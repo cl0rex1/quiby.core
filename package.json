@@ -1,0 +1,32 @@
+{
+  "name": "quiby-core-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "quiby.core - Minecraft 1.21.1 NeoForge Launcher & Modpack Management Ecosystem for Season 6",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace=apps/server",
+    "dev:launcher": "npm run dev --workspace=apps/launcher",
+    "build": "npm run build --workspaces --if-present",
+    "build:server": "npm run build --workspace=apps/server",
+    "build:launcher": "npm run build --workspace=apps/launcher",
+    "build:pack-builder": "npm run build --workspace=packages/pack-builder",
+    "pack:cli": "npm run cli --workspace=packages/pack-builder --",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "keywords": [
+    "minecraft",
+    "neoforge",
+    "launcher",
+    "quiby",
+    "create",
+    "discord-auth",
+    "modpack"
+  ],
+  "author": "quiby team",
+  "license": "MIT"
+}

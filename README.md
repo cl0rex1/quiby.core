@@ -1,0 +1,115 @@
+# 🚀 quiby.core — Minecraft 1.21.1 NeoForge Ecosystem
+
+Официальная инфраструктура и лаунчер для **6 Сезона** проекта **quiby.** с модами **Create & Aeronautics** на версии **Minecraft 1.21.1 NeoForge**.
+
+---
+
+## 🌟 Ключевые возможности
+
+1. **Десктопный Лаунчер (`apps/launcher`)**:
+   - **Discord Авторизация (OAuth2 & Dev Mode)**: 1:1 связка Discord аккаунта и ника Minecraft. Служит автоматической заменой вайтлиста и защищает от мультиаккаунтов/твинков.
+   - **Дифференциальная синхронизация модов**: Лаунчер вычисляет SHA-256 хэши и скачивает только новые или изменившиеся файлы сборки, автоматически удаляя устаревшие моды.
+   - **Движок запуска Minecraft 1.21.1 NeoForge**: Автоматическая сборка библиотек Mojang, ассетов, запуск с оптимизированными JVM G1GC параметрами для плавной работы Create.
+   - **Управление ресурсами**: Слайдер выделения оперативной памяти (RAM 4-16 ГБ), автопоиск установленной Java 21, выбор разрешения экрана.
+   - **Встроенная консоль логов**: Просмотр вывода stdout/stderr игры в реальном времени с подсветкой ошибок и возможностью экспорта лога для отладки.
+   - **Discord Rich Presence**: Отображение статуса игры в профиле Discord («В игре на quiby. S6»).
+   - **Виджет сервера**: Живой пинг и статус сервера `play.quiby.fun`.
+
+2. **Инструмент сборщика модов (`packages/pack-builder`)**:
+   - CLI-утилита `quiby-pack` для создания, анализа и публикации версий сборки.
+   - Автоматическое параллельное хэширование файлов (SHA-256) и парсинг метаданных модов из `META-INF/neoforge.mods.toml` / `mods.toml` / `fabric.mod.json`.
+   - Публикация сборки на сервер в одну команду: `quiby-pack publish --server http://your-server:3001`.
+   - Команда `quiby-pack diff` для сравнения локальной папки с активной версией на сервере.
+
+3. **Бэкенд-сервер дистрибуции (`apps/server`)**:
+   - Node.js + Express + SQLite база данных с автомиграциями.
+   - Discord OAuth2 эндпоинты и проверка членства на Discord сервере quiby.
+   - JWT сессии и шлюз проверки вайтлиста для сервера Minecraft (`/api/auth/verify-session`).
+   - Раздача манифестов, файлов сборки с ETag кэшированием, новостей и статуса сервера.
+
+---
+
+## 📁 Структура проекта
+
+```
+quiby.core/
+├── apps/
+│   ├── launcher/            # Electron + React 18 + TailwindCSS десктопный лаунчер
+│   └── server/              # Node.js + Express + SQLite бэкенд и раздача сборки
+├── packages/
+│   ├── pack-builder/        # CLI утилита (quiby-pack) для создания и публикации сборок
+│   └── shared/              # Общие TypeScript интерфейсы, типы и схемы манифеста
+├── tasks.md                 # Трекер стадий разработки
+└── README.md
+```
+
+---
+
+## 🛠 Быстрый старт
+
+### 1. Установка зависимостей
+
+```bash
+npm install
+```
+
+### 2. Запуск бэкенда
+
+```bash
+npm run dev:server
+```
+Бэкенд запустится на `http://localhost:3001`. База данных SQLite создастся автоматически в `apps/server/storage/quiby.sqlite`.
+
+### 3. Запуск лаунчера
+
+```bash
+npm run dev:launcher
+```
+Откроется окно лаунчера quiby. Season 6.
+
+---
+
+## 📦 Работа со сборкой модов (`quiby-pack`)
+
+### 1. Инициализация рабочей папки сборки
+
+```bash
+npx quiby-pack init ./modpack
+```
+Создадутся папки `mods/`, `config/`, `kubejs/`, `defaultconfigs/`, `resourcepacks/`, `shaderpacks/` и файл `pack.json`.
+
+### 2. Сканирование и проверка модов
+
+```bash
+npx quiby-pack scan ./modpack
+```
+
+### 3. Сравнение с версией на сервере
+
+```bash
+npx quiby-pack diff ./modpack --server http://localhost:3001
+```
+
+### 4. Публикация новой версии сборки
+
+```bash
+npx quiby-pack publish ./modpack --server http://localhost:3001 --version 6.1.0 --changelog "Добавлен Create Aeronautics и аддоны"
+```
+После публикации все игроки при открытии лаунчера автоматически получат обновление!
+
+---
+
+## ⚙️ Настройка Discord OAuth2
+
+1. Создайте приложение на [Discord Developer Portal](https://discord.com/developers/applications).
+2. В разделе **OAuth2 -> Redirects** добавьте:
+   - `http://localhost:45678/callback` (для лаунчера)
+   - `http://localhost:3001/api/auth/discord/callback` (для бэкенда)
+3. Заполните переменные в файле `.env` в `apps/server/`:
+   ```env
+   DISCORD_CLIENT_ID=ваш_client_id
+   DISCORD_CLIENT_SECRET=ваш_client_secret
+   DISCORD_BOT_TOKEN=токен_бота (опционально, для проверки ролей)
+   DISCORD_GUILD_ID=id_сервера_дискорд
+   ```
+4. *Примечание*: Если Discord OAuth2 ещё не настроен, в лаунчере и на сервере работает вкладка **«Локальный тест (Dev)»**, позволяющая войти под любым тестовым ником без необходимости подключения Discord API.

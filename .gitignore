@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+release/
+.vite/
+*.log
+*.sqlite
+*.sqlite-journal
+.env
+.env.local
+.DS_Store
+.cache/
+.minecraft/
+game/
+runtime/
+logs/
+temp/

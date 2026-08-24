@@ -1,0 +1,11 @@
+{
+  "client": {
+    "enableAeronauticsGpuAcceleration": true,
+    "maxAirshipRenderDistance": 32,
+    "physicsTickRate": 20
+  },
+  "world": {
+    "enableAirshipCollisions": true,
+    "fuelConsumptionRate": 1.0
+  }
+}
