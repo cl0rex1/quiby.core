@@ -24,8 +24,11 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
 }) => {
   return (
     <aside className="w-[72px] bg-onyx-900 border-r border-onyx-border flex flex-col justify-between items-center py-6 select-none shrink-0 z-30">
-      {/* Exactly 4 Clean Navigation Icons */}
-      <div className="flex flex-col items-center space-y-7 w-full">
+      {/* Top spacer for balance */}
+      <div className="w-8 h-8 pointer-events-none" />
+
+      {/* Exactly 4 Clean Navigation Icons Centered in Sidebar */}
+      <div className="flex flex-col items-center space-y-6 w-full my-auto">
         {/* 1. Home / Character Stage */}
         <button
           onClick={() => onSelectTab('home')}

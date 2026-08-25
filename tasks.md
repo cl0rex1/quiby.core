@@ -224,6 +224,27 @@
   - [x] Enhanced green save confirmation animation in `FloatingActionDeck` with an emerald/teal glow and zoom checkmark
   - [x] Verified complete 36-test suite passing and clean monorepo build
 
+- [x] **Stage 32: Centered Sidebar, Window-Wide Drag-and-Drop & Replacement Modal**
+  - [x] Vertically centered navigation icons in `MinimalSidebar` for balanced layout
+  - [x] Enabled window-wide drag-and-drop file listener with animated full-window dropzone overlay
+  - [x] Further enlarged collection cards (`h-28`, `w-20` avatars) and added larger, easily clickable top-right buttons
+  - [x] Implemented replacement confirmation modal when attempting to add a 6th skin (showing visual old vs new comparison)
+  - [x] Verified complete 36-test suite passing and completed production build
+
+- [x] **Stage 33: Fixed Collection Card Overflow & Contained Responsive Avatar Scaling**
+  - [x] Resolved horizontal image overflow in the 5-column collection grid by applying responsive `max-w-full max-h-full` containment
+  - [x] Added strict `overflow-hidden` on collection cards to eliminate cross-card overlap
+  - [x] Verified all 36 automated tests passing and completed clean production build
+
+- [x] **Stage 34: Spacious 3x2 Collection Grid with 6-Skin Limit**
+  - [x] Reorganized collection gallery into a clean, spacious 3x2 grid (`grid-cols-3`) with 3 skins on row 1 and 3 skins on row 2
+  - [x] Increased maximum player skin collection capacity to 6 skins
+  - [x] Updated replacement confirmation dialog threshold and counters to 6 skins
+  - [x] Verified full monorepo typecheck and production build
+
+
+
+
 
 
 

@@ -27,6 +27,34 @@ export function getSavedSkinLibrary(): SavedSkinItem[] {
 }
 
 /**
+ * Renders a crisp standardized 96x96 Chibi PNG data URI from a skin canvas.
+ */
+export function createChibiPreviewUri(skinCanvas: HTMLCanvasElement): string {
+  const config = {
+    ...createDefaultChibiConfig(),
+    model: { bodyType: 'steve' as const, resolved: 'steve' as const },
+    anim: 'idle',
+  };
+  const frames = bakeChibiLiveAnimation(skinCanvas, config, 'idle');
+  const curFrame = frames[0];
+
+  const thumbCv = document.createElement('canvas');
+  thumbCv.width = 96;
+  thumbCv.height = 96;
+  const tCtx = thumbCv.getContext('2d')!;
+  tCtx.imageSmoothingEnabled = false;
+
+  const scale = 2.0;
+  const dw = Math.round(curFrame.width * scale);
+  const dh = Math.round(curFrame.height * scale);
+  const dx = Math.round((96 - dw) / 2);
+  const dy = Math.round((96 - dh) / 2 + 1);
+
+  tCtx.drawImage(curFrame.canvas, dx, dy, dw, dh);
+  return thumbCv.toDataURL('image/png');
+}
+
+/**
  * Saves a new skin into the library with an authentic, standardized Live Chibi preview.
  */
 export function addSkinToLibrary(
@@ -36,32 +64,7 @@ export function addSkinToLibrary(
   const library = getSavedSkinLibrary();
   const dataUri = skinCanvas.toDataURL('image/png');
   const bodyType = detectSkinBodyType(skinCanvas);
-
-  // Generate Live Chibi thumbnail preview (Always using classic Steve proportions for uniform chibi size)
-  const config = {
-    ...createDefaultChibiConfig(),
-    model: { bodyType: 'steve' as const, resolved: 'steve' as const },
-    anim: 'idle',
-  };
-  const frames = bakeChibiLiveAnimation(skinCanvas, config, 'idle');
-  const curFrame = frames[0];
-
-  // Scale up sprite crisply to thumbnail canvas (96x96)
-  const thumbCv = document.createElement('canvas');
-  thumbCv.width = 96;
-  thumbCv.height = 96;
-  const tCtx = thumbCv.getContext('2d')!;
-  tCtx.imageSmoothingEnabled = false;
-
-  // Fixed uniform scale for consistent size across all skins
-  const scale = 2.0;
-  const dw = Math.round(curFrame.width * scale);
-  const dh = Math.round(curFrame.height * scale);
-  const dx = Math.round((96 - dw) / 2);
-  const dy = Math.round((96 - dh) / 2 + 1);
-
-  tCtx.drawImage(curFrame.canvas, dx, dy, dw, dh);
-  const chibiPreviewUri = thumbCv.toDataURL('image/png');
+  const chibiPreviewUri = createChibiPreviewUri(skinCanvas);
 
   // Check if identical skin dataUri already exists
   const existingIdx = library.findIndex((s) => s.dataUri === dataUri);
@@ -81,9 +84,9 @@ export function addSkinToLibrary(
     updated = [item, ...library];
   }
 
-  // Limit to maximum 5 skins in player collection
-  if (updated.length > 5) {
-    updated = updated.slice(0, 5);
+  // Limit to maximum 6 skins in player collection (3x2 grid)
+  if (updated.length > 6) {
+    updated = updated.slice(0, 6);
   }
 
   try {
