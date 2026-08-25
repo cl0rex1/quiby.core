@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Trash2, Check, AlertCircle, Lock, Download, FolderHeart } from 'lucide-react';
-import { CAPE_PRESETS, DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
+import { Upload, Trash2, Check, AlertCircle, Download, User } from 'lucide-react';
+import { DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
 import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
 import { validateSkinFile } from '../utils/skinValidator';
 import {
@@ -27,7 +27,6 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   selectedCape,
   onSetCustomSkin,
   onSetDefaultSkinIdx,
-  onSelectCape,
 }) => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -50,7 +49,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
     setValidationError(null);
 
-    // 1. Create working canvas for library storage
+    // Create working canvas for library storage
     const cv = document.createElement('canvas');
     const sourceImg = result.convertedImg || (customSkinImg as HTMLImageElement);
     cv.width = sourceImg.naturalWidth || sourceImg.width || 64;
@@ -59,11 +58,11 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(sourceImg, 0, 0);
 
-    // 2. Add to persistent library
-    const newItem = addSkinToLibrary(file.name, cv);
+    // Add to persistent library (max 5 items)
+    addSkinToLibrary(file.name, cv);
     setLibrary(getSavedSkinLibrary());
 
-    // 3. Set as current active custom skin
+    // Set as current active custom skin
     onSetCustomSkin(result.convertedImg || null, file.name);
   };
 
@@ -81,7 +80,6 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
     const updated = removeSkinFromLibrary(id);
     setLibrary(updated);
 
-    // If currently selected skin was deleted, revert to default
     if (customSkinName && library.find((s) => s.id === id)?.name === customSkinName) {
       onSetCustomSkin(null, null);
     }
@@ -114,208 +112,190 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
     }
   };
 
-  return (
-    <div className="flex-1 flex flex-col md:flex-row h-full overflow-y-auto p-8 gap-8 select-none z-10">
-      {/* Left Column: Live Chibi Character Preview */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-onyx-900/60 border border-onyx-border rounded-3xl p-6 relative">
-        <ChibiCharacterDisplay
-          customSkinImg={customSkinImg}
-          activeDefaultSkinIdx={activeDefaultSkinIdx}
-          selectedCape={selectedCape}
-        />
-      </div>
+  // Determine active display name
+  const currentDisplayName = customSkinImg
+    ? customSkinName || 'Пользовательский скин'
+    : DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Скин';
 
-      {/* Right Column: Customization & Library Controls */}
-      <div className="flex-1 flex flex-col space-y-6 overflow-y-auto pr-1">
-        {/* Section 1: Skin Selection & Upload */}
-        <div className="bg-onyx-900/60 border border-onyx-border rounded-3xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-white">Скин</span>
+  return (
+    <div className="flex-1 flex flex-col lg:flex-row h-full overflow-hidden p-6 md:p-8 gap-6 md:gap-8 select-none z-10">
+      {/* Left Column: Character Stage Preview */}
+      <div className="flex-[1.1] flex flex-col items-center justify-center bg-zinc-950/40 border border-white/5 rounded-3xl p-6 relative overflow-hidden backdrop-blur-sm">
+        {/* Subtle radial backdrop accent */}
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,transparent_70%)]" />
+
+        {/* Live Chibi Character */}
+        <div className="relative z-10 flex flex-col items-center">
+          <ChibiCharacterDisplay
+            customSkinImg={customSkinImg}
+            activeDefaultSkinIdx={activeDefaultSkinIdx}
+            selectedCape={selectedCape}
+          />
+
+          {/* Minimal Floating Name Badge */}
+          <div className="mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-white/10 text-xs font-medium text-zinc-200 shadow-sm backdrop-blur-md">
+            <User size={12} className="text-zinc-400" />
+            <span className="truncate max-w-[200px]">{currentDisplayName}</span>
             {customSkinImg && (
               <button
                 onClick={() => {
                   onSetCustomSkin(null, null);
                   setValidationError(null);
                 }}
-                className="flex items-center gap-1 text-xs text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
+                title="Сбросить скин"
+                className="ml-1 text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer"
               >
-                <Trash2 size={13} />
-                <span>Сбросить</span>
+                <Trash2 size={11} />
               </button>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Validation Error Banner */}
-          {validationError && (
-            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs animate-in fade-in">
-              <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-400" />
-              <div className="flex-1">
-                <p className="font-semibold">Ошибка проверки скина</p>
-                <p className="text-[11px] text-rose-200/80 mt-0.5">{validationError}</p>
-              </div>
+      {/* Right Column: Minimalist Control Panel */}
+      <div className="flex-1 flex flex-col space-y-5 overflow-y-auto pr-1 justify-center">
+        {/* Validation Error Banner */}
+        {validationError && (
+          <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs animate-in fade-in">
+            <AlertCircle size={15} className="shrink-0 mt-0.5 text-rose-400" />
+            <div className="flex-1">
+              <p className="font-semibold text-rose-200">Неверный скин</p>
+              <p className="text-[11px] text-rose-300/80 mt-0.5">{validationError}</p>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Upload Custom Skin Button / Drop Zone */}
-          <label
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={`flex flex-col items-center justify-center gap-1.5 w-full py-3.5 px-4 rounded-2xl border text-xs font-bold transition-all cursor-pointer shadow-sm ${
-              isDragging
-                ? 'bg-quiby-purple/10 border-quiby-purpleLight text-quiby-purpleLight scale-[1.01]'
-                : 'bg-onyx-850 hover:bg-onyx-800 border-onyx-border text-white'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Upload size={15} className="text-quiby-purpleLight" />
-              <span>{customSkinName ? `Текущий: ${customSkinName}` : 'Загрузить скин (.png)'}</span>
+        {/* Section 1: Upload Zone */}
+        <label
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`group flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer ${
+            isDragging
+              ? 'bg-zinc-800/80 border-zinc-400 scale-[1.01]'
+              : 'bg-zinc-900/50 hover:bg-zinc-900 border-white/5 hover:border-white/10'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-white/5 flex items-center justify-center text-zinc-300 group-hover:text-white transition-colors">
+              <Upload size={16} />
             </div>
-            <span className="text-[11px] font-normal text-quiby-textMuted">
-              64x64 или 64x32 PNG • Автосохранение в библиотеку
-            </span>
-            <input
-              type="file"
-              accept=".png"
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files?.[0]) {
-                  processSkinFile(e.target.files[0]);
-                }
-              }}
-            />
-          </label>
-
-          {/* Library Section: Saved Skins Collection */}
-          {library.length > 0 && (
-            <div className="space-y-2 pt-1">
-              <div className="flex items-center gap-1.5 text-quiby-textMuted">
-                <FolderHeart size={12} className="text-quiby-purpleLight" />
-                <span className="text-[11px] font-bold uppercase tracking-wider">Моя коллекция ({library.length})</span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-48 overflow-y-auto pr-1">
-                {library.map((item) => {
-                  const isSelected = customSkinImg && customSkinName === item.name;
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => handleSelectLibraryItem(item)}
-                      className={`group relative flex flex-col items-center p-2.5 rounded-2xl border transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-onyx-800 border-quiby-purple shadow-onyx-glow text-white'
-                          : 'bg-onyx-850/80 hover:bg-onyx-800 border-onyx-border text-quiby-textMuted hover:text-white'
-                      }`}
-                    >
-                      {/* Live Chibi Thumbnail */}
-                      <img
-                        src={item.chibiPreviewUri}
-                        alt={item.name}
-                        className="w-12 h-12 object-contain [image-rendering:pixelated] drop-shadow-md pointer-events-none select-none"
-                      />
-
-                      <span className="text-[10px] font-medium truncate w-full text-center mt-1">
-                        {item.name}
-                      </span>
-
-                      {/* Action buttons (Download Chibi & Delete) */}
-                      <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => handleDownloadChibi(e, item)}
-                          title="Скачать чиби-аватар (.png)"
-                          className="p-1 rounded-md bg-onyx-900/90 text-quiby-textMuted hover:text-white transition-colors"
-                        >
-                          <Download size={11} />
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteLibraryItem(e, item.id)}
-                          title="Удалить из коллекции"
-                          className="p-1 rounded-md bg-onyx-900/90 text-rose-400 hover:text-rose-300 transition-colors"
-                        >
-                          <Trash2 size={11} />
-                        </button>
-                      </div>
-
-                      {isSelected && (
-                        <div className="absolute top-1.5 left-1.5 w-3.5 h-3.5 rounded-full bg-quiby-purple flex items-center justify-center text-white">
-                          <Check size={9} />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors">
+                Загрузить скин
+              </span>
+              <span className="text-[11px] text-zinc-500">
+                PNG 64x64 • Перетащите файл сюда
+              </span>
             </div>
-          )}
+          </div>
 
-          {/* Subtitle for Default Skins */}
-          <div className="space-y-2 pt-1">
-            <span className="text-[11px] font-bold text-quiby-textMuted uppercase tracking-wider block">
-              Базовые скины
-            </span>
+          <span className="text-[11px] font-medium text-zinc-400 px-2.5 py-1 rounded-lg bg-zinc-800/50 border border-white/5 group-hover:border-white/10">
+            Обзор
+          </span>
 
-            <div className="grid grid-cols-2 gap-3">
-              {DEFAULT_SKINS.map((skin, idx) => {
-                const isSelected = !customSkinImg && activeDefaultSkinIdx === idx;
+          <input
+            type="file"
+            accept=".png"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                processSkinFile(e.target.files[0]);
+              }
+            }}
+          />
+        </label>
+
+        {/* Section 2: Library Grid (Saved Skins - max 5) */}
+        {library.length > 0 && (
+          <div className="bg-zinc-950/40 border border-white/5 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                Моя коллекция
+              </span>
+              <span className="text-[11px] text-zinc-500 font-mono">
+                {library.length}/5
+              </span>
+            </div>
+
+            <div className="grid grid-cols-5 gap-3">
+              {library.map((item) => {
+                const isSelected = customSkinImg && customSkinName === item.name;
                 return (
-                  <button
-                    key={skin.id}
-                    onClick={() => {
-                      onSetCustomSkin(null, null);
-                      onSetDefaultSkinIdx(idx);
-                      setValidationError(null);
-                    }}
-                    className={`p-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  <div
+                    key={item.id}
+                    onClick={() => handleSelectLibraryItem(item)}
+                    title={item.name}
+                    className={`group relative flex flex-col items-center justify-center p-2 rounded-2xl border transition-all cursor-pointer aspect-square ${
                       isSelected
-                        ? 'bg-onyx-800 border-quiby-purple text-white shadow-onyx-glow'
-                        : 'bg-onyx-850 border-onyx-border text-quiby-textMuted hover:text-white hover:bg-onyx-800'
+                        ? 'bg-zinc-800 border-zinc-400 shadow-md'
+                        : 'bg-zinc-900/60 hover:bg-zinc-850 border-white/5 hover:border-white/15 text-zinc-400 hover:text-zinc-200'
                     }`}
                   >
-                    <span>{skin.name}</span>
-                    {isSelected && <Check size={14} className="text-quiby-purpleLight" />}
-                  </button>
+                    {/* Live Chibi Thumbnail */}
+                    <img
+                      src={item.chibiPreviewUri}
+                      alt={item.name}
+                      className="w-14 h-14 object-contain [image-rendering:pixelated] drop-shadow-sm pointer-events-none select-none"
+                    />
+
+                    {/* Active Checkmark in Top-Left */}
+                    {isSelected && (
+                      <div className="absolute top-2 left-2 w-3 h-3 rounded-full bg-white flex items-center justify-center shadow-sm">
+                        <Check size={8} className="text-zinc-900 stroke-[3]" />
+                      </div>
+                    )}
+
+                    {/* Action buttons pinned in the Top-Right Corner */}
+                    <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <button
+                        onClick={(e) => handleDownloadChibi(e, item)}
+                        title="Скачать чиби-аватар"
+                        className="p-1 rounded-md bg-zinc-900/90 text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors shadow-sm"
+                      >
+                        <Download size={11} />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteLibraryItem(e, item.id)}
+                        title="Удалить скин"
+                        className="p-1 rounded-md bg-zinc-900/90 text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 transition-colors shadow-sm"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Section 2: Cape Selection (Disabled / Locked) */}
-        <div className="bg-onyx-900/60 border border-onyx-border rounded-3xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-white">Плащ</span>
-            <span className="px-2.5 py-0.5 rounded-full bg-onyx-850 border border-onyx-border text-[10px] font-mono text-quiby-textDim uppercase flex items-center gap-1.5">
-              <Lock size={11} className="text-quiby-purple" />
-              <span>Недоступно в этом сезоне</span>
-            </span>
-          </div>
+        {/* Section 3: Default Skins (Steve & Alex) */}
+        <div className="bg-zinc-950/40 border border-white/5 rounded-2xl p-4 space-y-2.5">
+          <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block">
+            Базовые скины
+          </span>
 
-          <div className="grid grid-cols-2 gap-2.5 opacity-40 pointer-events-none select-none">
-            {CAPE_PRESETS.map((cape) => {
-              const isSelected = selectedCape.id === cape.id;
+          <div className="grid grid-cols-2 gap-2">
+            {DEFAULT_SKINS.map((skin, idx) => {
+              const isSelected = !customSkinImg && activeDefaultSkinIdx === idx;
               return (
-                <div
-                  key={cape.id}
-                  className={`p-3 rounded-2xl border flex items-center justify-between cursor-not-allowed ${
+                <button
+                  key={skin.id}
+                  onClick={() => {
+                    onSetCustomSkin(null, null);
+                    onSetDefaultSkinIdx(idx);
+                    setValidationError(null);
+                  }}
+                  className={`py-2.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-onyx-800 border-quiby-purple shadow-onyx-glow text-white'
-                      : 'bg-onyx-850 border-onyx-border text-quiby-textMuted'
+                      ? 'bg-zinc-800 border-zinc-400 text-white shadow-sm'
+                      : 'bg-zinc-900/60 hover:bg-zinc-900 border-white/5 text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 truncate">
-                    <div
-                      className="w-5 h-7 rounded-md shrink-0 shadow-inner flex items-center justify-center text-[9px] text-white font-bold"
-                      style={{
-                        background: `linear-gradient(135deg, ${cape.gradient[0]}, ${cape.gradient[1]})`,
-                      }}
-                    >
-                      {cape.emblem === 'quiby' ? 'Q' : ''}
-                    </div>
-                    <span className="text-xs font-semibold truncate">{cape.name}</span>
-                  </div>
-
-                  <Lock size={13} className="text-quiby-textDim shrink-0" />
-                </div>
+                  <span>{skin.name}</span>
+                  {isSelected && <Check size={13} className="text-zinc-200" />}
+                </button>
               );
             })}
           </div>

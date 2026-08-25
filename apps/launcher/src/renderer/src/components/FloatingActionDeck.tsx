@@ -171,13 +171,13 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
 
         {/* Clean Expanding Solid Green Layer with Centered Checkmark */}
         <div
-          className={`absolute inset-0 rounded-full bg-emerald-400 flex items-center justify-center pointer-events-none transition-all duration-300 ease-out origin-center z-10 ${
-            isFilled ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+          className={`absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 flex items-center justify-center pointer-events-none transition-all duration-300 ease-out origin-center z-10 shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)] ${
+            isFilled ? 'scale-100 opacity-100 shadow-[0_0_30px_rgba(52,211,153,0.9)]' : 'scale-0 opacity-0'
           }`}
         >
           {isFilled && (
             <div className="flex items-center justify-center animate-in zoom-in-75 duration-200">
-              <Check size={22} className="text-black stroke-[3.5]" />
+              <Check size={22} className="text-zinc-950 stroke-[3.5]" />
             </div>
           )}
         </div>

@@ -260,7 +260,7 @@ function runTests() {
   const config = createDefaultChibiConfig();
   assert(config.style === 'live', 'Config style is "live"');
   assert(config.detail === 'blocky', 'Config detail is "blocky"');
-  assert(config.model.bodyType === 'alex', 'Config bodyType is "alex"');
+  assert(config.model.bodyType === 'steve', 'Config bodyType is "steve"');
   assert(config.view === '34-right', 'Config view is "34-right"');
   assert(config.facing === 'right', 'Config facing is "right"');
   assert(config.outline.perPart === true, 'Config outline perPart is true');

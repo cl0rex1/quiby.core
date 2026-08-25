@@ -45,11 +45,11 @@ export const ChibiCharacterDisplay: React.FC<ChibiCharacterDisplayProps> = ({
           : 'alex';
 
       const config: ChibiLiveConfig = {
-      ...createDefaultChibiConfig(),
-      model: {
-        bodyType,
-        resolved: bodyType,
-      },
+        ...createDefaultChibiConfig(),
+        model: {
+          bodyType: 'steve',
+          resolved: 'steve',
+        },
       style: 'live',
       detail: 'blocky',
       view: '34-right',

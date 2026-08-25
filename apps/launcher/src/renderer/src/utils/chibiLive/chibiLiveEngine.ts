@@ -49,8 +49,8 @@ export function createDefaultChibiConfig(): ChibiLiveConfig {
     version: 3,
     tool: 'minecraft-chibi-skin-maker',
     model: {
-      bodyType: 'alex',
-      resolved: 'alex',
+      bodyType: 'steve',
+      resolved: 'steve',
     },
     style: 'live',
     detail: 'blocky',

@@ -209,6 +209,23 @@
   - [x] Disabled and locked Capes section with sleek "Недоступно в этом сезоне" badge
   - [x] Verified all 36 automated tests passing across modules and clean build
 
+- [x] **Stage 30: Unified Steve Chibi Proportions & Minimalist UI/UX Redesign**
+  - [x] Standardized all Chibi rendering on classic Steve 4px proportions for consistent chibi avatars across both Steve and Alex textures
+  - [x] Completely redesigned `SkinWardrobeView` with a sleek, minimalist zinc/onyx monochrome aesthetic
+  - [x] Reduced visual clutter and removed heavy purple glows in favor of restrained, premium styling
+  - [x] Optimized canvas rendering performance and animation frame teardown
+  - [x] Verified all 36 tests passing and completed launcher production build
+
+- [x] **Stage 31: Uniform Chibi Thumbnail Scaling, 5 Skin Limit & Enhanced Save Animation**
+  - [x] Standardized thumbnail generation with `bakeChibiLiveAnimation` at uniform scale (resolving smaller Alex thumbnail bug)
+  - [x] Enlarged collection card dimensions with a clean 5-skin limit
+  - [x] Positioned download and delete action buttons cleanly in the top-right corner of each card frame
+  - [x] Removed redundant bottom text notes from wardrobe view
+  - [x] Enhanced green save confirmation animation in `FloatingActionDeck` with an emerald/teal glow and zoom checkmark
+  - [x] Verified complete 36-test suite passing and clean monorepo build
+
+
+
 
 
 
