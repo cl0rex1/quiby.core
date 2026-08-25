@@ -2,13 +2,14 @@ import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { AuthSession, LauncherSettings, LogEntry } from '@quiby/shared';
+import { AuthSession, LauncherSettings } from '@quiby/shared';
 import { startDiscordOAuthFlow } from './auth/discordAuth';
 import { detectInstalledJava, getRecommendedJava } from './engine/javaDetector';
 import { launchMinecraft, killGameProcess } from './engine/minecraftLauncher';
-import { initDiscordRpc, updateDiscordRpcStatus } from './rpc/discordRpc';
+import { initDiscordRpc } from './rpc/discordRpc';
 
 let mainWindow: BrowserWindow | null = null;
+let splashWindow: BrowserWindow | null = null;
 
 const DEFAULT_SERVER_URL = 'http://localhost:3001';
 
@@ -62,15 +63,15 @@ function saveSettings(settings: LauncherSettings): void {
   fs.writeFileSync(filePath, JSON.stringify(settings, null, 2), 'utf8');
 }
 
-function createWindow(): void {
+function createMainWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1100,
-    height: 700,
+    height: 720,
     minWidth: 980,
     minHeight: 620,
     frame: false,
+    backgroundColor: '#07080a',
     titleBarStyle: 'hidden',
-    backgroundColor: '#0b0f17',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       nodeIntegration: false,
@@ -90,7 +91,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
-  createWindow();
+  createMainWindow();
   initDiscordRpc();
 
   // 1. Window Controls

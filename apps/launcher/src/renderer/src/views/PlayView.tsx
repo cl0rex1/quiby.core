@@ -1,204 +1,147 @@
 import React, { useState } from 'react';
-import { Play, RotateCw, CheckCircle2, AlertTriangle, HardDrive, Cpu, Wifi, Copy, Check, Sparkles, Shield, Square } from 'lucide-react';
-import { AuthSession, DownloadProgress, LauncherSettings, LaunchState, ModpackManifest, ServerStatus } from '@quiby/shared';
+import { 
+  Sparkles, 
+  Copy, 
+  Check, 
+  Wifi, 
+  Layers, 
+  ShieldCheck, 
+  Zap, 
+  Compass, 
+  Anchor,
+  Sliders
+} from 'lucide-react';
+import { ModpackManifest, ServerStatus } from '@quiby/shared';
 
 interface PlayViewProps {
-  session: AuthSession | null;
-  settings: LauncherSettings;
   manifest: ModpackManifest | null;
   serverStatus: ServerStatus | null;
-  launchState: LaunchState;
-  downloadProgress: DownloadProgress | null;
-  onLaunch: () => void;
-  onKill: () => void;
-  onOpenLogin: () => void;
+  serverIp: string;
+  onOpenModpack: () => void;
+  onOpenSettings: () => void;
 }
 
 export const PlayView: React.FC<PlayViewProps> = ({
-  session,
-  settings,
   manifest,
   serverStatus,
-  launchState,
-  downloadProgress,
-  onLaunch,
-  onKill,
-  onOpenLogin,
+  serverIp,
+  onOpenModpack,
+  onOpenSettings,
 }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopyIp = () => {
-    navigator.clipboard.writeText(settings.serverIp || 'play.quiby.fun:25565');
+    navigator.clipboard.writeText(serverIp || 'play.quiby.fun:25565');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const isBusy = launchState.status === 'updating' || launchState.status === 'starting';
-  const isRunning = launchState.status === 'running';
-
-  const formatSpeed = (bps: number) => {
-    if (bps <= 0) return '';
-    const mbps = (bps / (1024 * 1024)).toFixed(1);
-    return `${mbps} МБ/с`;
-  };
-
-  const formatBytes = (bytes: number) => {
-    if (!bytes) return '0 МБ';
-    return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
-  };
-
   return (
-    <div className="flex-1 flex flex-col justify-between p-6 overflow-y-auto space-y-6">
-      {/* Season 6 Hero Showcase */}
-      <div className="relative rounded-3xl overflow-hidden border border-quiby-border/80 bg-gradient-to-br from-slate-900 via-quiby-panel to-slate-950 p-8 shadow-2xl">
-        {/* Background ambient glow */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-0 left-10 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div className="relative flex-1 flex flex-col justify-between p-8 overflow-y-auto select-none">
+      {/* Atmospheric Nebula Background Glows */}
+      <div className="absolute top-10 left-1/4 w-[500px] h-[500px] bg-quiby-purple/15 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-quiby-indigo/15 rounded-full blur-[100px] pointer-events-none"></div>
 
-        <div className="relative z-10 max-w-2xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-bold tracking-wide uppercase">
-            <Sparkles size={13} />
-            <span>Сезон 6 • Открытие</span>
-          </div>
+      {/* Main Hero Header */}
+      <div className="relative z-10 max-w-3xl space-y-4 pt-4">
+        {/* Season Tag Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-quiby-card border border-quiby-purple/40 text-quiby-purpleLight text-xs font-mono font-bold tracking-wider uppercase shadow-neon-purple">
+          <Sparkles size={13} className="text-quiby-purple" />
+          <span>Season VI • Aeronautics Release</span>
+        </div>
 
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-            quiby<span className="text-emerald-400">.</span> Aeronautics
+        {/* Big Cinematic Display Typography */}
+        <div className="space-y-1">
+          <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-white leading-none">
+            QUIBY<span className="text-quiby-purpleLight">.</span>
           </h1>
-
-          <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-            Погрузитесь в эру дирижаблей, сложной механики и индустриализации на базе мода{' '}
-            <span className="text-white font-semibold">Create & Aeronautics</span>. Официальная сборка на{' '}
-            <span className="text-emerald-400 font-semibold">Minecraft 1.21.1 NeoForge</span>.
-          </p>
-
-          {/* Quick Specs Badges */}
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-quiby-card/80 border border-quiby-border text-xs text-slate-300">
-              <HardDrive size={14} className="text-emerald-400" />
-              <span>Память: <strong>{(settings.ramMaxMb / 1024).toFixed(0)} ГБ</strong></span>
-            </div>
-
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-quiby-card/80 border border-quiby-border text-xs text-slate-300">
-              <Cpu size={14} className="text-cyan-400" />
-              <span>Java 21 NeoForge</span>
-            </div>
-
-            <button
-              onClick={handleCopyIp}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-quiby-card/80 border border-quiby-border text-xs text-slate-300 hover:text-white hover:border-emerald-500/40 transition-all cursor-pointer"
-            >
-              <Wifi size={14} className="text-emerald-400" />
-              <span>{settings.serverIp || 'play.quiby.fun'}</span>
-              {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-            </button>
+          <div className="text-xl sm:text-2xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-white via-quiby-purpleLight to-quiby-purple">
+            Create Aeronautics & Industrial Age
           </div>
+        </div>
+
+        <p className="text-sm sm:text-base text-quiby-textMuted leading-relaxed max-w-2xl">
+          Сборка нового поколения на <strong className="text-white">Minecraft 1.21.1 NeoForge</strong>. Стройте летающие базы, дирижабли, настраивайте паровую тягу и исследуйте мир без ограничений на официальном сервере.
+        </p>
+
+        {/* Server IP Quick Copy Card */}
+        <div className="inline-flex items-center gap-3 p-2 pr-4 rounded-2xl bg-quiby-card/80 border border-quiby-border shadow-sm backdrop-blur-md">
+          <div className="w-9 h-9 rounded-xl bg-quiby-surface flex items-center justify-center text-quiby-purpleLight border border-quiby-border">
+            <Wifi size={17} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-quiby-textMuted uppercase font-mono">Адрес сервера:</span>
+            <span className="text-xs font-mono font-bold text-white">{serverIp || 'play.quiby.fun'}</span>
+          </div>
+          <button
+            onClick={handleCopyIp}
+            className="ml-3 px-3 py-1.5 rounded-xl bg-quiby-surface hover:bg-quiby-purple/20 border border-quiby-border text-xs font-bold text-quiby-text hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            {copied ? (
+              <>
+                <Check size={13} className="text-emerald-400" />
+                <span className="text-emerald-400">Скопировано</span>
+              </>
+            ) : (
+              <>
+                <Copy size={13} />
+                <span>Копировать IP</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Progress & Launch Bar Area */}
-      <div className="bg-quiby-card/90 border border-quiby-border rounded-2xl p-5 shadow-lg space-y-4">
-        {/* Active Download Progress */}
-        {isBusy && downloadProgress && (
-          <div className="space-y-2 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2 text-slate-200 font-medium">
-                <RotateCw size={14} className="animate-spin text-emerald-400" />
-                <span>{downloadProgress.stageLabel}</span>
-              </div>
-              <div className="flex items-center gap-3 text-slate-400 font-mono text-[11px]">
-                {downloadProgress.speedBps > 0 && (
-                  <span className="text-emerald-400 font-bold">{formatSpeed(downloadProgress.speedBps)}</span>
-                )}
-                {downloadProgress.totalBytes > 0 && (
-                  <span>
-                    {formatBytes(downloadProgress.bytesDownloaded)} / {formatBytes(downloadProgress.totalBytes)}
-                  </span>
-                )}
-                <span className="font-bold text-white">{downloadProgress.progressPercent}%</span>
-              </div>
-            </div>
-
-            {/* Visual Bar */}
-            <div className="w-full h-2.5 bg-quiby-panel rounded-full overflow-hidden border border-quiby-border">
-              <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-300 rounded-full"
-                style={{ width: `${Math.max(downloadProgress.progressPercent, 4)}%` }}
-              ></div>
-            </div>
-
-            {downloadProgress.currentFile && (
-              <div className="text-[11px] font-mono text-slate-400 truncate">
-                Файл: {downloadProgress.currentFile}
-              </div>
-            )}
+      {/* Feature Spotlight Cards */}
+      <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
+        {/* Card 1 */}
+        <div 
+          onClick={onOpenModpack}
+          className="group bg-quiby-card/70 hover:bg-quiby-card border border-quiby-border hover:border-quiby-purple/50 rounded-2xl p-4 space-y-2.5 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-neon-purple backdrop-blur-md"
+        >
+          <div className="w-9 h-9 rounded-xl bg-quiby-purple/15 flex items-center justify-center text-quiby-purpleLight group-hover:scale-110 transition-transform">
+            <Anchor size={18} />
           </div>
-        )}
-
-        {/* Action Controls */}
-        <div className="flex items-center justify-between gap-4">
-          {/* User Account Reminder */}
-          <div className="flex items-center gap-3">
-            {session ? (
-              <div className="flex items-center gap-3">
-                <img
-                  src={session.user.avatarUrl || `https://api.dicebear.com/8.x/bottts/svg?seed=${session.user.mcUsername}`}
-                  alt="Player"
-                  className="w-10 h-10 rounded-xl border border-emerald-500/40 object-cover"
-                />
-                <div>
-                  <div className="text-xs text-slate-400">Игровой профиль:</div>
-                  <div className="text-sm font-bold text-white flex items-center gap-1.5">
-                    <span>{session.user.mcUsername}</span>
-                    <span title="Вайтлист активен">
-                      <Shield size={13} className="text-emerald-400" />
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-xs text-amber-400 flex items-center gap-2">
-                <AlertTriangle size={16} />
-                <span>Авторизуйтесь через Discord для запуска игры</span>
-              </div>
-            )}
+          <div>
+            <h3 className="font-bold text-white text-sm group-hover:text-quiby-purpleLight transition-colors">
+              Create Aeronautics
+            </h3>
+            <p className="text-xs text-quiby-textMuted leading-relaxed mt-0.5">
+              Дирижабли, полёты в реальном времени, шестерни и кинетическая энергия.
+            </p>
           </div>
+        </div>
 
-          {/* Launch / Action Buttons */}
-          <div className="flex items-center gap-3">
-            {!session ? (
-              <button
-                onClick={onOpenLogin}
-                className="px-8 py-3.5 rounded-xl bg-[#5865F2] hover:bg-[#4752c4] text-white font-bold text-base shadow-lg shadow-[#5865F2]/25 transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <span>Войти в аккаунт</span>
-              </button>
-            ) : isRunning ? (
-              <button
-                onClick={onKill}
-                className="px-8 py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-base shadow-lg shadow-red-600/30 transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <Square size={18} />
-                <span>Остановить игру</span>
-              </button>
-            ) : (
-              <button
-                onClick={onLaunch}
-                disabled={isBusy}
-                className="px-10 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-quiby-500 hover:from-emerald-400 hover:to-emerald-500 disabled:opacity-50 text-quiby-dark font-extrabold text-base tracking-wide shadow-glow-green hover:shadow-[0_0_35px_rgba(34,197,94,0.6)] transition-all flex items-center gap-2.5 cursor-pointer transform active:scale-98"
-              >
-                {isBusy ? (
-                  <>
-                    <RotateCw size={20} className="animate-spin text-quiby-dark" />
-                    <span>СИНХРОНИЗАЦИЯ...</span>
-                  </>
-                ) : (
-                  <>
-                    <Play size={20} className="fill-quiby-dark" />
-                    <span>ИГРАТЬ (1.21.1 NEOFORGE)</span>
-                  </>
-                )}
-              </button>
-            )}
+        {/* Card 2 */}
+        <div 
+          onClick={onOpenSettings}
+          className="group bg-quiby-card/70 hover:bg-quiby-card border border-quiby-border hover:border-quiby-purple/50 rounded-2xl p-4 space-y-2.5 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-neon-purple backdrop-blur-md"
+        >
+          <div className="w-9 h-9 rounded-xl bg-quiby-purple/15 flex items-center justify-center text-quiby-purpleLight group-hover:scale-110 transition-transform">
+            <Zap size={18} />
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-sm group-hover:text-quiby-purpleLight transition-colors">
+              NeoForge 1.21.1 + Oculus
+            </h3>
+            <p className="text-xs text-quiby-textMuted leading-relaxed mt-0.5">
+              Экстремальная оптимизация графики, шейдеры нового поколения и 120+ FPS.
+            </p>
+          </div>
+        </div>
+
+        {/* Card 3 */}
+        <div className="bg-quiby-card/70 border border-quiby-border rounded-2xl p-4 space-y-2.5 shadow-sm backdrop-blur-md">
+          <div className="w-9 h-9 rounded-xl bg-quiby-purple/15 flex items-center justify-center text-quiby-purpleLight">
+            <ShieldCheck size={18} />
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-sm">
+              Discord Whitelist 1:1
+            </h3>
+            <p className="text-xs text-quiby-textMuted leading-relaxed mt-0.5">
+              Автоматическая привязка аккаунта, защита от мультиаккаунтов и безопасность.
+            </p>
           </div>
         </div>
       </div>

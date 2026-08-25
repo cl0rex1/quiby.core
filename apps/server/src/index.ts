@@ -45,10 +45,20 @@ async function bootstrap() {
     res.status(500).json({ error: err.message || 'Internal Server Error' });
   });
 
-  app.listen(config.port, config.host, () => {
+  const server = app.listen(config.port, config.host, () => {
     console.log(`🚀 quiby.core backend running at http://${config.host}:${config.port}`);
     console.log(`🎮 Target Minecraft: ${config.minecraft.targetGameVersion} (${config.minecraft.targetLoader} ${config.minecraft.targetLoaderVersion})`);
     console.log(`🔑 Admin API Key: ${config.adminApiKey}`);
+  });
+
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Порт ${config.port} уже занят другим процессом.`);
+      console.error(`👉 Чтобы освободить порт на macOS/Linux: npx kill-port ${config.port}`);
+    } else {
+      console.error('Server error:', err);
+    }
+    process.exit(1);
   });
 }
 

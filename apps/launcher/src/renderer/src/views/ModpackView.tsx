@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Package, Layers, FileCode, CheckCircle, HardDrive, RefreshCw } from 'lucide-react';
+import { Search, Package, Layers, FileCode, CheckCircle, RefreshCw, Sparkles } from 'lucide-react';
 import { ModpackManifest } from '@quiby/shared';
 
 interface ModpackViewProps {
@@ -35,103 +35,101 @@ export const ModpackView: React.FC<ModpackViewProps> = ({ manifest, onRefresh })
   };
 
   return (
-    <div className="flex-1 flex flex-col p-6 overflow-hidden space-y-5">
-      {/* Header Info */}
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-black p-5 space-y-4 select-none">
+      {/* Top Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-black text-white flex items-center gap-2.5">
-            <Layers className="text-emerald-400" />
+          <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
+            <Layers className="text-x-purpleLight" />
             <span>Сборка {manifest?.name || 'quiby. Season 6'}</span>
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Minecraft {manifest?.gameVersion || '1.21.1'} • {manifest?.loader.type || 'NeoForge'} {manifest?.loader.version || '21.1.65'} • Всего файлов: {files.length} ({formatSize(manifest?.totalSize || 0)})
+          <p className="text-xs text-x-textMuted mt-0.5">
+            Minecraft {manifest?.gameVersion || '1.21.1'} • {manifest?.loader.type || 'NeoForge'} {manifest?.loader.version || '21.1.65'} • Файлов: {files.length} ({formatSize(manifest?.totalSize || 0)})
           </p>
         </div>
 
         <button
           onClick={onRefresh}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-quiby-panel hover:bg-quiby-panel/80 border border-quiby-border text-xs text-slate-300 transition-colors"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-all active:scale-95 shadow-sm"
         >
           <RefreshCw size={13} />
-          <span>Проверить обновления</span>
+          <span>Обновить манифест</span>
         </button>
       </div>
 
       {/* Changelog Box */}
       {manifest?.changelog && (
-        <div className="p-4 rounded-2xl bg-quiby-card border border-quiby-border text-xs space-y-1.5 shadow-sm">
-          <div className="font-bold text-emerald-400 flex items-center gap-1.5">
-            <CheckCircle size={14} />
-            <span>Список изменений версии v{manifest.version}:</span>
+        <div className="p-3.5 rounded-2xl bg-x-surface border border-x-border text-xs space-y-1 shadow-sm">
+          <div className="font-bold text-x-purpleLight flex items-center gap-1.5">
+            <Sparkles size={14} className="text-x-purple" />
+            <span>Changelog v{manifest.version}:</span>
           </div>
-          <p className="text-slate-300 leading-relaxed pl-5">
+          <p className="text-x-text leading-relaxed pl-5">
             {manifest.changelog}
           </p>
         </div>
       )}
 
-      {/* Search & Filter Bar */}
-      <div className="flex items-center justify-between gap-4">
-        {/* Category Pills */}
+      {/* Search & Category Pills */}
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveCategory('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
               activeCategory === 'all'
-                ? 'bg-emerald-500 text-quiby-dark shadow-sm'
-                : 'bg-quiby-panel text-slate-400 hover:text-white border border-quiby-border'
+                ? 'bg-white text-black shadow-sm'
+                : 'bg-x-surface text-x-textMuted hover:text-white border border-x-border'
             }`}
           >
             Все ({files.length})
           </button>
           <button
             onClick={() => setActiveCategory('mods')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
               activeCategory === 'mods'
-                ? 'bg-emerald-500 text-quiby-dark shadow-sm'
-                : 'bg-quiby-panel text-slate-400 hover:text-white border border-quiby-border'
+                ? 'bg-white text-black shadow-sm'
+                : 'bg-x-surface text-x-textMuted hover:text-white border border-x-border'
             }`}
           >
             Моды ({modsCount})
           </button>
           <button
             onClick={() => setActiveCategory('configs')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
               activeCategory === 'configs'
-                ? 'bg-emerald-500 text-quiby-dark shadow-sm'
-                : 'bg-quiby-panel text-slate-400 hover:text-white border border-quiby-border'
+                ? 'bg-white text-black shadow-sm'
+                : 'bg-x-surface text-x-textMuted hover:text-white border border-x-border'
             }`}
           >
             Конфиги ({configsCount})
           </button>
         </div>
 
-        {/* Search Input */}
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
+        <div className="relative w-60">
+          <Search className="absolute left-3.5 top-2.5 text-x-textMuted" size={14} />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск модов и файлов..."
-            className="w-full bg-quiby-panel border border-quiby-border rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+            placeholder="Поиск мода..."
+            className="w-full bg-x-surface border border-x-border rounded-full pl-9 pr-3 py-1.5 text-xs text-white placeholder:text-x-textMuted focus:outline-none focus:border-x-purple transition-all"
           />
         </div>
       </div>
 
-      {/* Files List */}
-      <div className="flex-1 bg-quiby-card border border-quiby-border rounded-2xl overflow-hidden flex flex-col shadow-inner">
-        <div className="grid grid-cols-12 px-4 py-2.5 bg-quiby-panel/80 border-b border-quiby-border text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-          <div className="col-span-6">Название / Путь</div>
+      {/* Files List Table in X style */}
+      <div className="flex-1 bg-x-surface border border-x-border rounded-2xl overflow-hidden flex flex-col shadow-x-card">
+        <div className="grid grid-cols-12 px-4 py-2.5 bg-black/60 border-b border-x-border text-[11px] font-bold text-x-textMuted uppercase tracking-wider">
+          <div className="col-span-6">Название / Файл</div>
           <div className="col-span-2">Версия</div>
           <div className="col-span-2">Размер</div>
           <div className="col-span-2 text-right">Хэш (SHA-256)</div>
         </div>
 
-        <div className="flex-1 overflow-y-auto divide-y divide-quiby-border/40 text-xs">
+        <div className="flex-1 overflow-y-auto divide-y divide-x-border/40 text-xs">
           {filteredFiles.length === 0 ? (
-            <div className="p-12 text-center text-slate-500">
-              <Package size={32} className="mx-auto mb-2 opacity-40" />
+            <div className="p-12 text-center text-x-textMuted">
+              <Package size={32} className="mx-auto mb-2 opacity-30 text-x-purple" />
               <p>Файлы не найдены</p>
             </div>
           ) : (
@@ -142,31 +140,31 @@ export const ModpackView: React.FC<ModpackViewProps> = ({ manifest, onRefresh })
               return (
                 <div
                   key={idx}
-                  className="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-quiby-panel/40 transition-colors"
+                  className="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-white/[0.03] transition-colors"
                 >
                   <div className="col-span-6 flex items-center gap-2.5 truncate">
                     {isJar ? (
-                      <Package size={15} className="text-emerald-400 shrink-0" />
+                      <Package size={15} className="text-x-purpleLight shrink-0" />
                     ) : (
-                      <FileCode size={15} className="text-cyan-400 shrink-0" />
+                      <FileCode size={15} className="text-x-textMuted shrink-0" />
                     )}
                     <div className="truncate">
-                      <span className="text-slate-200 font-medium">{displayName}</span>
+                      <span className="text-white font-medium">{displayName}</span>
                       {isJar && file.modName && (
-                        <span className="text-[10px] text-slate-500 ml-2 font-mono">{file.path}</span>
+                        <span className="text-[10px] text-x-textDim ml-2 font-mono">{file.path}</span>
                       )}
                     </div>
                   </div>
 
-                  <div className="col-span-2 text-slate-400 font-mono text-[11px]">
+                  <div className="col-span-2 text-x-textMuted font-mono text-[11px]">
                     {file.modVersion || '—'}
                   </div>
 
-                  <div className="col-span-2 text-slate-300 font-mono text-[11px]">
+                  <div className="col-span-2 text-x-text font-mono text-[11px]">
                     {formatSize(file.size)}
                   </div>
 
-                  <div className="col-span-2 text-right text-slate-500 font-mono text-[10px] truncate" title={file.sha256}>
+                  <div className="col-span-2 text-right text-x-textDim font-mono text-[10px] truncate" title={file.sha256}>
                     {file.sha256.substring(0, 10)}...
                   </div>
                 </div>

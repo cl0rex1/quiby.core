@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Header } from './components/Header';
-import { Sidebar, NavTab } from './components/Sidebar';
-import { PlayView } from './views/PlayView';
-import { ModpackView } from './views/ModpackView';
-import { NewsView } from './views/NewsView';
-import { ConsoleView } from './views/ConsoleView';
+import { SplashScreen } from './components/SplashScreen';
+import { MinimalSidebar, ActiveTab } from './components/MinimalSidebar';
+import { CharacterStage } from './views/CharacterStage';
+import { SkinWardrobeView } from './views/SkinWardrobeView';
+import { ModsView } from './views/ModsView';
 import { SettingsView } from './views/SettingsView';
+import { FloatingPlayButton } from './components/FloatingPlayButton';
 import { DiscordAuthModal } from './components/DiscordAuthModal';
-import { AuthSession, DownloadProgress, LauncherSettings, LaunchState, LogEntry, ModpackManifest, NewsArticle, ServerStatus } from '@quiby/shared';
+import { CAPE_PRESETS, CapePreset } from './utils/chibiRenderer';
+import { 
+  AuthSession, 
+  DownloadProgress, 
+  LauncherSettings, 
+  LaunchState, 
+  LogEntry, 
+  ModpackManifest, 
+  ServerStatus 
+} from '@quiby/shared';
 
 const SERVER_URL = 'http://localhost:3001';
 
@@ -26,15 +35,23 @@ const defaultSettings: LauncherSettings = {
 };
 
 export const App: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<NavTab>('play');
+  const [showSplash, setShowSplash] = useState(true);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [session, setSession] = useState<AuthSession | null>(null);
   const [settings, setSettings] = useState<LauncherSettings>(defaultSettings);
   const [manifest, setManifest] = useState<ModpackManifest | null>(null);
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
-  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [launchState, setLaunchState] = useState<LaunchState>({ status: 'idle' });
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
+
+  // Custom Skin & Cape State
+  const [customSkinImg, setCustomSkinImg] = useState<HTMLImageElement | null>(null);
+  const [customSkinName, setCustomSkinName] = useState<string | null>(null);
+  const [activeDefaultSkinIdx, setActiveDefaultSkinIdx] = useState(0);
+  const [selectedCape, setSelectedCape] = useState<CapePreset>(CAPE_PRESETS[1]); // Default to quiby S6 Cape
+
+  // Modals
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // 1. Initial Load (Settings & Saved Session)
@@ -46,8 +63,14 @@ export const App: React.FC = () => {
       } catch (_) {}
     }
 
+    const savedCapeId = localStorage.getItem('quiby_cape');
+    if (savedCapeId) {
+      const found = CAPE_PRESETS.find((c) => c.id === savedCapeId);
+      if (found) setSelectedCape(found);
+    }
+
     if (window.quibyApi) {
-      window.quibyApi.getSettings().then(s => {
+      window.quibyApi.getSettings().then((s) => {
         if (s) setSettings(s);
       });
 
@@ -57,7 +80,7 @@ export const App: React.FC = () => {
       });
 
       const unsubscribeLog = window.quibyApi.onGameLog((log) => {
-        setLogs(prev => [...prev.slice(-1000), log]); // Keep last 1000 lines
+        setLogs((prev) => [...prev.slice(-1000), log]);
       });
 
       const unsubscribeState = window.quibyApi.onLaunchStateChange((state) => {
@@ -72,34 +95,26 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // 2. Fetch Remote Manifest, News, and Server Ping
+  // 2. Fetch Remote Manifest and Server Ping
   const fetchRemoteData = async () => {
     try {
-      // Manifest
       const manRes = await fetch(`${SERVER_URL}/api/modpack/latest`);
       if (manRes.ok) {
         setManifest(await manRes.json());
       }
 
-      // News
-      const newsRes = await fetch(`${SERVER_URL}/api/news`);
-      if (newsRes.ok) {
-        setNewsArticles(await newsRes.json());
-      }
-
-      // Server Status
       const statusRes = await fetch(`${SERVER_URL}/api/status`);
       if (statusRes.ok) {
         setServerStatus(await statusRes.json());
       }
     } catch (e) {
-      console.warn('Backend server not reachable yet, operating in standalone/mock mode.');
+      console.warn('Backend server not reachable yet, operating in standalone mode.');
     }
   };
 
   useEffect(() => {
     fetchRemoteData();
-    const interval = setInterval(fetchRemoteData, 30000); // Ping every 30s
+    const interval = setInterval(fetchRemoteData, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -112,6 +127,11 @@ export const App: React.FC = () => {
   const handleLogout = () => {
     setSession(null);
     localStorage.removeItem('quiby_session');
+  };
+
+  const handleSelectCape = (cape: CapePreset) => {
+    setSelectedCape(cape);
+    localStorage.setItem('quiby_cape', cape.id);
   };
 
   const handleSaveSettings = async (newSettings: LauncherSettings) => {
@@ -143,68 +163,81 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-quiby-dark text-slate-100 overflow-hidden select-none font-sans">
-      {/* Top Header */}
-      <Header
+    <div className="flex h-screen w-screen bg-onyx-950 text-quiby-text overflow-hidden select-none font-sans relative">
+      {/* Standalone Startup Splash Screen */}
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+
+      {/* Floating Purple Ambient Light Orb (Gentle Drift) */}
+      <div className="absolute top-1/4 left-1/3 w-[600px] h-[600px] bg-quiby-purple/15 rounded-full blur-[140px] pointer-events-none animate-float-nebula"></div>
+      <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-quiby-indigo/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+      {/* 1. Exactly 4-Button Minimalist Left Sidebar */}
+      <MinimalSidebar
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
         session={session}
-        serverStatus={serverStatus}
-        onOpenLogin={() => setIsAuthModalOpen(true)}
-        onLogout={handleLogout}
+        onOpenProfile={() => setIsAuthModalOpen(true)}
       />
 
-      {/* Main App Body with Sidebar & Dynamic View */}
-      <div className="flex-1 flex overflow-hidden">
-        <Sidebar
-          currentTab={currentTab}
-          onSelectTab={setCurrentTab}
-          logsCount={logs.length}
-        />
+      {/* 2. Main View Content */}
+      <main className="flex-1 flex flex-col overflow-hidden relative">
+        {activeTab === 'home' && (
+          <CharacterStage
+            session={session}
+            serverStatus={serverStatus}
+            serverIp={settings.serverIp}
+            customSkinImg={customSkinImg}
+            customSkinName={customSkinName}
+            activeDefaultSkinIdx={activeDefaultSkinIdx}
+            selectedCape={selectedCape}
+            onOpenWardrobe={() => setActiveTab('wardrobe')}
+            onOpenLogin={() => setIsAuthModalOpen(true)}
+          />
+        )}
 
-        <main className="flex-1 flex flex-col overflow-hidden bg-gradient-to-b from-quiby-dark to-slate-950">
-          {currentTab === 'play' && (
-            <PlayView
-              session={session}
-              settings={settings}
-              manifest={manifest}
-              serverStatus={serverStatus}
-              launchState={launchState}
-              downloadProgress={downloadProgress}
-              onLaunch={handleLaunchGame}
-              onKill={handleKillGame}
-              onOpenLogin={() => setIsAuthModalOpen(true)}
-            />
-          )}
+        {activeTab === 'wardrobe' && (
+          <SkinWardrobeView
+            customSkinImg={customSkinImg}
+            customSkinName={customSkinName}
+            activeDefaultSkinIdx={activeDefaultSkinIdx}
+            selectedCape={selectedCape}
+            onSetCustomSkin={(img, name) => {
+              setCustomSkinImg(img);
+              setCustomSkinName(name);
+            }}
+            onSetDefaultSkinIdx={setActiveDefaultSkinIdx}
+            onSelectCape={handleSelectCape}
+          />
+        )}
 
-          {currentTab === 'modpack' && (
-            <ModpackView
-              manifest={manifest}
-              onRefresh={fetchRemoteData}
-            />
-          )}
+        {activeTab === 'mods' && (
+          <ModsView
+            manifest={manifest}
+            gameDir={settings.gameDir}
+          />
+        )}
 
-          {currentTab === 'news' && (
-            <NewsView
-              articles={newsArticles}
-            />
-          )}
+        {activeTab === 'settings' && (
+          <SettingsView
+            settings={settings}
+            logs={logs}
+            onSaveSettings={handleSaveSettings}
+            onClearLogs={() => setLogs([])}
+          />
+        )}
+      </main>
 
-          {currentTab === 'console' && (
-            <ConsoleView
-              logs={logs}
-              onClearLogs={() => setLogs([])}
-            />
-          )}
+      {/* 3. Floating Action Play Button (Bottom Right) */}
+      <FloatingPlayButton
+        session={session}
+        launchState={launchState}
+        downloadProgress={downloadProgress}
+        onLaunch={handleLaunchGame}
+        onKill={handleKillGame}
+        onOpenLogin={() => setIsAuthModalOpen(true)}
+      />
 
-          {currentTab === 'settings' && (
-            <SettingsView
-              settings={settings}
-              onSaveSettings={handleSaveSettings}
-            />
-          )}
-        </main>
-      </div>
-
-      {/* Discord OAuth Modal */}
+      {/* 4. Discord Auth Modal */}
       <DiscordAuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
