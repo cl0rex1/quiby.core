@@ -155,3 +155,12 @@
   - [x] Deep onyx background with clean `quiby.` title in top-left
   - [x] Slider-style horizontal progress track at the bottom without stick thumb or icons
   - [x] Verified build and transition to main window
+
+- [x] **Stage 22: Minecraft Chibi Live Style Engine Extraction & Standalone Test Suite**
+  - [x] Extracted Minecraft Live chibi rendering algorithms (`ML_PARTS`, `ML_BOXES`, `ML_CAMERAS`, `ML_GROUPS`)
+  - [x] Implemented exact user configuration (Alex model, `34-right` view, `idle` animation, `blocky` native 36x42 grid, per-part `mlEdgeColor` outline, 53% shading)
+  - [x] Implemented multi-frame animation baker (`_bakeAnim`) with upperDy squash cycle and union bounding box
+  - [x] Created isolated test suite (`chibiLiveEngine.test.ts`) with 26 passing automated unit tests
+  - [x] Created reusable React canvas component (`ChibiLiveCanvas.tsx`) without altering existing production wardrobe UI
+  - [x] Verified full monorepo build and typechecking
+
