@@ -22,6 +22,10 @@ class MockCanvasRenderingContext2D {
     this.canvas = canvas;
   }
 
+  createImageData(w: number, h: number): MockImageData {
+    return new MockImageData(w, h);
+  }
+
   clearRect(x: number, y: number, w: number, h: number): void {
     const d = this.canvas._data;
     const cw = this.canvas.width;

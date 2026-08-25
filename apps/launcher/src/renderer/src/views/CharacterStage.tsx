@@ -78,7 +78,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
       <div
         className="flex flex-col items-center justify-center my-auto cursor-pointer group"
         onClick={onOpenWardrobe}
-        title="Нажмите для смены скина и плаща"
+        title="Нажмите для выбора скина"
       >
         <div className="relative flex flex-col items-center">
           <div className="group-hover:scale-105 transition-transform duration-300">

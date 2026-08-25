@@ -29,6 +29,21 @@ import {
   mlRects,
 } from './constants';
 
+export function detectSkinBodyType(skinCanvas: HTMLCanvasElement): 'alex' | 'steve' {
+  const ctx = skinCanvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return 'alex';
+  const s = Math.max(1, Math.round(skinCanvas.width / 64));
+  const imgData = ctx.getImageData(54 * s, 20 * s, s, 12 * s);
+  let hasAlpha = false;
+  for (let i = 3; i < imgData.data.length; i += 4) {
+    if (imgData.data[i] !== 0) {
+      hasAlpha = true;
+      break;
+    }
+  }
+  return hasAlpha ? 'steve' : 'alex';
+}
+
 export function createDefaultChibiConfig(): ChibiLiveConfig {
   return {
     version: 3,

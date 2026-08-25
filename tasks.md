@@ -164,3 +164,55 @@
   - [x] Created reusable React canvas component (`ChibiLiveCanvas.tsx`) without altering existing production wardrobe UI
   - [x] Verified full monorepo build and typechecking
 
+- [x] **Stage 23: Production Integration of Minecraft Live Chibi Engine**
+  - [x] Connected `ChibiCharacterDisplay` directly to the `chibiLive` rendering engine
+  - [x] Integrated auto skin body type detection (`alex` vs `steve`), custom skin canvas composition, and animated idle loops (500ms delay, `gifSpeed: 0.75`)
+  - [x] Integrated dynamic Cape rendering and ground drop shadows behind the Live Chibi model
+  - [x] Verified seamless live character rendering across CharacterStage and SkinWardrobeView
+  - [x] Monorepo build and test suite passing cleanly
+
+- [x] **Stage 24: Authentic Official Minecraft Steve & Alex Default Textures Integration**
+  - [x] Imported official user-provided 64x64 PNG textures for Steve and Alex into assets
+  - [x] Embedded Base64 Data URIs (`STEVE_SKIN_DATA_URI`, `ALEX_SKIN_DATA_URI`) and integrated instant RGBA decoding in `defaultSkins.ts`
+  - [x] Added `loadSkinCanvasAsync` pipeline to `ChibiCharacterDisplay` for asynchronous texture resolving
+  - [x] Re-verified complete 26-test suite passing and production build
+
+- [x] **Stage 25: Fixed PNG Paeth Decompression & Alex Color Palette Calibration**
+  - [x] Identified and corrected the Paeth filter calculation (`left + up - upLeft`) in `decodeBase64Png`
+  - [x] Eliminated vertical color-striping distortion on Alex's face, hair, eyes, and shirt
+  - [x] Optimized browser texture resolution using native Chromium `Image` decoding
+  - [x] Verified full monorepo build and clean 26-test run
+
+- [x] **Stage 26: Bit-for-bit Alex Base64 Binary Injection & Exact 35x40 Bounding Box Calibration**
+  - [x] Detected and resolved binary payload difference between raw `alex.png` and embedded base64 string
+  - [x] Verified 100% bit-for-bit binary equality between uploaded PNG assets and embedded Data URIs
+  - [x] Confirmed native live sprite dimensions calibrated to clean 35x40 box
+  - [x] Re-ran test suite (26/26 passing) and completed launcher production build
+
+- [x] **Stage 27: Minecraft Skin Format & Anatomy Validation Pipeline**
+  - [x] Created `skinValidator.ts` analyzing resolution (64x64, 64x32 legacy, HD multiples), file extension (.png), and transparency ratio
+  - [x] Implemented Minecraft UV anatomy analysis (verifying transparent corners `[0,0,8,8]` & `[24,0,8,8]`, populated face region `[8,8,8,8]`)
+  - [x] Added automatic legacy 64x32 to 64x64 texture converter (`convertLegacySkinTo64x64`)
+  - [x] Integrated visual error feedback alerts and Drag-and-Drop UX in `SkinWardrobeView`
+  - [x] Created automated test suite `skinValidator.test.ts` (10/10 tests passed) and verified clean build
+
+- [x] **Stage 28: Minimalist Wardrobe UI Refinement**
+  - [x] Removed redundant metadata pill from wardrobe view for a cleaner layout
+  - [x] Retained robust file validation, error alerts on invalid files, and drag-and-drop support
+  - [x] Verified full monorepo build and clean typechecking
+
+- [x] **Stage 29: Persistent Skin Library, Live Chibi Thumbnails & Locked Capes**
+  - [x] Implemented `skinLibrary.ts` with persistent collection storage in LocalStorage
+  - [x] Added automatic generation of crisp Live Chibi avatar previews (`chibiPreviewUri`) for every uploaded skin
+  - [x] Built library collection gallery in `SkinWardrobeView` with one-click selection, Chibi PNG export/download, and deletion
+  - [x] Added clean "Базовые скины" section title above Steve and Alex default choices
+  - [x] Disabled and locked Capes section with sleek "Недоступно в этом сезоне" badge
+  - [x] Verified all 36 automated tests passing across modules and clean build
+
+
+
+
+
+
+
+
