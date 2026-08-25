@@ -52,6 +52,78 @@
   animation: float-nebula 18s ease-in-out infinite;
 }
 
+/* Smooth organic shake animation for unsaved changes guard */
+@keyframes smooth-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  15%, 45%, 75% {
+    transform: translateX(-5px);
+  }
+  30%, 60%, 90% {
+    transform: translateX(5px);
+  }
+}
+
+.animate-shake {
+  animation: smooth-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Organic paint spill liquid animations */
+@keyframes paint-spill-1 {
+  0% {
+    transform: translate(-50%, -50%) scale(0) rotate(0deg);
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    opacity: 0.85;
+  }
+  40% {
+    transform: translate(-50%, -50%) scale(0.7) rotate(90deg);
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    opacity: 0.95;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1.4) rotate(200deg);
+    border-radius: 45% 55% 60% 40% / 50% 60% 40% 50%;
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.8) rotate(360deg);
+    border-radius: 0%;
+    opacity: 1;
+  }
+}
+
+@keyframes paint-spill-2 {
+  0% {
+    transform: translate(-50%, -50%) scale(0) rotate(45deg);
+    border-radius: 70% 30% 50% 50% / 30% 60% 40% 70%;
+    opacity: 0.75;
+  }
+  45% {
+    transform: translate(-50%, -50%) scale(0.85) rotate(160deg);
+    border-radius: 30% 70% 40% 60% / 70% 40% 60% 30%;
+    opacity: 0.95;
+  }
+  80% {
+    transform: translate(-50%, -50%) scale(1.6) rotate(270deg);
+    border-radius: 50% 50% 60% 40% / 40% 55% 45% 60%;
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3.0) rotate(420deg);
+    border-radius: 0%;
+    opacity: 1;
+  }
+}
+
+.animate-paint-spill-1 {
+  animation: paint-spill-1 0.48s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-paint-spill-2 {
+  animation: paint-spill-2 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* Window drag regions */
 .app-drag {
   -webkit-app-region: drag;

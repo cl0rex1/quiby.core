@@ -79,3 +79,79 @@
   - [x] Build unified clean Mods Manager page (official S6 + custom client mods)
   - [x] Build clean Settings page (RAM slider, Java 21, directory, embedded logs)
   - [x] Build and verify all components end-to-end
+
+- [x] **Stage 10: Stick-Thumb RAM Slider with Measurement Ticks & Floating Tooltip**
+  - [x] Removed preset boxes in favor of ultra-minimalist track
+  - [x] Implemented vertical stick thumb with glowing white/purple needle
+  - [x] Added measurement ticks/sticks along the track for each GB step
+  - [x] Implemented floating tooltip bubble pinned directly above the moving stick thumb
+  - [x] Added minimalist conditional warnings (only for < 8 GB and > 16 GB GC latency)
+
+- [x] **Stage 11: Standalone Compact Splash Window & Unsaved Changes Shake Guard**
+  - [x] Remove `8 ГБ (Create S6)` label from RAM slider
+  - [x] Implement standalone compact Splash Window (`300x360`) on startup
+  - [x] Limit Play button exclusively to Home page
+  - [x] Transform floating button into smooth sliding action deck (Save + Cross icon Cancel)
+  - [x] Implement organic smooth Shake Alert & Red Glow when leaving with unsaved changes
+  - [x] Remove logs console from Settings view
+  - [x] Verify build and all interaction flows
+
+- [x] **Stage 12: Save Feedback Animation & Steve/Alex Chibi Assets Integration**
+  - [x] Integrated authentic nogard.dev Steve & Alex Chibi models into default presets
+  - [x] Simplified wardrobe view by removing redundant text/explanatory labels
+  - [x] Added dynamic green checkmark & pulse save confirmation animation
+  - [x] Verified full monorepo build and assets pipeline
+
+- [x] **Stage 13: Native Animated Chibi GIF Integration (Steve & Alex)**
+  - [x] Bundled native idle-animated `chibi_steve.gif` & `chibi_alex.gif` assets
+  - [x] Removed programmatic bobbing on default skins in favor of authentic nogard.dev GIF animations
+  - [x] Kept dynamic canvas Chibi slicing for custom uploaded 64x64 user skins
+  - [x] Verified build and pixel-art rendering across all views
+
+- [x] **Stage 14: Fluid Morphing Save Animation & Clean Slide-Down**
+  - [x] Implemented seamless morph from Save/Cross buttons into a glowing emerald circular pill with centered checkmark
+  - [x] Added slide-down exit animation in the morphed green checkmark state
+  - [x] Verified full monorepo compilation and smooth UI transitions
+
+- [x] **Stage 15: In-Place Center-Out Green Fill & 1s Confirmation Hold Before Fly-Down**
+  - [x] Preserved full container size without shrinking
+  - [x] Implemented smooth radial center-out emerald green fill covering the whole card
+  - [x] Added centered animated checkmark icon
+  - [x] Added 1.0-second confirmation pause before smoothly flying down out of view
+  - [x] Verified build and animations
+
+- [x] **Stage 16: Organic Liquid Paint Spill Animation & Seamless Full Fill**
+  - [x] Created multi-layered organic paint fluid keyframes (`animate-paint-spill-1`, `animate-paint-spill-2`)
+  - [x] Liquid splashes and spreads dynamically from the center until fully covering the card
+  - [x] Seamlessly reveals centered checkmark icon, holds for 1s, and flies down
+  - [x] Verified full monorepo build
+
+- [x] **Stage 17: 60FPS Fluid Dynamics Paint Spill Canvas (Physics Simulation)**
+  - [x] Implemented GPU-accelerated HTML5 Canvas fluid simulation (`PaintSpillCanvas.tsx`)
+  - [x] Real dynamic liquid waves, organic droplets, and non-uniform fluid dispersion to all edges
+  - [x] Fully smooth 60fps frame rate without any stepping or choppy stutter
+  - [x] Verified full monorepo compilation and verified fluid flow
+
+- [x] **Stage 18: Asymmetric 4-Corner Staggered Timing Paint Spread**
+  - [x] Implemented quadrant-based angular velocity weights for the 4 corners
+  - [x] Corner fill order: Top-Right -> Bottom-Left -> Bottom-Right -> Top-Left
+  - [x] Natural fluid dispersion physics with organic spline wave blending
+  - [x] Verified smooth 60fps execution across all resolutions
+
+- [x] **Stage 19: Clean In-Place Solid Green Expansion & Fly-Down**
+  - [x] Simplified save animation to smooth in-place radial emerald fill
+  - [x] Centered black checkmark icon emergence
+  - [x] 1.0-second confirmation pause followed by smooth fly-down
+  - [x] Verified full monorepo build
+
+- [x] **Stage 20: Persistent Skin & Cape Storage & Standalone Splash BrowserWindow**
+  - [x] Implemented persistent LocalStorage / state pipeline for custom uploaded skins (`.png`), default skins (Steve / Alex), and selected capes
+  - [x] Automatic skin restoration on launcher startup
+  - [x] Created separate standalone Electron Splash `BrowserWindow` (`320x380`, frameless, center) that closes seamlessly upon completion to reveal the main window
+  - [x] Verified full monorepo compilation and app lifecycle
+
+- [x] **Stage 21: Rectangular Ultra-Minimalist Splash Window**
+  - [x] Set splash window size to sleek horizontal rectangle (`440x160`, frameless, no exit buttons)
+  - [x] Deep onyx background with clean `quiby.` title in top-left
+  - [x] Slider-style horizontal progress track at the bottom without stick thumb or icons
+  - [x] Verified build and transition to main window

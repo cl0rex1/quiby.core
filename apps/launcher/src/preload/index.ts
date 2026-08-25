@@ -3,6 +3,7 @@ import { AuthSession, DownloadProgress, LauncherSettings, LaunchState, LogEntry 
 
 export const quibyApi = {
   // Window controls
+  splashReady: () => ipcRenderer.invoke('splash:ready'),
   minimize: () => ipcRenderer.invoke('window:minimize'),
   maximize: () => ipcRenderer.invoke('window:maximize'),
   close: () => ipcRenderer.invoke('window:close'),

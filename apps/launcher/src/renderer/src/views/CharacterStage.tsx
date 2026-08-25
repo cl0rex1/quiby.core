@@ -1,19 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { 
-  Sparkles, 
   Copy, 
   Check, 
-  Wifi, 
   Shirt, 
-  Heart,
-  ShieldCheck
+  ShieldCheck 
 } from 'lucide-react';
 import { AuthSession, ServerStatus } from '@quiby/shared';
-import { 
-  renderChibiCharacter, 
-  DEFAULT_SKINS, 
-  CapePreset 
-} from '../utils/chibiRenderer';
+import { DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
+import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
 
 interface CharacterStageProps {
   session: AuthSession | null;
@@ -38,37 +32,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
   onOpenWardrobe,
   onOpenLogin,
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
-
-  // Animation Loop for Chibi Canvas
-  useEffect(() => {
-    let animationFrameId: number;
-    let startTime = performance.now();
-
-    const render = () => {
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          const time = (performance.now() - startTime) / 1000;
-          renderChibiCharacter(
-            ctx,
-            canvas.width,
-            canvas.height,
-            time,
-            customSkinImg,
-            activeDefaultSkinIdx,
-            selectedCape
-          );
-        }
-      }
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    render();
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [customSkinImg, activeDefaultSkinIdx, selectedCape]);
 
   const handleCopyIp = () => {
     navigator.clipboard.writeText(serverIp || 'play.quiby.fun:25565');
@@ -76,7 +40,9 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const skinDisplayName = customSkinName ? customSkinName : DEFAULT_SKINS[activeDefaultSkinIdx].name;
+  const skinDisplayName = customSkinName
+    ? customSkinName
+    : (DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve');
 
   return (
     <div className="relative flex-1 flex flex-col justify-between items-center p-8 overflow-hidden select-none z-10">
@@ -109,16 +75,21 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
       </div>
 
       {/* Center Stage: Animated Chibi Character */}
-      <div className="flex flex-col items-center justify-center my-auto cursor-pointer group" onClick={onOpenWardrobe} title="Нажмите для смены скина и плаща">
-        <div className="relative">
-          <canvas
-            ref={canvasRef}
-            width={340}
-            height={340}
-            className="w-[280px] h-[280px] sm:w-[340px] sm:h-[340px] drop-shadow-2xl group-hover:scale-105 transition-transform duration-300"
-          />
+      <div
+        className="flex flex-col items-center justify-center my-auto cursor-pointer group"
+        onClick={onOpenWardrobe}
+        title="Нажмите для смены скина и плаща"
+      >
+        <div className="relative flex flex-col items-center">
+          <div className="group-hover:scale-105 transition-transform duration-300">
+            <ChibiCharacterDisplay
+              customSkinImg={customSkinImg}
+              activeDefaultSkinIdx={activeDefaultSkinIdx}
+              selectedCape={selectedCape}
+            />
+          </div>
 
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-1.5 rounded-full bg-onyx-900/90 border border-onyx-border text-xs font-mono text-quiby-purpleLight shadow-onyx-card backdrop-blur-md whitespace-nowrap group-hover:border-quiby-purple transition-colors">
+          <div className="mt-3 flex items-center gap-2 px-4 py-1.5 rounded-full bg-onyx-900/90 border border-onyx-border text-xs font-mono text-quiby-purpleLight shadow-onyx-card backdrop-blur-md whitespace-nowrap group-hover:border-quiby-purple transition-colors">
             <Shirt size={13} className="text-quiby-purple" />
             <span>{skinDisplayName}</span>
             {selectedCape.id !== 'none' && (

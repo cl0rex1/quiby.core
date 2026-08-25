@@ -6,9 +6,7 @@ import {
   FolderOpen, 
   Upload, 
   ToggleLeft, 
-  ToggleRight,
-  FileCode,
-  Sparkles
+  ToggleRight 
 } from 'lucide-react';
 import { ModpackManifest } from '@quiby/shared';
 
@@ -23,15 +21,18 @@ export interface CustomModItem {
 interface ModsViewProps {
   manifest: ModpackManifest | null;
   gameDir: string;
+  customMods: CustomModItem[];
+  onUpdateCustomMods: (mods: CustomModItem[]) => void;
 }
 
-export const ModsView: React.FC<ModsViewProps> = ({ manifest, gameDir }) => {
+export const ModsView: React.FC<ModsViewProps> = ({
+  manifest,
+  gameDir,
+  customMods,
+  onUpdateCustomMods,
+}) => {
   const [tab, setTab] = useState<'official' | 'custom'>('official');
   const [search, setSearch] = useState('');
-  const [customMods, setCustomMods] = useState<CustomModItem[]>([
-    { id: '1', name: "Xaero's Minimap", filename: 'Xaeros_Minimap_24.2.0_NeoForge_1.21.1.jar', size: 1420000, enabled: true },
-    { id: '2', name: 'Jade (WAILA Tooltips)', filename: 'Jade-1.21.1-NeoForge-15.1.0.jar', size: 680000, enabled: true },
-  ]);
 
   const officialFiles = manifest?.files || [];
   const filteredOfficial = officialFiles.filter((f) => {
@@ -43,9 +44,8 @@ export const ModsView: React.FC<ModsViewProps> = ({ manifest, gameDir }) => {
   );
 
   const toggleCustomMod = (id: string) => {
-    setCustomMods((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, enabled: !m.enabled } : m))
-    );
+    const updated = customMods.map((m) => (m.id === id ? { ...m, enabled: !m.enabled } : m));
+    onUpdateCustomMods(updated);
   };
 
   const handleAddCustomModFile = (file: File) => {
@@ -57,7 +57,7 @@ export const ModsView: React.FC<ModsViewProps> = ({ manifest, gameDir }) => {
       size: file.size,
       enabled: true,
     };
-    setCustomMods((prev) => [newMod, ...prev]);
+    onUpdateCustomMods([newMod, ...customMods]);
   };
 
   const handleOpenModsFolder = () => {

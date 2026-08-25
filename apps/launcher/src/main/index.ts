@@ -63,6 +63,35 @@ function saveSettings(settings: LauncherSettings): void {
   fs.writeFileSync(filePath, JSON.stringify(settings, null, 2), 'utf8');
 }
 
+function createSplashWindow(): void {
+  splashWindow = new BrowserWindow({
+    width: 440,
+    height: 160,
+    frame: false,
+    resizable: false,
+    center: true,
+    alwaysOnTop: true,
+    backgroundColor: '#07080a',
+    webPreferences: {
+      preload: path.join(__dirname, '../preload/index.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+
+  if (process.env.VITE_DEV_SERVER_URL) {
+    splashWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}?view=splash`);
+  } else {
+    splashWindow.loadFile(path.join(__dirname, '../renderer/index.html'), {
+      query: { view: 'splash' },
+    });
+  }
+
+  splashWindow.on('closed', () => {
+    splashWindow = null;
+  });
+}
+
 function createMainWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1100,
@@ -70,6 +99,7 @@ function createMainWindow(): void {
     minWidth: 980,
     minHeight: 620,
     frame: false,
+    show: false, // Hidden until splash is ready
     backgroundColor: '#07080a',
     titleBarStyle: 'hidden',
     webPreferences: {
@@ -91,10 +121,24 @@ function createMainWindow(): void {
 }
 
 app.whenReady().then(async () => {
+  createSplashWindow();
   createMainWindow();
   initDiscordRpc();
 
-  // 1. Window Controls
+  // 1. Splash Window Transition
+  ipcMain.handle('splash:ready', () => {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close();
+      splashWindow = null;
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+    return true;
+  });
+
+  // 2. Window Controls
   ipcMain.handle('window:minimize', () => mainWindow?.minimize());
   ipcMain.handle('window:maximize', () => {
     if (mainWindow?.isMaximized()) {
@@ -105,14 +149,14 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle('window:close', () => mainWindow?.close());
 
-  // 2. Settings IPC
+  // 3. Settings IPC
   ipcMain.handle('settings:get', () => loadSettings());
   ipcMain.handle('settings:save', (_, settings: LauncherSettings) => {
     saveSettings(settings);
     return true;
   });
 
-  // 3. Java & System Inspection
+  // 4. Java & System Inspection
   ipcMain.handle('system:detect-java', async () => {
     const installations = await detectInstalledJava();
     const recommended = getRecommendedJava(installations);
@@ -146,12 +190,12 @@ app.whenReady().then(async () => {
     shell.openPath(p);
   });
 
-  // 4. Discord Auth Flow
+  // 5. Discord Auth Flow
   ipcMain.handle('auth:discord-login', async (_, serverUrl: string = DEFAULT_SERVER_URL) => {
     return await startDiscordOAuthFlow(serverUrl);
   });
 
-  // 5. Game Launching
+  // 6. Game Launching
   ipcMain.handle('game:launch', async (_, session: AuthSession, settings: LauncherSettings, serverUrl: string = DEFAULT_SERVER_URL) => {
     await launchMinecraft(session, settings, serverUrl, mainWindow);
   });
