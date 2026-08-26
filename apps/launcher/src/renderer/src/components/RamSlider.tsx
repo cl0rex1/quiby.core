@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { HardDrive, AlertTriangle } from 'lucide-react';
 
 interface RamSliderProps {
@@ -33,13 +33,13 @@ export const RamSlider: React.FC<RamSliderProps> = ({
     if (currentGb < 8) {
       return {
         type: 'low',
-        text: 'Менее 8 ГБ: возможна нехватка памяти для Create Aeronautics',
+        text: 'Менее 8 ГБ: возможна нехватка памяти для тяжелых модов Create Aeronautics',
       };
     }
     if (currentGb > 16) {
       return {
         type: 'high',
-        text: 'Более 16 ГБ: сборщик мусора Java (GC) может вызывать задержки',
+        text: 'Более 16 ГБ: сборщик мусора Java (GC) может вызывать микрофризы',
       };
     }
     return null;
@@ -48,16 +48,16 @@ export const RamSlider: React.FC<RamSliderProps> = ({
   const warning = getMinimalWarning();
 
   return (
-    <div className="bg-onyx-900/60 border border-onyx-border rounded-3xl p-6 space-y-6 select-none shadow-sm">
+    <div className="bg-zinc-950/40 border border-white/5 rounded-3xl p-6 space-y-6 select-none shadow-sm backdrop-blur-sm">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-white font-bold text-sm">
-          <HardDrive size={16} className="text-quiby-purpleLight" />
+          <HardDrive size={16} className="text-zinc-400" />
           <span>Выделение оперативной памяти</span>
         </div>
 
-        <span className="text-[11px] text-quiby-textMuted font-mono">
-          Всего в системе: <strong className="text-white">{totalSystemRamGb} ГБ</strong>
+        <span className="text-[11px] text-zinc-500 font-mono">
+          Всего в системе: <strong className="text-zinc-200">{totalSystemRamGb} ГБ</strong>
         </span>
       </div>
 
@@ -70,12 +70,12 @@ export const RamSlider: React.FC<RamSliderProps> = ({
             style={{ left: `${trackPercentage}%` }}
           >
             <div className="-translate-x-1/2 flex flex-col items-center">
-              <div className="px-2.5 py-1 rounded-lg bg-onyx-800 border border-quiby-purple/50 shadow-onyx-glow text-white font-mono text-xs font-bold whitespace-nowrap flex items-center gap-1">
+              <div className="px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/10 shadow-lg text-white font-mono text-xs font-bold whitespace-nowrap flex items-center gap-1">
                 <span>{currentGb} ГБ</span>
-                <span className="text-[10px] text-quiby-textDim font-normal">({ramMb} МБ)</span>
+                <span className="text-[10px] text-zinc-500 font-normal">({ramMb} МБ)</span>
               </div>
               {/* Tooltip caret / arrow */}
-              <div className="w-2 h-2 bg-onyx-800 border-r border-b border-quiby-purple/50 rotate-45 -mt-1"></div>
+              <div className="w-2 h-2 bg-zinc-900 border-r border-b border-white/10 rotate-45 -mt-1" />
             </div>
           </div>
 
@@ -97,11 +97,11 @@ export const RamSlider: React.FC<RamSliderProps> = ({
                     } ${
                       isFilled
                         ? isMajor
-                          ? 'bg-quiby-purpleLight shadow-[0_0_6px_rgba(167,139,250,0.8)]'
-                          : 'bg-quiby-purple/60'
+                          ? 'bg-zinc-200'
+                          : 'bg-zinc-400'
                         : isMajor
-                        ? 'bg-onyx-borderLight'
-                        : 'bg-onyx-border'
+                        ? 'bg-zinc-700'
+                        : 'bg-zinc-800'
                     }`}
                   />
                 </div>
@@ -110,9 +110,9 @@ export const RamSlider: React.FC<RamSliderProps> = ({
           </div>
 
           {/* Horizontal Track Bar */}
-          <div className="relative w-full h-1.5 bg-onyx-800 rounded-full overflow-hidden">
+          <div className="relative w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-white/5">
             <div
-              className="h-full bg-gradient-to-r from-quiby-purple via-quiby-purpleLight to-quiby-accent rounded-full transition-all duration-75"
+              className="h-full bg-white rounded-full transition-all duration-75"
               style={{ width: `${trackPercentage}%` }}
             />
           </div>
@@ -122,7 +122,7 @@ export const RamSlider: React.FC<RamSliderProps> = ({
             className="absolute top-1/2 -translate-y-1/2 pointer-events-none transition-all duration-75 z-20"
             style={{ left: `${trackPercentage}%` }}
           >
-            <div className="-translate-x-1/2 w-1.5 h-6 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.9)] border border-quiby-purpleLight" />
+            <div className="-translate-x-1/2 w-2 h-6 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.9)] border border-zinc-300" />
           </div>
 
           {/* Transparent Native Range Input */}
@@ -137,17 +137,17 @@ export const RamSlider: React.FC<RamSliderProps> = ({
           />
         </div>
 
-        {/* Clean Extremities Labels (No clutter) */}
-        <div className="flex justify-between text-[10px] text-quiby-textDim font-mono pt-3 px-1">
+        {/* Clean Extremities Labels */}
+        <div className="flex justify-between text-[10px] text-zinc-500 font-mono pt-3 px-1">
           <span>{minGb} ГБ</span>
           <span>{maxGb} ГБ</span>
         </div>
       </div>
 
-      {/* Minimalist Warning Note (Only if < 8 GB or > 16 GB) */}
+      {/* Minimalist Warning Note */}
       {warning && (
-        <div className="flex items-center gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-400 text-xs animate-in fade-in duration-200">
-          <AlertTriangle size={14} className="shrink-0" />
+        <div className="flex items-center gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs animate-in fade-in duration-200">
+          <AlertTriangle size={14} className="shrink-0 text-amber-400" />
           <span className="leading-tight">{warning.text}</span>
         </div>
       )}

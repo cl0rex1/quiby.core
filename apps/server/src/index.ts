@@ -8,6 +8,7 @@ import modpackRoutes from './routes/modpack';
 import newsRoutes from './routes/news';
 import statusRoutes from './routes/status';
 import adminRoutes from './routes/admin';
+import modsRoutes from './routes/mods';
 
 async function bootstrap() {
   const app = express();
@@ -38,6 +39,7 @@ async function bootstrap() {
   app.use('/api/news', newsRoutes);
   app.use('/api/status', statusRoutes);
   app.use('/api/admin', adminRoutes);
+  app.use('/api/mods', modsRoutes);
 
   // Global Error Handler
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

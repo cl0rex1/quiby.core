@@ -242,6 +242,15 @@
   - [x] Updated replacement confirmation dialog threshold and counters to 6 skins
   - [x] Verified full monorepo typecheck and production build
 
+- [x] **Stage 35: Expandable Sidebar, Full Minimalist Redesign & Intelligent Anti-Cheat Mod Safety**
+  - [x] Updated sidebar navigation icons (`Play` for Home, `FolderGit2` for Mods) and built smooth hover expansion with `backdrop-blur-2xl`, animated tab names, and expanded player profile info
+  - [x] Completely redesigned `CharacterStage` (Home), `ModsView`, `SettingsView`, and `RamSlider` into a clean, premium zinc/onyx monochrome palette matching `SkinWardrobeView`
+  - [x] Built backend Intelligent Anti-Cheat & Mod Safety service (`modSafetyService.ts`) integrating Modrinth API (SHA-1 hash lookup) and category filter (blocking `xray`, `cheat`, `grief`, `automation` while approving safe utilities)
+  - [x] Implemented SQLite cache (`verified_mods`) to eliminate duplicate API requests and whitelist request queue (`mod_whitelist_requests`)
+  - [x] Integrated client-side mod verification and safety badges (🟢 Одобрен, 🟡 Не проверен / В вайтлист, 🔴 Запрещен) in `ModsView`
+  - [x] Verified all 50 automated tests (36 launcher + 14 backend anti-cheat) passing and completed production build
+
+
 
 
 

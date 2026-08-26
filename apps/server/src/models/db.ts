@@ -89,6 +89,39 @@ export async function initDatabase(): Promise<void> {
     )
   `);
 
+  // Anti-Cheat: Verified Mods Table (Modrinth / CurseForge / Admin Whitelist Cache)
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS verified_mods (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      hash_sha1 TEXT UNIQUE NOT NULL,
+      mod_id TEXT,
+      name TEXT NOT NULL,
+      version TEXT,
+      summary TEXT,
+      source TEXT NOT NULL,
+      is_allowed INTEGER NOT NULL,
+      status TEXT NOT NULL,
+      reason TEXT,
+      categories_json TEXT DEFAULT '[]',
+      checked_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Anti-Cheat: Player Mod Whitelist Requests Table
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS mod_whitelist_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_discord_id TEXT,
+      mc_username TEXT,
+      mod_name TEXT NOT NULL,
+      filename TEXT NOT NULL,
+      hash_sha1 TEXT NOT NULL,
+      reason TEXT,
+      status TEXT DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Seed default Season 6 modpack version if table is empty
   const count = await dbGet<{ count: number }>('SELECT count(*) as count FROM modpack_versions');
   if (!count || count.count === 0) {

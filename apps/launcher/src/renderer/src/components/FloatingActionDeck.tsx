@@ -63,27 +63,27 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
       <div className="fixed bottom-8 right-8 z-40 flex flex-col items-end gap-3 select-none">
         {/* Mini Progress HUD (during update/sync) */}
         {isBusy && downloadProgress && (
-          <div className="bg-onyx-900/95 border border-onyx-borderLight rounded-2xl p-3 shadow-2xl backdrop-blur-md max-w-xs w-72 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="bg-zinc-900/95 border border-white/10 rounded-2xl p-3 shadow-2xl backdrop-blur-md max-w-xs w-72 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
             <div className="flex items-center justify-between text-xs">
               <span className="text-white font-medium truncate">{downloadProgress.stageLabel}</span>
-              <span className="text-quiby-purpleLight font-mono font-bold">{downloadProgress.progressPercent}%</span>
+              <span className="text-emerald-400 font-mono font-bold">{downloadProgress.progressPercent}%</span>
             </div>
 
-            <div className="w-full h-1.5 bg-onyx-800 rounded-full overflow-hidden border border-onyx-border">
+            <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden border border-white/5">
               <div
-                className="h-full bg-gradient-to-r from-quiby-purple via-quiby-purpleLight to-quiby-indigo transition-all duration-300 rounded-full"
+                className="h-full bg-emerald-400 transition-all duration-300 rounded-full"
                 style={{ width: `${Math.max(downloadProgress.progressPercent, 5)}%` }}
-              ></div>
+              />
             </div>
 
-            <div className="flex items-center justify-between text-[10px] font-mono text-quiby-textMuted">
+            <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500">
               {downloadProgress.currentFile ? (
                 <span className="truncate max-w-[180px]">{downloadProgress.currentFile}</span>
               ) : (
                 <span>Синхронизация...</span>
               )}
               {downloadProgress.speedBps > 0 && (
-                <span className="text-quiby-purpleLight font-bold">{formatSpeed(downloadProgress.speedBps)}</span>
+                <span className="text-zinc-300 font-bold">{formatSpeed(downloadProgress.speedBps)}</span>
               )}
             </div>
           </div>
@@ -110,16 +110,16 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
           <button
             onClick={onLaunch}
             disabled={isBusy}
-            className="px-9 py-4 rounded-full bg-gradient-to-r from-quiby-purple via-quiby-purpleLight to-quiby-indigo hover:from-quiby-purpleDark hover:to-quiby-purple disabled:opacity-50 text-white font-black text-base tracking-wider shadow-play-btn hover:shadow-[0_0_40px_rgba(139,92,246,0.7)] hover:scale-105 active:scale-95 transition-all flex items-center gap-3 cursor-pointer uppercase"
+            className="px-9 py-4 rounded-full bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-black text-base tracking-wider shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 cursor-pointer uppercase"
           >
             {isBusy ? (
               <>
-                <RotateCw size={19} className="animate-spin text-white" />
+                <RotateCw size={19} className="animate-spin text-black" />
                 <span>СИНХРОНИЗАЦИЯ...</span>
               </>
             ) : (
               <>
-                <Play size={19} className="fill-white" />
+                <Play size={19} className="fill-black text-black" />
                 <span>ИГРАТЬ (1.21.1)</span>
               </>
             )}
@@ -147,14 +147,14 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
             ? 'border-emerald-300 shadow-[0_0_35px_rgba(52,211,153,0.9)]'
             : isShaking
             ? 'animate-shake bg-rose-950/90 border-rose-500 shadow-[0_0_35px_rgba(244,63,94,0.85)] ring-2 ring-rose-500'
-            : 'bg-onyx-900/90 border-onyx-borderLight shadow-2xl backdrop-blur-md'
+            : 'bg-zinc-900/90 border-white/10 shadow-2xl backdrop-blur-md'
         }`}
       >
         {/* Base Buttons (Cross Cancel + Save Button) */}
         <button
           onClick={onCancel}
           disabled={isFilled}
-          className="w-10 h-10 rounded-full bg-onyx-800 hover:bg-onyx-750 text-quiby-textMuted hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0"
+          className="w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0"
           title="Отменить изменения"
         >
           <X size={16} />

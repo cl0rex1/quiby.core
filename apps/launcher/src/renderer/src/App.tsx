@@ -269,12 +269,12 @@ export const App: React.FC = () => {
 
   // Otherwise, render the Main Launcher Window:
   return (
-    <div className="flex h-screen w-screen bg-onyx-950 text-quiby-text overflow-hidden select-none font-sans relative">
-      {/* Floating Purple Ambient Light */}
-      <div className="absolute top-1/4 left-1/3 w-[600px] h-[600px] bg-quiby-purple/15 rounded-full blur-[140px] pointer-events-none animate-float-nebula"></div>
-      <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-quiby-indigo/10 rounded-full blur-[120px] pointer-events-none"></div>
+    <div className="flex h-screen w-screen bg-zinc-950 text-zinc-100 overflow-hidden select-none font-sans relative">
+      {/* Subtle Radial Ambient Light */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.03)_0%,transparent_60%)] pointer-events-none" />
+      <div className="absolute bottom-0 left-1/3 w-[500px] h-[300px] bg-white/[0.015] rounded-full blur-[140px] pointer-events-none" />
 
-      {/* 1. Exactly 4-Button Minimalist Left Sidebar */}
+      {/* 1. Interactive Expandable Minimal Sidebar */}
       <MinimalSidebar
         activeTab={activeTab}
         onSelectTab={handleSelectTab}
@@ -282,8 +282,8 @@ export const App: React.FC = () => {
         onOpenProfile={() => setIsAuthModalOpen(true)}
       />
 
-      {/* 2. Main View Content */}
-      <main className="flex-1 flex flex-col overflow-hidden relative">
+      {/* 2. Main View Content (Offset for 72px sidebar rail) */}
+      <main className="flex-1 flex flex-col overflow-hidden relative pl-[72px]">
         {activeTab === 'home' && (
           <CharacterStage
             session={session}
@@ -318,6 +318,7 @@ export const App: React.FC = () => {
             manifest={manifest}
             gameDir={draftSettings.gameDir}
             customMods={draftCustomMods}
+            session={session}
             onUpdateCustomMods={setDraftCustomMods}
           />
         )}
