@@ -186,10 +186,7 @@ export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({
       </div>
 
       {/* Bottom Navigation Shortcut */}
-      <div className="pt-4 border-t border-white/10 shrink-0 flex items-center justify-between">
-        <span className="text-xs text-zinc-500">
-          Quiby Core Notification System • Season VI
-        </span>
+      <div className="pt-4 border-t border-white/10 shrink-0 flex items-center justify-end">
         <button
           onClick={onNavigateToMods}
           className="h-10 px-5 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95 shadow-md"

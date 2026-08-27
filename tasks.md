@@ -392,6 +392,36 @@
   - [x] Synchronized layout transition (`pl-[310px]` $\leftrightarrow$ `pl-[72px]`) with smooth cubic-bezier easing
   - [x] Verified 63 / 63 unit tests passing and completed clean production build
 
+- [x] **Stage 60: Bottom Origin Drawer Blooming, Top-Right Blue Unread Dots & Bottom-Only Back Button**
+  - [x] Configured `origin-bottom-left` physics on the inbox drawer so the panel emerges and expands directly out of the notification bell button
+  - [x] Placed clean, glowing blue unread indicator dots in the top-right corner of each unread notification card
+  - [x] Removed redundant top back button from the header, keeping exclusively the full-width bottom navigation Back button
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+- [x] **Stage 61: Brand Metallic Purple Logo, Up/Down Morphing Drawer Expansion from Bell Slot & Subtext Cleanup**
+  - [x] Integrated official high-res purple metallic `quiby_logo.png` into sidebar brand anchor with soft neon glow
+  - [x] Rebuilt notification drawer animation to physically expand from the exact coordinates of the Bell button upwards to `top: 0`, downwards to `bottom: 0`, and outwards to `310px`
+  - [x] Removed "Quiby Core Notification System • Season VI" footer text from notification inspection view
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+- [x] **Stage 62: Dynamic Brand Transition: Letter 'q' to Full Metallic 'quiby' Wordmark**
+  - [x] Embedded official purple metallic single-letter `quiby_q_logo.png` in closed sidebar rail (72px centered slot)
+  - [x] Seamlessly cross-faded into the full metallic `quiby_logo.png` wordmark upon sidebar expansion without redundant text
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+- [x] **Stage 63: Full-Width Header Brand Scaling for Expanded Sidebar**
+  - [x] Scaled full `quiby` metallic logo to span the entire width of the expanded sidebar header (`h-14 w-full px-1`) with high-res glow
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+- [x] **Stage 64: Fixed-Dimension Viewport-Stable Logo Sizing**
+  - [x] Locked expanded `quiby` logo to an exact, non-adaptive fixed box (`w-[180px] h-11 shrink-0`) filling 85% of sidebar width without distorting parent dimensions
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+
+
+
+
+
 
 
 
