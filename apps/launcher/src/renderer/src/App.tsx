@@ -286,7 +286,13 @@ export const App: React.FC = () => {
       );
     }
     if (activeTab === 'mods') {
-      return JSON.stringify(draftCustomMods) !== JSON.stringify(savedCustomMods);
+      // Only compare user-configurable states: which mods exist and whether they are enabled
+      const getComparableState = (mods: CustomModItem[]) =>
+        mods.map((m) => ({ id: m.id, enabled: m.enabled }));
+      return (
+        JSON.stringify(getComparableState(draftCustomMods)) !==
+        JSON.stringify(getComparableState(savedCustomMods))
+      );
     }
     if (activeTab === 'settings') {
       return JSON.stringify(draftSettings) !== JSON.stringify(savedSettings);
@@ -376,6 +382,20 @@ export const App: React.FC = () => {
     window.quibyApi?.killGame();
   };
 
+  const handleUpdateCustomMods = (newMods: CustomModItem[]) => {
+    const getEnabledFingerprint = (mods: CustomModItem[]) =>
+      mods.map((m) => `${m.id}:${m.enabled}`).join('|');
+
+    if (
+      getEnabledFingerprint(draftCustomMods) === getEnabledFingerprint(newMods) &&
+      draftCustomMods.length === newMods.length
+    ) {
+      setSavedCustomMods(newMods);
+    }
+
+    setDraftCustomMods(newMods);
+  };
+
   // If this window is the dedicated Splash BrowserWindow:
   if (isSplashQuery) {
     return <SplashWindowView />;
@@ -437,7 +457,7 @@ export const App: React.FC = () => {
             session={session}
             selectedModIds={selectedModIds}
             onUpdateSelectedModIds={setSelectedModIds}
-            onUpdateCustomMods={setDraftCustomMods}
+            onUpdateCustomMods={handleUpdateCustomMods}
             onNotify={handleNotify}
           />
         )}

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CheckCircle2, AlertCircle, Info, Bell } from 'lucide-react';
 
 export interface ToastData {
   id: string;
@@ -17,62 +17,125 @@ export const FloatingNotificationToast: React.FC<FloatingNotificationToastProps>
   toast,
   onDismiss,
 }) => {
+  const [isExiting, setIsExiting] = useState(false);
+  const [cachedToast, setCachedToast] = useState<ToastData | null>(toast);
+
   useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => {
-      onDismiss();
-    }, 5000);
-    return () => clearTimeout(timer);
+    if (toast) {
+      setCachedToast(toast);
+      setIsExiting(false);
+
+      // Start smooth slide-down exit animation 300ms before unmount
+      const exitTimer = setTimeout(() => {
+        setIsExiting(true);
+      }, 3900);
+
+      const dismissTimer = setTimeout(() => {
+        onDismiss();
+      }, 4200);
+
+      return () => {
+        clearTimeout(exitTimer);
+        clearTimeout(dismissTimer);
+      };
+    } else {
+      setIsExiting(true);
+    }
   }, [toast, onDismiss]);
 
-  if (!toast) return null;
+  const displayToast = toast || cachedToast;
+  if (!displayToast) return null;
 
-  const isSuccess = toast.type === 'success' || !toast.type;
-  const isError = toast.type === 'error';
+  const isVisible = Boolean(toast) && !isExiting;
+  const type = displayToast.type || 'success';
+  const isSuccess = type === 'success';
+  const isError = type === 'error';
+  const isWarning = type === 'warning';
+
+  // Crisp, no-glow solid stroke colors
+  const strokeColor = isSuccess
+    ? '#34d399' // emerald-400
+    : isError
+    ? '#f43f5e' // rose-500
+    : isWarning
+    ? '#fbbf24' // amber-400
+    : '#38bdf8'; // sky-400
+
+  // Window geometry: fixed 360x52 matching FloatingActionDeck dimensions exactly
+  // Path starts at top center (180, 1) and loops clockwise around the perimeter
+  const pathD = 'M 180 1 H 335 A 25 25 0 0 1 359 26 A 25 25 0 0 1 335 51 H 25 A 25 25 0 0 1 1 26 A 25 25 0 0 1 25 1 H 180';
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto select-none animate-in slide-in-from-bottom-6 fade-in zoom-in-95 duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
-      <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-zinc-900/95 border border-white/15 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] max-w-md">
-        {/* Status Icon */}
-        <div
-          className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-            isSuccess
-              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
-              : isError
-              ? 'bg-rose-500/15 text-rose-400 border border-rose-500/20'
-              : 'bg-zinc-800 text-zinc-300 border border-white/10'
-          }`}
-        >
-          {isSuccess ? (
-            <CheckCircle2 size={18} />
-          ) : isError ? (
-            <AlertCircle size={18} />
-          ) : (
-            <Info size={18} />
-          )}
-        </div>
+    <>
+      <style>{`
+        @keyframes toastContourAppear {
+          0% {
+            stroke-dashoffset: 100;
+          }
+          100% {
+            stroke-dashoffset: 0;
+          }
+        }
+      `}</style>
 
-        {/* Text Details */}
-        <div className="flex flex-col truncate pr-1">
-          <span className="text-xs font-bold text-white leading-tight truncate">
-            {toast.title}
+      {/* Physics, scale, blur, and slide transitions identical to FloatingActionDeck */}
+      <div
+        className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-40 select-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isVisible
+            ? 'translate-y-0 opacity-100 scale-100 blur-0 pointer-events-auto'
+            : 'translate-y-8 opacity-0 scale-95 blur-[2px] pointer-events-none'
+        }`}
+      >
+        <div className="relative flex items-center gap-3 px-5 py-2.5 h-[52px] w-[360px] rounded-full bg-zinc-900/95 border border-white/10 shadow-2xl backdrop-blur-md">
+          {/* Animated SVG Contour: Starts from Top-Center and draws clockwise around the entire window */}
+          <svg
+            className="absolute -inset-[1px] w-[362px] h-[54px] pointer-events-none overflow-visible"
+            viewBox="0 0 360 52"
+          >
+            <path
+              d={pathD}
+              fill="none"
+              stroke={strokeColor}
+              strokeWidth="2"
+              strokeLinecap="round"
+              pathLength="100"
+              style={{
+                strokeDasharray: '100 100',
+                strokeDashoffset: '100',
+                animation: 'toastContourAppear 3.9s linear forwards',
+              }}
+            />
+          </svg>
+
+          {/* Status Icon */}
+          <div
+            className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+              isSuccess
+                ? 'bg-emerald-500/15 text-emerald-400'
+                : isError
+                ? 'bg-rose-500/15 text-rose-400'
+                : isWarning
+                ? 'bg-amber-500/15 text-amber-400'
+                : 'bg-sky-500/15 text-sky-400'
+            }`}
+          >
+            {isSuccess ? (
+              <CheckCircle2 size={16} />
+            ) : isError ? (
+              <AlertCircle size={16} />
+            ) : isWarning ? (
+              <Bell size={16} />
+            ) : (
+              <Info size={16} />
+            )}
+          </div>
+
+          {/* Clean Title Text without extra subtext */}
+          <span className="text-xs font-bold text-white truncate flex-1 pr-1">
+            {displayToast.title}
           </span>
-          {toast.message && (
-            <span className="text-[11px] text-zinc-400 truncate mt-0.5 leading-snug">
-              {toast.message}
-            </span>
-          )}
         </div>
-
-        {/* Dismiss Button */}
-        <button
-          onClick={onDismiss}
-          className="w-6 h-6 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer shrink-0 ml-1"
-          title="Закрыть"
-        >
-          <X size={13} />
-        </button>
       </div>
-    </div>
+    </>
   );
 };

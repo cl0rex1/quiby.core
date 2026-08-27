@@ -358,6 +358,39 @@
   - [x] Eliminated redundant duplicate status text in card footers, keeping only size indicator and «Запросить доступ» action button
   - [x] Verified clean UI and 0 build errors across monorepo
 
+- [x] **Stage 54: Notification Deck Form Factor, Perimeter Contour Countdown Timer & Detail-Free Toast**
+  - [x] Matched `FloatingNotificationToast` geometry and styling identically to `FloatingActionDeck` (bottom-8 center, pill shape, glassmorphism)
+  - [x] Removed manual `X` close button from floating toast in favor of smooth auto-dismissal
+  - [x] Stripped detailed message subtext from floating deck for concise single-line title presentation
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+- [x] **Stage 55: Top-Center Contour Origin, Exact Deck Physics & Crisp Glow-Free Presentation**
+  - [x] Reprogrammed SVG perimeter path to start drawing exactly from the middle of the top edge (`(cx, 1)`) and progress clockwise
+  - [x] Replaced abrupt unmounting with smooth entrance (`translate-y-0 opacity-100 scale-100 blur-0`) and exit (`translate-y-8 opacity-0 scale-95 blur-[2px]`) identical to other action decks
+  - [x] Removed neon glow/halo shadows in favor of crisp, clean, subtle dark deck borders
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+- [x] **Stage 56: Suppressing Unsaved Changes & Save Window on Safety State Transitions**
+  - [x] Refactored `hasUnsavedChanges` for mods to only check user-toggleable states (`enabled` flags and mod additions/deletions)
+  - [x] Synchronized `savedCustomMods` and `draftCustomMods` during whitelist requests and status updates so the save prompt never triggers inappropriately
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+- [x] **Stage 57: Zero-Jitter Synchronous Layout Measurement & Forward Contour Fill Animation**
+  - [x] Reversed contour animation so that stroke starts at 0% and draws itself (`appears`) clockwise from top-center to 100% full
+  - [x] Used `useLayoutEffect` and precise SVG `viewBox` matching pre-paint bounding rects to eliminate layout jitter and glitches
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+- [x] **Stage 58: Fixed Deck Geometry (360x52) with Exact Outer Perimeter Contour**
+  - [x] Locked notification window dimensions to a solid `360x52px` pill matching the `FloatingActionDeck` action form factor
+  - [x] Implemented pixel-exact outer contour SVG vector loop (`-inset-[1px] w-[362px] h-[54px]`) wrapping cleanly around the border
+  - [x] Configured `strokeDasharray="100 100"` with clockwise fill from top-center `(180, 1)` with 0 clipping or glitching
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+
+
+
+
+
 
 
 
