@@ -250,6 +250,29 @@
   - [x] Integrated client-side mod verification and safety badges (🟢 Одобрен, 🟡 Не проверен / В вайтлист, 🔴 Запрещен) in `ModsView`
   - [x] Verified all 50 automated tests (36 launcher + 14 backend anti-cheat) passing and completed production build
 
+- [x] **Stage 36: Silky-Smooth Sidebar Closing Physics & Full-Window Backdrop Blur**
+  - [x] Eliminated abrupt `display: none` layout pops by replacing with continuous `max-w` and `opacity` transitions with `cubic-bezier(0.16,1,0.3,1)`
+  - [x] Pinned navigation icons to constant pixel offsets to prevent icon movement during expansion and collapse
+  - [x] Added full-window ambient backdrop blur overlay (`bg-black/45 backdrop-blur-md`) that smoothly fades in when sidebar is hovered
+  - [x] Verified all 50 automated tests passing and completed clean production build
+
+- [x] **Stage 37: 2-Column Mods Hub, Rich 2-Column Grid Cards & Window Drag-and-Drop**
+  - [x] Rebuilt `ModsView` with a sleek 2-column layout (Left: S6 Modpack Hub, Upload Dropzone & Anti-Cheat Shield; Right: Mod Browser)
+  - [x] Designed rich 2-column mod cards with category chips (`#optimization`, `#utility`, `#gui`), Modrinth URLs, active emerald switches, and safety status badges
+  - [x] Enabled window-wide drag-and-drop listener with animated full-window dropzone overlay for instant `.jar` hashing and verification
+  - [x] Added segmented filters (`Все`, `Сборка 6 Сезона`, `Мои моды`) and real-time search
+  - [x] Verified complete 50-test suite passing and completed clean production build
+
+- [x] **Stage 38: Clean & Intuitive Mods List with Mod Logos, Concise Descriptions & Clutter-Free UI**
+  - [x] Removed verbose security banners, anti-cheat text, and heavy side columns in favor of a clean, focused mod browser
+  - [x] Integrated authentic Modrinth mod logo icons and created `knownMods.ts` catalog for instant high-quality logo rendering
+  - [x] Added concise, clear 1-line Russian descriptions for all official and custom mods (e.g. Create, Sodium, Iris, JEI, FerriteCore)
+  - [x] Added clean top-level `+ Добавить мод (.jar)` button and segment tabs (`Официальные моды` / `Мои моды`)
+  - [x] Verified all 50 automated tests passing and completed production build
+
+
+
+
 
 
 

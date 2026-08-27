@@ -10,6 +10,8 @@ export interface ModVerificationResult {
   reason: string;
   categories: string[];
   projectUrl?: string;
+  iconUrl?: string;
+  description?: string;
 }
 
 /**

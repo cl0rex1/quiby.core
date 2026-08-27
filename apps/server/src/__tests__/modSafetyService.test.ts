@@ -17,8 +17,16 @@ async function runTests() {
   };
 
   try {
-    // 1. Initialize Database
+    // 1. Initialize Database & Clean test hashes
     await initDatabase();
+    await dbRun('DELETE FROM verified_mods WHERE hash_sha1 IN (?, ?, ?)', [
+      'e61b17b1897e0e7a2bfa11d6db0d12e6d302d911',
+      'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+      '1234567890abcdef1234567890abcdef12345678'
+    ]);
+    await dbRun('DELETE FROM mod_whitelist_requests WHERE hash_sha1 = ?', [
+      '1234567890abcdef1234567890abcdef12345678'
+    ]);
     assert(true, 'SQLite database initialized with anti-cheat tables');
 
     // 2. Test Safe Mod Caching & Verification

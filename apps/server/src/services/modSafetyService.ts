@@ -10,6 +10,8 @@ export interface ModVerificationResult {
   reason: string;
   categories: string[];
   projectUrl?: string;
+  iconUrl?: string;
+  description?: string;
 }
 
 const FORBIDDEN_KEYWORDS = [
@@ -114,7 +116,7 @@ export async function verifyMod(
       const versionData = await versionRes.json();
       const projectId = versionData.project_id;
 
-      // Query project metadata for categories and tags
+      // Query project metadata for categories, icon, and description
       const projectRes = await fetch(
         `https://api.modrinth.com/v2/project/${projectId}`,
         {
@@ -126,7 +128,9 @@ export async function verifyMod(
       if (projectRes.ok) {
         const projectData = await projectRes.json();
         const categories: string[] = projectData.categories || [];
-        const combinedText = `${projectData.title} ${projectData.description || ''} ${categories.join(' ')}`.toLowerCase();
+        const iconUrl: string | undefined = projectData.icon_url || undefined;
+        const description: string | undefined = projectData.description || undefined;
+        const combinedText = `${projectData.title} ${description || ''} ${categories.join(' ')}`.toLowerCase();
 
         // Check for forbidden anti-cheat tags
         const matchedForbidden = FORBIDDEN_KEYWORDS.find((kw) =>
@@ -139,7 +143,7 @@ export async function verifyMod(
           await dbRun(
             `INSERT OR REPLACE INTO verified_mods (hash_sha1, mod_id, name, summary, source, is_allowed, status, reason, categories_json)
              VALUES (?, ?, ?, ?, 'modrinth', 0, 'blocked', ?, ?)`,
-            [normalizedHash, projectId, projectData.title || name, projectData.description || '', reason, JSON.stringify(categories)]
+            [normalizedHash, projectId, projectData.title || name, description || '', reason, JSON.stringify(categories)]
           );
 
           return {
@@ -152,15 +156,17 @@ export async function verifyMod(
             reason,
             categories,
             projectUrl: `https://modrinth.com/mod/${projectData.slug || projectId}`,
+            iconUrl,
+            description,
           };
         }
 
         // Safe approved mod
-        const reason = 'Проверен в каталоге Modrinth (безопасный клиентский мод)';
+        const reason = 'Проверен в каталоге Modrinth';
         await dbRun(
           `INSERT OR REPLACE INTO verified_mods (hash_sha1, mod_id, name, summary, source, is_allowed, status, reason, categories_json)
            VALUES (?, ?, ?, ?, 'modrinth', 1, 'approved', ?, ?)`,
-          [normalizedHash, projectId, projectData.title || name, projectData.description || '', reason, JSON.stringify(categories)]
+          [normalizedHash, projectId, projectData.title || name, description || '', reason, JSON.stringify(categories)]
         );
 
         return {
@@ -173,6 +179,8 @@ export async function verifyMod(
           reason,
           categories,
           projectUrl: `https://modrinth.com/mod/${projectData.slug || projectId}`,
+          iconUrl,
+          description,
         };
       }
     }
