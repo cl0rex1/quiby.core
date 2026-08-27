@@ -417,6 +417,18 @@
   - [x] Locked expanded `quiby` logo to an exact, non-adaptive fixed box (`w-[180px] h-11 shrink-0`) filling 85% of sidebar width without distorting parent dimensions
   - [x] Verified 63 / 63 unit tests passing and completed clean production build
 
+- [x] **Stage 65: Auto-Trimmed Logo Transparency & Edge-to-Edge Prominent Branding**
+  - [x] Trimmed all empty transparent whitespace from logo PNG assets (`quiby_logo.png` 1000x1000 $\rightarrow$ 641x251; `quiby_q_logo.png` 1000x1000 $\rightarrow$ 264x353)
+  - [x] Scaled full metallic `quiby` wordmark to tightly fill the entire width of the expanded sidebar header with massive, crisp lettering and neon purple glow
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+- [x] **Stage 66: Volumetric Soft Neon Aura Backdrop Behind Brand Logos**
+  - [x] Added layered ambient purple/fuchsia glow backdrops (`bg-fuchsia-600/30 blur-xl`) and multi-layer CSS drop-shadow filters behind both letter 'q' and 'quiby' wordmark
+  - [x] Completely eliminated hard clipping edges, creating smooth, luminous outer bloom
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+
+
 
 
 

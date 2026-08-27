@@ -96,35 +96,40 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
             isNotificationsOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
         >
-          {/* Top Brand Mark: Fixed dimension Letter 'q' -> Fixed width 'quiby' logo */}
-          <div className="w-full flex items-center h-12 shrink-0 relative overflow-hidden">
-            {/* 1. Closed state: Single Letter 'q' logo centered in 48px slot */}
+          {/* Top Brand Mark: Letter 'q' (closed) -> Big Full 'quiby' logo (expanded) with matching neon glow aura */}
+          <div className="w-full flex items-center h-14 shrink-0 relative">
+            {/* 1. Closed state: Single Letter 'q' logo centered in 48px slot with circular glow */}
             <div
-              className={`w-12 h-12 flex items-center justify-center shrink-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              className={`w-12 h-14 flex items-center justify-center shrink-0 relative transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 isHovered
                   ? 'opacity-0 scale-75 pointer-events-none -translate-x-4'
                   : 'opacity-100 scale-100 translate-x-0'
               }`}
             >
+              {/* Soft purple radial aura */}
+              <div className="absolute w-8 h-8 bg-fuchsia-500/35 rounded-full blur-md pointer-events-none" />
               <img
                 src={quibyQLogo}
                 alt="Q"
-                className="w-8 h-8 object-contain shrink-0 drop-shadow-[0_2px_10px_rgba(192,38,211,0.65)] hover:scale-105 transition-transform"
+                className="w-7 h-9 object-contain drop-shadow-[0_0_12px_rgba(192,38,211,0.9)] drop-shadow-[0_0_24px_rgba(168,85,247,0.5)] hover:scale-105 transition-transform relative z-10"
               />
             </div>
 
-            {/* 2. Expanded state: Full 'quiby' logo filling majority of sidebar (fixed 180px width) */}
+            {/* 2. Expanded state: Big Full 'quiby' logo with wide ambient purple glow bloom */}
             <div
-              className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              className={`absolute inset-0 flex items-center justify-center px-2 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 isHovered
                   ? 'opacity-100 scale-100 translate-x-0 pointer-events-auto'
                   : 'opacity-0 scale-95 translate-x-4 pointer-events-none'
               }`}
             >
+              {/* Wide ambient purple glow aura behind the full wordmark */}
+              <div className="absolute inset-x-4 inset-y-2 bg-gradient-to-r from-fuchsia-600/30 via-purple-500/40 to-fuchsia-600/30 rounded-full blur-xl pointer-events-none" />
+              <div className="absolute w-28 h-6 bg-fuchsia-400/25 rounded-full blur-md pointer-events-none" />
               <img
                 src={quibyLogo}
                 alt="Quiby"
-                className="w-[180px] h-11 object-contain shrink-0 drop-shadow-[0_2px_14px_rgba(192,38,211,0.75)] select-none pointer-events-none"
+                className="w-full h-11 object-contain drop-shadow-[0_0_14px_rgba(192,38,211,0.85)] drop-shadow-[0_0_28px_rgba(168,85,247,0.5)] select-none pointer-events-none relative z-10"
               />
             </div>
           </div>
