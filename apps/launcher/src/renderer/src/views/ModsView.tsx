@@ -13,13 +13,12 @@ import {
   Check,
   Upload,
   X,
-  Send,
-  CheckSquare,
-  Square
+  CheckSquare
 } from 'lucide-react';
 import { ModpackManifest, AuthSession } from '@quiby/shared';
-import { verifyCustomMod, submitModWhitelistRequest } from '../utils/modVerifier';
+import { verifyCustomMod } from '../utils/modVerifier';
 import { resolveModMetadata } from '../utils/knownMods';
+import { ModWhitelistModal } from '../components/ModWhitelistModal';
 
 export interface CustomModItem {
   id: string;
@@ -46,7 +45,7 @@ interface ModsViewProps {
   onUpdateCustomMods: (mods: CustomModItem[]) => void;
 }
 
-type TabType = 'official' | 'custom';
+export type SwitcherMode = 'official' | 'custom';
 
 export const ModsView: React.FC<ModsViewProps> = ({
   manifest,
@@ -57,11 +56,12 @@ export const ModsView: React.FC<ModsViewProps> = ({
   onUpdateSelectedModIds,
   onUpdateCustomMods,
 }) => {
-  const [tab, setTab] = useState<TabType>('official');
+  const [switcherMode, setSwitcherMode] = useState<SwitcherMode>('custom');
   const [search, setSearch] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [whitelistSuccessId, setWhitelistSuccessId] = useState<string | null>(null);
+  const [activeWhitelistMod, setActiveWhitelistMod] = useState<CustomModItem | null>(null);
 
   const officialFiles = manifest?.files || [];
 
@@ -151,7 +151,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
   const toggleCustomMod = (id: string) => {
     const target = customMods.find((m) => m.id === id);
-    if (target?.safetyStatus === 'blocked') return;
+    if (target?.safetyStatus !== 'approved') return;
 
     const updated = customMods.map((m) =>
       m.id === id ? { ...m, enabled: !m.enabled } : m
@@ -185,7 +185,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
     const nextList = [initialMod, ...customMods];
     onUpdateCustomMods(nextList);
-    setTab('custom');
+    setSwitcherMode('custom');
 
     setIsVerifying(true);
     try {
@@ -220,21 +220,9 @@ export const ModsView: React.FC<ModsViewProps> = ({
     }
   };
 
-  const handleRequestWhitelist = async (e: React.MouseEvent, mod: CustomModItem) => {
+  const handleOpenWhitelistModal = (e: React.MouseEvent, mod: CustomModItem) => {
     e.stopPropagation();
-    if (!mod.hashSha1) return;
-    try {
-      const res = await submitModWhitelistRequest(
-        { name: mod.name, filename: mod.filename, hashSha1: mod.hashSha1 },
-        session
-      );
-      if (res.success) {
-        setWhitelistSuccessId(mod.id);
-        setTimeout(() => setWhitelistSuccessId(null), 4000);
-      }
-    } catch (e) {
-      console.error('Failed to submit whitelist request:', e);
-    }
+    setActiveWhitelistMod(mod);
   };
 
   const handleOpenModsFolder = () => {
@@ -306,27 +294,28 @@ export const ModsView: React.FC<ModsViewProps> = ({
         </div>
       </div>
 
-      {/* Search, Tab Switcher & Batch Selection Bar */}
+      {/* Switcher & Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-        {/* Clean Segment Tabs & Select-All button */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-950/60 border border-white/5">
+        {/* Clean Modern Segmented Control Switcher */}
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="inline-flex p-1 rounded-2xl bg-zinc-950/80 border border-white/10 shadow-inner gap-1">
             <button
-              onClick={() => setTab('official')}
-              className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                tab === 'official'
-                  ? 'bg-zinc-800 text-white shadow-sm border border-white/10'
-                  : 'text-zinc-400 hover:text-zinc-200'
+              onClick={() => setSwitcherMode('official')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
+                switcherMode === 'official'
+                  ? 'bg-zinc-800 text-white shadow-md border border-white/15'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent'
               }`}
             >
-              Официальные моды ({officialFiles.length})
+              <span>Сборка ({officialFiles.length})</span>
             </button>
+
             <button
-              onClick={() => setTab('custom')}
-              className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                tab === 'custom'
-                  ? 'bg-zinc-800 text-white shadow-sm border border-white/10'
-                  : 'text-zinc-400 hover:text-zinc-200'
+              onClick={() => setSwitcherMode('custom')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
+                switcherMode === 'custom'
+                  ? 'bg-zinc-800 text-white shadow-md border border-white/15'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent'
               }`}
             >
               <span>Мои моды ({customMods.length})</span>
@@ -334,18 +323,18 @@ export const ModsView: React.FC<ModsViewProps> = ({
             </button>
           </div>
 
-          {/* Select All Toggle for Custom Mods */}
-          {tab === 'custom' && filteredCustom.length > 0 && (
+          {/* Select All Button for Custom Mods */}
+          {switcherMode === 'custom' && filteredCustom.length > 0 && (
             <button
               onClick={handleSelectAllCustom}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`h-9 px-4 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-2 shadow-sm ${
                 isAllSelected
-                  ? 'bg-zinc-800 border-white/20 text-white'
-                  : 'bg-zinc-950/40 border-white/5 text-zinc-400 hover:text-white'
+                  ? 'bg-zinc-800 border-white/20 text-white hover:bg-zinc-750'
+                  : 'bg-zinc-900/90 border-white/10 text-zinc-300 hover:text-white hover:bg-zinc-800 hover:border-white/20'
               }`}
             >
-              <CheckSquare size={13} className={isAllSelected ? 'text-emerald-400' : ''} />
-              <span>{isAllSelected ? 'Снять выбор' : 'Выбрать все'}</span>
+              <CheckSquare size={14} className={isAllSelected ? 'text-emerald-400' : 'text-zinc-400'} />
+              <span>{isAllSelected ? 'Снять выбор' : `Выбрать все (${filteredCustom.length})`}</span>
             </button>
           )}
         </div>
@@ -372,8 +361,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
       </div>
 
       {/* Main Mods Grid Container */}
-      <div className="flex-1 bg-zinc-950/40 border border-white/5 rounded-3xl p-4 md:p-5 overflow-y-auto backdrop-blur-sm shadow-sm">
-        {tab === 'official' ? (
+      <div className="flex-1 bg-zinc-950/40 border border-white/5 rounded-3xl p-4 md:p-5 overflow-y-auto backdrop-blur-sm shadow-sm space-y-3">
+        {switcherMode === 'official' ? (
           /* Official Modpack Mods Grid */
           filteredOfficial.length === 0 ? (
             <div className="py-20 text-center text-zinc-500 text-xs space-y-2">
@@ -427,7 +416,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                       </div>
                     </div>
 
-                    <span className="px-3 py-1 rounded-full bg-zinc-800/80 text-[10px] font-mono text-zinc-400 border border-white/5 shrink-0">
+                    <span className="px-2.5 py-1 rounded-full bg-zinc-800/60 text-[10px] font-mono text-zinc-400 border border-white/5 shrink-0">
                       В сборке
                     </span>
                   </div>
@@ -451,9 +440,13 @@ export const ModsView: React.FC<ModsViewProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {filteredCustom.map((mod) => {
                 const isBlocked = mod.safetyStatus === 'blocked';
-                const isUnverified = mod.safetyStatus === 'unverified';
+                const isApproved = mod.safetyStatus === 'approved';
+                const isChecking = mod.safetyStatus === 'checking';
+                const isUnverified = mod.safetyStatus === 'unverified' || (!isBlocked && !isApproved && !isChecking);
+                const isWhitelist = isApproved && (mod.safetyReason?.includes('Вайтлист') || mod.safetyReason?.includes('администрацией'));
                 const isRequested = whitelistSuccessId === mod.id;
                 const isSelected = selectedModIds.includes(mod.id);
+
                 const meta = resolveModMetadata(
                   mod.name,
                   mod.filename,
@@ -504,12 +497,61 @@ export const ModsView: React.FC<ModsViewProps> = ({
                         )}
                       </div>
 
-                      {/* Title & Short Description */}
-                      <div className="truncate space-y-0.5">
-                        <div className="flex items-center gap-2">
+                      {/* Title, Subtle Minimal Badges & Description */}
+                      <div className="truncate space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-bold text-white truncate">
                             {meta.displayName}
                           </span>
+
+                          {/* Subtle Non-Intrusive Status Dots/Labels */}
+                          {isChecking && (
+                            <span className="text-[10px] text-zinc-400 font-medium flex items-center gap-1">
+                              <Loader2 size={10} className="animate-spin text-zinc-400" />
+                              <span>Проверка</span>
+                            </span>
+                          )}
+
+                          {isApproved && !isWhitelist && (
+                            <span
+                              className="text-[10px] text-zinc-400 font-medium flex items-center gap-1.5"
+                              title={mod.safetyReason}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/90" />
+                              <span>Проверен</span>
+                            </span>
+                          )}
+
+                          {isWhitelist && (
+                            <span
+                              className="text-[10px] text-zinc-400 font-medium flex items-center gap-1.5"
+                              title={mod.safetyReason}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-teal-400/90" />
+                              <span>Вайтлист</span>
+                            </span>
+                          )}
+
+                          {isBlocked && (
+                            <span
+                              className="text-[10px] text-rose-400/90 font-medium flex items-center gap-1.5"
+                              title={mod.safetyReason}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                              <span>Запрещен</span>
+                            </span>
+                          )}
+
+                          {isUnverified && (
+                            <span
+                              className="text-[10px] text-zinc-500 font-medium flex items-center gap-1.5"
+                              title={mod.safetyReason}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+                              <span>Не в каталоге</span>
+                            </span>
+                          )}
+
                           {mod.projectUrl && (
                             <a
                               href={mod.projectUrl}
@@ -518,7 +560,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                               className="text-zinc-500 hover:text-white transition-colors shrink-0"
                               title="Открыть на Modrinth"
                             >
-                              <ExternalLink size={12} />
+                              <ExternalLink size={11} />
                             </a>
                           )}
                         </div>
@@ -531,17 +573,17 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           <span>{formatSize(mod.size)}</span>
                           {isUnverified && !isRequested && (
                             <button
-                              onClick={(e) => handleRequestWhitelist(e, mod)}
-                              className="text-amber-400 hover:underline cursor-pointer flex items-center gap-1"
+                              onClick={(e) => handleOpenWhitelistModal(e, mod)}
+                              className="text-zinc-300 hover:text-white underline hover:no-underline cursor-pointer flex items-center gap-1 font-sans font-medium transition-colors"
+                              title="Заполнить заявку на добавление мода в Discord"
                             >
-                              <Send size={10} />
-                              <span>Запросить вайтлист</span>
+                              <span>Запросить доступ</span>
                             </button>
                           )}
                           {isRequested && (
-                            <span className="text-emerald-400 flex items-center gap-1">
+                            <span className="text-emerald-400 flex items-center gap-1 font-sans font-medium animate-in fade-in duration-200">
                               <Check size={11} />
-                              <span>Запрос отправлен</span>
+                              <span>Заявка отправлена боту</span>
                             </span>
                           )}
                         </div>
@@ -552,13 +594,25 @@ export const ModsView: React.FC<ModsViewProps> = ({
                     <div className="flex items-center gap-2.5 shrink-0">
                       <button
                         onClick={() => toggleCustomMod(mod.id)}
-                        disabled={isBlocked}
-                        className={`cursor-pointer transition-all ${
-                          isBlocked ? 'opacity-30 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
+                        disabled={!isApproved}
+                        className={`transition-all ${
+                          !isApproved
+                            ? 'opacity-25 cursor-not-allowed'
+                            : 'cursor-pointer hover:scale-105 active:scale-95'
                         }`}
-                        title={isBlocked ? 'Мод заблокирован' : undefined}
+                        title={
+                          isBlocked
+                            ? 'Запрещенный чит-мод заблокирован античитом'
+                            : isUnverified
+                            ? 'Мод заблокирован: требуется одобрение администрацией (Запросить доступ)'
+                            : isChecking
+                            ? 'Мод проверяется...'
+                            : mod.enabled
+                            ? 'Отключить мод'
+                            : 'Включить мод'
+                        }
                       >
-                        {mod.enabled && !isBlocked ? (
+                        {mod.enabled && isApproved ? (
                           <ToggleRight size={32} className="text-white" />
                         ) : (
                           <ToggleLeft size={32} className="text-zinc-600" />
@@ -580,6 +634,18 @@ export const ModsView: React.FC<ModsViewProps> = ({
           )
         )}
       </div>
+
+      {/* Whitelist Submission Modal Dialog */}
+      <ModWhitelistModal
+        isOpen={Boolean(activeWhitelistMod)}
+        onClose={() => setActiveWhitelistMod(null)}
+        mod={activeWhitelistMod}
+        session={session}
+        onSuccess={(modId) => {
+          setWhitelistSuccessId(modId);
+          setTimeout(() => setWhitelistSuccessId(null), 8000);
+        }}
+      />
     </div>
   );
 };

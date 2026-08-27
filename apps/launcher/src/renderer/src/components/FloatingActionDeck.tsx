@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Play, 
   RotateCw, 
@@ -17,6 +17,9 @@ import { ActiveTab } from './MinimalSidebar';
 
 export interface BatchActionConfig {
   count: number;
+  totalCount?: number;
+  isAllSelected?: boolean;
+  onSelectAll?: () => void;
   onEnableAll: () => void;
   onDisableAll: () => void;
   onDeleteAll: () => void;
@@ -53,8 +56,22 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   onCancel,
 }) => {
   const [savePhase, setSavePhase] = useState<'idle' | 'filled' | 'sliding'>('idle');
+  const [cachedBatchActions, setCachedBatchActions] = useState<BatchActionConfig | null>(batchActions || null);
+
+  useEffect(() => {
+    if (batchActions) {
+      setCachedBatchActions(batchActions);
+    }
+  }, [batchActions]);
+
   const isBusy = launchState.status === 'updating' || launchState.status === 'starting';
   const isRunning = launchState.status === 'running';
+
+  const hasBatch = Boolean(batchActions && batchActions.count > 0);
+  const displayBatch = batchActions || cachedBatchActions;
+  const isFilled = savePhase === 'filled' || savePhase === 'sliding';
+  const isSaveExiting = savePhase === 'sliding';
+  const showSave = hasUnsavedChanges || isFilled;
 
   const formatSpeed = (bps: number) => {
     if (bps <= 0) return '';
@@ -63,13 +80,13 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   };
 
   const handleSaveClick = async () => {
-    // 1. Smoothly fill with solid green + reveal centered checkmark
+    // 1. Fill save button with solid emerald + reveal centered checkmark
     setSavePhase('filled');
     await onSave();
 
     // 2. Hold in green checkmark state for 1 second
     setTimeout(() => {
-      // 3. Smoothly fly down
+      // 3. Smoothly slide/fly down
       setSavePhase('sliding');
     }, 1000);
 
@@ -151,125 +168,121 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
     );
   }
 
-  // Case 2: Other Tabs with Metaball / Dual-Pod Separation Animation
-  const isFilled = savePhase === 'filled' || savePhase === 'sliding';
-  const isSaveExiting = savePhase === 'sliding';
-  const showSavePod = hasUnsavedChanges || isFilled;
-  const hasBatch = Boolean(batchActions && batchActions.count > 0);
-
-  // If nothing to show at all:
-  if (!showSavePod && !hasBatch) {
-    return null;
-  }
-
+  // Case 2: Other Tabs -> Dedicated Bottom-Center Actions Window & Bottom-Right Save Window
   return (
-    <div className="fixed bottom-8 right-8 z-40 flex items-center gap-3 select-none pointer-events-auto">
-      {/* Pod 1: Batch Actions Capsule (Multi-Selection) */}
-      {hasBatch && batchActions && (
-        <div
-          className={`flex items-center gap-2 p-1.5 rounded-full bg-zinc-900/95 border border-white/10 shadow-2xl backdrop-blur-md transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] animate-in fade-in zoom-in-95 ${
-            isSaveExiting ? 'translate-x-0' : ''
-          }`}
-        >
-          {/* Selected Count Indicator */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-800 text-xs font-bold text-white font-mono">
-            <CheckSquare size={13} className="text-emerald-400" />
-            <span>{batchActions.count}</span>
-          </div>
-
-          {/* Action: Enable All */}
-          <button
-            onClick={batchActions.onEnableAll}
-            className="px-3 py-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-            title="Включить все выбранные моды"
-          >
-            <ToggleRight size={15} className="text-emerald-400" />
-            <span className="hidden sm:inline">Включить</span>
-          </button>
-
-          {/* Action: Disable All */}
-          <button
-            onClick={batchActions.onDisableAll}
-            className="px-3 py-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-            title="Отключить все выбранные моды"
-          >
-            <ToggleLeft size={15} className="text-zinc-400" />
-            <span className="hidden sm:inline">Отключить</span>
-          </button>
-
-          {/* Action: Delete All */}
-          <button
-            onClick={batchActions.onDeleteAll}
-            className="p-2 rounded-full bg-zinc-800 hover:bg-rose-950/80 text-zinc-400 hover:text-rose-400 transition-all cursor-pointer active:scale-95"
-            title="Удалить выбранные моды"
-          >
-            <Trash2 size={14} />
-          </button>
-
-          {/* Dismiss selection */}
-          <button
-            onClick={batchActions.onClear}
-            className="p-2 rounded-full text-zinc-500 hover:text-white transition-colors cursor-pointer"
-            title="Снять выбор"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      )}
-
-      {/* Pod 2: Save & Cancel Capsule (With Metaball Organic Division Effect) */}
-      {showSavePod && (
-        <div
-          className={`transition-all duration-300 ease-out ${
-            isSaveExiting
-              ? 'translate-y-24 opacity-0 pointer-events-none'
-              : 'translate-y-0 opacity-100'
-          }`}
-        >
-          <div
-            className={`relative overflow-hidden p-1.5 rounded-full border transition-all duration-300 flex items-center gap-2 ${
-              isFilled
-                ? 'border-emerald-300 shadow-[0_0_35px_rgba(52,211,153,0.9)]'
-                : isShaking
-                ? 'animate-shake bg-rose-950/90 border-rose-500 shadow-[0_0_35px_rgba(244,63,94,0.85)] ring-2 ring-rose-500'
-                : 'bg-zinc-900/95 border-white/10 shadow-2xl backdrop-blur-md'
-            }`}
-          >
-            {/* Cancel Button */}
+    <>
+      {/* 1. SEPARATE ACTIONS WINDOW: Positioned in Bottom-Center */}
+      <div
+        className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-40 select-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          hasBatch
+            ? 'translate-y-0 opacity-100 scale-100 blur-0 pointer-events-auto'
+            : 'translate-y-8 opacity-0 scale-95 blur-[2px] pointer-events-none'
+        }`}
+      >
+        {displayBatch && (
+          <div className="flex items-center gap-2 p-1.5 rounded-full bg-zinc-900/95 border border-white/10 shadow-2xl backdrop-blur-md h-[52px]">
+            {/* Selected Count / Select All Button (matching circular button height) */}
             <button
-              onClick={onCancel}
-              disabled={isFilled}
-              className="w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0"
-              title="Отменить изменения"
+              onClick={displayBatch.onSelectAll}
+              className="h-10 px-3.5 rounded-full bg-zinc-800 hover:bg-zinc-750 border border-white/5 flex items-center justify-center text-xs font-bold text-white font-mono shrink-0 shadow-sm gap-1.5 cursor-pointer active:scale-95 transition-all"
+              title={displayBatch.isAllSelected ? 'Снять выбор со всех' : 'Выбрать все моды'}
+            >
+              <CheckSquare size={14} className={displayBatch.isAllSelected ? 'text-emerald-400' : 'text-zinc-400'} />
+              <span>{displayBatch.count}{displayBatch.totalCount ? `/${displayBatch.totalCount}` : ''}</span>
+            </button>
+
+            {/* Action: Enable All */}
+            <button
+              onClick={displayBatch.onEnableAll}
+              className="h-10 px-4 rounded-full bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-zinc-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm shrink-0"
+              title="Включить все выбранные моды"
+            >
+              <ToggleRight size={17} className="text-emerald-400" />
+              <span>Включить</span>
+            </button>
+
+            {/* Action: Disable All */}
+            <button
+              onClick={displayBatch.onDisableAll}
+              className="h-10 px-4 rounded-full bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-zinc-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm shrink-0"
+              title="Отключить все выбранные моды"
+            >
+              <ToggleLeft size={17} className="text-zinc-400" />
+              <span>Отключить</span>
+            </button>
+
+            {/* Action: Delete All */}
+            <button
+              onClick={displayBatch.onDeleteAll}
+              className="w-10 h-10 rounded-full bg-zinc-800 hover:bg-rose-950/80 text-zinc-400 hover:text-rose-400 flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 shadow-sm"
+              title="Удалить выбранные моды"
+            >
+              <Trash2 size={15} />
+            </button>
+
+            {/* Dismiss selection */}
+            <button
+              onClick={displayBatch.onClear}
+              className="w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 shadow-sm"
+              title="Снять выбор"
             >
               <X size={16} />
             </button>
+          </div>
+        )}
+      </div>
 
-            {/* Save Button */}
-            <button
-              onClick={handleSaveClick}
-              disabled={isFilled}
-              className="px-6 py-2.5 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-black transition-all shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0"
-            >
-              <Save size={14} />
-              <span>Сохранить</span>
-            </button>
+      {/* 2. SEPARATE SAVE WINDOW: Positioned in Bottom-Right Corner */}
+      <div
+        className={`fixed bottom-8 right-8 z-40 select-none pointer-events-auto transition-all duration-300 ease-out ${
+          showSave && !isSaveExiting
+            ? 'translate-y-0 opacity-100 pointer-events-auto'
+            : 'translate-y-24 opacity-0 pointer-events-none'
+        }`}
+      >
+        <div
+          className={`relative overflow-hidden p-1.5 rounded-full border transition-all duration-300 flex items-center gap-2 ${
+            isFilled
+              ? 'border-emerald-300 shadow-[0_0_35px_rgba(52,211,153,0.9)]'
+              : isShaking
+              ? 'animate-shake bg-rose-950/90 border-rose-500 shadow-[0_0_35px_rgba(244,63,94,0.85)] ring-2 ring-rose-500'
+              : 'bg-zinc-900/95 border-white/10 shadow-2xl backdrop-blur-md'
+          }`}
+        >
+          {/* Cancel Button */}
+          <button
+            onClick={onCancel}
+            disabled={isFilled}
+            className="w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 shadow-sm"
+            title="Отменить изменения"
+          >
+            <X size={16} />
+          </button>
 
-            {/* Expanding Solid Green Checkmark Layer */}
-            <div
-              className={`absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 flex items-center justify-center pointer-events-none transition-all duration-300 ease-out origin-center z-10 ${
-                isFilled ? 'scale-100 opacity-100 shadow-[0_0_30px_rgba(52,211,153,0.9)]' : 'scale-0 opacity-0'
-              }`}
-            >
-              {isFilled && (
-                <div className="flex items-center justify-center animate-in zoom-in-75 duration-200">
-                  <Check size={22} className="text-zinc-950 stroke-[3.5]" />
-                </div>
-              )}
-            </div>
+          {/* Save Button */}
+          <button
+            onClick={handleSaveClick}
+            disabled={isFilled}
+            className="px-6 py-2.5 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-black transition-all shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0"
+          >
+            <Save size={14} />
+            <span>Сохранить</span>
+          </button>
+
+          {/* Expanding Solid Green Layer with Centered Checkmark */}
+          <div
+            className={`absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 flex items-center justify-center pointer-events-none transition-all duration-300 ease-out origin-center z-10 ${
+              isFilled ? 'scale-100 opacity-100 shadow-[0_0_30px_rgba(52,211,153,0.9)]' : 'scale-0 opacity-0'
+            }`}
+          >
+            {isFilled && (
+              <div className="flex items-center justify-center animate-in zoom-in-75 duration-200">
+                <Check size={22} className="text-zinc-950 stroke-[3.5]" />
+              </div>
+            )}
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 };

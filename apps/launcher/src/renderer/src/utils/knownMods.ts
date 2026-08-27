@@ -184,6 +184,26 @@ const KNOWN_MODS: Record<string, ModMetadata> = {
     categoryLabel: 'Библиотека',
     iconUrl: 'https://cdn.modrinth.com/data/lhGA9TYQ/icon.png',
   },
+  jade: {
+    displayName: 'Jade (WAILA Tooltips)',
+    description: 'Информативные всплывающие подсказки на блоках и мобах',
+    category: 'interface',
+    categoryLabel: 'Интерфейс',
+    iconUrl: 'https://cdn.modrinth.com/data/nvQzSEkH/icon.png',
+  },
+  voicechat: {
+    displayName: 'Simple Voice Chat',
+    description: 'Позиционный 3D голосовой чат для общения на сервере',
+    category: 'utility',
+    categoryLabel: 'Голос',
+    iconUrl: 'https://cdn.modrinth.com/data/9eGKb6K1/icon.png',
+  },
+  xray: {
+    displayName: 'X-Ray Ultimate',
+    description: 'Запрещенный чит-мод для поиска скрытых руд сквозь стены',
+    category: 'utility',
+    categoryLabel: 'Чит',
+  },
 };
 
 /**

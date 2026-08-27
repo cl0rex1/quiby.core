@@ -17,6 +17,7 @@ export interface ModVerificationResult {
 const FORBIDDEN_KEYWORDS = [
   'xray',
   'x-ray',
+  'x_ray',
   'cheat',
   'cheats',
   'hacks',
@@ -28,16 +29,31 @@ const FORBIDDEN_KEYWORDS = [
   'dupe',
   'duplication',
   'fly',
+  'flyhack',
   'speed',
+  'speedhack',
   'killaura',
+  'kill-aura',
   'freecam',
   'baritone',
   'meteor',
   'wurst',
   'bleachhack',
   'aristois',
+  'liquidbounce',
+  'inertia',
+  'impact',
   'seedcracker',
   'autoclicker',
+  'auto-clicker',
+  'autofish',
+  'auto-fish',
+  'orefinder',
+  'cavefinder',
+  'aimbot',
+  'nuker',
+  'esp',
+  'cheststealer',
 ];
 
 const MODRINTH_USER_AGENT = 'quiby-launcher/6.0.0 (security@quiby.fun)';
@@ -213,7 +229,7 @@ export async function verifyModBatch(
 }
 
 /**
- * Submits a player request to whitelist an unverified custom mod.
+ * Submits a player request to whitelist an unverified custom mod and forwards to Discord channel.
  */
 export async function submitWhitelistRequest(req: {
   user_discord_id?: string;
@@ -222,6 +238,7 @@ export async function submitWhitelistRequest(req: {
   filename: string;
   hash_sha1: string;
   reason?: string;
+  project_url?: string;
 }): Promise<void> {
   const normalizedHash = req.hash_sha1.toLowerCase().trim();
   await dbRun(
@@ -233,9 +250,40 @@ export async function submitWhitelistRequest(req: {
       req.mod_name,
       req.filename,
       normalizedHash,
-      req.reason || 'Запрос от игрока через лаунчер',
+      req.reason || 'Запрос от игрока через форму лаунчера',
     ]
   );
+
+  // Optional: Forward to Discord Webhook / Bot Channel
+  const webhookUrl = process.env.DISCORD_MOD_WHITELIST_WEBHOOK;
+  if (webhookUrl) {
+    try {
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          embeds: [
+            {
+              title: '🛡️ Новая заявка на добавление мода в вайтлист',
+              color: 0x10b981, // Emerald
+              fields: [
+                { name: '📦 Название мода', value: req.mod_name, inline: true },
+                { name: '📁 Имя файла', value: `\`${req.filename}\``, inline: true },
+                { name: '👤 Игрок', value: req.mc_username || 'Player', inline: true },
+                { name: '🔑 SHA-1 хэш', value: `\`${normalizedHash}\``, inline: false },
+                { name: '💬 Назначение / Причина', value: req.reason || 'Не указана', inline: false },
+                ...(req.project_url ? [{ name: '🔗 Ссылка на проект', value: req.project_url, inline: false }] : []),
+              ],
+              footer: { text: 'Quiby Core • Season VI Anti-Cheat Bot' },
+              timestamp: new Date().toISOString(),
+            },
+          ],
+        }),
+      });
+    } catch (err) {
+      console.warn('Failed to forward whitelist request to Discord webhook:', err);
+    }
+  }
 }
 
 /**

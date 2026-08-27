@@ -35,8 +35,80 @@ const defaultSettings: LauncherSettings = {
 };
 
 const initialCustomMods: CustomModItem[] = [
-  { id: '1', name: "Xaero's Minimap", filename: 'Xaeros_Minimap_24.2.0_NeoForge_1.21.1.jar', size: 1420000, enabled: true },
-  { id: '2', name: 'Jade (WAILA Tooltips)', filename: 'Jade-1.21.1-NeoForge-15.1.0.jar', size: 680000, enabled: true },
+  {
+    id: 'test-1',
+    name: 'Embeddium',
+    filename: 'embeddium-0.3.31+mc1.21.1.jar',
+    size: 3450000,
+    enabled: true,
+    safetyStatus: 'approved',
+    safetyReason: 'Одобрен • Modrinth (безопасный клиентский мод)',
+    categories: ['optimization', 'shaders'],
+    projectUrl: 'https://modrinth.com/mod/embeddium',
+    iconUrl: 'https://cdn.modrinth.com/data/sk9gg7Kq/icon.png',
+    description: 'Оптимизация рендеринга мира и повышение частоты кадров',
+  },
+  {
+    id: 'test-2',
+    name: 'Sound Physics Remastered',
+    filename: 'soundphysics-neoforge-1.21.1-1.4.6.jar',
+    size: 2100000,
+    enabled: true,
+    safetyStatus: 'approved',
+    safetyReason: 'Одобрен администрацией сервера (Вайтлист)',
+    categories: ['audio', 'graphics'],
+    projectUrl: 'https://modrinth.com/mod/sound-physics-remastered',
+    iconUrl: 'https://cdn.modrinth.com/data/qyVF9oeo/icon.png',
+    description: 'Реалистичная акустика, эхо в пещерах и затухание звука',
+  },
+  {
+    id: 'test-3',
+    name: 'Simple Voice Chat',
+    filename: 'voicechat-neoforge-1.21.1-2.5.18.jar',
+    size: 4200000,
+    enabled: false,
+    hashSha1: '7fa52e8964b10b0a8813bc6218d8442e97da60f1',
+    safetyStatus: 'unverified',
+    safetyReason: 'Мод не найден в публичном каталоге. Доступен запрос на одобрение.',
+    categories: ['voice', 'utility'],
+    iconUrl: 'https://cdn.modrinth.com/data/9eGKb6K1/icon.png',
+    description: 'Позиционный 3D голосовой чат для общения на сервере',
+  },
+  {
+    id: 'test-4',
+    name: 'X-Ray Ultimate Plus',
+    filename: 'XRay-Ultimate-1.21.1-cheat.jar',
+    size: 890000,
+    enabled: false,
+    safetyStatus: 'blocked',
+    safetyReason: 'Запрещен: содержит сигнатуры читов/рентгена руд (xray)',
+    categories: ['cheat', 'xray'],
+    description: 'Запрещенный чит-мод для поиска скрытых руд сквозь стены',
+  },
+  {
+    id: 'test-5',
+    name: 'Memory Leak Fix',
+    filename: 'memoryleakfix-neoforge-1.21.1-1.1.5.jar',
+    size: 1100000,
+    enabled: false,
+    safetyStatus: 'checking',
+    safetyReason: 'Проверка по каталогу Modrinth...',
+    iconUrl: 'https://cdn.modrinth.com/data/NRjSnAWE/icon.png',
+    description: 'Автоматическое устранение утечек оперативной памяти в игре',
+  },
+  {
+    id: 'test-6',
+    name: 'Jade (WAILA Tooltips)',
+    filename: 'Jade-1.21.1-NeoForge-15.1.0.jar',
+    size: 680000,
+    enabled: true,
+    safetyStatus: 'approved',
+    safetyReason: 'Одобрен • Modrinth (безопасный клиентский мод)',
+    categories: ['interface'],
+    projectUrl: 'https://modrinth.com/mod/jade',
+    iconUrl: 'https://cdn.modrinth.com/data/nvQzSEkH/icon.png',
+    description: 'Информативные всплывающие подсказки на блоках и мобах',
+  },
 ];
 
 export const App: React.FC = () => {
@@ -218,6 +290,7 @@ export const App: React.FC = () => {
       }
     } else if (activeTab === 'mods') {
       setSavedCustomMods(draftCustomMods);
+      setSelectedModIds([]);
     } else if (activeTab === 'settings') {
       setSavedSettings(draftSettings);
       if (window.quibyApi) {
@@ -235,6 +308,7 @@ export const App: React.FC = () => {
       setDraftDefaultSkinIdx(savedDefaultSkinIdx);
     } else if (activeTab === 'mods') {
       setDraftCustomMods(savedCustomMods);
+      setSelectedModIds([]);
     } else if (activeTab === 'settings') {
       setDraftSettings(savedSettings);
     }
@@ -346,10 +420,19 @@ export const App: React.FC = () => {
           activeTab === 'mods' && selectedModIds.length > 0
             ? {
                 count: selectedModIds.length,
+                totalCount: draftCustomMods.length,
+                isAllSelected: draftCustomMods.length > 0 && selectedModIds.length === draftCustomMods.length,
+                onSelectAll: () => {
+                  if (selectedModIds.length === draftCustomMods.length) {
+                    setSelectedModIds([]);
+                  } else {
+                    setSelectedModIds(draftCustomMods.map((m) => m.id));
+                  }
+                },
                 onEnableAll: () => {
                   setDraftCustomMods((prev) =>
                     prev.map((m) =>
-                      selectedModIds.includes(m.id) && m.safetyStatus !== 'blocked'
+                      selectedModIds.includes(m.id) && m.safetyStatus === 'approved'
                         ? { ...m, enabled: true }
                         : m
                     )

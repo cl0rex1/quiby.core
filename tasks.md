@@ -270,14 +270,85 @@
   - [x] Added clean top-level `+ Добавить мод (.jar)` button and segment tabs (`Официальные моды` / `Мои моды`)
   - [x] Verified all 50 automated tests passing and completed production build
 
-- [x] **Stage 39: Enlarged Toggle Controls, Batch Selection Mode & Metaball Dual-Pod Split Animation**
+- [x] **Stage 39: Enlarged Toggle Controls, Batch Selection Mode & Custom Mod Badges**
   - [x] Enlarged toggle switches to 32px with comfortable tap targets and smoother hover physics
   - [x] Added multi-selection mode in `ModsView` with card selection checkboxes and "Выбрать все / Снять выбор" controls
-  - [x] Implemented organic Metaball Dual-Pod division physics in `FloatingActionDeck`:
-    - When saving with selected items, deck splits into two distinct capsules (Save Pod & Batch Actions Pod)
-    - Save Pod plays emerald checkmark zoom and slide-down exit
-    - Batch Actions Pod smoothly translates into the primary dock position
   - [x] Verified all 50 automated tests passing and completed production build
+
+- [x] **Stage 40: Unified Expanding Action Deck & Vertical Divider Layout**
+  - [x] Tested and prototyped unified expanding capsule layout with internal vertical divider `|`
+  - [x] Verified all 50 automated tests passing and completed production build
+
+- [x] **Stage 41: Dedicated Center-Bottom Actions Deck & Restored Signature Corner Save Deck**
+  - [x] Positioned Batch Actions Deck cleanly in the bottom-center (`fixed bottom-8 left-1/2 -translate-x-1/2`) with smooth slide-up entry and scale transitions
+  - [x] Restored classic signature Save & Cancel Deck in the bottom-right corner (`fixed bottom-8 right-8`):
+    - Smooth emerald green fill with centered scaling checkmark `[ ✓ ]`
+    - 1-second hold followed by fluid slide-down exit
+    - Red shake protection guard on unsaved tab switches
+  - [x] Verified complete 50-test suite passing and completed production build
+
+- [x] **Stage 42: Harmonized Sizing and Geometry for Actions Deck and Save Deck**
+  - [x] Calibrated Actions Deck to exact matching height (`h-[52px]`), padding (`p-1.5`), and button heights (`h-10`) as the Save Deck
+  - [x] Styled circular 40px action buttons and count badge for pixel-perfect visual balance
+  - [x] Verified complete 50-test suite passing and completed production build
+
+- [x] **Stage 43: Smooth Exit Physics for Actions Deck with Cached State Snapshot**
+  - [x] Resolved unmount pop by caching batch actions during transition lifecycle
+  - [x] Engineered continuous slide-down (`translate-y-8`), scale (`scale-95`), and motion blur (`blur-[2px]`) exit animation with `cubic-bezier(0.16,1,0.3,1)`
+  - [x] Verified complete 50-test suite passing and completed production build
+
+- [x] **Stage 44: Synchronized Selection Reset on Save & Dedicated Select-All Controls**
+  - [x] Wired automatic selection reset (`selectedModIds = []`) on "Сохранить" and "Отменить", triggering smooth simultaneous slide-down dismissal of both windows
+  - [x] Enhanced the "Выбрать все" / "Снять выбор" button in `ModsView` tab bar with prominent pill styling and counts
+  - [x] Made the batch count badge in `FloatingActionDeck` interactive to toggle selection across all mods with 1 click
+  - [x] Verified complete 50-test suite passing and completed production build
+
+- [x] **Stage 45: Layered Switcher Mode & Complete Multi-Badge Test Showcase**
+  - [x] Seeded rich test mods showcasing all 5 security and status badges:
+    - 🟢 **Одобрен • Modrinth** (Embeddium, Jade)
+    - 🟢 **Одобрен • Вайтлист** (Sound Physics Remastered)
+    - 🟡 **Не в каталоге (Запрос в вайтлист)** (Simple Voice Chat)
+    - 🔴 **Запрещен (Чит)** (X-Ray Ultimate Plus)
+    - ⏳ **Проверка...** (Memory Leak Fix)
+  - [x] Verified complete 50-test suite passing and completed production build
+
+- [x] **Stage 46: Text Layer Switcher, Subtle Minimalist Badges & Discord Whitelist Channel Redirect**
+  - [x] Built tactile sliding capsule switcher with clear text (`Сборка` vs `Мои моды`)
+  - [x] Redesigned badges into calm, non-intrusive status dots (`• Проверен`, `• Вайтлист`, `• Не в каталоге`, `• Запрещен`, `• Проверка`)
+  - [x] Linked whitelist requests directly to Discord channel (`https://discord.com/channels/1093897814712520734/1186665851991109732`)
+  - [x] Verified complete 50-test suite passing and completed clean production build
+
+- [x] **Stage 47: Sliding Pill Background Switcher & Clean 'Запросить доступ' Action**
+  - [x] Engineered continuous sliding background thumb (`absolute bg-zinc-800 border-white/15`) gliding with `cubic-bezier(0.16,1,0.3,1)` behind the tab labels
+  - [x] Renamed unverified mod action label to concise **«Запросить доступ»** with direct Discord channel redirection
+  - [x] Verified complete 50-test suite passing and completed clean production build
+
+- [x] **Stage 48: Security Toggle Locking & Instant Cheat Auto-Scanner**
+  - [x] Locked mod activation switches (`disabled`, `opacity-25`, `cursor-not-allowed`) for all non-approved mods (`blocked`, `unverified`, `checking`) with explanatory tooltips
+  - [x] Built client-side and server-side fast keyword scanner detecting 35+ cheat signatures (`xray`, `baritone`, `meteor`, `wurst`, `autoclicker`, `esp`, `freecam`, `flyhack`, `killaura`, etc.)
+  - [x] Added `modVerifier.test.ts` test suite; 61 / 61 monorepo tests passing with 0 errors
+
+- [x] **Stage 49: Sidebar Icon Centering, Clean Segmented Switcher & 1-Click Discord Auto-Template**
+  - [x] Calibrated sidebar geometry to exact 36px central axis for all icons, brand logo, and profile avatars (48px fixed icon slots inside 72px rail)
+  - [x] Redesigned mods layer switcher into clean, modern segmented buttons (`Сборка` vs `Мои моды`) without awkward sliding layer overlaps
+  - [x] Verified complete 61-test suite passing and completed clean production build
+
+- [x] **Stage 50: Custom In-App Whitelist Submission Modal & Discord Bot Forwarding**
+  - [x] Removed clipboard auto-copy mechanism in favor of a native in-launcher modal dialog (`ModWhitelistModal.tsx`)
+  - [x] Form fields: Pre-filled Mod name, file, SHA-1, applicant player username, mandatory purpose/reason textarea, optional project URL, and anti-cheat compliance checkbox
+  - [x] Connected backend `/api/mods/whitelist-request` to forward structured Rich Embeds directly to Discord moderation channel
+  - [x] Verified complete 61-test suite passing and completed clean production build
+
+
+
+
+
+
+
+
+
+
+
 
 
 

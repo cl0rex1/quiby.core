@@ -14,6 +14,59 @@ export interface ModVerificationResult {
   description?: string;
 }
 
+// Longest / most specific keywords first to avoid premature generic matches
+export const CHEAT_KEYWORDS = [
+  'liquidbounce',
+  'cheststealer',
+  'auto-clicker',
+  'autoclicker',
+  'seedcracker',
+  'cavefinder',
+  'orefinder',
+  'bleachhack',
+  'duplication',
+  'speedhack',
+  'auto-fish',
+  'kill-aura',
+  'aristois',
+  'baritone',
+  'killaura',
+  'autofish',
+  'freecam',
+  'flyhack',
+  'griefing',
+  'meteor',
+  'cheats',
+  'aimbot',
+  'inertia',
+  'impact',
+  'x-ray',
+  'x_ray',
+  'cheat',
+  'hacks',
+  'grief',
+  'wurst',
+  'nuker',
+  'xray',
+  'hack',
+  'dupe',
+  'bot',
+  'esp',
+];
+
+/**
+ * Fast client-side scan for cheat keywords in filename or mod title.
+ */
+export function quickScanForCheatSignatures(filename: string, name: string): { isCheat: boolean; signature?: string } {
+  const lower = (filename + ' ' + name).toLowerCase();
+  for (const kw of CHEAT_KEYWORDS) {
+    if (lower.includes(kw)) {
+      return { isCheat: true, signature: kw };
+    }
+  }
+  return { isCheat: false };
+}
+
 /**
  * Computes SHA-1 hash of a File object using browser Web Cryptography API.
  */
@@ -32,6 +85,24 @@ export async function verifyCustomMod(
   serverUrl = 'http://localhost:3001'
 ): Promise<ModVerificationResult> {
   const hashSha1 = await computeFileSha1(file);
+  const rawName = file.name.replace('.jar', '');
+
+  // 1. Fast client-side cheat signature check
+  const localScan = quickScanForCheatSignatures(file.name, rawName);
+  if (localScan.isCheat) {
+    return {
+      hashSha1,
+      name: rawName,
+      filename: file.name,
+      isAllowed: false,
+      status: 'blocked',
+      source: 'none',
+      reason: `Запрещен античитом: обнаружена сигнатура читов (${localScan.signature})`,
+      categories: ['cheat', localScan.signature!],
+    };
+  }
+
+  // 2. Server-side verification & Modrinth catalog lookup
   try {
     const res = await fetch(`${serverUrl}/api/mods/verify`, {
       method: 'POST',
@@ -39,7 +110,7 @@ export async function verifyCustomMod(
       body: JSON.stringify({
         mods: [
           {
-            name: file.name.replace('.jar', ''),
+            name: rawName,
             filename: file.name,
             hash_sha1: hashSha1,
             size: file.size,
@@ -62,24 +133,24 @@ export async function verifyCustomMod(
   // Fallback unverified status
   return {
     hashSha1,
-    name: file.name.replace('.jar', ''),
+    name: rawName,
     filename: file.name,
     isAllowed: false,
     status: 'unverified',
     source: 'none',
-    reason: 'Мод ожидает проверки в вайтлисте или не найден на Modrinth',
+    reason: 'Мод не найден в каталоге Modrinth. Доступен запрос доступа.',
     categories: ['unverified'],
   };
 }
 
 /**
- * Submits an unverified mod to the server whitelist queue.
+ * Submits an unverified mod to the server whitelist queue and Discord bot channel.
  */
 export async function submitModWhitelistRequest(
   mod: { name: string; filename: string; hashSha1: string },
   session: any,
-  reason?: string,
-  serverUrl = 'http://localhost:3001'
+  serverUrl = 'http://localhost:3001',
+  extra?: { mc_username?: string; reason?: string; project_url?: string }
 ): Promise<{ success: boolean; message: string }> {
   try {
     const res = await fetch(`${serverUrl}/api/mods/whitelist-request`, {
@@ -87,16 +158,24 @@ export async function submitModWhitelistRequest(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         user_discord_id: session?.user?.discordId,
-        mc_username: session?.user?.mcUsername || 'Player',
+        mc_username: extra?.mc_username || session?.user?.mcUsername || 'Player',
         mod_name: mod.name,
         filename: mod.filename,
         hash_sha1: mod.hashSha1,
-        reason: reason || 'Запрос от игрока через интерфейс модов лаунчера',
+        reason: extra?.reason || 'Запрос от игрока через форму лаунчера',
+        project_url: extra?.project_url,
       }),
       signal: AbortSignal.timeout(6000),
     });
 
-    return await res.json();
+    if (res.ok) {
+      return await res.json();
+    }
+    const errData = await res.json().catch(() => ({}));
+    return {
+      success: false,
+      message: errData.error || 'Ошибка при отправке заявки',
+    };
   } catch (e: any) {
     return {
       success: false,
