@@ -270,6 +270,16 @@
   - [x] Added clean top-level `+ Добавить мод (.jar)` button and segment tabs (`Официальные моды` / `Мои моды`)
   - [x] Verified all 50 automated tests passing and completed production build
 
+- [x] **Stage 39: Enlarged Toggle Controls, Batch Selection Mode & Metaball Dual-Pod Split Animation**
+  - [x] Enlarged toggle switches to 32px with comfortable tap targets and smoother hover physics
+  - [x] Added multi-selection mode in `ModsView` with card selection checkboxes and "Выбрать все / Снять выбор" controls
+  - [x] Implemented organic Metaball Dual-Pod division physics in `FloatingActionDeck`:
+    - When saving with selected items, deck splits into two distinct capsules (Save Pod & Batch Actions Pod)
+    - Save Pod plays emerald checkmark zoom and slide-down exit
+    - Batch Actions Pod smoothly translates into the primary dock position
+  - [x] Verified all 50 automated tests passing and completed production build
+
+
 
 
 

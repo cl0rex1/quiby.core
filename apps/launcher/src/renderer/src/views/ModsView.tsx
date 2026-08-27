@@ -13,11 +13,13 @@ import {
   Check,
   Upload,
   X,
-  Send
+  Send,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import { ModpackManifest, AuthSession } from '@quiby/shared';
 import { verifyCustomMod, submitModWhitelistRequest } from '../utils/modVerifier';
-import { resolveModMetadata, ModMetadata } from '../utils/knownMods';
+import { resolveModMetadata } from '../utils/knownMods';
 
 export interface CustomModItem {
   id: string;
@@ -39,6 +41,8 @@ interface ModsViewProps {
   gameDir: string;
   customMods: CustomModItem[];
   session?: AuthSession | null;
+  selectedModIds: string[];
+  onUpdateSelectedModIds: (ids: string[]) => void;
   onUpdateCustomMods: (mods: CustomModItem[]) => void;
 }
 
@@ -49,6 +53,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
   gameDir,
   customMods,
   session,
+  selectedModIds,
+  onUpdateSelectedModIds,
   onUpdateCustomMods,
 }) => {
   const [tab, setTab] = useState<TabType>('official');
@@ -127,6 +133,22 @@ export const ModsView: React.FC<ModsViewProps> = ({
       m.filename.toLowerCase().includes(search.toLowerCase())
   );
 
+  const toggleSelectMod = (id: string) => {
+    if (selectedModIds.includes(id)) {
+      onUpdateSelectedModIds(selectedModIds.filter((item) => item !== id));
+    } else {
+      onUpdateSelectedModIds([...selectedModIds, id]);
+    }
+  };
+
+  const handleSelectAllCustom = () => {
+    if (selectedModIds.length === filteredCustom.length) {
+      onUpdateSelectedModIds([]);
+    } else {
+      onUpdateSelectedModIds(filteredCustom.map((m) => m.id));
+    }
+  };
+
   const toggleCustomMod = (id: string) => {
     const target = customMods.find((m) => m.id === id);
     if (target?.safetyStatus === 'blocked') return;
@@ -141,6 +163,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
     e.stopPropagation();
     const updated = customMods.filter((m) => m.id !== id);
     onUpdateCustomMods(updated);
+    onUpdateSelectedModIds(selectedModIds.filter((item) => item !== id));
   };
 
   const handleAddCustomModFile = async (file: File) => {
@@ -226,6 +249,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
     return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
   };
 
+  const isAllSelected = filteredCustom.length > 0 && selectedModIds.length === filteredCustom.length;
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden p-6 md:p-8 space-y-5 select-none z-10 relative">
       {/* Full-Window Drag & Drop Overlay */}
@@ -256,7 +281,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
         {/* Action Buttons: Add Mod & Open Folder */}
         <div className="flex items-center gap-2.5">
           <label className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95">
-            <Plus size={15} className="stroke-[2.5]" />
+            <Plus size={16} className="stroke-[2.5]" />
             <span>Добавить мод (.jar)</span>
             <input
               type="file"
@@ -281,31 +306,48 @@ export const ModsView: React.FC<ModsViewProps> = ({
         </div>
       </div>
 
-      {/* Search & Tab Switcher Bar */}
+      {/* Search, Tab Switcher & Batch Selection Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-        {/* Clean Segment Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-950/60 border border-white/5 w-full sm:w-auto">
-          <button
-            onClick={() => setTab('official')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              tab === 'official'
-                ? 'bg-zinc-800 text-white shadow-sm border border-white/10'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            Официальные моды ({officialFiles.length})
-          </button>
-          <button
-            onClick={() => setTab('custom')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-              tab === 'custom'
-                ? 'bg-zinc-800 text-white shadow-sm border border-white/10'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <span>Мои моды ({customMods.length})</span>
-            {isVerifying && <Loader2 size={11} className="animate-spin text-zinc-400" />}
-          </button>
+        {/* Clean Segment Tabs & Select-All button */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-950/60 border border-white/5">
+            <button
+              onClick={() => setTab('official')}
+              className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                tab === 'official'
+                  ? 'bg-zinc-800 text-white shadow-sm border border-white/10'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Официальные моды ({officialFiles.length})
+            </button>
+            <button
+              onClick={() => setTab('custom')}
+              className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                tab === 'custom'
+                  ? 'bg-zinc-800 text-white shadow-sm border border-white/10'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <span>Мои моды ({customMods.length})</span>
+              {isVerifying && <Loader2 size={11} className="animate-spin text-zinc-400" />}
+            </button>
+          </div>
+
+          {/* Select All Toggle for Custom Mods */}
+          {tab === 'custom' && filteredCustom.length > 0 && (
+            <button
+              onClick={handleSelectAllCustom}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                isAllSelected
+                  ? 'bg-zinc-800 border-white/20 text-white'
+                  : 'bg-zinc-950/40 border-white/5 text-zinc-400 hover:text-white'
+              }`}
+            >
+              <CheckSquare size={13} className={isAllSelected ? 'text-emerald-400' : ''} />
+              <span>{isAllSelected ? 'Снять выбор' : 'Выбрать все'}</span>
+            </button>
+          )}
         </div>
 
         {/* Search Input */}
@@ -347,11 +389,11 @@ export const ModsView: React.FC<ModsViewProps> = ({
                 return (
                   <div
                     key={idx}
-                    className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-900/50 hover:bg-zinc-900/80 border border-white/5 hover:border-white/10 transition-all gap-3.5"
+                    className="flex items-center justify-between p-4 rounded-2xl bg-zinc-900/50 hover:bg-zinc-900/80 border border-white/5 hover:border-white/10 transition-all gap-3.5"
                   >
                     <div className="flex items-center gap-3.5 truncate">
                       {/* Mod Logo Icon */}
-                      <div className="w-11 h-11 rounded-2xl bg-zinc-850 border border-white/5 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                      <div className="w-12 h-12 rounded-2xl bg-zinc-850 border border-white/5 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
                         {meta.iconUrl ? (
                           <img
                             src={meta.iconUrl}
@@ -362,7 +404,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                             }}
                           />
                         ) : (
-                          <Package size={18} className="text-zinc-400" />
+                          <Package size={20} className="text-zinc-400" />
                         )}
                       </div>
 
@@ -385,7 +427,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                       </div>
                     </div>
 
-                    <span className="px-2.5 py-1 rounded-full bg-zinc-800/80 text-[10px] font-mono text-zinc-400 border border-white/5 shrink-0">
+                    <span className="px-3 py-1 rounded-full bg-zinc-800/80 text-[10px] font-mono text-zinc-400 border border-white/5 shrink-0">
                       В сборке
                     </span>
                   </div>
@@ -411,6 +453,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                 const isBlocked = mod.safetyStatus === 'blocked';
                 const isUnverified = mod.safetyStatus === 'unverified';
                 const isRequested = whitelistSuccessId === mod.id;
+                const isSelected = selectedModIds.includes(mod.id);
                 const meta = resolveModMetadata(
                   mod.name,
                   mod.filename,
@@ -421,17 +464,32 @@ export const ModsView: React.FC<ModsViewProps> = ({
                 return (
                   <div
                     key={mod.id}
-                    className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all gap-3.5 ${
-                      isBlocked
+                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all gap-3.5 ${
+                      isSelected
+                        ? 'bg-zinc-850 border-white/25 shadow-md ring-1 ring-white/10'
+                        : isBlocked
                         ? 'bg-rose-950/20 border-rose-500/20 text-rose-300'
                         : mod.enabled
                         ? 'bg-zinc-900/80 border-white/10 shadow-sm'
                         : 'bg-zinc-900/40 border-white/5 opacity-60'
                     }`}
                   >
-                    <div className="flex items-center gap-3.5 truncate">
+                    <div className="flex items-center gap-3 truncate">
+                      {/* Checkbox Selector Circle */}
+                      <button
+                        onClick={() => toggleSelectMod(mod.id)}
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-white text-black shadow-sm'
+                            : 'bg-zinc-800/80 border border-white/10 hover:border-white/30 text-transparent'
+                        }`}
+                        title={isSelected ? 'Снять выбор' : 'Выбрать мод'}
+                      >
+                        <Check size={13} className="stroke-[3]" />
+                      </button>
+
                       {/* Mod Logo */}
-                      <div className="w-11 h-11 rounded-2xl bg-zinc-850 border border-white/5 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                      <div className="w-12 h-12 rounded-2xl bg-zinc-850 border border-white/5 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
                         {meta.iconUrl ? (
                           <img
                             src={meta.iconUrl}
@@ -442,7 +500,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                             }}
                           />
                         ) : (
-                          <Package size={18} className="text-zinc-400" />
+                          <Package size={20} className="text-zinc-400" />
                         )}
                       </div>
 
@@ -460,7 +518,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                               className="text-zinc-500 hover:text-white transition-colors shrink-0"
                               title="Открыть на Modrinth"
                             >
-                              <ExternalLink size={11} />
+                              <ExternalLink size={12} />
                             </a>
                           )}
                         </div>
@@ -469,20 +527,20 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           {meta.description}
                         </p>
 
-                        <div className="flex items-center gap-2 font-mono text-[10px] text-zinc-500 truncate">
+                        <div className="flex items-center gap-2.5 font-mono text-[10px] text-zinc-500 truncate">
                           <span>{formatSize(mod.size)}</span>
                           {isUnverified && !isRequested && (
                             <button
                               onClick={(e) => handleRequestWhitelist(e, mod)}
                               className="text-amber-400 hover:underline cursor-pointer flex items-center gap-1"
                             >
-                              <Send size={9} />
+                              <Send size={10} />
                               <span>Запросить вайтлист</span>
                             </button>
                           )}
                           {isRequested && (
                             <span className="text-emerald-400 flex items-center gap-1">
-                              <Check size={10} />
+                              <Check size={11} />
                               <span>Запрос отправлен</span>
                             </span>
                           )}
@@ -490,8 +548,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Controls: Switch & Delete */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    {/* Enlarged Controls: Switch & Delete */}
+                    <div className="flex items-center gap-2.5 shrink-0">
                       <button
                         onClick={() => toggleCustomMod(mod.id)}
                         disabled={isBlocked}
@@ -501,18 +559,18 @@ export const ModsView: React.FC<ModsViewProps> = ({
                         title={isBlocked ? 'Мод заблокирован' : undefined}
                       >
                         {mod.enabled && !isBlocked ? (
-                          <ToggleRight size={26} className="text-white" />
+                          <ToggleRight size={32} className="text-white" />
                         ) : (
-                          <ToggleLeft size={26} className="text-zinc-600" />
+                          <ToggleLeft size={32} className="text-zinc-600" />
                         )}
                       </button>
 
                       <button
                         onClick={(e) => handleDeleteCustomMod(e, mod.id)}
-                        className="p-1.5 rounded-xl text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 transition-colors cursor-pointer"
+                        className="p-2 rounded-xl text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 transition-colors cursor-pointer"
                         title="Удалить мод"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </div>

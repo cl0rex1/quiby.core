@@ -48,6 +48,7 @@ export const App: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [launchState, setLaunchState] = useState<LaunchState>({ status: 'idle' });
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
+  const [selectedModIds, setSelectedModIds] = useState<string[]>([]);
 
   // 1. Saved vs Draft Settings State
   const [savedSettings, setSavedSettings] = useState<LauncherSettings>(defaultSettings);
@@ -319,6 +320,8 @@ export const App: React.FC = () => {
             gameDir={draftSettings.gameDir}
             customMods={draftCustomMods}
             session={session}
+            selectedModIds={selectedModIds}
+            onUpdateSelectedModIds={setSelectedModIds}
             onUpdateCustomMods={setDraftCustomMods}
           />
         )}
@@ -331,7 +334,7 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* 3. Floating Action Deck (Play on Home / Save & Cancel on other tabs with shake guard) */}
+      {/* 3. Floating Action Deck (Play on Home / Save & Cancel on other tabs / Batch Actions with Metaball Split) */}
       <FloatingActionDeck
         activeTab={activeTab}
         session={session}
@@ -339,6 +342,38 @@ export const App: React.FC = () => {
         downloadProgress={downloadProgress}
         hasUnsavedChanges={hasUnsavedChanges}
         isShaking={isShaking}
+        batchActions={
+          activeTab === 'mods' && selectedModIds.length > 0
+            ? {
+                count: selectedModIds.length,
+                onEnableAll: () => {
+                  setDraftCustomMods((prev) =>
+                    prev.map((m) =>
+                      selectedModIds.includes(m.id) && m.safetyStatus !== 'blocked'
+                        ? { ...m, enabled: true }
+                        : m
+                    )
+                  );
+                },
+                onDisableAll: () => {
+                  setDraftCustomMods((prev) =>
+                    prev.map((m) =>
+                      selectedModIds.includes(m.id) ? { ...m, enabled: false } : m
+                    )
+                  );
+                },
+                onDeleteAll: () => {
+                  setDraftCustomMods((prev) =>
+                    prev.filter((m) => !selectedModIds.includes(m.id))
+                  );
+                  setSelectedModIds([]);
+                },
+                onClear: () => {
+                  setSelectedModIds([]);
+                },
+              }
+            : null
+        }
         onLaunch={handleLaunchGame}
         onKill={handleKillGame}
         onOpenLogin={() => setIsAuthModalOpen(true)}
