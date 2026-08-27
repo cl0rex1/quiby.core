@@ -9,6 +9,7 @@ import { FloatingActionDeck } from './components/FloatingActionDeck';
 import { DiscordAuthModal } from './components/DiscordAuthModal';
 import { FloatingNotificationToast, ToastData } from './components/FloatingNotificationToast';
 import { NotificationsModal, NotificationItem } from './components/NotificationsModal';
+import { NotificationDetailView } from './views/NotificationDetailView';
 import { CAPE_PRESETS, CapePreset } from './utils/chibiRenderer';
 import { 
   AuthSession, 
@@ -125,24 +126,26 @@ export const App: React.FC = () => {
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [selectedModIds, setSelectedModIds] = useState<string[]>([]);
 
-  // Notifications State
+  // Notifications State (Morphing Email-Like Inbox)
   const [notifications, setNotifications] = useState<NotificationItem[]>([
     {
       id: 'notif-1',
       title: 'Quiby Core готов к запуску',
-      message: 'Сезон VI запущен. Приятной игры на сервере!',
+      message: 'Сезон VI запущен. Все моды и оптимизации готовы к игре на сервере!',
       type: 'info',
       timestamp: Date.now() - 1000 * 60 * 10,
       read: false,
     },
   ]);
+  const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>('notif-1');
   const [activeToast, setActiveToast] = useState<ToastData | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const handleNotify = (
     title: string,
     message?: string,
-    type: 'success' | 'info' | 'warning' | 'error' = 'success'
+    type: 'success' | 'info' | 'warning' | 'error' = 'success',
+    modInfo?: NotificationItem['modInfo']
   ) => {
     const newNotif: NotificationItem = {
       id: 'notif-' + Date.now(),
@@ -151,8 +154,10 @@ export const App: React.FC = () => {
       type,
       timestamp: Date.now(),
       read: false,
+      modInfo,
     };
     setNotifications((prev) => [newNotif, ...prev]);
+    setSelectedNotificationId(newNotif.id);
     setActiveToast({
       id: newNotif.id,
       title,
@@ -408,123 +413,175 @@ export const App: React.FC = () => {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.03)_0%,transparent_60%)] pointer-events-none" />
       <div className="absolute bottom-0 left-1/3 w-[500px] h-[300px] bg-white/[0.015] rounded-full blur-[140px] pointer-events-none" />
 
-      {/* 1. Interactive Expandable Minimal Sidebar */}
+      {/* 1. Interactive Expandable Minimal Sidebar & Morphing Email-Like Inbox Drawer */}
       <MinimalSidebar
         activeTab={activeTab}
-        onSelectTab={handleSelectTab}
+        onSelectTab={(tab) => {
+          setIsNotificationsOpen(false);
+          handleSelectTab(tab);
+        }}
         session={session}
         onOpenProfile={() => setIsAuthModalOpen(true)}
-        onOpenNotifications={() => setIsNotificationsOpen(true)}
+        isNotificationsOpen={isNotificationsOpen}
+        onOpenNotifications={() => {
+          setIsNotificationsOpen(true);
+          if (!selectedNotificationId && notifications.length > 0) {
+            setSelectedNotificationId(notifications[0].id);
+          }
+        }}
+        onCloseNotifications={() => setIsNotificationsOpen(false)}
+        notifications={notifications}
+        selectedNotificationId={selectedNotificationId}
+        onSelectNotification={(id) => {
+          setSelectedNotificationId(id);
+          setNotifications((prev) =>
+            prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+          );
+        }}
+        onMarkAllNotificationsRead={() =>
+          setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+        }
+        onClearAllNotifications={() => {
+          setNotifications([]);
+          setSelectedNotificationId(null);
+        }}
         unreadNotificationsCount={notifications.filter((n) => !n.read).length}
       />
 
-      {/* 2. Main View Content (Offset for 72px sidebar rail) */}
-      <main className="flex-1 flex flex-col overflow-hidden relative pl-[72px]">
-        {activeTab === 'home' && (
-          <CharacterStage
-            session={session}
-            serverStatus={serverStatus}
-            serverIp={savedSettings.serverIp}
-            customSkinImg={savedSkinImg}
-            customSkinName={savedSkinName}
-            activeDefaultSkinIdx={savedDefaultSkinIdx}
-            selectedCape={savedCape}
-            onOpenWardrobe={() => handleSelectTab('wardrobe')}
-            onOpenLogin={() => setIsAuthModalOpen(true)}
-          />
-        )}
-
-        {activeTab === 'wardrobe' && (
-          <SkinWardrobeView
-            customSkinImg={draftSkinImg}
-            customSkinName={draftSkinName}
-            activeDefaultSkinIdx={draftDefaultSkinIdx}
-            selectedCape={draftCape}
-            onSetCustomSkin={(img, name) => {
-              setDraftSkinImg(img);
-              setDraftSkinName(name);
+      {/* 2. Main View Content (Offset for 72px rail or 310px expanded notification inbox) */}
+      <main
+        className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isNotificationsOpen ? 'pl-[310px]' : 'pl-[72px]'
+        }`}
+      >
+        {isNotificationsOpen ? (
+          <NotificationDetailView
+            notification={
+              notifications.find((n) => n.id === selectedNotificationId) || null
+            }
+            onDeleteNotification={(id) => {
+              const remaining = notifications.filter((n) => n.id !== id);
+              setNotifications(remaining);
+              if (selectedNotificationId === id) {
+                setSelectedNotificationId(remaining[0]?.id || null);
+              }
             }}
-            onSetDefaultSkinIdx={setDraftDefaultSkinIdx}
-            onSelectCape={setDraftCape}
+            onNavigateToMods={() => {
+              setIsNotificationsOpen(false);
+              setActiveTab('mods');
+            }}
           />
-        )}
+        ) : (
+          <>
+            {activeTab === 'home' && (
+              <CharacterStage
+                session={session}
+                serverStatus={serverStatus}
+                serverIp={savedSettings.serverIp}
+                customSkinImg={savedSkinImg}
+                customSkinName={savedSkinName}
+                activeDefaultSkinIdx={savedDefaultSkinIdx}
+                selectedCape={savedCape}
+                onOpenWardrobe={() => handleSelectTab('wardrobe')}
+                onOpenLogin={() => setIsAuthModalOpen(true)}
+              />
+            )}
 
-        {activeTab === 'mods' && (
-          <ModsView
-            manifest={manifest}
-            gameDir={draftSettings.gameDir}
-            customMods={draftCustomMods}
-            session={session}
-            selectedModIds={selectedModIds}
-            onUpdateSelectedModIds={setSelectedModIds}
-            onUpdateCustomMods={handleUpdateCustomMods}
-            onNotify={handleNotify}
-          />
-        )}
+            {activeTab === 'wardrobe' && (
+              <SkinWardrobeView
+                customSkinImg={draftSkinImg}
+                customSkinName={draftSkinName}
+                activeDefaultSkinIdx={draftDefaultSkinIdx}
+                selectedCape={draftCape}
+                onSetCustomSkin={(img, name) => {
+                  setDraftSkinImg(img);
+                  setDraftSkinName(name);
+                }}
+                onSetDefaultSkinIdx={setDraftDefaultSkinIdx}
+                onSelectCape={setDraftCape}
+              />
+            )}
 
-        {activeTab === 'settings' && (
-          <SettingsView
-            settings={draftSettings}
-            onUpdateSettings={setDraftSettings}
-          />
+            {activeTab === 'mods' && (
+              <ModsView
+                manifest={manifest}
+                gameDir={draftSettings.gameDir}
+                customMods={draftCustomMods}
+                session={session}
+                selectedModIds={selectedModIds}
+                onUpdateSelectedModIds={setSelectedModIds}
+                onUpdateCustomMods={handleUpdateCustomMods}
+                onNotify={handleNotify}
+              />
+            )}
+
+            {activeTab === 'settings' && (
+              <SettingsView
+                settings={draftSettings}
+                onUpdateSettings={setDraftSettings}
+              />
+            )}
+          </>
         )}
       </main>
 
       {/* 3. Floating Action Deck (Play on Home / Save & Cancel on other tabs / Batch Actions with Metaball Split) */}
-      <FloatingActionDeck
-        activeTab={activeTab}
-        session={session}
-        launchState={launchState}
-        downloadProgress={downloadProgress}
-        hasUnsavedChanges={hasUnsavedChanges}
-        isShaking={isShaking}
-        batchActions={
-          activeTab === 'mods' && selectedModIds.length > 0
-            ? {
-                count: selectedModIds.length,
-                totalCount: draftCustomMods.length,
-                isAllSelected: draftCustomMods.length > 0 && selectedModIds.length === draftCustomMods.length,
-                onSelectAll: () => {
-                  if (selectedModIds.length === draftCustomMods.length) {
+      {!isNotificationsOpen && (
+        <FloatingActionDeck
+          activeTab={activeTab}
+          session={session}
+          launchState={launchState}
+          downloadProgress={downloadProgress}
+          hasUnsavedChanges={hasUnsavedChanges}
+          isShaking={isShaking}
+          batchActions={
+            activeTab === 'mods' && selectedModIds.length > 0
+              ? {
+                  count: selectedModIds.length,
+                  totalCount: draftCustomMods.length,
+                  isAllSelected: draftCustomMods.length > 0 && selectedModIds.length === draftCustomMods.length,
+                  onSelectAll: () => {
+                    if (selectedModIds.length === draftCustomMods.length) {
+                      setSelectedModIds([]);
+                    } else {
+                      setSelectedModIds(draftCustomMods.map((m) => m.id));
+                    }
+                  },
+                  onEnableAll: () => {
+                    setDraftCustomMods((prev) =>
+                      prev.map((m) =>
+                        selectedModIds.includes(m.id) && m.safetyStatus === 'approved'
+                          ? { ...m, enabled: true }
+                          : m
+                      )
+                    );
+                  },
+                  onDisableAll: () => {
+                    setDraftCustomMods((prev) =>
+                      prev.map((m) =>
+                        selectedModIds.includes(m.id) ? { ...m, enabled: false } : m
+                      )
+                    );
+                  },
+                  onDeleteAll: () => {
+                    setDraftCustomMods((prev) =>
+                      prev.filter((m) => !selectedModIds.includes(m.id))
+                    );
                     setSelectedModIds([]);
-                  } else {
-                    setSelectedModIds(draftCustomMods.map((m) => m.id));
-                  }
-                },
-                onEnableAll: () => {
-                  setDraftCustomMods((prev) =>
-                    prev.map((m) =>
-                      selectedModIds.includes(m.id) && m.safetyStatus === 'approved'
-                        ? { ...m, enabled: true }
-                        : m
-                    )
-                  );
-                },
-                onDisableAll: () => {
-                  setDraftCustomMods((prev) =>
-                    prev.map((m) =>
-                      selectedModIds.includes(m.id) ? { ...m, enabled: false } : m
-                    )
-                  );
-                },
-                onDeleteAll: () => {
-                  setDraftCustomMods((prev) =>
-                    prev.filter((m) => !selectedModIds.includes(m.id))
-                  );
-                  setSelectedModIds([]);
-                },
-                onClear: () => {
-                  setSelectedModIds([]);
-                },
-              }
-            : null
-        }
-        onLaunch={handleLaunchGame}
-        onKill={handleKillGame}
-        onOpenLogin={() => setIsAuthModalOpen(true)}
-        onSave={handleSaveCurrentTab}
-        onCancel={handleCancelCurrentTab}
-      />
+                  },
+                  onClear: () => {
+                    setSelectedModIds([]);
+                  },
+                }
+              : null
+          }
+          onLaunch={handleLaunchGame}
+          onKill={handleKillGame}
+          onOpenLogin={() => setIsAuthModalOpen(true)}
+          onSave={handleSaveCurrentTab}
+          onCancel={handleCancelCurrentTab}
+        />
+      )}
 
       {/* 4. Floating Bottom Notification Toast (Same placement as action deck) */}
       <FloatingNotificationToast
@@ -532,19 +589,7 @@ export const App: React.FC = () => {
         onDismiss={() => setActiveToast(null)}
       />
 
-      {/* 5. Notifications Drawer Modal */}
-      <NotificationsModal
-        isOpen={isNotificationsOpen}
-        onClose={() => {
-          setIsNotificationsOpen(false);
-          setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        }}
-        notifications={notifications}
-        onClearAll={() => setNotifications([])}
-        onMarkAllRead={() => setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))}
-      />
-
-      {/* 6. Discord Auth Modal */}
+      {/* 5. Discord Auth Modal */}
       <DiscordAuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}

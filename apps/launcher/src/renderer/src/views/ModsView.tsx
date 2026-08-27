@@ -35,6 +35,8 @@ export interface CustomModItem {
   description?: string;
 }
 
+import { NotificationItem } from '../components/NotificationsModal';
+
 interface ModsViewProps {
   manifest: ModpackManifest | null;
   gameDir: string;
@@ -43,7 +45,12 @@ interface ModsViewProps {
   selectedModIds: string[];
   onUpdateSelectedModIds: (ids: string[]) => void;
   onUpdateCustomMods: (mods: CustomModItem[]) => void;
-  onNotify?: (title: string, message?: string, type?: 'success' | 'info' | 'error') => void;
+  onNotify?: (
+    title: string,
+    message?: string,
+    type?: 'success' | 'info' | 'warning' | 'error',
+    modInfo?: NotificationItem['modInfo']
+  ) => void;
 }
 
 export type SwitcherMode = 'official' | 'custom';
@@ -621,6 +628,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
         mod={activeWhitelistMod}
         session={session}
         onSuccess={(modId, modName) => {
+          const modItem = customMods.find((m) => m.id === modId);
           onUpdateCustomMods(
             customMods.map((m) =>
               m.id === modId
@@ -635,8 +643,18 @@ export const ModsView: React.FC<ModsViewProps> = ({
           if (onNotify) {
             onNotify(
               `Заявка на мод «${modName}» отправлена`,
-              'Модераторы рассмотрят заявку в ближайшее время',
-              'success'
+              'Заявка на добавление мода успешно отправлена в Discord канал модерации. Модераторы проверят файл и вынесут решение.',
+              'success',
+              modItem
+                ? {
+                    name: modItem.name,
+                    filename: modItem.filename,
+                    iconUrl: modItem.iconUrl,
+                    status: 'pending',
+                    hashSha1: modItem.hashSha1,
+                    description: modItem.description,
+                  }
+                : undefined
             );
           }
         }}

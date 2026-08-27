@@ -386,6 +386,13 @@
   - [x] Configured `strokeDasharray="100 100"` with clockwise fill from top-center `(180, 1)` with 0 clipping or glitching
   - [x] Verified 63 / 63 unit tests passing and completed clean production build
 
+- [x] **Stage 59: Morphing Sidebar Email-Like Inbox & Split Master-Detail Notification System**
+  - [x] Rebuilt `MinimalSidebar` to smoothly morph into a `310px` email inbox pane with top Back navigation button, item list, unread indicators, and quick actions (Mark all read, Clear)
+  - [x] Created `NotificationDetailView` filling the right workspace with rich inspection details, mod metadata cards, antivirus verification status, SHA-1 fingerprints, and mod redirection shortcuts
+  - [x] Synchronized layout transition (`pl-[310px]` $\leftrightarrow$ `pl-[72px]`) with smooth cubic-bezier easing
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+
 
 
 
