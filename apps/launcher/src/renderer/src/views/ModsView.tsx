@@ -27,7 +27,7 @@ export interface CustomModItem {
   size: number;
   enabled: boolean;
   hashSha1?: string;
-  safetyStatus?: 'approved' | 'blocked' | 'unverified' | 'checking';
+  safetyStatus?: 'approved' | 'pending' | 'blocked' | 'unverified';
   safetyReason?: string;
   categories?: string[];
   projectUrl?: string;
@@ -43,6 +43,7 @@ interface ModsViewProps {
   selectedModIds: string[];
   onUpdateSelectedModIds: (ids: string[]) => void;
   onUpdateCustomMods: (mods: CustomModItem[]) => void;
+  onNotify?: (title: string, message?: string, type?: 'success' | 'info' | 'error') => void;
 }
 
 export type SwitcherMode = 'official' | 'custom';
@@ -55,6 +56,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
   selectedModIds,
   onUpdateSelectedModIds,
   onUpdateCustomMods,
+  onNotify,
 }) => {
   const [switcherMode, setSwitcherMode] = useState<SwitcherMode>('custom');
   const [search, setSearch] = useState('');
@@ -178,7 +180,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
       filename: file.name,
       size: file.size,
       enabled: false,
-      safetyStatus: 'checking',
+      safetyStatus: 'unverified',
       iconUrl: meta.iconUrl,
       description: meta.description,
     };
@@ -439,12 +441,11 @@ export const ModsView: React.FC<ModsViewProps> = ({
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {filteredCustom.map((mod) => {
-                const isBlocked = mod.safetyStatus === 'blocked';
+                // Exactly 4 states: approved, pending, blocked, unverified
                 const isApproved = mod.safetyStatus === 'approved';
-                const isChecking = mod.safetyStatus === 'checking';
-                const isUnverified = mod.safetyStatus === 'unverified' || (!isBlocked && !isApproved && !isChecking);
-                const isWhitelist = isApproved && (mod.safetyReason?.includes('Вайтлист') || mod.safetyReason?.includes('администрацией'));
-                const isRequested = whitelistSuccessId === mod.id;
+                const isPending = mod.safetyStatus === 'pending';
+                const isBlocked = mod.safetyStatus === 'blocked';
+                const isUnverified = !isApproved && !isPending && !isBlocked;
                 const isSelected = selectedModIds.includes(mod.id);
 
                 const meta = resolveModMetadata(
@@ -497,56 +498,40 @@ export const ModsView: React.FC<ModsViewProps> = ({
                         )}
                       </div>
 
-                      {/* Title, Subtle Minimal Badges & Description */}
+                      {/* Title, Exact 4 Status Badges & Description */}
                       <div className="truncate space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-bold text-white truncate">
                             {meta.displayName}
                           </span>
 
-                          {/* Subtle Non-Intrusive Status Dots/Labels */}
-                          {isChecking && (
-                            <span className="text-[10px] text-zinc-400 font-medium flex items-center gap-1">
-                              <Loader2 size={10} className="animate-spin text-zinc-400" />
-                              <span>Проверка</span>
-                            </span>
-                          )}
-
-                          {isApproved && !isWhitelist && (
-                            <span
-                              className="text-[10px] text-zinc-400 font-medium flex items-center gap-1.5"
-                              title={mod.safetyReason}
-                            >
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/90" />
+                          {/* 1. Проверен */}
+                          {isApproved && (
+                            <span className="text-[10px] text-zinc-400 font-medium flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                               <span>Проверен</span>
                             </span>
                           )}
 
-                          {isWhitelist && (
-                            <span
-                              className="text-[10px] text-zinc-400 font-medium flex items-center gap-1.5"
-                              title={mod.safetyReason}
-                            >
-                              <span className="w-1.5 h-1.5 rounded-full bg-teal-400/90" />
-                              <span>Вайтлист</span>
+                          {/* 2. На рассмотрении */}
+                          {isPending && (
+                            <span className="text-[10px] text-zinc-400 font-medium flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              <span>На рассмотрении</span>
                             </span>
                           )}
 
+                          {/* 3. Запрещен */}
                           {isBlocked && (
-                            <span
-                              className="text-[10px] text-rose-400/90 font-medium flex items-center gap-1.5"
-                              title={mod.safetyReason}
-                            >
+                            <span className="text-[10px] text-rose-400/90 font-medium flex items-center gap-1.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                               <span>Запрещен</span>
                             </span>
                           )}
 
+                          {/* 4. Не в каталоге */}
                           {isUnverified && (
-                            <span
-                              className="text-[10px] text-zinc-500 font-medium flex items-center gap-1.5"
-                              title={mod.safetyReason}
-                            >
+                            <span className="text-[10px] text-zinc-500 font-medium flex items-center gap-1.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
                               <span>Не в каталоге</span>
                             </span>
@@ -571,20 +556,14 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
                         <div className="flex items-center gap-2.5 font-mono text-[10px] text-zinc-500 truncate">
                           <span>{formatSize(mod.size)}</span>
-                          {isUnverified && !isRequested && (
+
+                          {isUnverified && (
                             <button
                               onClick={(e) => handleOpenWhitelistModal(e, mod)}
-                              className="text-zinc-300 hover:text-white underline hover:no-underline cursor-pointer flex items-center gap-1 font-sans font-medium transition-colors"
-                              title="Заполнить заявку на добавление мода в Discord"
+                              className="px-2.5 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border border-white/10 text-[11px] font-medium font-sans transition-all cursor-pointer shadow-sm active:scale-95 flex items-center gap-1"
                             >
                               <span>Запросить доступ</span>
                             </button>
-                          )}
-                          {isRequested && (
-                            <span className="text-emerald-400 flex items-center gap-1 font-sans font-medium animate-in fade-in duration-200">
-                              <Check size={11} />
-                              <span>Заявка отправлена боту</span>
-                            </span>
                           )}
                         </div>
                       </div>
@@ -603,10 +582,10 @@ export const ModsView: React.FC<ModsViewProps> = ({
                         title={
                           isBlocked
                             ? 'Запрещенный чит-мод заблокирован античитом'
+                            : isPending
+                            ? 'Мод находится на рассмотрении администрации'
                             : isUnverified
                             ? 'Мод заблокирован: требуется одобрение администрацией (Запросить доступ)'
-                            : isChecking
-                            ? 'Мод проверяется...'
                             : mod.enabled
                             ? 'Отключить мод'
                             : 'Включить мод'
@@ -641,9 +620,25 @@ export const ModsView: React.FC<ModsViewProps> = ({
         onClose={() => setActiveWhitelistMod(null)}
         mod={activeWhitelistMod}
         session={session}
-        onSuccess={(modId) => {
-          setWhitelistSuccessId(modId);
-          setTimeout(() => setWhitelistSuccessId(null), 8000);
+        onSuccess={(modId, modName) => {
+          onUpdateCustomMods(
+            customMods.map((m) =>
+              m.id === modId
+                ? {
+                    ...m,
+                    safetyStatus: 'pending',
+                    safetyReason: 'Заявка отправлена модераторам в Discord и находится на рассмотрении',
+                  }
+                : m
+            )
+          );
+          if (onNotify) {
+            onNotify(
+              `Заявка на мод «${modName}» отправлена`,
+              'Модераторы рассмотрят заявку в ближайшее время',
+              'success'
+            );
+          }
         }}
       />
     </div>

@@ -54,6 +54,27 @@ export const CHEAT_KEYWORDS = [
   'esp',
 ];
 
+// Malware, Trojan, and Infostealer signatures
+export const MALWARE_KEYWORDS = [
+  'fractureiser',
+  'necros',
+  'token-grabber',
+  'tokengrabber',
+  'discord-stealer',
+  'discordstealer',
+  'infostealer',
+  'stealer',
+  'redline',
+  'skyrage',
+  'kurium',
+  'rat',
+  'trojan',
+  'backdoor',
+  'payload',
+  'ransomware',
+  'keylogger',
+];
+
 /**
  * Fast client-side scan for cheat keywords in filename or mod title.
  */
@@ -65,6 +86,56 @@ export function quickScanForCheatSignatures(filename: string, name: string): { i
     }
   }
   return { isCheat: false };
+}
+
+/**
+ * Scans a file or metadata for known malware, token grabbers, or suspicious byte patterns.
+ */
+export async function scanFileForMalware(
+  file?: File | null,
+  filename?: string,
+  name?: string
+): Promise<{ isSafe: boolean; threat?: string; details?: string }> {
+  const targetStr = ((filename || '') + ' ' + (name || '')).toLowerCase();
+
+  // 1. Check filename against known malware signatures
+  for (const kw of MALWARE_KEYWORDS) {
+    if (targetStr.includes(kw)) {
+      return {
+        isSafe: false,
+        threat: kw,
+        details: `Обнаружена сигнатура вредоносного ПО (${kw}). Заявка отклонена для защиты модераторов.`,
+      };
+    }
+  }
+
+  // 2. Scan binary header / sample if File object is present
+  if (file && file.size < 60 * 1024 * 1024) {
+    try {
+      const buffer = await file.slice(0, 1024 * 256).arrayBuffer(); // First 256KB
+      const textDecoder = new TextDecoder('utf-8', { fatal: false });
+      const sample = textDecoder.decode(buffer).toLowerCase();
+
+      const dangerousPatterns = [
+        { key: 'webhook_grabber', pattern: 'discord.com/api/webhooks' },
+        { key: 'fractureiser_stage', pattern: 'files.skyrage.de' },
+        { key: 'payload_downloader', pattern: 'powershell -encodedcommand' },
+        { key: 'stealer_exec', pattern: 'cmd.exe /c start /b' },
+      ];
+
+      for (const p of dangerousPatterns) {
+        if (sample.includes(p.pattern)) {
+          return {
+            isSafe: false,
+            threat: p.key,
+            details: `Внутри файла обнаружен потенциально опасный код (${p.key}). Отправка запрещена.`,
+          };
+        }
+      }
+    } catch (_) {}
+  }
+
+  return { isSafe: true };
 }
 
 /**

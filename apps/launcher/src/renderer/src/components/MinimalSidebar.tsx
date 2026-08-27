@@ -5,7 +5,8 @@ import {
   FolderGit2, 
   Sliders,
   ShieldCheck,
-  LogIn
+  LogIn,
+  Bell
 } from 'lucide-react';
 import { AuthSession } from '@quiby/shared';
 
@@ -16,6 +17,8 @@ interface MinimalSidebarProps {
   onSelectTab: (tab: ActiveTab) => void;
   session: AuthSession | null;
   onOpenProfile: () => void;
+  onOpenNotifications?: () => void;
+  unreadNotificationsCount?: number;
 }
 
 export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
@@ -23,6 +26,8 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
   onSelectTab,
   session,
   onOpenProfile,
+  onOpenNotifications,
+  unreadNotificationsCount = 0,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -110,8 +115,37 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
           })}
         </div>
 
-        {/* Bottom User Profile Section */}
-        <div className="w-full shrink-0">
+        {/* Bottom Section: Notifications & User Profile */}
+        <div className="w-full shrink-0 space-y-2">
+          {/* Notifications Button above Avatar */}
+          <button
+            onClick={onOpenNotifications}
+            className="flex items-center w-full h-12 rounded-2xl transition-all duration-200 cursor-pointer text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent"
+            title={!isHovered ? 'Уведомления' : undefined}
+          >
+            <div className="w-12 h-12 flex items-center justify-center shrink-0 relative">
+              <Bell size={19} />
+              {unreadNotificationsCount > 0 && (
+                <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-zinc-950 animate-pulse" />
+              )}
+            </div>
+            <div
+              className={`flex items-center justify-between whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pl-1 flex-1 pr-3 ${
+                isHovered
+                  ? 'max-w-[130px] opacity-100 translate-x-0'
+                  : 'max-w-0 opacity-0 -translate-x-3 pointer-events-none'
+              }`}
+            >
+              <span className="text-xs font-semibold">Уведомления</span>
+              {unreadNotificationsCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-zinc-800 border border-white/10 text-[10px] font-mono text-emerald-400">
+                  {unreadNotificationsCount}
+                </span>
+              )}
+            </div>
+          </button>
+
+          {/* User Profile / Login */}
           {session ? (
             <button
               onClick={onOpenProfile}

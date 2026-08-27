@@ -339,6 +339,28 @@
   - [x] Connected backend `/api/mods/whitelist-request` to forward structured Rich Embeds directly to Discord moderation channel
   - [x] Verified complete 61-test suite passing and completed clean production build
 
+- [x] **Stage 51: Pre-Submission Antivirus Security Scanner, Ultra-Minimal Form & Persistent 'На рассмотрении' Status**
+  - [x] Implemented pre-submission malware & infostealer scanner (`scanFileForMalware`) detecting Fractureiser, Redline, token grabbers, and suspicious payloads to protect server moderators
+  - [x] Redesigned `ModWhitelistModal` into a compact, ultra-minimalist layout with real-time antivirus status feedback
+  - [x] Added persistent `safetyStatus: 'pending'` with subtle `• На рассмотрении` badge on cards that remains active until moderation verdict
+  - [x] Added unit tests for malware scanner; 63 / 63 monorepo tests passing with 0 errors
+
+- [x] **Stage 52: 4 Strict Mod States, Clean 2-Field Whitelist Modal with Background Antivirus, Bottom Notification Deck & Sidebar Notifications Tab**
+  - [x] Standardized mod security states to strictly 4 statuses: `Проверен` (🟢), `На рассмотрении` (🟡), `Запрещен` (🔴), and `Не в каталоге` (⚪)
+  - [x] Polished «Запросить доступ» action button with sleek dark pill styling
+  - [x] Redesigned `ModWhitelistModal` to display mod logo + exactly 2 user inputs (`Описание / Назначение` and optional `Ссылка на мод`), running antivirus and payload dispatch in the background on send
+  - [x] Created `FloatingNotificationToast` positioned at bottom center (matching Action Deck placement and spring physics)
+  - [x] Added `Notifications` tab in sidebar above avatar with unread counter and interactive `NotificationsModal`
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+- [x] **Stage 53: Elimination of Verbose Status Details & Streamlined Mod Card Layout**
+  - [x] Removed long explanatory sub-reasons and tooltips from mod status badges
+  - [x] Eliminated redundant duplicate status text in card footers, keeping only size indicator and «Запросить доступ» action button
+  - [x] Verified clean UI and 0 build errors across monorepo
+
+
+
+
 
 
 

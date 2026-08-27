@@ -7,6 +7,8 @@ import { ModsView, CustomModItem } from './views/ModsView';
 import { SettingsView } from './views/SettingsView';
 import { FloatingActionDeck } from './components/FloatingActionDeck';
 import { DiscordAuthModal } from './components/DiscordAuthModal';
+import { FloatingNotificationToast, ToastData } from './components/FloatingNotificationToast';
+import { NotificationsModal, NotificationItem } from './components/NotificationsModal';
 import { CAPE_PRESETS, CapePreset } from './utils/chibiRenderer';
 import { 
   AuthSession, 
@@ -75,6 +77,18 @@ const initialCustomMods: CustomModItem[] = [
     description: 'Позиционный 3D голосовой чат для общения на сервере',
   },
   {
+    id: 'test-pending',
+    name: 'Custom HUD Tweaks',
+    filename: 'custom-hud-1.21.1.jar',
+    size: 1540000,
+    enabled: false,
+    hashSha1: '3bc948a7d1840294829103847291038472910384',
+    safetyStatus: 'pending',
+    safetyReason: 'Заявка отправлена модераторам в Discord и находится на рассмотрении',
+    categories: ['interface', 'utility'],
+    description: 'Кастомизация интерфейса, координат и компаса на экране',
+  },
+  {
     id: 'test-4',
     name: 'X-Ray Ultimate Plus',
     filename: 'XRay-Ultimate-1.21.1-cheat.jar',
@@ -84,17 +98,6 @@ const initialCustomMods: CustomModItem[] = [
     safetyReason: 'Запрещен: содержит сигнатуры читов/рентгена руд (xray)',
     categories: ['cheat', 'xray'],
     description: 'Запрещенный чит-мод для поиска скрытых руд сквозь стены',
-  },
-  {
-    id: 'test-5',
-    name: 'Memory Leak Fix',
-    filename: 'memoryleakfix-neoforge-1.21.1-1.1.5.jar',
-    size: 1100000,
-    enabled: false,
-    safetyStatus: 'checking',
-    safetyReason: 'Проверка по каталогу Modrinth...',
-    iconUrl: 'https://cdn.modrinth.com/data/NRjSnAWE/icon.png',
-    description: 'Автоматическое устранение утечек оперативной памяти в игре',
   },
   {
     id: 'test-6',
@@ -121,6 +124,42 @@ export const App: React.FC = () => {
   const [launchState, setLaunchState] = useState<LaunchState>({ status: 'idle' });
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [selectedModIds, setSelectedModIds] = useState<string[]>([]);
+
+  // Notifications State
+  const [notifications, setNotifications] = useState<NotificationItem[]>([
+    {
+      id: 'notif-1',
+      title: 'Quiby Core готов к запуску',
+      message: 'Сезон VI запущен. Приятной игры на сервере!',
+      type: 'info',
+      timestamp: Date.now() - 1000 * 60 * 10,
+      read: false,
+    },
+  ]);
+  const [activeToast, setActiveToast] = useState<ToastData | null>(null);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  const handleNotify = (
+    title: string,
+    message?: string,
+    type: 'success' | 'info' | 'warning' | 'error' = 'success'
+  ) => {
+    const newNotif: NotificationItem = {
+      id: 'notif-' + Date.now(),
+      title,
+      message,
+      type,
+      timestamp: Date.now(),
+      read: false,
+    };
+    setNotifications((prev) => [newNotif, ...prev]);
+    setActiveToast({
+      id: newNotif.id,
+      title,
+      message,
+      type,
+    });
+  };
 
   // 1. Saved vs Draft Settings State
   const [savedSettings, setSavedSettings] = useState<LauncherSettings>(defaultSettings);
@@ -355,6 +394,8 @@ export const App: React.FC = () => {
         onSelectTab={handleSelectTab}
         session={session}
         onOpenProfile={() => setIsAuthModalOpen(true)}
+        onOpenNotifications={() => setIsNotificationsOpen(true)}
+        unreadNotificationsCount={notifications.filter((n) => !n.read).length}
       />
 
       {/* 2. Main View Content (Offset for 72px sidebar rail) */}
@@ -397,6 +438,7 @@ export const App: React.FC = () => {
             selectedModIds={selectedModIds}
             onUpdateSelectedModIds={setSelectedModIds}
             onUpdateCustomMods={setDraftCustomMods}
+            onNotify={handleNotify}
           />
         )}
 
@@ -464,7 +506,25 @@ export const App: React.FC = () => {
         onCancel={handleCancelCurrentTab}
       />
 
-      {/* 4. Discord Auth Modal */}
+      {/* 4. Floating Bottom Notification Toast (Same placement as action deck) */}
+      <FloatingNotificationToast
+        toast={activeToast}
+        onDismiss={() => setActiveToast(null)}
+      />
+
+      {/* 5. Notifications Drawer Modal */}
+      <NotificationsModal
+        isOpen={isNotificationsOpen}
+        onClose={() => {
+          setIsNotificationsOpen(false);
+          setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        }}
+        notifications={notifications}
+        onClearAll={() => setNotifications([])}
+        onMarkAllRead={() => setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))}
+      />
+
+      {/* 6. Discord Auth Modal */}
       <DiscordAuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
