@@ -9,6 +9,8 @@ import { ensureNeoForge } from './neoforge';
 import { updateDiscordRpcStatus } from '../rpc/discordRpc';
 
 let runningGameProcess: ChildProcess | null = null;
+let gameStartTime: number | null = null;
+let playtimeInterval: NodeJS.Timeout | null = null;
 
 export async function launchMinecraft(
   session: AuthSession,
@@ -32,6 +34,20 @@ export async function launchMinecraft(
   const setLaunchState = (state: LaunchState) => {
     if (win && !win.isDestroyed()) {
       win.webContents.send('launch-state-change', state);
+    }
+  };
+
+  const stopPlaytimeTracking = () => {
+    if (playtimeInterval) {
+      clearInterval(playtimeInterval);
+      playtimeInterval = null;
+    }
+    if (gameStartTime) {
+      const elapsedSec = Math.round((Date.now() - gameStartTime) / 1000);
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('playtime-session-end', elapsedSec);
+      }
+      gameStartTime = null;
     }
   };
 
@@ -122,7 +138,9 @@ export async function launchMinecraft(
       gameArgs.push('--fullscreen');
     }
 
-    if (settings.serverIp) {
+    // Fast-Connect Auto-Join flag
+    if (settings.autoJoinServer !== false && settings.serverIp) {
+      sendLog('info', `⚡ Быстрый вход (Fast-Connect) на сервер: ${settings.serverIp}`);
       gameArgs.push('--quickPlayMultiplayer', settings.serverIp);
     }
 
@@ -138,6 +156,16 @@ export async function launchMinecraft(
     });
 
     runningGameProcess = gameProcess;
+    gameStartTime = Date.now();
+
+    // Start 60-second heartbeat playtime tracker
+    if (playtimeInterval) clearInterval(playtimeInterval);
+    playtimeInterval = setInterval(() => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('playtime-tick', 60);
+      }
+    }, 60000);
+
     setLaunchState({ status: 'running', gamePid: gameProcess.pid });
     sendLog('info', `🎮 Игра успешно запущена (PID: ${gameProcess.pid})`);
 
@@ -164,12 +192,14 @@ export async function launchMinecraft(
     });
 
     gameProcess.on('error', (err) => {
+      stopPlaytimeTracking();
       sendLog('error', `Ошибка процесса Java: ${err.message}`);
       setLaunchState({ status: 'crashed', error: err.message });
       runningGameProcess = null;
     });
 
     gameProcess.on('exit', (code) => {
+      stopPlaytimeTracking();
       sendLog('info', `Процесс Minecraft завершился с кодом: ${code}`);
       setLaunchState({ status: code === 0 ? 'stopped' : 'crashed', exitCode: code || 0 });
       runningGameProcess = null;
@@ -181,6 +211,7 @@ export async function launchMinecraft(
     });
 
   } catch (error: any) {
+    stopPlaytimeTracking();
     sendLog('error', `Критическая ошибка запуска: ${error.message}`);
     setLaunchState({ status: 'crashed', error: error.message });
     throw error;
@@ -188,6 +219,10 @@ export async function launchMinecraft(
 }
 
 export function killGameProcess(): void {
+  if (playtimeInterval) {
+    clearInterval(playtimeInterval);
+    playtimeInterval = null;
+  }
   if (runningGameProcess) {
     runningGameProcess.kill('SIGTERM');
     runningGameProcess = null;

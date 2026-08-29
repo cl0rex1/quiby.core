@@ -94,6 +94,10 @@ export interface LauncherSettings {
   gameDir: string;
   enableDiscordRpc: boolean;
   serverIp: string;
+  autoJoinServer?: boolean;
+  totalPlaytimeSeconds?: number;
+  graphicsPreset?: 'potato' | 'optimal' | 'ultra';
+  modpackProfile?: 'clean' | 'optimal' | 'full';
 }
 
 export interface DownloadProgress {

@@ -195,7 +195,59 @@ app.whenReady().then(async () => {
     return await startDiscordOAuthFlow(serverUrl);
   });
 
-  // 6. Game Launching
+  // 6. Schematics & Shaders filesystem handlers
+  ipcMain.handle('schematics:list', async (_, gameDir: string) => {
+    const targetDir = path.join(gameDir || getDefaultGameDir(), 'schematics');
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+      return [];
+    }
+    try {
+      const files = fs.readdirSync(targetDir);
+      return files
+        .filter((f) => f.endsWith('.nbt') || f.endsWith('.schem') || f.endsWith('.schematic'))
+        .map((f) => {
+          const stat = fs.statSync(path.join(targetDir, f));
+          return {
+            name: f,
+            filename: f,
+            path: path.join(targetDir, f),
+            size: stat.size,
+            updatedAt: stat.mtimeMs,
+          };
+        });
+    } catch (_) {
+      return [];
+    }
+  });
+
+  ipcMain.handle('shaderpacks:list', async (_, gameDir: string) => {
+    const targetDir = path.join(gameDir || getDefaultGameDir(), 'shaderpacks');
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+      return [];
+    }
+    try {
+      const files = fs.readdirSync(targetDir);
+      return files
+        .filter((f) => f.endsWith('.zip') || fs.statSync(path.join(targetDir, f)).isDirectory())
+        .map((f) => {
+          const stat = fs.statSync(path.join(targetDir, f));
+          return {
+            name: f.replace('.zip', ''),
+            filename: f,
+            path: path.join(targetDir, f),
+            size: stat.size,
+            isDirectory: stat.isDirectory(),
+            updatedAt: stat.mtimeMs,
+          };
+        });
+    } catch (_) {
+      return [];
+    }
+  });
+
+  // 7. Game Launching
   ipcMain.handle('game:launch', async (_, session: AuthSession, settings: LauncherSettings, serverUrl: string = DEFAULT_SERVER_URL) => {
     await launchMinecraft(session, settings, serverUrl, mainWindow);
   });

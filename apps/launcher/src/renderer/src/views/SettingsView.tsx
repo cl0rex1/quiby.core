@@ -207,6 +207,99 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 5. Presets & Fast-Connect Group */}
+      <div className="glass-panel rounded-3xl p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-white font-bold text-sm">
+            <Monitor size={16} className="text-purple-400" />
+            <span className="apple-subheading">Быстрые пресеты графики и сборки</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              onUpdateSettings({
+                ...settings,
+                ramMaxMb: 4096,
+                ramMinMb: 2048,
+                graphicsPreset: 'potato',
+                modpackProfile: 'clean',
+              });
+            }}
+            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 press-feedback ${
+              settings.graphicsPreset === 'potato'
+                ? 'bg-zinc-800/90 border-white/30 ring-1 ring-white/20'
+                : 'bg-zinc-900/40 hover:bg-zinc-900/80 border-white/5 text-zinc-400'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-lg">🥔</span>
+              <span className="text-[10px] font-mono text-zinc-400">4 GB</span>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white apple-subheading">Пресет: Картошка</p>
+              <p className="text-[10px] text-zinc-500">Чистая сборка, макс. FPS</p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onUpdateSettings({
+                ...settings,
+                ramMaxMb: 8192,
+                ramMinMb: 4096,
+                graphicsPreset: 'optimal',
+                modpackProfile: 'optimal',
+              });
+            }}
+            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 press-feedback ${
+              settings.graphicsPreset === 'optimal' || !settings.graphicsPreset
+                ? 'bg-zinc-800/90 border-emerald-400/40 ring-1 ring-emerald-400/30'
+                : 'bg-zinc-900/40 hover:bg-zinc-900/80 border-white/5 text-zinc-400'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-lg">⚡</span>
+              <span className="text-[10px] font-mono text-emerald-400 font-bold">8 GB</span>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white apple-subheading">Пресет: Оптимально</p>
+              <p className="text-[10px] text-emerald-400/90">Рекомендовано для Create S6</p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onUpdateSettings({
+                ...settings,
+                ramMaxMb: 12288,
+                ramMinMb: 4096,
+                graphicsPreset: 'ultra',
+                modpackProfile: 'full',
+              });
+            }}
+            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 press-feedback ${
+              settings.graphicsPreset === 'ultra'
+                ? 'bg-zinc-800/90 border-purple-400/40 ring-1 ring-purple-400/30'
+                : 'bg-zinc-900/40 hover:bg-zinc-900/80 border-white/5 text-zinc-400'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-lg">✨</span>
+              <span className="text-[10px] font-mono text-purple-400 font-bold">12+ GB</span>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white apple-subheading">Пресет: Ультра</p>
+              <p className="text-[10px] text-purple-400/90">Шейдеры и полная сборка</p>
+            </div>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

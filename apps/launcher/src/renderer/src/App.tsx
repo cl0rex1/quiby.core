@@ -10,6 +10,7 @@ import { DiscordAuthModal } from './components/DiscordAuthModal';
 import { FloatingNotificationToast, ToastData } from './components/FloatingNotificationToast';
 import { NotificationsModal, NotificationItem } from './components/NotificationsModal';
 import { NotificationDetailView } from './views/NotificationDetailView';
+import { FirstLaunchOnboardingModal } from './components/FirstLaunchOnboardingModal';
 import { CAPE_PRESETS, CapePreset } from './utils/chibiRenderer';
 import { 
   AuthSession, 
@@ -184,6 +185,11 @@ export const App: React.FC = () => {
   const [savedCustomMods, setSavedCustomMods] = useState<CustomModItem[]>(initialCustomMods);
   const [draftCustomMods, setDraftCustomMods] = useState<CustomModItem[]>(initialCustomMods);
 
+  // 4. Playtime & Fast-Connect States
+  const [totalPlaytimeSeconds, setTotalPlaytimeSeconds] = useState<number>(0);
+  const [autoConnect, setAutoConnect] = useState<boolean>(true);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
+
   // Shake warning state when leaving tab with unsaved changes
   const [isShaking, setIsShaking] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -196,6 +202,24 @@ export const App: React.FC = () => {
       try {
         setSession(JSON.parse(savedSession));
       } catch (_) {}
+    }
+
+    // Check Onboarding
+    const onboarded = localStorage.getItem('quiby_onboarded');
+    if (!onboarded) {
+      setIsOnboardingOpen(true);
+    }
+
+    // Restore Playtime
+    const savedPlaytime = localStorage.getItem('quiby_total_playtime');
+    if (savedPlaytime) {
+      setTotalPlaytimeSeconds(parseInt(savedPlaytime, 10) || 0);
+    }
+
+    // Restore Auto-Connect Preference
+    const savedAutoConnect = localStorage.getItem('quiby_auto_connect');
+    if (savedAutoConnect !== null) {
+      setAutoConnect(savedAutoConnect === 'true');
     }
 
     // Restore Cape
@@ -236,6 +260,9 @@ export const App: React.FC = () => {
         if (s) {
           setSavedSettings(s);
           setDraftSettings(s);
+          if (s.autoJoinServer !== undefined) {
+            setAutoConnect(s.autoJoinServer);
+          }
         }
       });
 
@@ -251,10 +278,19 @@ export const App: React.FC = () => {
         setLaunchState(state);
       });
 
+      const unsubscribePlaytime = window.quibyApi.onPlaytimeTick?.((sec) => {
+        setTotalPlaytimeSeconds((prev) => {
+          const next = prev + sec;
+          localStorage.setItem('quiby_total_playtime', String(next));
+          return next;
+        });
+      });
+
       return () => {
         unsubscribeProgress?.();
         unsubscribeLog?.();
         unsubscribeState?.();
+        unsubscribePlaytime?.();
       };
     }
   }, []);
@@ -478,6 +514,7 @@ export const App: React.FC = () => {
                 session={session}
                 serverStatus={serverStatus}
                 serverIp={savedSettings.serverIp}
+                totalPlaytimeSeconds={totalPlaytimeSeconds}
                 customSkinImg={savedSkinImg}
                 customSkinName={savedSkinName}
                 activeDefaultSkinIdx={savedDefaultSkinIdx}
@@ -534,6 +571,13 @@ export const App: React.FC = () => {
           downloadProgress={downloadProgress}
           hasUnsavedChanges={hasUnsavedChanges}
           isShaking={isShaking}
+          autoConnect={autoConnect}
+          onToggleAutoConnect={(val) => {
+            setAutoConnect(val);
+            localStorage.setItem('quiby_auto_connect', String(val));
+            setSavedSettings((prev) => ({ ...prev, autoJoinServer: val }));
+            setDraftSettings((prev) => ({ ...prev, autoJoinServer: val }));
+          }}
           batchActions={
             activeTab === 'mods' && selectedModIds.length > 0
               ? {
@@ -595,6 +639,48 @@ export const App: React.FC = () => {
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={handleLoginSuccess}
         serverUrl={SERVER_URL}
+      />
+
+      {/* 6. First Launch Onboarding Modal */}
+      <FirstLaunchOnboardingModal
+        isOpen={isOnboardingOpen}
+        settings={savedSettings}
+        onClose={() => setIsOnboardingOpen(false)}
+        onApplyPreset={(updated, profile) => {
+          const merged = { ...savedSettings, ...updated };
+          setSavedSettings(merged);
+          setDraftSettings(merged);
+          if (window.quibyApi) {
+            window.quibyApi.saveSettings(merged);
+          }
+
+          if (profile === 'clean') {
+            setSavedCustomMods((prev) => prev.map((m) => ({ ...m, enabled: false })));
+            setDraftCustomMods((prev) => prev.map((m) => ({ ...m, enabled: false })));
+          } else if (profile === 'optimal') {
+            setSavedCustomMods((prev) =>
+              prev.map((m) => ({
+                ...m,
+                enabled: m.safetyStatus === 'approved' && !m.categories?.includes('graphics'),
+              }))
+            );
+            setDraftCustomMods((prev) =>
+              prev.map((m) => ({
+                ...m,
+                enabled: m.safetyStatus === 'approved' && !m.categories?.includes('graphics'),
+              }))
+            );
+          } else {
+            setSavedCustomMods((prev) =>
+              prev.map((m) => ({ ...m, enabled: m.safetyStatus === 'approved' }))
+            );
+            setDraftCustomMods((prev) =>
+              prev.map((m) => ({ ...m, enabled: m.safetyStatus === 'approved' }))
+            );
+          }
+
+          handleNotify('Настройки применены', 'Параметры графики и состав сборки сконфигурированы.', 'success');
+        }}
       />
     </div>
   );

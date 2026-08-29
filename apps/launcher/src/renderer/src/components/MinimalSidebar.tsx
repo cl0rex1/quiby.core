@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Play, 
   Shirt, 
-  FolderGit2, 
+  Layers, 
   Sliders, 
   LogIn, 
   Bell, 
@@ -53,7 +53,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
   const navItems = [
     { id: 'home' as ActiveTab, label: 'Главная', icon: Play, size: 20 },
     { id: 'wardrobe' as ActiveTab, label: 'Гардероб', icon: Shirt, size: 20 },
-    { id: 'mods' as ActiveTab, label: 'Моды', icon: FolderGit2, size: 20 },
+    { id: 'mods' as ActiveTab, label: 'Контент', icon: Layers, size: 20 },
     { id: 'settings' as ActiveTab, label: 'Настройки', icon: Sliders, size: 20 },
   ];
 

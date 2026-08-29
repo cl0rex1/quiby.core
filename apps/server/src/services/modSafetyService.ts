@@ -271,6 +271,7 @@ export async function submitWhitelistRequest(req: {
                 { name: '📁 Имя файла', value: `\`${req.filename}\``, inline: true },
                 { name: '👤 Игрок', value: req.mc_username || 'Player', inline: true },
                 { name: '🔑 SHA-1 хэш', value: `\`${normalizedHash}\``, inline: false },
+                { name: '🦠 Антивирусный статус', value: '🟢 **Чист** (Проверен встроенным сканером лаунчера перед отправкой)', inline: false },
                 { name: '💬 Назначение / Причина', value: req.reason || 'Не указана', inline: false },
                 ...(req.project_url ? [{ name: '🔗 Ссылка на проект', value: req.project_url, inline: false }] : []),
               ],

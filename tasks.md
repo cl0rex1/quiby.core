@@ -453,6 +453,20 @@
   - [x] Removed bulky redundant text descriptions for maximum minimalist aesthetics
   - [x] Verified 63 / 63 unit tests passing and completed clean production build
 
+- [x] **Stage 71: Project Roadmap & High-Impact Feature Ideation**
+  - [x] Formulated top practical feature proposals for quiby.core ecosystem (Create S6, launcher UX, server ops, mod safety)
+  - [x] Categorized by impact vs complexity under ponytail principles (minimum boilerplate, maximum player value)
+
+- [x] **Stage 72: Playtime Tracking, Content Hub (Schematics/Shaders/Mods), Onboarding Presets & Fast-Connect Auto-Join**
+  - [x] Integrated real-time process heartbeat playtime tracker (`playtime-tick`) and cumulative season hours display (`14.5 ч в игре`) in `CharacterStage.tsx`
+  - [x] Rebuilt Mods view into unified 3-segment Content Hub (`Контент`): `Моды` (official/custom), `Схематики Create` (`.nbt` explorer with drag-and-drop), and `Шейдеры` (`.zip` shaderpacks)
+  - [x] Added `[✓] Сразу на сервер` Fast-Connect toggle beside Play button passing `--quickPlayMultiplayer play.quiby.fun`
+  - [x] Created `FirstLaunchOnboardingModal.tsx` and quick presets card in `SettingsView.tsx` (Potato 4GB / Optimal 8GB / Ultra 12GB+)
+  - [x] Enhanced Discord mod whitelist webhook with pre-verified antivirus status, SHA-1, player IGN, and project links
+  - [x] Added test suite `contentFeatures.test.ts`; 71 / 71 unit tests passing and completed clean production build
+
+
+
 
 
 

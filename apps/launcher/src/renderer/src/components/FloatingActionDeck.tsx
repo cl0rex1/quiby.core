@@ -33,6 +33,8 @@ interface FloatingActionDeckProps {
   downloadProgress: DownloadProgress | null;
   hasUnsavedChanges: boolean;
   isShaking: boolean;
+  autoConnect?: boolean;
+  onToggleAutoConnect?: (val: boolean) => void;
   batchActions?: BatchActionConfig | null;
   onLaunch: () => void;
   onKill: () => void;
@@ -48,6 +50,8 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   downloadProgress,
   hasUnsavedChanges,
   isShaking,
+  autoConnect = true,
+  onToggleAutoConnect,
   batchActions,
   onLaunch,
   onKill,
@@ -128,42 +132,67 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
           </div>
         )}
 
-        {/* The Floating Play Button with Apple Tactile Press Feedback */}
-        {!session ? (
-          <button
-            onClick={onOpenLogin}
-            className="px-8 py-4 rounded-full bg-white hover:bg-neutral-100 text-black font-extrabold text-sm tracking-wide shadow-[0_12px_40px_rgba(0,0,0,0.8)] border border-white/40 press-feedback flex items-center gap-2.5 cursor-pointer uppercase"
-          >
-            <User size={18} />
-            <span>Войти в аккаунт</span>
-          </button>
-        ) : isRunning ? (
-          <button
-            onClick={onKill}
-            className="px-8 py-4 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-sm tracking-wide shadow-[0_12px_40px_rgba(225,29,72,0.5)] border border-rose-400/40 press-feedback flex items-center gap-2.5 cursor-pointer uppercase"
-          >
-            <Square size={18} />
-            <span>В игре (Остановить)</span>
-          </button>
-        ) : (
-          <button
-            onClick={onLaunch}
-            disabled={isBusy}
-            className="px-9 py-4 rounded-full bg-white hover:bg-neutral-100 disabled:opacity-50 text-black font-black text-base tracking-wider shadow-[0_16px_48px_rgba(0,0,0,0.85)] border border-white/50 press-feedback flex items-center gap-3 cursor-pointer uppercase"
-          >
-            {isBusy ? (
-              <>
-                <RotateCw size={19} className="animate-spin text-black" />
-                <span>СИНХРОНИЗАЦИЯ...</span>
-              </>
-            ) : (
-              <>
-                <Play size={19} className="fill-black text-black" />
-                <span>ИГРАТЬ (1.21.1)</span>
-              </>
-            )}
-          </button>
-        )}
+        {/* The Floating Play Button & Fast-Connect Toggle with Apple Tactile Press Feedback */}
+        <div className="flex items-center gap-3">
+          {session && !isRunning && !isBusy && (
+            <button
+              onClick={() => onToggleAutoConnect?.(!autoConnect)}
+              className={`flex items-center gap-2 px-4 py-3.5 rounded-full border transition-all cursor-pointer press-feedback shadow-lg select-none ${
+                autoConnect
+                  ? 'bg-zinc-900/90 border-emerald-400/40 text-white border-t-emerald-300/60 shadow-[0_4px_20px_rgba(52,211,153,0.15)]'
+                  : 'bg-zinc-950/80 border-white/10 text-zinc-400 hover:text-zinc-200'
+              }`}
+              title="Автоматический вход сразу на сервер play.quiby.fun без захода в главное меню"
+            >
+              <div
+                className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all ${
+                  autoConnect
+                    ? 'bg-emerald-400 border-emerald-400 text-zinc-950'
+                    : 'border-zinc-500 bg-zinc-850'
+                }`}
+              >
+                {autoConnect && <Check size={11} className="stroke-[3.5]" />}
+              </div>
+              <span className="text-xs font-bold apple-subheading">Сразу на сервер</span>
+            </button>
+          )}
+
+          {!session ? (
+            <button
+              onClick={onOpenLogin}
+              className="px-8 py-4 rounded-full bg-white hover:bg-neutral-100 text-black font-extrabold text-sm tracking-wide shadow-[0_12px_40px_rgba(0,0,0,0.8)] border border-white/40 press-feedback flex items-center gap-2.5 cursor-pointer uppercase"
+            >
+              <User size={18} />
+              <span>Войти в аккаунт</span>
+            </button>
+          ) : isRunning ? (
+            <button
+              onClick={onKill}
+              className="px-8 py-4 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-sm tracking-wide shadow-[0_12px_40px_rgba(225,29,72,0.5)] border border-rose-400/40 press-feedback flex items-center gap-2.5 cursor-pointer uppercase"
+            >
+              <Square size={18} />
+              <span>В игре (Остановить)</span>
+            </button>
+          ) : (
+            <button
+              onClick={onLaunch}
+              disabled={isBusy}
+              className="px-9 py-4 rounded-full bg-white hover:bg-neutral-100 disabled:opacity-50 text-black font-black text-base tracking-wider shadow-[0_16px_48px_rgba(0,0,0,0.85)] border border-white/50 press-feedback flex items-center gap-3 cursor-pointer uppercase"
+            >
+              {isBusy ? (
+                <>
+                  <RotateCw size={19} className="animate-spin text-black" />
+                  <span>СИНХРОНИЗАЦИЯ...</span>
+                </>
+              ) : (
+                <>
+                  <Play size={19} className="fill-black text-black" />
+                  <span>ИГРАТЬ (1.21.1)</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     );
   }

@@ -3,10 +3,11 @@ import {
   Copy, 
   Check, 
   Shirt, 
-  ShieldCheck,
-  Sparkles,
-  Layers,
-  Activity
+  ShieldCheck, 
+  Sparkles, 
+  Layers, 
+  Activity,
+  Clock
 } from 'lucide-react';
 import { AuthSession, ServerStatus } from '@quiby/shared';
 import { DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
@@ -16,6 +17,7 @@ interface CharacterStageProps {
   session: AuthSession | null;
   serverStatus: ServerStatus | null;
   serverIp: string;
+  totalPlaytimeSeconds?: number;
   customSkinImg: HTMLImageElement | null;
   customSkinName: string | null;
   activeDefaultSkinIdx: number;
@@ -28,6 +30,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
   session,
   serverStatus,
   serverIp,
+  totalPlaytimeSeconds = 0,
   customSkinImg,
   customSkinName,
   activeDefaultSkinIdx,
@@ -36,6 +39,14 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
   onOpenLogin,
 }) => {
   const [copied, setCopied] = useState(false);
+
+  const formatPlaytime = (seconds: number) => {
+    if (seconds < 60) return '< 1 мин';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} мин`;
+    const hours = (seconds / 3600).toFixed(1);
+    return `${hours} ч`;
+  };
 
   const handleCopyIp = () => {
     navigator.clipboard.writeText(serverIp || 'play.quiby.fun:25565');
@@ -123,21 +134,33 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
         </div>
       </div>
 
-      {/* Bottom Row: Player Profile Identity Pill */}
-      <div className="w-full flex items-center justify-start">
+      {/* Bottom Row: Player Profile Identity & Playtime Pills */}
+      <div className="w-full flex items-center justify-start gap-3 flex-wrap">
         {session ? (
-          <div className="flex items-center gap-2.5 px-4 py-2 rounded-full glass-panel text-xs text-white shadow-md">
-            <div className="w-5 h-5 rounded-full overflow-hidden border border-white/20 shrink-0 bg-zinc-800">
-              <img
-                src={session.user.avatarUrl || `https://mc-heads.net/avatar/${session.user.mcUsername}/32`}
-                alt={session.user.mcUsername}
-                className="w-full h-full object-cover"
-              />
+          <>
+            <div className="flex items-center gap-2.5 px-4 py-2 rounded-full glass-panel text-xs text-white shadow-md">
+              <div className="w-5 h-5 rounded-full overflow-hidden border border-white/20 shrink-0 bg-zinc-800">
+                <img
+                  src={session.user.avatarUrl || `https://mc-heads.net/avatar/${session.user.mcUsername}/32`}
+                  alt={session.user.mcUsername}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
+              <span className="font-bold font-mono text-white apple-subheading">{session.user.mcUsername}</span>
+              <span className="text-zinc-400 font-mono text-[11px]">(@{session.user.username})</span>
             </div>
-            <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
-            <span className="font-bold font-mono text-white apple-subheading">{session.user.mcUsername}</span>
-            <span className="text-zinc-400 font-mono text-[11px]">(@{session.user.username})</span>
-          </div>
+
+            {/* Playtime Tracker Pill */}
+            <div
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full glass-panel text-xs text-zinc-300 font-mono shadow-sm"
+              title="Общее наигранное время на сервере quiby в этом сезоне"
+            >
+              <Clock size={13} className="text-purple-400" />
+              <span className="text-white font-bold">{formatPlaytime(totalPlaytimeSeconds)}</span>
+              <span className="text-zinc-500 text-[10px]">в игре</span>
+            </div>
+          </>
         ) : (
           <button
             onClick={onOpenLogin}

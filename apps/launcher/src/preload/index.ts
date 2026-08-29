@@ -22,6 +22,10 @@ export const quibyApi = {
   // Auth
   startDiscordLogin: (serverUrl?: string) => ipcRenderer.invoke('auth:discord-login', serverUrl),
 
+  // Schematics & Shaders
+  getSchematics: (gameDir: string) => ipcRenderer.invoke('schematics:list', gameDir),
+  getShaderpacks: (gameDir: string) => ipcRenderer.invoke('shaderpacks:list', gameDir),
+
   // Game Engine
   launchGame: (session: AuthSession, settings: LauncherSettings, serverUrl?: string) =>
     ipcRenderer.invoke('game:launch', session, settings, serverUrl),
@@ -42,6 +46,16 @@ export const quibyApi = {
     const handler = (_: any, data: LaunchState) => callback(data);
     ipcRenderer.on('launch-state-change', handler);
     return () => ipcRenderer.removeListener('launch-state-change', handler);
+  },
+  onPlaytimeTick: (callback: (seconds: number) => void) => {
+    const handler = (_: any, sec: number) => callback(sec);
+    ipcRenderer.on('playtime-tick', handler);
+    return () => ipcRenderer.removeListener('playtime-tick', handler);
+  },
+  onPlaytimeSessionEnd: (callback: (seconds: number) => void) => {
+    const handler = (_: any, sec: number) => callback(sec);
+    ipcRenderer.on('playtime-session-end', handler);
+    return () => ipcRenderer.removeListener('playtime-session-end', handler);
   },
 };
 

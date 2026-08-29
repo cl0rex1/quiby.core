@@ -13,12 +13,17 @@ import {
   Check,
   Upload,
   X,
-  CheckSquare
+  CheckSquare,
+  Layers,
+  FileCode,
+  Sun
 } from 'lucide-react';
 import { ModpackManifest, AuthSession } from '@quiby/shared';
 import { verifyCustomMod } from '../utils/modVerifier';
 import { resolveModMetadata } from '../utils/knownMods';
 import { ModWhitelistModal } from '../components/ModWhitelistModal';
+import { SchematicsExplorer } from '../components/SchematicsExplorer';
+import { ShadersExplorer } from '../components/ShadersExplorer';
 
 export interface CustomModItem {
   id: string;
@@ -54,6 +59,7 @@ interface ModsViewProps {
 }
 
 export type SwitcherMode = 'official' | 'custom';
+export type ContentCategory = 'mods' | 'schematics' | 'shaders';
 
 export const ModsView: React.FC<ModsViewProps> = ({
   manifest,
@@ -65,6 +71,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
   onUpdateCustomMods,
   onNotify,
 }) => {
+  const [contentCategory, setContentCategory] = useState<ContentCategory>('mods');
   const [switcherMode, setSwitcherMode] = useState<SwitcherMode>('custom');
   const [search, setSearch] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -263,111 +270,162 @@ export const ModsView: React.FC<ModsViewProps> = ({
         </div>
       )}
 
-      {/* Top Header & Actions */}
+      {/* Top Header: Title & Content Category Segmented Switcher */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
         <div>
           <h2 className="text-xl font-extrabold text-white flex items-center gap-2.5">
-            <FolderGit2 className="text-zinc-400" size={22} />
-            <span>Моды сборки</span>
+            {contentCategory === 'mods' && <Package className="text-zinc-400" size={22} />}
+            {contentCategory === 'schematics' && <Layers className="text-purple-400" size={22} />}
+            {contentCategory === 'shaders' && <Sun className="text-amber-400" size={22} />}
+            <span>
+              {contentCategory === 'mods' && 'Модификации'}
+              {contentCategory === 'schematics' && 'Схематики Create'}
+              {contentCategory === 'shaders' && 'Шейдерпаки'}
+            </span>
           </h2>
           <p className="text-xs text-zinc-500 font-mono mt-0.5">
-            Minecraft 1.21.1 NeoForge • Season VI
+            Minecraft 1.21.1 NeoForge • Season VI Content Hub
           </p>
         </div>
 
-        {/* Action Buttons: Add Mod & Open Folder with Apple Press Feedback */}
-        <div className="flex items-center gap-2.5">
-          <label className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-neutral-100 text-black text-xs font-bold transition-all cursor-pointer shadow-sm press-feedback border border-white/40">
-            <Plus size={16} className="stroke-[2.5]" />
-            <span className="apple-subheading">Добавить мод (.jar)</span>
-            <input
-              type="file"
-              accept=".jar"
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files?.[0]) {
-                  handleAddCustomModFile(e.target.files[0]);
-                }
-              }}
-            />
-          </label>
+        {/* Master Category Selector */}
+        <div className="inline-flex p-1 rounded-2xl bg-zinc-950/90 border border-white/10 shadow-inner gap-1 backdrop-blur-md">
+          <button
+            onClick={() => setContentCategory('mods')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
+              contentCategory === 'mods'
+                ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Package size={13} />
+            <span className="apple-subheading">Моды</span>
+          </button>
 
           <button
-            onClick={handleOpenModsFolder}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm press-feedback"
-            title="Открыть папку mods в проводнике"
+            onClick={() => setContentCategory('schematics')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
+              contentCategory === 'schematics'
+                ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
           >
-            <FolderOpen size={14} className="text-zinc-400" />
-            <span className="apple-subheading">Папка mods</span>
+            <Layers size={13} className="text-purple-400" />
+            <span className="apple-subheading">Схематики</span>
+          </button>
+
+          <button
+            onClick={() => setContentCategory('shaders')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
+              contentCategory === 'shaders'
+                ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Sun size={13} className="text-amber-400" />
+            <span className="apple-subheading">Шейдеры</span>
           </button>
         </div>
       </div>
 
-      {/* Switcher & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-        {/* Apple-Style Segmented Control Switcher */}
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="inline-flex p-1 rounded-2xl bg-zinc-950/80 border border-white/10 shadow-inner gap-1 relative backdrop-blur-md">
-            <button
-              onClick={() => setSwitcherMode('official')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 press-feedback ${
-                switcherMode === 'official'
-                  ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
-                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent'
-              }`}
-            >
-              <span className="apple-subheading">Сборка ({officialFiles.length})</span>
-            </button>
+      {contentCategory === 'schematics' ? (
+        <SchematicsExplorer gameDir={gameDir} onNotify={onNotify} />
+      ) : contentCategory === 'shaders' ? (
+        <ShadersExplorer gameDir={gameDir} onNotify={onNotify} />
+      ) : (
+        <>
+          {/* Action Buttons: Add Mod & Open Folder with Apple Press Feedback */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+            {/* Apple-Style Segmented Control Switcher */}
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="inline-flex p-1 rounded-2xl bg-zinc-950/80 border border-white/10 shadow-inner gap-1 relative backdrop-blur-md">
+                <button
+                  onClick={() => setSwitcherMode('official')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 press-feedback ${
+                    switcherMode === 'official'
+                      ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent'
+                  }`}
+                >
+                  <span className="apple-subheading">Сборка ({officialFiles.length})</span>
+                </button>
 
-            <button
-              onClick={() => setSwitcherMode('custom')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 press-feedback ${
-                switcherMode === 'custom'
-                  ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
-                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent'
-              }`}
-            >
-              <span className="apple-subheading">Мои моды ({customMods.length})</span>
-              {isVerifying && <Loader2 size={11} className="animate-spin text-zinc-400" />}
-            </button>
+                <button
+                  onClick={() => setSwitcherMode('custom')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 press-feedback ${
+                    switcherMode === 'custom'
+                      ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent'
+                  }`}
+                >
+                  <span className="apple-subheading">Мои моды ({customMods.length})</span>
+                  {isVerifying && <Loader2 size={11} className="animate-spin text-zinc-400" />}
+                </button>
+              </div>
+
+              {/* Select All Button for Custom Mods */}
+              {switcherMode === 'custom' && filteredCustom.length > 0 && (
+                <button
+                  onClick={handleSelectAllCustom}
+                  className={`h-9 px-4 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-2 shadow-sm press-feedback ${
+                    isAllSelected
+                      ? 'bg-zinc-800 border-white/20 text-white hover:bg-zinc-750 border-t-white/30'
+                      : 'bg-zinc-900/90 border-white/10 text-zinc-300 hover:text-white hover:bg-zinc-800 hover:border-white/20'
+                  }`}
+                >
+                  <CheckSquare size={14} className={isAllSelected ? 'text-emerald-400' : 'text-zinc-400'} />
+                  <span className="apple-subheading">{isAllSelected ? 'Снять выбор' : `Выбрать все (${filteredCustom.length})`}</span>
+                </button>
+              )}
+            </div>
+
+            {/* Actions & Search */}
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              <label className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-neutral-100 text-black text-xs font-bold transition-all cursor-pointer shadow-sm press-feedback border border-white/40">
+                <Plus size={16} className="stroke-[2.5]" />
+                <span className="apple-subheading">Добавить мод (.jar)</span>
+                <input
+                  type="file"
+                  accept=".jar"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      handleAddCustomModFile(e.target.files[0]);
+                    }
+                  }}
+                />
+              </label>
+
+              <button
+                onClick={handleOpenModsFolder}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm press-feedback"
+                title="Открыть папку mods в проводнике"
+              >
+                <FolderOpen size={14} className="text-zinc-400" />
+                <span className="apple-subheading">Папка mods</span>
+              </button>
+            </div>
           </div>
 
-          {/* Select All Button for Custom Mods */}
-          {switcherMode === 'custom' && filteredCustom.length > 0 && (
-            <button
-              onClick={handleSelectAllCustom}
-              className={`h-9 px-4 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-2 shadow-sm press-feedback ${
-                isAllSelected
-                  ? 'bg-zinc-800 border-white/20 text-white hover:bg-zinc-750 border-t-white/30'
-                  : 'bg-zinc-900/90 border-white/10 text-zinc-300 hover:text-white hover:bg-zinc-800 hover:border-white/20'
-              }`}
-            >
-              <CheckSquare size={14} className={isAllSelected ? 'text-emerald-400' : 'text-zinc-400'} />
-              <span className="apple-subheading">{isAllSelected ? 'Снять выбор' : `Выбрать все (${filteredCustom.length})`}</span>
-            </button>
-          )}
-        </div>
-
-        {/* Search Input with Apple Glassmorphism */}
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3.5 top-2.5 text-zinc-500" size={13} />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск по названию..."
-            className="w-full bg-zinc-900/80 border border-white/10 focus:border-white/30 rounded-2xl pl-9 pr-8 py-2 text-xs text-white placeholder:text-zinc-500 focus:outline-none transition-colors backdrop-blur-md"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute right-2.5 top-2.5 text-zinc-500 hover:text-white press-feedback"
-            >
-              <X size={13} />
-            </button>
-          )}
-        </div>
-      </div>
+          {/* Search Input with Apple Glassmorphism */}
+          <div className="relative w-full">
+            <Search className="absolute left-3.5 top-2.5 text-zinc-500" size={13} />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Поиск по названию мода..."
+              className="w-full bg-zinc-900/80 border border-white/10 focus:border-white/30 rounded-2xl pl-9 pr-8 py-2 text-xs text-white placeholder:text-zinc-500 focus:outline-none transition-colors backdrop-blur-md"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-2.5 text-zinc-500 hover:text-white press-feedback"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
 
       {/* Main Mods Grid Container */}
       <div className="flex-1 bg-zinc-950/40 border border-white/5 rounded-3xl p-4 md:p-5 overflow-y-auto backdrop-blur-sm shadow-sm space-y-3">
@@ -620,6 +678,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
           )
         )}
       </div>
+        </>
+      )}
 
       {/* Whitelist Submission Modal Dialog */}
       <ModWhitelistModal
