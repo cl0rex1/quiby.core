@@ -3,15 +3,16 @@ import {
   Copy, 
   Check, 
   Shirt, 
-  ShieldCheck, 
   Sparkles, 
   Layers, 
   Activity,
-  Clock
+  Clock,
+  Newspaper
 } from 'lucide-react';
 import { AuthSession, ServerStatus } from '@quiby/shared';
 import { DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
 import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
+import quibySeasonLogo from '../assets/quiby_season6_logo.png';
 
 interface CharacterStageProps {
   session: AuthSession | null;
@@ -25,6 +26,7 @@ interface CharacterStageProps {
   isInGame?: boolean;
   onOpenWardrobe: () => void;
   onOpenLogin: () => void;
+  onOpenNews?: () => void;
 }
 
 export const CharacterStage: React.FC<CharacterStageProps> = ({
@@ -39,6 +41,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
   isInGame = false,
   onOpenWardrobe,
   onOpenLogin,
+  onOpenNews,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -62,26 +65,37 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
 
   return (
     <div className="relative flex-1 flex flex-col justify-between items-center p-8 overflow-hidden select-none z-10">
-      {/* Top Header: Season Branding & Server Pill */}
-      <div className="w-full flex items-start sm:items-center justify-between gap-4 flex-wrap">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="font-black text-2xl tracking-tight text-white apple-display">
-              QUIBY.
-            </span>
-            <span className="px-3 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-[10px] font-mono font-bold text-purple-300 shadow-sm apple-micro-tag">
-              SEASON VI • AERONAUTICS
-            </span>
+      {/* Top Header: News Card Widget (Left) & Server Address Pill (Right) */}
+      <div className="w-full flex items-start justify-between gap-4 flex-wrap">
+        {/* Top-Left: News Widget Card (matching reference layout - wider & lower) */}
+        <button
+          type="button"
+          onClick={onOpenNews}
+          className="w-56 sm:w-64 rounded-2xl glass-card border border-white/10 hover:border-white/25 overflow-hidden transition-all duration-300 group cursor-pointer press-feedback shadow-lg flex flex-col text-left"
+          title="Открыть новости Season VI"
+        >
+          {/* Top Half: Wider Aspect Image Preview */}
+          <div className="w-full h-16 sm:h-18 bg-gradient-to-br from-purple-950/80 via-zinc-900 to-black relative overflow-hidden flex items-center justify-center border-b border-white/5">
+            <img
+              src={quibySeasonLogo}
+              alt="Season VI"
+              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/70 via-transparent to-transparent pointer-events-none" />
           </div>
-          <div className="flex items-center gap-2 text-xs text-zinc-400 font-mono">
-            <span>Minecraft 1.21.1 NeoForge</span>
-            <span className="text-zinc-600">•</span>
-            <span className="flex items-center gap-1 text-zinc-400">
-              <Layers size={11} className="text-purple-400" />
-              Create Modpack
-            </span>
+
+          {/* Bottom Half: Title Line & Metadata Row */}
+          <div className="px-3 py-2 space-y-0.5 bg-zinc-950/60 backdrop-blur-md">
+            <p className="text-xs font-bold text-white truncate apple-subheading group-hover:text-purple-300 transition-colors">
+              Сезон VI: Aeronautics
+            </p>
+            <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono">
+              <span className="truncate">Create S6</span>
+              <span className="text-zinc-600 font-bold">•</span>
+              <span className="text-zinc-500 shrink-0">29 авг</span>
+            </div>
           </div>
-        </div>
+        </button>
 
         {/* Server Address Pill with Quick Copy & Live Status */}
         <button
@@ -153,34 +167,9 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
         </div>
       </div>
 
-      {/* Bottom Row: Player Profile Identity & Playtime Pills */}
-      <div className="w-full flex items-center justify-start gap-3 flex-wrap">
-        {session ? (
-          <>
-            <div className="flex items-center gap-2.5 px-4 py-2 rounded-full glass-panel text-xs text-white shadow-md">
-              <div className="w-5 h-5 rounded-full overflow-hidden border border-white/20 shrink-0 bg-zinc-800">
-                <img
-                  src={session.user.avatarUrl || `https://mc-heads.net/avatar/${session.user.mcUsername}/32`}
-                  alt={session.user.mcUsername}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
-              <span className="font-bold font-mono text-white apple-subheading">{session.user.mcUsername}</span>
-              <span className="text-zinc-400 font-mono text-[11px]">(@{session.user.username})</span>
-            </div>
-
-            {/* Playtime Tracker Pill */}
-            <div
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full glass-panel text-xs text-zinc-300 font-mono shadow-sm"
-              title="Общее наигранное время на сервере quiby в этом сезоне"
-            >
-              <Clock size={13} className="text-purple-400" />
-              <span className="text-white font-bold">{formatPlaytime(totalPlaytimeSeconds)}</span>
-              <span className="text-zinc-500 text-[10px]">в игре</span>
-            </div>
-          </>
-        ) : (
+      {/* Bottom Row: Ultra-minimal login or empty spacer */}
+      <div className="w-full flex items-center justify-start gap-3 flex-wrap min-h-[36px]">
+        {!session && (
           <button
             onClick={onOpenLogin}
             className="flex items-center gap-2 px-4 py-2 rounded-full glass-panel hover:bg-zinc-850 text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm press-feedback border border-white/10"

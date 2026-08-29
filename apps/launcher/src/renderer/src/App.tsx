@@ -522,6 +522,7 @@ export const App: React.FC = () => {
                 isInGame={launchState.status === 'running' || launchState.status === 'starting' || launchState.status === 'updating'}
                 onOpenWardrobe={() => handleSelectTab('wardrobe')}
                 onOpenLogin={() => setIsAuthModalOpen(true)}
+                onOpenNews={() => setIsNotificationsOpen(true)}
               />
             )}
 

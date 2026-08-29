@@ -9,6 +9,8 @@ import {
   Check, 
   Sparkles, 
   HardDrive,
+  ToggleLeft,
+  ToggleRight,
   SlidersHorizontal
 } from 'lucide-react';
 
@@ -65,6 +67,7 @@ export const ShadersExplorer: React.FC<ShadersExplorerProps> = ({
     return DEFAULT_SAMPLE_SHADERS;
   });
   const [search, setSearch] = useState('');
+  const [filterMode, setFilterMode] = useState<'all' | 'active'>('all');
   const [isDragging, setIsDragging] = useState(false);
 
   const loadShadersFromDisk = async () => {
@@ -155,15 +158,54 @@ export const ShadersExplorer: React.FC<ShadersExplorerProps> = ({
     return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
   };
 
-  const filtered = shaders.filter((s) =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.filename.toLowerCase().includes(search.toLowerCase())
-  );
+  const formatDate = (ts: number) => {
+    return new Date(ts).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'short',
+    });
+  };
+
+  const filtered = shaders.filter((s) => {
+    if (filterMode === 'active' && !s.active) return false;
+    return (
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.filename.toLowerCase().includes(search.toLowerCase())
+    );
+  });
+
+  const activeShader = shaders.find((s) => s.active);
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden space-y-4 select-none">
-      {/* Action Header & Search */}
+    <div className="flex-1 flex flex-col h-full overflow-hidden space-y-5 select-none">
+      {/* 1. Controls Row (Matching ModsView: Left Tab Switcher, Right Action Buttons) */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+        {/* Left: Apple-Style Segmented Control Filter */}
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="inline-flex p-1 rounded-2xl bg-zinc-950/80 border border-white/10 shadow-inner gap-1 relative backdrop-blur-md">
+            <button
+              onClick={() => setFilterMode('all')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 press-feedback ${
+                filterMode === 'all'
+                  ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent'
+              }`}
+            >
+              <span className="apple-subheading">Все шейдеры ({shaders.length})</span>
+            </button>
+            <button
+              onClick={() => setFilterMode('active')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 press-feedback ${
+                filterMode === 'active'
+                  ? 'bg-zinc-800 text-amber-300 shadow-md border border-amber-500/20 border-t-amber-400/30'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent'
+              }`}
+            >
+              <span className="apple-subheading">Активный ({activeShader ? 1 : 0})</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Action Buttons */}
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <label className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-neutral-100 text-black text-xs font-bold transition-all cursor-pointer shadow-sm press-feedback border border-white/40">
             <Plus size={16} className="stroke-[2.5]" />
@@ -186,29 +228,29 @@ export const ShadersExplorer: React.FC<ShadersExplorerProps> = ({
             <span className="apple-subheading">Папка shaderpacks</span>
           </button>
         </div>
-
-        {/* Search Input */}
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3.5 top-2.5 text-zinc-500" size={13} />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск по шейдерам..."
-            className="w-full bg-zinc-900/80 border border-white/10 focus:border-white/30 rounded-2xl pl-9 pr-8 py-2 text-xs text-white placeholder:text-zinc-500 focus:outline-none transition-colors backdrop-blur-md"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute right-2.5 top-2.5 text-zinc-500 hover:text-white press-feedback"
-            >
-              <X size={13} />
-            </button>
-          )}
-        </div>
       </div>
 
-      {/* Main List / Grid */}
+      {/* 2. Full-Width Search Input (Matching ModsView) */}
+      <div className="relative w-full">
+        <Search className="absolute left-3.5 top-2.5 text-zinc-500" size={13} />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Поиск по названию шейдерпака..."
+          className="w-full bg-zinc-900/80 border border-white/10 focus:border-white/30 rounded-2xl pl-9 pr-8 py-2 text-xs text-white placeholder:text-zinc-500 focus:outline-none transition-colors backdrop-blur-md"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-2.5 top-2.5 text-zinc-500 hover:text-white press-feedback"
+          >
+            <X size={13} />
+          </button>
+        )}
+      </div>
+
+      {/* 3. Main List / Grid Container */}
       <div
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
@@ -238,12 +280,12 @@ export const ShadersExplorer: React.FC<ShadersExplorerProps> = ({
                 key={idx}
                 className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 gap-3.5 ${
                   shader.active
-                    ? 'bg-zinc-850/90 border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.15)] ring-1 ring-amber-500/20 border-t-amber-300/40'
+                    ? 'bg-zinc-850/90 border-amber-500/40 shadow-[0_0_24px_rgba(245,158,11,0.12)] ring-1 ring-amber-500/20 border-t-amber-300/40'
                     : 'glass-card hover:border-white/20'
                 }`}
               >
                 <div className="flex items-center gap-3.5 truncate">
-                  {/* Active Radio Selector */}
+                  {/* Active Indicator Radio */}
                   <button
                     onClick={() => handleToggleActive(shader.filename)}
                     className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all cursor-pointer press-feedback ${
@@ -261,40 +303,55 @@ export const ShadersExplorer: React.FC<ShadersExplorerProps> = ({
                     <Sun size={22} className={shader.active ? 'animate-spin-slow' : ''} />
                   </div>
 
-                  {/* Title & Info */}
-                  <div className="truncate space-y-1">
+                  {/* Title, Badges, Description & Metadata */}
+                  <div className="truncate space-y-0.5">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-white truncate apple-subheading">
                         {shader.name}
                       </span>
                       {shader.active && (
-                        <span className="px-1.5 py-0.2 rounded-md bg-amber-500/15 border border-amber-500/30 text-[9px] font-mono text-amber-300 font-bold">
+                        <span className="px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-[9px] font-mono text-amber-300 font-bold shrink-0">
                           АКТИВЕН
                         </span>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3 text-[10px] font-mono text-zinc-500">
-                      <span className="flex items-center gap-1">
-                        <HardDrive size={10} />
-                        {formatSize(shader.size)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Sparkles size={10} />
-                        Iris / Oculus
-                      </span>
+                    <p className="text-[11px] text-zinc-400 truncate leading-snug apple-body">
+                      Пакет освещения и отражений для Iris
+                    </p>
+
+                    <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-500 truncate">
+                      <span>{formatSize(shader.size)}</span>
+                      <span>•</span>
+                      <span>Iris 1.21.1</span>
+                      <span>•</span>
+                      <span>{formatDate(shader.updatedAt)}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Delete Button */}
-                <button
-                  onClick={() => handleDelete(shader.filename)}
-                  className="p-2 rounded-xl text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer press-feedback shrink-0"
-                  title="Удалить шейдерпак"
-                >
-                  <Trash2 size={15} />
-                </button>
+                {/* Right Actions: Toggle Switch & Delete */}
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <button
+                    onClick={() => handleToggleActive(shader.filename)}
+                    className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer press-feedback"
+                    title={shader.active ? 'Отключить шейдер' : 'Включить шейдер'}
+                  >
+                    {shader.active ? (
+                      <ToggleRight size={28} className="text-amber-400 fill-amber-400/20" />
+                    ) : (
+                      <ToggleLeft size={28} className="text-zinc-600 hover:text-zinc-400" />
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(shader.filename)}
+                    className="p-2 rounded-xl text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer press-feedback"
+                    title="Удалить шейдерпак"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>

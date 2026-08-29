@@ -477,6 +477,39 @@
   - [x] Included collapsible state, auto-scroll, log syntax styling, and copy/clear actions in the unified card
   - [x] Verified seamless transition, 74 / 74 unit tests passing, and clean monorepo production build
 
+- [x] **Stage 75: Stage Decluttering & Compact Top-Left News Widget with Image Thumbnail**
+  - [x] Removed redundant bottom profile identity pill (`Cl0rex (@cl0rex#0001)`) from `CharacterStage.tsx`
+  - [x] Replaced bulky top-left title block with a sleek, compact news widget featuring a small Season VI image thumbnail and headline
+  - [x] Wired news widget click to open notifications/news inbox in `App.tsx`
+  - [x] Verified clean UI, 74 / 74 unit tests passing, and clean production build
+
+- [x] **Stage 76: Reference-Matched Vertical News Card Widget in Top-Left**
+  - [x] Rebuilt top-left news widget into a vertical card (`w-48`) with top image preview (`h-28`) and bottom metadata block
+  - [x] Included headline title `Сезон VI: Aeronautics` and dot-separated metadata row `Create S6 • 29 авг` matching user wireframe
+  - [x] Verified clean UI, 74 / 74 unit tests passing, and clean production build
+
+- [x] **Stage 77: Optimized News Widget Proportions (Wider & Compact Height)**
+  - [x] Expanded card width to `w-56 sm:w-64` and reduced banner height to `h-16 sm:h-18` with compact vertical padding
+  - [x] Verified crisp aspect ratio, 74 / 74 unit tests passing, and clean production build
+
+- [x] **Stage 78: Content Hub UX Redesign (Schematics & Shaders Aligned with Mods UX)**
+  - [x] Aligned `SchematicsExplorer.tsx` card anatomy with `ModsView.tsx` (mod-style tags, descriptions, size/date metadata, readiness badges)
+  - [x] Aligned `ShadersExplorer.tsx` with `ModsView.tsx` (interactive switches, status tags, filter pills `Все` / `Активный`, Iris descriptions)
+  - [x] Verified consistent styling across all Content Hub tabs, 74 / 74 unit tests passing, and clean production build
+
+- [x] **Stage 79: Unified Layout Structure for Schematics & Shaders (Matching Mods Controls & Search Placement)**
+  - [x] Restructured `SchematicsExplorer.tsx` and `ShadersExplorer.tsx` page layout into 3 synchronized tiers:
+    - Tier 1 (Controls Row): Left Segmented Tab / Filter, Right Action Buttons (`+ Добавить...`, `Папка...`)
+    - Tier 2 (Full-Width Search Row): Full-width search bar right above the grid
+    - Tier 3 (Cards Grid): Clean glass grid container
+  - [x] Removed awkward right-left look jumping; tabs now transition smoothly with 100% position symmetry
+  - [x] Verified 74 / 74 unit tests passing and clean monorepo production build
+
+
+
+
+
+
 
 
 
