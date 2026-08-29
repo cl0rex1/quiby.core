@@ -427,6 +427,16 @@
   - [x] Completely eliminated hard clipping edges, creating smooth, luminous outer bloom
   - [x] Verified 63 / 63 unit tests passing and completed clean production build
 
+- [x] **Stage 67: Apple Design Elevation: Translucent Materials, Spring Physics & Tactile Interaction Hierarchy**
+  - [x] Implemented Apple translucent glass materials (`glass-panel`, `glass-card`, `glass-floating`) with specular top highlights (`border-t-white/15...35`) simulating physical light catching surfaces
+  - [x] Applied instant tactile press feedback (`active:scale-[0.97]` with 100ms recovery) across all buttons, cards, switches, and sliders
+  - [x] Configured optical typography tracking (tight display headings, clean body copy, wide uppercase micro-tags) and Apple system font stack
+  - [x] Rebuilt segmented switcher control in ModsView into an authentic sliding Apple-style pill switcher
+  - [x] Formatted SettingsView into macOS-style grouped glass cards and upgraded SkinWardrobeView with glass tiles
+  - [x] Added comprehensive accessibility support for `prefers-reduced-motion` and `prefers-reduced-transparency`
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+
 
 
 

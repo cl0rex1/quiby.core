@@ -86,7 +86,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
 
     // 2. Hold in green checkmark state for 1 second
     setTimeout(() => {
-      // 3. Smoothly slide/fly down
+      // 3. Smoothly slide/fly down with Apple spring settle
       setSavePhase('sliding');
     }, 1000);
 
@@ -100,39 +100,39 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   if (activeTab === 'home') {
     return (
       <div className="fixed bottom-8 right-8 z-40 flex flex-col items-end gap-3 select-none">
-        {/* Mini Progress HUD (during update/sync) */}
+        {/* Mini Progress HUD (during update/sync) with Apple glassmorphism */}
         {isBusy && downloadProgress && (
-          <div className="bg-zinc-900/95 border border-white/10 rounded-2xl p-3 shadow-2xl backdrop-blur-md max-w-xs w-72 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="glass-floating rounded-3xl p-3.5 max-w-xs w-72 space-y-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-white font-medium truncate">{downloadProgress.stageLabel}</span>
+              <span className="text-white font-medium truncate apple-body">{downloadProgress.stageLabel}</span>
               <span className="text-emerald-400 font-mono font-bold">{downloadProgress.progressPercent}%</span>
             </div>
 
-            <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden border border-white/5">
+            <div className="w-full h-1.5 bg-zinc-800/80 rounded-full overflow-hidden border border-white/5">
               <div
-                className="h-full bg-emerald-400 transition-all duration-300 rounded-full"
+                className="h-full bg-emerald-400 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-full"
                 style={{ width: `${Math.max(downloadProgress.progressPercent, 5)}%` }}
               />
             </div>
 
-            <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500">
+            <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400">
               {downloadProgress.currentFile ? (
                 <span className="truncate max-w-[180px]">{downloadProgress.currentFile}</span>
               ) : (
                 <span>Синхронизация...</span>
               )}
               {downloadProgress.speedBps > 0 && (
-                <span className="text-zinc-300 font-bold">{formatSpeed(downloadProgress.speedBps)}</span>
+                <span className="text-zinc-200 font-bold">{formatSpeed(downloadProgress.speedBps)}</span>
               )}
             </div>
           </div>
         )}
 
-        {/* The Floating Play Button */}
+        {/* The Floating Play Button with Apple Tactile Press Feedback */}
         {!session ? (
           <button
             onClick={onOpenLogin}
-            className="px-8 py-4 rounded-full bg-white hover:bg-neutral-200 text-black font-extrabold text-sm tracking-wide shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2.5 cursor-pointer uppercase"
+            className="px-8 py-4 rounded-full bg-white hover:bg-neutral-100 text-black font-extrabold text-sm tracking-wide shadow-[0_12px_40px_rgba(0,0,0,0.8)] border border-white/40 press-feedback flex items-center gap-2.5 cursor-pointer uppercase"
           >
             <User size={18} />
             <span>Войти в аккаунт</span>
@@ -140,7 +140,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
         ) : isRunning ? (
           <button
             onClick={onKill}
-            className="px-8 py-4 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-sm tracking-wide shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2.5 cursor-pointer uppercase"
+            className="px-8 py-4 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-sm tracking-wide shadow-[0_12px_40px_rgba(225,29,72,0.5)] border border-rose-400/40 press-feedback flex items-center gap-2.5 cursor-pointer uppercase"
           >
             <Square size={18} />
             <span>В игре (Остановить)</span>
@@ -149,7 +149,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
           <button
             onClick={onLaunch}
             disabled={isBusy}
-            className="px-9 py-4 rounded-full bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-black text-base tracking-wider shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 cursor-pointer uppercase"
+            className="px-9 py-4 rounded-full bg-white hover:bg-neutral-100 disabled:opacity-50 text-black font-black text-base tracking-wider shadow-[0_16px_48px_rgba(0,0,0,0.85)] border border-white/50 press-feedback flex items-center gap-3 cursor-pointer uppercase"
           >
             {isBusy ? (
               <>
@@ -171,7 +171,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   // Case 2: Other Tabs -> Dedicated Bottom-Center Actions Window & Bottom-Right Save Window
   return (
     <>
-      {/* 1. SEPARATE ACTIONS WINDOW: Positioned in Bottom-Center */}
+      {/* 1. SEPARATE ACTIONS WINDOW: Positioned in Bottom-Center with Glass Capsule Material */}
       <div
         className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-40 select-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           hasBatch
@@ -180,11 +180,11 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
         }`}
       >
         {displayBatch && (
-          <div className="flex items-center gap-2 p-1.5 rounded-full bg-zinc-900/95 border border-white/10 shadow-2xl backdrop-blur-md h-[52px]">
-            {/* Selected Count / Select All Button (matching circular button height) */}
+          <div className="flex items-center gap-2 p-1.5 rounded-full glass-floating h-[52px]">
+            {/* Selected Count / Select All Button */}
             <button
               onClick={displayBatch.onSelectAll}
-              className="h-10 px-3.5 rounded-full bg-zinc-800 hover:bg-zinc-750 border border-white/5 flex items-center justify-center text-xs font-bold text-white font-mono shrink-0 shadow-sm gap-1.5 cursor-pointer active:scale-95 transition-all"
+              className="h-10 px-3.5 rounded-full bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/10 flex items-center justify-center text-xs font-bold text-white font-mono shrink-0 shadow-sm gap-1.5 cursor-pointer press-feedback"
               title={displayBatch.isAllSelected ? 'Снять выбор со всех' : 'Выбрать все моды'}
             >
               <CheckSquare size={14} className={displayBatch.isAllSelected ? 'text-emerald-400' : 'text-zinc-400'} />
@@ -194,7 +194,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
             {/* Action: Enable All */}
             <button
               onClick={displayBatch.onEnableAll}
-              className="h-10 px-4 rounded-full bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-zinc-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm shrink-0"
+              className="h-10 px-4 rounded-full bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/10 text-xs font-bold text-zinc-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer press-feedback shadow-sm shrink-0"
               title="Включить все выбранные моды"
             >
               <ToggleRight size={17} className="text-emerald-400" />
@@ -204,7 +204,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
             {/* Action: Disable All */}
             <button
               onClick={displayBatch.onDisableAll}
-              className="h-10 px-4 rounded-full bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-zinc-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm shrink-0"
+              className="h-10 px-4 rounded-full bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/10 text-xs font-bold text-zinc-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer press-feedback shadow-sm shrink-0"
               title="Отключить все выбранные моды"
             >
               <ToggleLeft size={17} className="text-zinc-400" />
@@ -214,7 +214,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
             {/* Action: Delete All */}
             <button
               onClick={displayBatch.onDeleteAll}
-              className="w-10 h-10 rounded-full bg-zinc-800 hover:bg-rose-950/80 text-zinc-400 hover:text-rose-400 flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 shadow-sm"
+              className="w-10 h-10 rounded-full bg-zinc-800/90 hover:bg-rose-950/90 border border-white/10 text-zinc-400 hover:text-rose-400 flex items-center justify-center cursor-pointer press-feedback shrink-0 shadow-sm"
               title="Удалить выбранные моды"
             >
               <Trash2 size={15} />
@@ -223,7 +223,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
             {/* Dismiss selection */}
             <button
               onClick={displayBatch.onClear}
-              className="w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 shadow-sm"
+              className="w-10 h-10 rounded-full bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer press-feedback shrink-0 shadow-sm"
               title="Снять выбор"
             >
               <X size={16} />
@@ -234,7 +234,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
 
       {/* 2. SEPARATE SAVE WINDOW: Positioned in Bottom-Right Corner */}
       <div
-        className={`fixed bottom-8 right-8 z-40 select-none pointer-events-auto transition-all duration-300 ease-out ${
+        className={`fixed bottom-8 right-8 z-40 select-none pointer-events-auto transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           showSave && !isSaveExiting
             ? 'translate-y-0 opacity-100 pointer-events-auto'
             : 'translate-y-24 opacity-0 pointer-events-none'
@@ -246,14 +246,14 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
               ? 'border-emerald-300 shadow-[0_0_35px_rgba(52,211,153,0.9)]'
               : isShaking
               ? 'animate-shake bg-rose-950/90 border-rose-500 shadow-[0_0_35px_rgba(244,63,94,0.85)] ring-2 ring-rose-500'
-              : 'bg-zinc-900/95 border-white/10 shadow-2xl backdrop-blur-md'
+              : 'glass-floating'
           }`}
         >
           {/* Cancel Button */}
           <button
             onClick={onCancel}
             disabled={isFilled}
-            className="w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 shadow-sm"
+            className="w-10 h-10 rounded-full bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-400 hover:text-white flex items-center justify-center press-feedback shrink-0 shadow-sm"
             title="Отменить изменения"
           >
             <X size={16} />
@@ -263,7 +263,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
           <button
             onClick={handleSaveClick}
             disabled={isFilled}
-            className="px-6 py-2.5 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-black transition-all shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0"
+            className="px-6 py-2.5 rounded-full bg-white hover:bg-neutral-100 text-black text-xs font-black shadow-md flex items-center gap-1.5 cursor-pointer press-feedback shrink-0"
           >
             <Save size={14} />
             <span>Сохранить</span>
@@ -271,7 +271,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
 
           {/* Expanding Solid Green Layer with Centered Checkmark */}
           <div
-            className={`absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 flex items-center justify-center pointer-events-none transition-all duration-300 ease-out origin-center z-10 ${
+            className={`absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 flex items-center justify-center pointer-events-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] origin-center z-10 ${
               isFilled ? 'scale-100 opacity-100 shadow-[0_0_30px_rgba(52,211,153,0.9)]' : 'scale-0 opacity-0'
             }`}
           >

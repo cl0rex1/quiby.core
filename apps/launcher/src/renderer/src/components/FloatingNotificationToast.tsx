@@ -52,7 +52,7 @@ export const FloatingNotificationToast: React.FC<FloatingNotificationToastProps>
   const isError = type === 'error';
   const isWarning = type === 'warning';
 
-  // Crisp, no-glow solid stroke colors
+  // Crisp, vibrant solid stroke colors
   const strokeColor = isSuccess
     ? '#34d399' // emerald-400
     : isError
@@ -86,7 +86,7 @@ export const FloatingNotificationToast: React.FC<FloatingNotificationToastProps>
             : 'translate-y-8 opacity-0 scale-95 blur-[2px] pointer-events-none'
         }`}
       >
-        <div className="relative flex items-center gap-3 px-5 py-2.5 h-[52px] w-[360px] rounded-full bg-zinc-900/95 border border-white/10 shadow-2xl backdrop-blur-md">
+        <div className="relative flex items-center gap-3 px-5 py-2.5 h-[52px] w-[360px] rounded-full glass-floating">
           {/* Animated SVG Contour: Starts from Top-Center and draws clockwise around the entire window */}
           <svg
             className="absolute -inset-[1px] w-[362px] h-[54px] pointer-events-none overflow-visible"
@@ -109,14 +109,14 @@ export const FloatingNotificationToast: React.FC<FloatingNotificationToastProps>
 
           {/* Status Icon */}
           <div
-            className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+            className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
               isSuccess
-                ? 'bg-emerald-500/15 text-emerald-400'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                 : isError
-                ? 'bg-rose-500/15 text-rose-400'
+                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                 : isWarning
-                ? 'bg-amber-500/15 text-amber-400'
-                : 'bg-sky-500/15 text-sky-400'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
             }`}
           >
             {isSuccess ? (
@@ -130,8 +130,8 @@ export const FloatingNotificationToast: React.FC<FloatingNotificationToastProps>
             )}
           </div>
 
-          {/* Clean Title Text without extra subtext */}
-          <span className="text-xs font-bold text-white truncate flex-1 pr-1">
+          {/* Clean Title Text with Apple Optical Tracking */}
+          <span className="text-xs font-bold text-white truncate flex-1 pr-1 apple-subheading">
             {displayToast.title}
           </span>
         </div>

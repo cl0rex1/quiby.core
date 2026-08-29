@@ -282,8 +282,8 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
         </div>
       )}
 
-      {/* Left Column: Character Stage Preview */}
-      <div className="flex-[1.1] flex flex-col items-center justify-center bg-zinc-950/40 border border-white/5 rounded-3xl p-6 relative overflow-hidden backdrop-blur-sm">
+      {/* Left Column: Character Stage Preview with Glass Depth */}
+      <div className="flex-[1.1] flex flex-col items-center justify-center glass-panel rounded-3xl p-6 relative overflow-hidden">
         {/* Subtle radial backdrop accent */}
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,transparent_70%)]" />
 
@@ -296,9 +296,9 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
           />
 
           {/* Minimal Floating Name Badge */}
-          <div className="mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-white/10 text-xs font-medium text-zinc-200 shadow-sm backdrop-blur-md">
+          <div className="mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-floating text-xs font-medium text-zinc-200 shadow-sm">
             <User size={12} className="text-zinc-400" />
-            <span className="truncate max-w-[200px]">{currentDisplayName}</span>
+            <span className="truncate max-w-[200px] apple-subheading">{currentDisplayName}</span>
             {customSkinImg && (
               <button
                 onClick={() => {
@@ -306,7 +306,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                   setValidationError(null);
                 }}
                 title="Сбросить скин"
-                className="ml-1 text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer"
+                className="ml-1 text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer press-feedback"
               >
                 <Trash2 size={11} />
               </button>
@@ -315,38 +315,38 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
         </div>
       </div>
 
-      {/* Right Column: Minimalist Control Panel */}
+      {/* Right Column: Control Panel with Glass Components */}
       <div className="flex-1 flex flex-col space-y-5 overflow-y-auto pr-1 justify-center">
         {/* Validation Error Banner */}
         {validationError && (
           <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs animate-in fade-in">
             <AlertCircle size={15} className="shrink-0 mt-0.5 text-rose-400" />
             <div className="flex-1">
-              <p className="font-semibold text-rose-200">Неверный скин</p>
-              <p className="text-[11px] text-rose-300/80 mt-0.5">{validationError}</p>
+              <p className="font-semibold text-rose-200 apple-subheading">Неверный скин</p>
+              <p className="text-[11px] text-rose-300/80 mt-0.5 apple-body">{validationError}</p>
             </div>
           </div>
         )}
 
         {/* Section 1: Upload Zone */}
         <label
-          className="group flex items-center justify-between p-4 rounded-2xl border bg-zinc-900/50 hover:bg-zinc-900 border-white/5 hover:border-white/10 transition-all cursor-pointer"
+          className="group flex items-center justify-between p-4 rounded-2xl glass-card cursor-pointer press-feedback"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-white/5 flex items-center justify-center text-zinc-300 group-hover:text-white transition-colors">
+            <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-white/5 flex items-center justify-center text-zinc-300 group-hover:text-white transition-colors shadow-sm">
               <Upload size={16} />
             </div>
             <div className="flex flex-col text-left">
-              <span className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors">
+              <span className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors apple-subheading">
                 Загрузить скин
               </span>
-              <span className="text-[11px] text-zinc-500">
+              <span className="text-[11px] text-zinc-500 apple-body">
                 PNG 64x64 • Перетащите файл в любое место окна
               </span>
             </div>
           </div>
 
-          <span className="text-[11px] font-medium text-zinc-400 px-2.5 py-1 rounded-lg bg-zinc-800/50 border border-white/5 group-hover:border-white/10">
+          <span className="text-[11px] font-medium text-zinc-400 px-2.5 py-1 rounded-lg bg-zinc-800/50 border border-white/5 group-hover:border-white/10 apple-body">
             Обзор
           </span>
 
@@ -364,9 +364,9 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
         {/* Section 2: Library Grid (3 on row 1, 3 on row 2, Max 6 Skins) */}
         {library.length > 0 && (
-          <div className="bg-zinc-950/40 border border-white/5 rounded-2xl p-4 space-y-3">
+          <div className="glass-panel rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider apple-micro-tag">
                 Моя коллекция
               </span>
               <span className="text-[11px] text-zinc-500 font-mono">
@@ -382,13 +382,13 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                     key={item.id}
                     onClick={() => handleSelectLibraryItem(item)}
                     title={item.name}
-                    className={`group relative flex flex-col items-center justify-center p-2 rounded-2xl border transition-all cursor-pointer aspect-square overflow-hidden ${
+                    className={`group relative flex flex-col items-center justify-center p-2 rounded-2xl border transition-all cursor-pointer aspect-square overflow-hidden press-feedback ${
                       isSelected
-                        ? 'bg-zinc-800 border-zinc-400 shadow-md ring-1 ring-white/10'
-                        : 'bg-zinc-900/60 hover:bg-zinc-850 border-white/5 hover:border-white/15 text-zinc-400 hover:text-zinc-200'
+                        ? 'bg-zinc-800/90 border-white/30 shadow-md ring-1 ring-white/15 border-t-white/40'
+                        : 'glass-card text-zinc-400 hover:text-zinc-200'
                     }`}
                   >
-                    {/* Live Chibi Thumbnail (Properly contained without overflow) */}
+                    {/* Live Chibi Thumbnail */}
                     <div className="w-full h-full flex items-center justify-center p-1">
                       <img
                         src={item.chibiPreviewUri}
@@ -409,14 +409,14 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                       <button
                         onClick={(e) => handleDownloadChibi(e, item)}
                         title="Скачать чиби-аватар"
-                        className="p-1.5 rounded-lg bg-zinc-900/95 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all shadow-md active:scale-95 cursor-pointer"
+                        className="p-1.5 rounded-lg bg-zinc-900/95 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all shadow-md press-feedback cursor-pointer"
                       >
                         <Download size={12} />
                       </button>
                       <button
                         onClick={(e) => handleDeleteLibraryItem(e, item.id)}
                         title="Удалить скин"
-                        className="p-1.5 rounded-lg bg-zinc-900/95 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 transition-all shadow-md active:scale-95 cursor-pointer"
+                        className="p-1.5 rounded-lg bg-zinc-900/95 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 transition-all shadow-md press-feedback cursor-pointer"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -429,8 +429,8 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
         )}
 
         {/* Section 3: Default Skins (Steve & Alex) */}
-        <div className="bg-zinc-950/40 border border-white/5 rounded-2xl p-4 space-y-2.5">
-          <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block">
+        <div className="glass-panel rounded-2xl p-4 space-y-2.5">
+          <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block apple-micro-tag">
             Базовые скины
           </span>
 
@@ -445,13 +445,13 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                     onSetDefaultSkinIdx(idx);
                     setValidationError(null);
                   }}
-                  className={`py-2.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  className={`py-2.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer press-feedback ${
                     isSelected
-                      ? 'bg-zinc-800 border-zinc-400 text-white shadow-sm'
-                      : 'bg-zinc-900/60 hover:bg-zinc-900 border-white/5 text-zinc-400 hover:text-zinc-200'
+                      ? 'bg-zinc-800/90 border-white/25 text-white shadow-sm border-t-white/35'
+                      : 'bg-zinc-900/60 hover:bg-zinc-850 border-white/5 text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <span>{skin.name}</span>
+                  <span className="apple-subheading">{skin.name}</span>
                   {isSelected && <Check size={13} className="text-zinc-200" />}
                 </button>
               );

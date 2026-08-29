@@ -59,14 +59,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto p-8 space-y-6 select-none z-10">
-      {/* Header */}
+      {/* Header with Apple Typography */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-white flex items-center gap-2.5 apple-heading">
             <Sliders className="text-zinc-400" size={22} />
             <span>Настройки лаунчера</span>
           </h2>
-          <p className="text-xs text-zinc-500 font-mono mt-0.5">
+          <p className="text-xs text-zinc-500 font-mono mt-0.5 apple-body">
             Память RAM, среда Java 21 и параметры запуска
           </p>
         </div>
@@ -85,21 +85,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }}
       />
 
-      {/* 2. Java 21 Runtime */}
-      <div className="bg-zinc-950/40 border border-white/5 rounded-3xl p-6 space-y-3.5 shadow-sm backdrop-blur-sm">
+      {/* 2. Java 21 Runtime Card (macOS Settings Group Style) */}
+      <div className="glass-panel rounded-3xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-white font-bold text-sm">
             <Cpu size={16} className="text-zinc-400" />
-            <span>Исполняемая среда Java 21</span>
+            <span className="apple-subheading">Исполняемая среда Java 21</span>
           </div>
           <button
             type="button"
             onClick={handleDetectJava}
             disabled={detectingJava}
-            className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white px-3 py-1 rounded-full bg-zinc-900 border border-white/10 hover:border-white/20 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white px-3 py-1 rounded-full bg-zinc-850 border border-white/10 hover:border-white/20 transition-colors cursor-pointer press-feedback shadow-sm"
           >
             <RefreshCw size={12} className={detectingJava ? 'animate-spin' : ''} />
-            <span>Автопоиск</span>
+            <span className="apple-body">Автопоиск</span>
           </button>
         </div>
 
@@ -108,7 +108,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <select
               value={settings.javaPath}
               onChange={(e) => onUpdateSettings({ ...settings, javaPath: e.target.value })}
-              className="w-full bg-zinc-900 border border-white/10 rounded-2xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-white/30 cursor-pointer"
+              className="w-full bg-zinc-900/90 border border-white/10 rounded-2xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-white/30 cursor-pointer transition-colors backdrop-blur-md"
             >
               {javaList.map((j, idx) => (
                 <option key={idx} value={j.path}>
@@ -124,12 +124,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               value={settings.javaPath}
               onChange={(e) => onUpdateSettings({ ...settings, javaPath: e.target.value })}
               placeholder="java или /usr/bin/java"
-              className="flex-1 bg-zinc-900 border border-white/10 rounded-2xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-white/30"
+              className="flex-1 bg-zinc-900/90 border border-white/10 focus:border-white/30 rounded-2xl px-4 py-2 text-xs text-white font-mono focus:outline-none transition-colors backdrop-blur-md"
             />
             <button
               type="button"
               onClick={handleBrowseJava}
-              className="px-4 py-2 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 hover:border-white/20 text-xs text-zinc-300 hover:text-white transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-2xl bg-zinc-850 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-xs text-zinc-300 hover:text-white transition-colors cursor-pointer press-feedback shadow-sm"
             >
               Обзор...
             </button>
@@ -137,13 +137,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* 3. Game Directory & Resolution */}
+      {/* 3. Game Directory & Resolution Group */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Directory */}
-        <div className="bg-zinc-950/40 border border-white/5 rounded-3xl p-6 space-y-2.5 shadow-sm backdrop-blur-sm">
+        <div className="glass-panel rounded-3xl p-6 space-y-3">
           <div className="flex items-center gap-2 text-white font-bold text-xs">
             <Folder size={16} className="text-zinc-400" />
-            <span>Папка с игрой</span>
+            <span className="apple-subheading">Папка с игрой</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -151,19 +151,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               type="text"
               value={settings.gameDir}
               onChange={(e) => onUpdateSettings({ ...settings, gameDir: e.target.value })}
-              className="flex-1 bg-zinc-900 border border-white/10 rounded-2xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-white/30 truncate"
+              className="flex-1 bg-zinc-900/90 border border-white/10 focus:border-white/30 rounded-2xl px-4 py-2 text-xs text-white font-mono focus:outline-none truncate transition-colors backdrop-blur-md"
             />
             <button
               type="button"
               onClick={handleBrowseGameDir}
-              className="px-4 py-2 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 hover:border-white/20 text-xs text-zinc-300 hover:text-white transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-2xl bg-zinc-850 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-xs text-zinc-300 hover:text-white transition-colors cursor-pointer press-feedback shadow-sm"
             >
               Обзор
             </button>
             <button
               type="button"
               onClick={() => window.quibyApi?.openPath(settings.gameDir)}
-              className="p-2 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white transition-colors cursor-pointer"
+              className="p-2 rounded-2xl bg-zinc-850 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white transition-colors cursor-pointer press-feedback shadow-sm"
               title="Открыть папку"
             >
               <FolderOpen size={16} />
@@ -172,10 +172,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         {/* Resolution */}
-        <div className="bg-zinc-950/40 border border-white/5 rounded-3xl p-6 space-y-2.5 shadow-sm backdrop-blur-sm">
+        <div className="glass-panel rounded-3xl p-6 space-y-3">
           <div className="flex items-center gap-2 text-white font-bold text-xs">
             <Monitor size={16} className="text-zinc-400" />
-            <span>Разрешение окна</span>
+            <span className="apple-subheading">Разрешение окна</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -184,25 +184,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="number"
                 value={settings.windowWidth}
                 onChange={(e) => onUpdateSettings({ ...settings, windowWidth: parseInt(e.target.value, 10) || 1280 })}
-                className="w-20 bg-zinc-900 border border-white/10 rounded-2xl px-2.5 py-2 text-xs text-white font-mono text-center"
+                className="w-20 bg-zinc-900/90 border border-white/10 focus:border-white/30 rounded-2xl px-2.5 py-2 text-xs text-white font-mono text-center transition-colors backdrop-blur-md"
               />
               <span className="text-zinc-500">×</span>
               <input
                 type="number"
                 value={settings.windowHeight}
                 onChange={(e) => onUpdateSettings({ ...settings, windowHeight: parseInt(e.target.value, 10) || 720 })}
-                className="w-20 bg-zinc-900 border border-white/10 rounded-2xl px-2.5 py-2 text-xs text-white font-mono text-center"
+                className="w-20 bg-zinc-900/90 border border-white/10 focus:border-white/30 rounded-2xl px-2.5 py-2 text-xs text-white font-mono text-center transition-colors backdrop-blur-md"
               />
             </div>
 
-            <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer ml-auto hover:text-white transition-colors">
+            <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer ml-auto hover:text-white transition-colors press-feedback">
               <input
                 type="checkbox"
                 checked={settings.fullscreen}
                 onChange={(e) => onUpdateSettings({ ...settings, fullscreen: e.target.checked })}
-                className="rounded accent-white"
+                className="rounded accent-white cursor-pointer"
               />
-              <span>Полноэкранный</span>
+              <span className="apple-body">Полноэкранный</span>
             </label>
           </div>
         </div>

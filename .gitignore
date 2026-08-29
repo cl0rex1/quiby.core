@@ -15,3 +15,4 @@ game/
 runtime/
 logs/
 temp/
+.agents/

@@ -275,11 +275,11 @@ export const ModsView: React.FC<ModsViewProps> = ({
           </p>
         </div>
 
-        {/* Action Buttons: Add Mod & Open Folder */}
+        {/* Action Buttons: Add Mod & Open Folder with Apple Press Feedback */}
         <div className="flex items-center gap-2.5">
-          <label className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95">
+          <label className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-neutral-100 text-black text-xs font-bold transition-all cursor-pointer shadow-sm press-feedback border border-white/40">
             <Plus size={16} className="stroke-[2.5]" />
-            <span>Добавить мод (.jar)</span>
+            <span className="apple-subheading">Добавить мод (.jar)</span>
             <input
               type="file"
               accept=".jar"
@@ -294,40 +294,40 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
           <button
             onClick={handleOpenModsFolder}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900 hover:bg-zinc-850 border border-white/10 hover:border-white/20 text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm press-feedback"
             title="Открыть папку mods в проводнике"
           >
             <FolderOpen size={14} className="text-zinc-400" />
-            <span>Папка mods</span>
+            <span className="apple-subheading">Папка mods</span>
           </button>
         </div>
       </div>
 
       {/* Switcher & Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-        {/* Clean Modern Segmented Control Switcher */}
+        {/* Apple-Style Segmented Control Switcher */}
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="inline-flex p-1 rounded-2xl bg-zinc-950/80 border border-white/10 shadow-inner gap-1">
+          <div className="inline-flex p-1 rounded-2xl bg-zinc-950/80 border border-white/10 shadow-inner gap-1 relative backdrop-blur-md">
             <button
               onClick={() => setSwitcherMode('official')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 press-feedback ${
                 switcherMode === 'official'
-                  ? 'bg-zinc-800 text-white shadow-md border border-white/15'
+                  ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent'
               }`}
             >
-              <span>Сборка ({officialFiles.length})</span>
+              <span className="apple-subheading">Сборка ({officialFiles.length})</span>
             </button>
 
             <button
               onClick={() => setSwitcherMode('custom')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 press-feedback ${
                 switcherMode === 'custom'
-                  ? 'bg-zinc-800 text-white shadow-md border border-white/15'
+                  ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent'
               }`}
             >
-              <span>Мои моды ({customMods.length})</span>
+              <span className="apple-subheading">Мои моды ({customMods.length})</span>
               {isVerifying && <Loader2 size={11} className="animate-spin text-zinc-400" />}
             </button>
           </div>
@@ -336,19 +336,19 @@ export const ModsView: React.FC<ModsViewProps> = ({
           {switcherMode === 'custom' && filteredCustom.length > 0 && (
             <button
               onClick={handleSelectAllCustom}
-              className={`h-9 px-4 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-2 shadow-sm ${
+              className={`h-9 px-4 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-2 shadow-sm press-feedback ${
                 isAllSelected
-                  ? 'bg-zinc-800 border-white/20 text-white hover:bg-zinc-750'
+                  ? 'bg-zinc-800 border-white/20 text-white hover:bg-zinc-750 border-t-white/30'
                   : 'bg-zinc-900/90 border-white/10 text-zinc-300 hover:text-white hover:bg-zinc-800 hover:border-white/20'
               }`}
             >
               <CheckSquare size={14} className={isAllSelected ? 'text-emerald-400' : 'text-zinc-400'} />
-              <span>{isAllSelected ? 'Снять выбор' : `Выбрать все (${filteredCustom.length})`}</span>
+              <span className="apple-subheading">{isAllSelected ? 'Снять выбор' : `Выбрать все (${filteredCustom.length})`}</span>
             </button>
           )}
         </div>
 
-        {/* Search Input */}
+        {/* Search Input with Apple Glassmorphism */}
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3.5 top-2.5 text-zinc-500" size={13} />
           <input
@@ -356,12 +356,12 @@ export const ModsView: React.FC<ModsViewProps> = ({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Поиск по названию..."
-            className="w-full bg-zinc-900/80 border border-white/10 rounded-2xl pl-9 pr-8 py-2 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/30"
+            className="w-full bg-zinc-900/80 border border-white/10 focus:border-white/30 rounded-2xl pl-9 pr-8 py-2 text-xs text-white placeholder:text-zinc-500 focus:outline-none transition-colors backdrop-blur-md"
           />
           {search && (
             <button
               onClick={() => setSearch('')}
-              className="absolute right-2.5 top-2.5 text-zinc-500 hover:text-white"
+              className="absolute right-2.5 top-2.5 text-zinc-500 hover:text-white press-feedback"
             >
               <X size={13} />
             </button>
@@ -387,11 +387,11 @@ export const ModsView: React.FC<ModsViewProps> = ({
                 return (
                   <div
                     key={idx}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-zinc-900/50 hover:bg-zinc-900/80 border border-white/5 hover:border-white/10 transition-all gap-3.5"
+                    className="flex items-center justify-between p-4 rounded-2xl glass-card gap-3.5"
                   >
                     <div className="flex items-center gap-3.5 truncate">
                       {/* Mod Logo Icon */}
-                      <div className="w-12 h-12 rounded-2xl bg-zinc-850 border border-white/5 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                      <div className="w-12 h-12 rounded-2xl bg-zinc-850/80 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
                         {meta.iconUrl ? (
                           <img
                             src={meta.iconUrl}
@@ -409,23 +409,23 @@ export const ModsView: React.FC<ModsViewProps> = ({
                       {/* Title & Short Description */}
                       <div className="truncate space-y-0.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-white truncate">
+                          <span className="text-xs font-bold text-white truncate apple-subheading">
                             {meta.displayName}
                           </span>
-                          <span className="px-1.5 py-0.5 rounded-md bg-zinc-800 border border-white/5 text-[9px] text-zinc-400 font-mono shrink-0">
+                          <span className="px-1.5 py-0.5 rounded-md bg-zinc-800/80 border border-white/5 text-[9px] text-zinc-400 font-mono shrink-0">
                             {meta.categoryLabel}
                           </span>
                         </div>
-                        <p className="text-[11px] text-zinc-400 truncate leading-snug">
+                        <p className="text-[11px] text-zinc-400 truncate leading-snug apple-body">
                           {meta.description}
                         </p>
-                        <p className="text-[10px] text-zinc-600 font-mono truncate">
+                        <p className="text-[10px] text-zinc-500 font-mono truncate">
                           {file.modVersion || '1.21.1'} • {formatSize(file.size)}
                         </p>
                       </div>
                     </div>
 
-                    <span className="px-2.5 py-1 rounded-full bg-zinc-800/60 text-[10px] font-mono text-zinc-400 border border-white/5 shrink-0">
+                    <span className="px-2.5 py-1 rounded-full bg-zinc-800/60 text-[10px] font-mono text-zinc-400 border border-white/5 shrink-0 apple-micro-tag">
                       В сборке
                     </span>
                   </div>
@@ -439,8 +439,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
             <div className="py-20 text-center text-zinc-500 text-xs space-y-3">
               <Package size={36} className="mx-auto text-zinc-600" />
               <div className="space-y-1">
-                <p className="font-bold text-sm text-zinc-300">У вас пока нет установленных модов</p>
-                <p className="text-zinc-500 text-xs max-w-sm mx-auto">
+                <p className="font-bold text-sm text-zinc-300 apple-subheading">У вас пока нет установленных модов</p>
+                <p className="text-zinc-500 text-xs max-w-sm mx-auto apple-body">
                   Перетащите файл .jar в любое место окна или нажмите «Добавить мод».
                 </p>
               </div>
@@ -465,13 +465,13 @@ export const ModsView: React.FC<ModsViewProps> = ({
                 return (
                   <div
                     key={mod.id}
-                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all gap-3.5 ${
+                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 gap-3.5 ${
                       isSelected
-                        ? 'bg-zinc-850 border-white/25 shadow-md ring-1 ring-white/10'
+                        ? 'bg-zinc-850/90 border-white/25 shadow-md ring-1 ring-white/10 border-t-white/35'
                         : isBlocked
                         ? 'bg-rose-950/20 border-rose-500/20 text-rose-300'
                         : mod.enabled
-                        ? 'bg-zinc-900/80 border-white/10 shadow-sm'
+                        ? 'glass-card shadow-sm'
                         : 'bg-zinc-900/40 border-white/5 opacity-60'
                     }`}
                   >
@@ -479,7 +479,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                       {/* Checkbox Selector Circle */}
                       <button
                         onClick={() => toggleSelectMod(mod.id)}
-                        className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all cursor-pointer ${
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all cursor-pointer press-feedback ${
                           isSelected
                             ? 'bg-white text-black shadow-sm'
                             : 'bg-zinc-800/80 border border-white/10 hover:border-white/30 text-transparent'
@@ -490,7 +490,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                       </button>
 
                       {/* Mod Logo */}
-                      <div className="w-12 h-12 rounded-2xl bg-zinc-850 border border-white/5 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                      <div className="w-12 h-12 rounded-2xl bg-zinc-850/80 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
                         {meta.iconUrl ? (
                           <img
                             src={meta.iconUrl}
@@ -508,31 +508,31 @@ export const ModsView: React.FC<ModsViewProps> = ({
                       {/* Title, Exact 4 Status Badges & Description */}
                       <div className="truncate space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold text-white truncate">
+                          <span className="text-xs font-bold text-white truncate apple-subheading">
                             {meta.displayName}
                           </span>
 
                           {/* 1. Проверен */}
                           {isApproved && (
                             <span className="text-[10px] text-zinc-400 font-medium flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                              <span>Проверен</span>
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+                              <span className="apple-body">Проверен</span>
                             </span>
                           )}
 
                           {/* 2. На рассмотрении */}
                           {isPending && (
                             <span className="text-[10px] text-zinc-400 font-medium flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                              <span>На рассмотрении</span>
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.6)]" />
+                              <span className="apple-body">На рассмотрении</span>
                             </span>
                           )}
 
                           {/* 3. Запрещен */}
                           {isBlocked && (
                             <span className="text-[10px] text-rose-400/90 font-medium flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                              <span>Запрещен</span>
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.6)]" />
+                              <span className="apple-body">Запрещен</span>
                             </span>
                           )}
 
@@ -540,7 +540,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           {isUnverified && (
                             <span className="text-[10px] text-zinc-500 font-medium flex items-center gap-1.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
-                              <span>Не в каталоге</span>
+                              <span className="apple-body">Не в каталоге</span>
                             </span>
                           )}
 
@@ -549,7 +549,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                               href={mod.projectUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-zinc-500 hover:text-white transition-colors shrink-0"
+                              className="text-zinc-500 hover:text-white transition-colors shrink-0 press-feedback"
                               title="Открыть на Modrinth"
                             >
                               <ExternalLink size={11} />
@@ -557,7 +557,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           )}
                         </div>
 
-                        <p className="text-[11px] text-zinc-400 truncate leading-snug">
+                        <p className="text-[11px] text-zinc-400 truncate leading-snug apple-body">
                           {meta.description}
                         </p>
 
@@ -567,7 +567,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           {isUnverified && (
                             <button
                               onClick={(e) => handleOpenWhitelistModal(e, mod)}
-                              className="px-2.5 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border border-white/10 text-[11px] font-medium font-sans transition-all cursor-pointer shadow-sm active:scale-95 flex items-center gap-1"
+                              className="px-2.5 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border border-white/10 text-[11px] font-medium font-sans transition-all cursor-pointer shadow-sm press-feedback flex items-center gap-1"
                             >
                               <span>Запросить доступ</span>
                             </button>
@@ -581,10 +581,10 @@ export const ModsView: React.FC<ModsViewProps> = ({
                       <button
                         onClick={() => toggleCustomMod(mod.id)}
                         disabled={!isApproved}
-                        className={`transition-all ${
+                        className={`transition-all press-feedback ${
                           !isApproved
                             ? 'opacity-25 cursor-not-allowed'
-                            : 'cursor-pointer hover:scale-105 active:scale-95'
+                            : 'cursor-pointer'
                         }`}
                         title={
                           isBlocked
@@ -598,16 +598,16 @@ export const ModsView: React.FC<ModsViewProps> = ({
                             : 'Включить мод'
                         }
                       >
-                        {mod.enabled && isApproved ? (
-                          <ToggleRight size={32} className="text-white" />
+                        {mod.enabled ? (
+                          <ToggleRight size={28} className="text-emerald-400 stroke-[1.75]" />
                         ) : (
-                          <ToggleLeft size={32} className="text-zinc-600" />
+                          <ToggleLeft size={28} className="text-zinc-500 stroke-[1.75]" />
                         )}
                       </button>
 
                       <button
                         onClick={(e) => handleDeleteCustomMod(e, mod.id)}
-                        className="p-2 rounded-xl text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer press-feedback"
                         title="Удалить мод"
                       >
                         <Trash2 size={15} />

@@ -71,7 +71,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
     <>
       {/* Full-Window Smooth Backdrop Blur Overlay on Hover (when not in inbox mode) */}
       <div
-        className={`fixed inset-0 z-30 bg-black/45 backdrop-blur-md transition-opacity duration-300 ease-out pointer-events-none ${
+        className={`fixed inset-0 z-30 bg-black/40 backdrop-blur-md transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none ${
           isHovered && !isNotificationsOpen ? 'opacity-100' : 'opacity-0'
         }`}
       />
@@ -80,7 +80,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
       <aside
         onMouseEnter={() => !isNotificationsOpen && setIsHovered(true)}
         onMouseLeave={() => !isNotificationsOpen && setIsHovered(false)}
-        className={`fixed top-0 left-0 bottom-0 z-40 bg-zinc-950/95 border-r border-white/10 select-none backdrop-blur-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-2xl overflow-hidden ${
+        className={`fixed top-0 left-0 bottom-0 z-40 bg-zinc-950/90 border-r border-white/10 select-none backdrop-blur-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-2xl overflow-hidden ${
           isNotificationsOpen
             ? 'w-[310px] shadow-[0_0_60px_rgba(0,0,0,0.9)]'
             : isHovered
@@ -144,10 +144,10 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                 <button
                   key={item.id}
                   onClick={() => onSelectTab(item.id)}
-                  className={`flex items-center w-full h-12 rounded-2xl transition-all duration-200 cursor-pointer ${
+                  className={`flex items-center w-full h-12 rounded-2xl cursor-pointer press-feedback ${
                     isActive
-                      ? 'bg-zinc-800 text-white shadow-sm border border-white/10'
-                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent'
+                      ? 'bg-zinc-800/90 text-white shadow-sm border border-white/15 border-t-white/30'
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900/80 border border-transparent'
                   }`}
                   title={!isHovered ? item.label : undefined}
                 >
@@ -162,7 +162,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
 
                   {/* Smooth Animated Label */}
                   <span
-                    className={`text-xs font-semibold whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pl-1 ${
+                    className={`text-xs font-semibold whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pl-1 apple-subheading ${
                       isHovered
                         ? 'max-w-[130px] opacity-100 translate-x-0'
                         : 'max-w-0 opacity-0 -translate-x-3 pointer-events-none'
@@ -180,7 +180,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
             {/* Notifications Bell Button */}
             <button
               onClick={onOpenNotifications}
-              className="flex items-center w-full h-12 rounded-2xl transition-all duration-200 cursor-pointer text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent"
+              className="flex items-center w-full h-12 rounded-2xl cursor-pointer text-zinc-400 hover:text-white hover:bg-zinc-900/80 border border-transparent press-feedback"
               title={!isHovered ? 'Уведомления' : undefined}
             >
               <div className="w-12 h-12 flex items-center justify-center shrink-0 relative">
@@ -196,9 +196,9 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                     : 'max-w-0 opacity-0 -translate-x-3 pointer-events-none'
                 }`}
               >
-                <span className="text-xs font-semibold">Уведомления</span>
+                <span className="text-xs font-semibold apple-subheading">Уведомления</span>
                 {unreadNotificationsCount > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full bg-zinc-800 border border-white/10 text-[10px] font-mono text-blue-400">
+                  <span className="px-1.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-[10px] font-mono text-blue-300">
                     {unreadNotificationsCount}
                   </span>
                 )}
@@ -209,7 +209,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
             {session ? (
               <button
                 onClick={onOpenProfile}
-                className="flex items-center w-full h-12 rounded-2xl transition-all duration-200 cursor-pointer hover:bg-zinc-900 border border-transparent hover:border-white/5"
+                className="flex items-center w-full h-12 rounded-2xl cursor-pointer hover:bg-zinc-900/80 border border-transparent hover:border-white/5 press-feedback"
                 title={!isHovered ? `Профиль: ${session.user.mcUsername}` : undefined}
               >
                 <div className="w-12 h-12 flex items-center justify-center shrink-0">
@@ -231,7 +231,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                       : 'max-w-0 opacity-0 -translate-x-3 pointer-events-none'
                   }`}
                 >
-                  <span className="text-xs font-bold text-white truncate">
+                  <span className="text-xs font-bold text-white truncate apple-subheading">
                     {session.user.mcUsername}
                   </span>
                   <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
@@ -243,14 +243,14 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
             ) : (
               <button
                 onClick={onOpenProfile}
-                className="flex items-center w-full h-12 rounded-2xl transition-all duration-200 cursor-pointer text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent"
+                className="flex items-center w-full h-12 rounded-2xl cursor-pointer text-zinc-400 hover:text-white hover:bg-zinc-900/80 border border-transparent press-feedback"
                 title={!isHovered ? 'Войти через Discord' : undefined}
               >
                 <div className="w-12 h-12 flex items-center justify-center shrink-0">
                   <LogIn size={20} />
                 </div>
                 <span
-                  className={`text-xs font-semibold whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pl-1 ${
+                  className={`text-xs font-semibold whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pl-1 apple-subheading ${
                     isHovered
                       ? 'max-w-[130px] opacity-100 translate-x-0'
                       : 'max-w-0 opacity-0 -translate-x-3 pointer-events-none'
@@ -276,15 +276,15 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
           {/* Top Bar: Title & Quick Actions (Clean, NO top back button) */}
           <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-zinc-300">
+              <div className="w-7 h-7 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-zinc-300 shadow-sm">
                 <Bell size={14} />
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black tracking-wide text-white uppercase">
+                <span className="text-xs font-bold tracking-wider text-white uppercase apple-micro-tag">
                   Уведомления
                 </span>
                 {notifications.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-zinc-800 border border-white/10 text-[10px] font-mono text-zinc-400">
+                  <span className="px-1.5 py-0.2 rounded-full bg-zinc-800 border border-white/10 text-[10px] font-mono text-zinc-300">
                     {notifications.length}
                   </span>
                 )}
@@ -296,7 +296,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
               {unreadNotificationsCount > 0 && (
                 <button
                   onClick={onMarkAllNotificationsRead}
-                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors cursor-pointer press-feedback"
                   title="Прочитать все"
                 >
                   <CheckCheck size={14} />
@@ -305,7 +305,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
               {notifications.length > 0 && (
                 <button
                   onClick={onClearAllNotifications}
-                  className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-zinc-800/80 transition-colors cursor-pointer press-feedback"
                   title="Очистить все"
                 >
                   <Trash2 size={14} />
@@ -319,8 +319,8 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
             {notifications.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center p-6 text-center text-zinc-500">
                 <Bell size={24} className="opacity-30 mb-2" />
-                <p className="text-xs font-medium">Нет уведомлений</p>
-                <p className="text-[10px] text-zinc-600 mt-0.5">Входящие пусты</p>
+                <p className="text-xs font-medium apple-subheading">Нет уведомлений</p>
+                <p className="text-[10px] text-zinc-600 mt-0.5 apple-body">Входящие пусты</p>
               </div>
             ) : (
               notifications.map((n) => {
@@ -333,17 +333,17 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                   <button
                     key={n.id}
                     onClick={() => onSelectNotification?.(n.id)}
-                    className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer relative group flex flex-col gap-1 ${
+                    className={`w-full p-2.5 rounded-2xl border text-left cursor-pointer relative group flex flex-col gap-1 press-feedback ${
                       isSelected
-                        ? 'bg-zinc-800 border-white/20 shadow-md text-white'
+                        ? 'bg-zinc-800/95 border-white/20 shadow-md text-white border-t-white/30'
                         : n.read
                         ? 'bg-zinc-900/30 hover:bg-zinc-900/80 border-white/5 text-zinc-400 hover:text-zinc-200'
-                        : 'bg-zinc-900/80 hover:bg-zinc-800/80 border-white/10 text-zinc-200'
+                        : 'bg-zinc-900/70 hover:bg-zinc-800/70 border-white/10 text-zinc-200'
                     }`}
                   >
                     {/* Blue unread dot in Top-Right corner */}
                     {!n.read && (
-                      <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500 ring-2 ring-zinc-950 shadow-[0_0_8px_rgba(59,130,246,0.9)]" />
+                      <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-blue-500 ring-2 ring-zinc-950 shadow-[0_0_8px_rgba(59,130,246,0.9)]" />
                     )}
 
                     {/* Top status row */}
@@ -360,7 +360,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                               : 'bg-sky-400'
                           }`}
                         />
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 truncate">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 truncate apple-micro-tag">
                           {isSuccess ? 'Одобрено' : isError ? 'Отклонено' : isWarning ? 'На рассмотрении' : 'Инфо'}
                         </span>
                       </div>
@@ -370,7 +370,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                     </div>
 
                     {/* Title */}
-                    <p className="text-xs font-semibold leading-snug line-clamp-2">
+                    <p className="text-xs font-semibold leading-snug line-clamp-2 apple-subheading">
                       {n.title}
                     </p>
                   </button>
@@ -383,10 +383,10 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
           <div className="pt-3 border-t border-white/10 shrink-0">
             <button
               onClick={onCloseNotifications}
-              className="w-full h-10 rounded-xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 hover:border-white/20 text-xs font-bold text-zinc-200 hover:text-white flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-md group"
+              className="w-full h-10 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-xs font-bold text-zinc-200 hover:text-white flex items-center justify-center gap-2 cursor-pointer press-feedback shadow-md group"
             >
               <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
-              <span>Назад</span>
+              <span className="apple-subheading">Назад</span>
             </button>
           </div>
         </div>
