@@ -13,6 +13,7 @@ interface ChibiCharacterDisplayProps {
   customSkinImg: HTMLImageElement | null;
   activeDefaultSkinIdx: number;
   selectedCape: CapePreset;
+  animation?: 'idle' | 'walk' | 'run' | 'wave' | 'bounce';
   size?: number;
 }
 
@@ -20,6 +21,7 @@ export const ChibiCharacterDisplay: React.FC<ChibiCharacterDisplayProps> = ({
   customSkinImg,
   activeDefaultSkinIdx,
   selectedCape,
+  animation = 'idle',
   size = 320,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,7 +33,7 @@ export const ChibiCharacterDisplay: React.FC<ChibiCharacterDisplayProps> = ({
   const activeDefaultSkin = DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length];
   const isDefaultSteve = activeDefaultSkin?.id === 'steve';
 
-  // 1. Re-bake Live Chibi animation when skin changes
+  // 1. Re-bake Live Chibi animation when skin or animation changes
   useEffect(() => {
     let cancelled = false;
 
@@ -50,41 +52,41 @@ export const ChibiCharacterDisplay: React.FC<ChibiCharacterDisplayProps> = ({
           bodyType: 'steve',
           resolved: 'steve',
         },
-      style: 'live',
-      detail: 'blocky',
-      view: '34-right',
-      facing: 'right',
-      anim: 'idle',
-      chibi: {
-        headOverlay: 'on',
-        bodyOverlay: 'on',
-        shading: 'on',
-        shadingStrength: 53,
-        layerShadow: false,
-      },
-      outline: {
-        width: 1,
-        sharp: false,
-        color: '#000000',
-        auto: true,
-        perPart: true,
-      },
-      farLegShade: true,
-      export: {
-        size: 4,
-        gifSpeed: 0.75,
-        animFormat: 'gif',
-      },
-    };
+        style: 'live',
+        detail: 'blocky',
+        view: '34-right',
+        facing: 'right',
+        anim: animation,
+        chibi: {
+          headOverlay: 'on',
+          bodyOverlay: 'on',
+          shading: 'on',
+          shadingStrength: 53,
+          layerShadow: false,
+        },
+        outline: {
+          width: 1,
+          sharp: false,
+          color: '#000000',
+          auto: true,
+          perPart: true,
+        },
+        farLegShade: true,
+        export: {
+          size: 4,
+          gifSpeed: 0.75,
+          animFormat: 'gif',
+        },
+      };
 
-      const baked = bakeChibiLiveAnimation(skinCanvas, config, 'idle');
+      const baked = bakeChibiLiveAnimation(skinCanvas, config, animation);
       setFrames(baked);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [customSkinImg, isDefaultSteve]);
+  }, [customSkinImg, isDefaultSteve, animation]);
 
   // 2. Animation loop & Cape compositing
   useEffect(() => {

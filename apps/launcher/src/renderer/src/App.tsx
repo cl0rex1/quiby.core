@@ -519,6 +519,7 @@ export const App: React.FC = () => {
                 customSkinName={savedSkinName}
                 activeDefaultSkinIdx={savedDefaultSkinIdx}
                 selectedCape={savedCape}
+                isInGame={launchState.status === 'running' || launchState.status === 'starting' || launchState.status === 'updating'}
                 onOpenWardrobe={() => handleSelectTab('wardrobe')}
                 onOpenLogin={() => setIsAuthModalOpen(true)}
               />
@@ -619,6 +620,8 @@ export const App: React.FC = () => {
                 }
               : null
           }
+          logs={logs}
+          onClearLogs={() => setLogs([])}
           onLaunch={handleLaunchGame}
           onKill={handleKillGame}
           onOpenLogin={() => setIsAuthModalOpen(true)}

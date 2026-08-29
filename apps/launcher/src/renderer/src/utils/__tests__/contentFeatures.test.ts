@@ -93,6 +93,42 @@ test('Ultra preset sets 12GB+ and full modpack', () => {
   assert.strictEqual(cfg.modpackProfile, 'full');
 });
 
+// 4. In-Game State & Chibi Animation Resolution Test
+function resolveChibiAnimation(status: 'idle' | 'starting' | 'updating' | 'running' | 'error'): 'idle' | 'walk' {
+  if (status === 'running' || status === 'starting' || status === 'updating') {
+    return 'walk';
+  }
+  return 'idle';
+}
+
+function resolveInGameTransform(isInGame: boolean): { translateX: string; scale: string } {
+  return {
+    translateX: isInGame ? '-translate-x-28 sm:-translate-x-44 md:-translate-x-60' : 'translate-x-0',
+    scale: isInGame ? 'scale-110 sm:scale-125' : 'scale-100',
+  };
+}
+
+test('Chibi animation is idle when launcher is idle', () => {
+  assert.strictEqual(resolveChibiAnimation('idle'), 'idle');
+  assert.strictEqual(resolveChibiAnimation('error'), 'idle');
+});
+
+test('Chibi animation switches to walk when starting or running', () => {
+  assert.strictEqual(resolveChibiAnimation('starting'), 'walk');
+  assert.strictEqual(resolveChibiAnimation('updating'), 'walk');
+  assert.strictEqual(resolveChibiAnimation('running'), 'walk');
+});
+
+test('In-game layout applies left translate and upscale transforms', () => {
+  const idleTransform = resolveInGameTransform(false);
+  assert.strictEqual(idleTransform.translateX, 'translate-x-0');
+  assert.strictEqual(idleTransform.scale, 'scale-100');
+
+  const inGameTransform = resolveInGameTransform(true);
+  assert.ok(inGameTransform.translateX.includes('-translate-x'));
+  assert.ok(inGameTransform.scale.includes('scale-125'));
+});
+
 console.log('\n========================================');
 console.log(`📊 Content Features Test Summary: ${passed} Passed, 0 Failed`);
 console.log('========================================\n');

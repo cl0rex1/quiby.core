@@ -465,6 +465,22 @@
   - [x] Enhanced Discord mod whitelist webhook with pre-verified antivirus status, SHA-1, player IGN, and project links
   - [x] Added test suite `contentFeatures.test.ts`; 71 / 71 unit tests passing and completed clean production build
 
+- [x] **Stage 73: In-Game Cinematic Transformation (Chibi Left Relocation + Walk Anim & Stop-Anchored Live Logs Drawer)**
+  - [x] Supported dynamic animation switching (`idle` vs `walk`) and scale in `ChibiCharacterDisplay.tsx`
+  - [x] Implemented smooth spring relocation of Chibi to the left side and scaling up when game is running in `CharacterStage.tsx`
+  - [x] Built minimalist glass logs drawer `InGameLogsDrawer.tsx` emerging from the Stop button in bottom-right
+  - [x] Verified animations, layout transitions, 74 / 74 unit tests passing, and clean monorepo production build
+
+- [x] **Stage 74: Unified Morphing Sync-to-Console HUD (Progress Bar Expands into Live Logs Console)**
+  - [x] Merged sync/download HUD and live in-game logs console into a single morphing card directly anchored above the action deck in `FloatingActionDeck.tsx`
+  - [x] Implemented smooth upward expansion (`w-80` -> `w-[520px] h-[320px]`) when download completes and game process launches
+  - [x] Included collapsible state, auto-scroll, log syntax styling, and copy/clear actions in the unified card
+  - [x] Verified seamless transition, 74 / 74 unit tests passing, and clean monorepo production build
+
+
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, 
   RotateCw, 
@@ -10,9 +10,13 @@ import {
   Trash2, 
   ToggleRight, 
   ToggleLeft,
-  CheckSquare
+  CheckSquare,
+  Copy,
+  ArrowDownCircle,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
-import { AuthSession, DownloadProgress, LaunchState } from '@quiby/shared';
+import { AuthSession, DownloadProgress, LaunchState, LogEntry } from '@quiby/shared';
 import { ActiveTab } from './MinimalSidebar';
 
 export interface BatchActionConfig {
@@ -31,6 +35,8 @@ interface FloatingActionDeckProps {
   session: AuthSession | null;
   launchState: LaunchState;
   downloadProgress: DownloadProgress | null;
+  logs?: LogEntry[];
+  onClearLogs?: () => void;
   hasUnsavedChanges: boolean;
   isShaking: boolean;
   autoConnect?: boolean;
@@ -48,6 +54,8 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   session,
   launchState,
   downloadProgress,
+  logs = [],
+  onClearLogs,
   hasUnsavedChanges,
   isShaking,
   autoConnect = true,
@@ -61,6 +69,16 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
 }) => {
   const [savePhase, setSavePhase] = useState<'idle' | 'filled' | 'sliding'>('idle');
   const [cachedBatchActions, setCachedBatchActions] = useState<BatchActionConfig | null>(batchActions || null);
+  const [isLogsCollapsed, setIsLogsCollapsed] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(true);
+  const [copiedLogs, setCopiedLogs] = useState(false);
+  const logsBottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (autoScroll && !isLogsCollapsed) {
+      logsBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logs, autoScroll, isLogsCollapsed]);
 
   useEffect(() => {
     if (batchActions) {
@@ -83,6 +101,28 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
     return `${mbps} МБ/с`;
   };
 
+  const handleCopyLogs = () => {
+    const text = logs
+      .map((l) => `[${l.timestamp}] [${l.source.toUpperCase()}/${l.level.toUpperCase()}]: ${l.message}`)
+      .join('\n');
+    navigator.clipboard.writeText(text);
+    setCopiedLogs(true);
+    setTimeout(() => setCopiedLogs(false), 2000);
+  };
+
+  const getLogLevelClass = (level: LogEntry['level']) => {
+    switch (level) {
+      case 'error':
+        return 'text-rose-400 font-semibold';
+      case 'warn':
+        return 'text-amber-400 font-medium';
+      case 'debug':
+        return 'text-purple-300';
+      default:
+        return 'text-zinc-300';
+    }
+  };
+
   const handleSaveClick = async () => {
     // 1. Fill save button with solid emerald + reveal centered checkmark
     setSavePhase('filled');
@@ -100,15 +140,18 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
     }, 1450);
   };
 
-  // Case 1: On Home Tab -> Primary Play Button
+  // Case 1: On Home Tab -> Primary Play Button & Morphing Sync-to-Console HUD
   if (activeTab === 'home') {
     return (
       <div className="fixed bottom-8 right-8 z-40 flex flex-col items-end gap-3 select-none">
-        {/* Mini Progress HUD (during update/sync) with Apple glassmorphism */}
-        {isBusy && downloadProgress && (
-          <div className="glass-floating rounded-3xl p-3.5 max-w-xs w-72 space-y-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {/* Unified Morphing Sync-to-Console HUD Card with Apple Smooth Spring Physics */}
+        {isBusy && downloadProgress && !isRunning ? (
+          <div className="glass-floating rounded-3xl p-3.5 w-80 space-y-2.5 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] animate-in fade-in slide-in-from-bottom-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-white font-medium truncate apple-body">{downloadProgress.stageLabel}</span>
+              <span className="text-white font-medium truncate apple-body flex items-center gap-2">
+                <RotateCw size={13} className="animate-spin text-emerald-400 shrink-0" />
+                <span className="truncate">{downloadProgress.stageLabel}</span>
+              </span>
               <span className="text-emerald-400 font-mono font-bold">{downloadProgress.progressPercent}%</span>
             </div>
 
@@ -130,7 +173,110 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
               )}
             </div>
           </div>
-        )}
+        ) : isRunning ? (
+          <div
+            className={`flex flex-col bg-zinc-950/95 border border-white/15 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] backdrop-blur-2xl overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] select-none animate-in fade-in slide-in-from-bottom-3 ${
+              isLogsCollapsed
+                ? 'w-80 h-11'
+                : 'w-[520px] max-w-[calc(100vw-360px)] h-[320px]'
+            }`}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-900/80 border-b border-white/10 shrink-0">
+              <div className="flex items-center gap-2.5 truncate">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                </span>
+                <span className="text-xs font-bold text-white tracking-wide apple-subheading truncate">
+                  Консоль процесса
+                </span>
+                {launchState.gamePid && (
+                  <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[9px] font-mono font-bold text-emerald-400 shrink-0">
+                    PID: {launchState.gamePid}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1 shrink-0">
+                {!isLogsCollapsed && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setAutoScroll(!autoScroll)}
+                      className={`p-1.5 rounded-lg border transition-colors cursor-pointer press-feedback ${
+                        autoScroll
+                          ? 'bg-zinc-800 text-emerald-400 border-emerald-400/30'
+                          : 'bg-zinc-900 text-zinc-500 border-transparent hover:text-white'
+                      }`}
+                      title={autoScroll ? 'Автопрокрутка включена' : 'Включить автопрокрутку'}
+                    >
+                      <ArrowDownCircle size={13} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleCopyLogs}
+                      disabled={!logs || logs.length === 0}
+                      className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-transparent hover:border-white/10 transition-colors cursor-pointer press-feedback disabled:opacity-30"
+                      title="Скопировать вывод в буфер обмена"
+                    >
+                      {copiedLogs ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={onClearLogs}
+                      disabled={!logs || logs.length === 0}
+                      className="p-1.5 rounded-lg bg-zinc-900 hover:bg-rose-950/50 text-zinc-400 hover:text-rose-400 border border-transparent hover:border-rose-500/20 transition-colors cursor-pointer press-feedback disabled:opacity-30"
+                      title="Очистить лог"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsLogsCollapsed(!isLogsCollapsed)}
+                  className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-transparent hover:border-white/10 transition-colors cursor-pointer press-feedback ml-1"
+                  title={isLogsCollapsed ? 'Развернуть консоль' : 'Свернуть консоль'}
+                >
+                  {isLogsCollapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Live Terminal Stream Output */}
+            {!isLogsCollapsed && (
+              <div className="flex-1 bg-black/90 p-3.5 font-mono text-[11px] overflow-y-auto space-y-1 select-text scrollbar-thin">
+                {!logs || logs.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-zinc-600 text-[11px]">
+                    <span>Ожидание вывода stdout/stderr игры...</span>
+                  </div>
+                ) : (
+                  logs.slice(-250).map((log) => (
+                    <div
+                      key={log.id}
+                      className="leading-relaxed hover:bg-white/[0.03] px-1.5 py-0.5 rounded flex items-start gap-2"
+                    >
+                      <span className="text-zinc-600 shrink-0 select-none text-[10px]">
+                        [{log.timestamp}]
+                      </span>
+                      <span className="text-purple-400/80 shrink-0 font-bold text-[9px] uppercase">
+                        [{log.source}]
+                      </span>
+                      <span className={`break-all ${getLogLevelClass(log.level)}`}>
+                        {log.message}
+                      </span>
+                    </div>
+                  ))
+                )}
+                <div ref={logsBottomRef} />
+              </div>
+            )}
+          </div>
+        ) : null}
 
         {/* The Floating Play Button & Fast-Connect Toggle with Apple Tactile Press Feedback */}
         <div className="flex items-center gap-3">

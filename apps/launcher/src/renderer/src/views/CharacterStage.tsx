@@ -22,6 +22,7 @@ interface CharacterStageProps {
   customSkinName: string | null;
   activeDefaultSkinIdx: number;
   selectedCape: CapePreset;
+  isInGame?: boolean;
   onOpenWardrobe: () => void;
   onOpenLogin: () => void;
 }
@@ -35,6 +36,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
   customSkinName,
   activeDefaultSkinIdx,
   selectedCape,
+  isInGame = false,
   onOpenWardrobe,
   onOpenLogin,
 }) => {
@@ -101,36 +103,53 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
         </button>
       </div>
 
-      {/* Center Stage: Hero Pedestal with Animated Chibi Character */}
+      {/* Center Stage: Hero Pedestal with Animated Chibi Character (Transforms in-game) */}
       <div
-        className="flex flex-col items-center justify-center my-auto cursor-pointer group relative"
-        onClick={onOpenWardrobe}
-        title="Нажмите для выбора скина и плаща"
+        className={`flex flex-col items-center justify-center my-auto relative transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isInGame
+            ? '-translate-x-28 sm:-translate-x-44 md:-translate-x-60 scale-110 sm:scale-125'
+            : 'translate-x-0 scale-100 cursor-pointer group'
+        }`}
+        onClick={!isInGame ? onOpenWardrobe : undefined}
+        title={!isInGame ? 'Нажмите для выбора скина и плаща' : undefined}
       >
         {/* Volumetric stage light bloom beneath the character */}
         <div className="absolute -bottom-8 w-64 h-24 bg-gradient-to-t from-fuchsia-600/25 via-purple-500/15 to-transparent rounded-[100%] blur-xl pointer-events-none group-hover:scale-110 transition-transform duration-500" />
         <div className="absolute -bottom-4 w-44 h-8 bg-purple-400/20 rounded-[100%] blur-md pointer-events-none" />
 
         <div className="relative flex flex-col items-center z-10">
-          <div className="group-hover:scale-105 transition-transform duration-300">
+          <div className="transition-transform duration-300">
             <ChibiCharacterDisplay
               customSkinImg={customSkinImg}
               activeDefaultSkinIdx={activeDefaultSkinIdx}
               selectedCape={selectedCape}
+              animation={isInGame ? 'walk' : 'idle'}
             />
           </div>
 
-          {/* Minimal Floating Name & Cape Badge */}
-          <div className="mt-3 flex items-center gap-2 px-4 py-1.5 rounded-full glass-floating text-xs font-medium text-zinc-200 shadow-md whitespace-nowrap group-hover:border-white/30 transition-colors press-feedback">
-            <Shirt size={13} className="text-purple-400" />
-            <span className="apple-subheading font-bold">{skinDisplayName}</span>
-            {selectedCape.id !== 'none' && (
-              <span className="text-[10px] text-purple-300 font-mono px-1.5 py-0.2 rounded-full bg-purple-500/20 border border-purple-400/30">
-                {selectedCape.name}
+          {/* Minimal Floating Name or In-Game Status Badge */}
+          {isInGame ? (
+            <div className="mt-3 flex items-center gap-2.5 px-4 py-1.5 rounded-full glass-floating text-xs font-bold text-white shadow-lg border-emerald-500/30 whitespace-nowrap animate-in fade-in zoom-in-95 duration-300">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
               </span>
-            )}
-            <span className="text-zinc-500 text-[11px] font-normal hidden sm:inline">• Сменить</span>
-          </div>
+              <span className="apple-subheading text-emerald-300 font-bold tracking-wide">
+                В игре на quiby. S6
+              </span>
+            </div>
+          ) : (
+            <div className="mt-3 flex items-center gap-2 px-4 py-1.5 rounded-full glass-floating text-xs font-medium text-zinc-200 shadow-md whitespace-nowrap group-hover:border-white/30 transition-colors press-feedback">
+              <Shirt size={13} className="text-purple-400" />
+              <span className="apple-subheading font-bold">{skinDisplayName}</span>
+              {selectedCape.id !== 'none' && (
+                <span className="text-[10px] text-purple-300 font-mono px-1.5 py-0.2 rounded-full bg-purple-500/20 border border-purple-400/30">
+                  {selectedCape.name}
+                </span>
+              )}
+              <span className="text-zinc-500 text-[11px] font-normal hidden sm:inline">• Сменить</span>
+            </div>
+          )}
         </div>
       </div>
 
