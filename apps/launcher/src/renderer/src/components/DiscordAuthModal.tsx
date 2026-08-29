@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CheckCircle, AlertCircle, Sparkles, User, ShieldCheck, Gamepad2, ArrowRight } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, User, ShieldCheck, Gamepad2, ArrowRight, Sparkles } from 'lucide-react';
 import { AuthSession } from '@quiby/shared';
 
 interface DiscordAuthModalProps {
@@ -110,22 +110,22 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none">
-      <div className="bg-black border border-x-border rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
+      <div className="glass-floating rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-white/15">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-x-border">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-x-surface border border-x-border flex items-center justify-center text-x-purpleLight">
-              <ShieldCheck size={18} />
+        <div className="flex items-center justify-between p-5 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 shadow-sm">
+              <ShieldCheck size={20} />
             </div>
             <div>
-              <h3 className="font-extrabold text-white text-base">Авторизация quiby.</h3>
-              <p className="text-xs text-x-textMuted">Discord OAuth2 и вайтлист 6 сезона</p>
+              <h3 className="font-extrabold text-white text-base apple-heading">Авторизация Quiby</h3>
+              <p className="text-xs text-zinc-400 font-mono">Discord OAuth2 и вайтлист Season VI</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-x-textMuted hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors"
+            className="text-zinc-400 hover:text-white p-1.5 rounded-full hover:bg-zinc-800 transition-colors press-feedback"
           >
             <X size={18} />
           </button>
@@ -133,23 +133,23 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
 
         {/* Tab Switcher */}
         {!pendingDiscordUser && (
-          <div className="flex border-b border-x-border bg-x-surface/40 px-5 pt-3 gap-6">
+          <div className="flex border-b border-white/10 bg-zinc-950/40 px-5 pt-3 gap-6">
             <button
               onClick={() => setMode('discord')}
-              className={`pb-2.5 text-xs font-bold border-b-2 transition-all ${
+              className={`pb-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer press-feedback ${
                 mode === 'discord'
-                  ? 'border-x-purple text-white'
-                  : 'border-transparent text-x-textMuted hover:text-white'
+                  ? 'border-purple-400 text-white'
+                  : 'border-transparent text-zinc-400 hover:text-white'
               }`}
             >
               Discord OAuth2
             </button>
             <button
               onClick={() => setMode('dev')}
-              className={`pb-2.5 text-xs font-bold border-b-2 transition-all ${
+              className={`pb-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer press-feedback ${
                 mode === 'dev'
-                  ? 'border-x-purple text-white'
-                  : 'border-transparent text-x-textMuted hover:text-white'
+                  ? 'border-purple-400 text-white'
+                  : 'border-transparent text-zinc-400 hover:text-white'
               }`}
             >
               Локальный тест (Dev)
@@ -160,33 +160,33 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
         {/* Body */}
         <div className="p-6 space-y-4">
           {error && (
-            <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-start gap-2.5">
-              <AlertCircle size={16} className="shrink-0 mt-0.5" />
-              <span>{error}</span>
+            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
+              <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-400" />
+              <span className="apple-body">{error}</span>
             </div>
           )}
 
           {/* Step 2: Minecraft IGN Binding */}
           {pendingDiscordUser ? (
             <form onSubmit={handleBindMinecraft} className="space-y-4">
-              <div className="p-3 rounded-2xl bg-x-surface border border-x-border flex items-center gap-3">
+              <div className="p-3.5 rounded-2xl glass-card flex items-center gap-3">
                 <img
                   src={pendingDiscordUser.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                   alt="Discord Avatar"
-                  className="w-10 h-10 rounded-full border border-x-border"
+                  className="w-10 h-10 rounded-full border border-white/10"
                 />
                 <div>
-                  <div className="text-[11px] text-x-textMuted">Discord профиль:</div>
-                  <div className="text-sm font-bold text-white">@{pendingDiscordUser.username}</div>
+                  <div className="text-[11px] text-zinc-400">Discord профиль:</div>
+                  <div className="text-sm font-bold text-white apple-subheading">@{pendingDiscordUser.username}</div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-white mb-1.5">
+                <label className="block text-xs font-bold text-white mb-1.5 apple-subheading">
                   Укажите ник в Minecraft (IGN):
                 </label>
                 <div className="relative">
-                  <Gamepad2 className="absolute left-3.5 top-3 text-x-textMuted" size={16} />
+                  <Gamepad2 className="absolute left-3.5 top-3 text-zinc-500" size={16} />
                   <input
                     type="text"
                     required
@@ -194,36 +194,36 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
                     value={mcUsername}
                     onChange={(e) => setMcUsername(e.target.value)}
                     placeholder="Например: Cl0rex"
-                    className="w-full bg-x-surface border border-x-border rounded-full pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-x-purple font-mono"
+                    className="w-full bg-zinc-900/90 border border-white/10 focus:border-purple-400 rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white font-mono focus:outline-none transition-colors"
                   />
                 </div>
-                <p className="text-[11px] text-x-textDim mt-1 pl-1">
-                  * Ник привязывается к вашему Discord аккаунту 1:1 для вайтлиста.
+                <p className="text-[11px] text-zinc-500 mt-1 pl-1 apple-body">
+                  * Ник привязывается к вашему Discord аккаунту для вайтлиста сервера.
                 </p>
               </div>
 
               <button
                 type="submit"
                 disabled={loading || !mcUsername.trim()}
-                className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-extrabold text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-98"
+                className="w-full py-3 rounded-full bg-white hover:bg-neutral-100 disabled:opacity-50 text-black font-extrabold text-sm flex items-center justify-center gap-2 shadow-md transition-all press-feedback cursor-pointer"
               >
-                {loading ? 'Привязка...' : 'Подтвердить и войти'}
+                <span>{loading ? 'Привязка...' : 'Подтвердить и войти'}</span>
                 <ArrowRight size={16} />
               </button>
             </form>
           ) : mode === 'discord' ? (
             /* Step 1: Discord OAuth2 */
             <div className="space-y-4 text-center">
-              <p className="text-xs text-x-text leading-relaxed text-left">
+              <p className="text-xs text-zinc-300 leading-relaxed text-left apple-body">
                 Авторизация через Discord гарантирует доступ в вайтлист сервера 6 сезона и связывает ваш ник с профилем.
               </p>
 
-              <div className="p-3.5 rounded-2xl bg-x-surface border border-x-border text-left text-xs text-x-text space-y-1.5">
-                <div className="flex items-center gap-2 text-x-purpleLight font-bold">
-                  <CheckCircle size={14} />
+              <div className="p-3.5 rounded-2xl glass-card text-left text-xs space-y-2">
+                <div className="flex items-center gap-2 text-purple-300 font-bold apple-subheading">
+                  <CheckCircle size={15} />
                   <span>Преимущества:</span>
                 </div>
-                <ul className="text-x-textMuted space-y-1 pl-1 text-[11px]">
+                <ul className="text-zinc-400 space-y-1 pl-1 text-[11px] apple-body">
                   <li>• Защита от мультиаккаунтов и автоматический вайтлист</li>
                   <li>• Доступ к сборке Minecraft 1.21.1 NeoForge</li>
                   <li>• Синхронизация ролей в Discord</li>
@@ -234,21 +234,21 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
                 type="button"
                 onClick={handleStartDiscordAuth}
                 disabled={loading}
-                className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-extrabold text-sm flex items-center justify-center gap-2.5 shadow-sm transition-all active:scale-98 cursor-pointer"
+                className="w-full py-3.5 rounded-full bg-white hover:bg-neutral-100 disabled:opacity-50 text-black font-extrabold text-sm flex items-center justify-center gap-2.5 shadow-md transition-all press-feedback cursor-pointer"
               >
-                <User size={17} />
+                <User size={18} />
                 <span>{loading ? 'Ожидание браузера...' : 'Войти через Discord'}</span>
               </button>
             </div>
           ) : (
             /* Dev Login */
-            <form onSubmit={handleDevLogin} className="space-y-3">
-              <p className="text-xs text-x-textMuted">
+            <form onSubmit={handleDevLogin} className="space-y-3.5">
+              <p className="text-xs text-zinc-400 apple-body">
                 Быстрый вход для локального тестирования без Discord API.
               </p>
 
               <div>
-                <label className="block text-xs font-bold text-white mb-1">
+                <label className="block text-xs font-bold text-white mb-1.5 apple-subheading">
                   Minecraft Ник:
                 </label>
                 <input
@@ -256,12 +256,12 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
                   required
                   value={devUsername}
                   onChange={(e) => setDevUsername(e.target.value)}
-                  className="w-full bg-x-surface border border-x-border rounded-full px-4 py-2 text-sm text-white font-mono focus:outline-none focus:border-x-purple"
+                  className="w-full bg-zinc-900/90 border border-white/10 focus:border-purple-400 rounded-2xl px-4 py-2 text-sm text-white font-mono focus:outline-none transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-white mb-1">
+                <label className="block text-xs font-bold text-white mb-1.5 apple-subheading">
                   Тестовый Discord Tag:
                 </label>
                 <input
@@ -269,16 +269,16 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
                   required
                   value={devTag}
                   onChange={(e) => setDevTag(e.target.value)}
-                  className="w-full bg-x-surface border border-x-border rounded-full px-4 py-2 text-sm text-white font-mono focus:outline-none focus:border-x-purple"
+                  className="w-full bg-zinc-900/90 border border-white/10 focus:border-purple-400 rounded-2xl px-4 py-2 text-sm text-white font-mono focus:outline-none transition-colors"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-extrabold text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-98"
+                className="w-full py-3.5 rounded-full bg-white hover:bg-neutral-100 disabled:opacity-50 text-black font-extrabold text-sm flex items-center justify-center gap-2 shadow-md transition-all press-feedback cursor-pointer mt-2"
               >
-                {loading ? 'Вход...' : 'Войти в тестовом режиме'}
+                <span>{loading ? 'Вход...' : 'Войти в тестовом режиме'}</span>
               </button>
             </form>
           )}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Trash2, Check, AlertCircle, Download, User, ArrowRight, X } from 'lucide-react';
-import { DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
+import { Upload, Trash2, Check, AlertCircle, Download, User, ArrowRight, X, Sparkles, Lock } from 'lucide-react';
+import { DEFAULT_SKINS, CAPE_PRESETS, CapePreset } from '../utils/chibiRenderer';
 import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
 import { validateSkinFile } from '../utils/skinValidator';
 import {
@@ -35,6 +35,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   selectedCape,
   onSetCustomSkin,
   onSetDefaultSkinIdx,
+  onSelectCape,
 }) => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -96,64 +97,59 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
     };
   }, [library]);
 
-  // Validate and handle uploaded file
   const processSkinFile = async (file: File) => {
     setValidationError(null);
-    const result = await validateSkinFile(file);
 
-    if (!result.valid) {
-      setValidationError(result.error || 'Выбранный файл не является скином Minecraft.');
+    const validation = await validateSkinFile(file);
+    if (!validation.valid) {
+      setValidationError(validation.error || 'Некорректный файл скина');
       return;
     }
 
-    setValidationError(null);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0);
 
-    // Create working canvas for library storage
-    const cv = document.createElement('canvas');
-    const sourceImg = result.convertedImg || (customSkinImg as HTMLImageElement);
-    cv.width = sourceImg.naturalWidth || sourceImg.width || 64;
-    cv.height = sourceImg.naturalHeight || sourceImg.height || 64;
-    const ctx = cv.getContext('2d')!;
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(sourceImg, 0, 0);
+        const cleanName = file.name.replace(/\.[^/.]+$/, '');
+        const previewUri = createChibiPreviewUri(canvas);
 
-    const currentLib = getSavedSkinLibrary();
-    const dataUri = cv.toDataURL('image/png');
-    const alreadyExists = currentLib.some((s) => s.dataUri === dataUri);
-
-    // If library already has 6 skins and this is a brand new skin -> prompt confirmation modal
-    if (currentLib.length >= 6 && !alreadyExists) {
-      const previewUri = createChibiPreviewUri(cv);
-      setPendingSkin({
-        name: file.name,
-        canvas: cv,
-        convertedImg: result.convertedImg || sourceImg,
-        previewUri,
-      });
-      return;
-    }
-
-    // Otherwise, directly add and equip
-    addSkinToLibrary(file.name, cv);
-    setLibrary(getSavedSkinLibrary());
-    onSetCustomSkin(result.convertedImg || null, file.name);
+        const currentLib = getSavedSkinLibrary();
+        if (currentLib.length >= 6) {
+          setPendingSkin({
+            name: cleanName,
+            canvas,
+            convertedImg: img,
+            previewUri,
+          });
+        } else {
+          commitAddSkinToLibrary(cleanName, canvas, img);
+        }
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
-  // Confirm replacement when collection limit is full
+  const commitAddSkinToLibrary = (
+    name: string,
+    canvas: HTMLCanvasElement,
+    img: HTMLImageElement
+  ) => {
+    addSkinToLibrary(name, canvas);
+    setLibrary(getSavedSkinLibrary());
+    onSetCustomSkin(img, name);
+  };
+
   const handleConfirmReplaceSkin = () => {
     if (!pendingSkin) return;
-
-    // Remove the oldest skin (last in array)
-    const currentLib = getSavedSkinLibrary();
-    if (currentLib.length >= 6) {
-      const oldest = currentLib[currentLib.length - 1];
-      removeSkinFromLibrary(oldest.id);
-    }
-
-    // Add new skin
-    addSkinToLibrary(pendingSkin.name, pendingSkin.canvas);
-    setLibrary(getSavedSkinLibrary());
-    onSetCustomSkin(pendingSkin.convertedImg, pendingSkin.name);
+    commitAddSkinToLibrary(pendingSkin.name, pendingSkin.canvas, pendingSkin.convertedImg);
     setPendingSkin(null);
   };
 
@@ -171,7 +167,8 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
     const updated = removeSkinFromLibrary(id);
     setLibrary(updated);
 
-    if (customSkinName && library.find((s) => s.id === id)?.name === customSkinName) {
+    const deletedItem = library.find((i) => i.id === id);
+    if (deletedItem && customSkinName === deletedItem.name) {
       onSetCustomSkin(null, null);
     }
   };
@@ -186,7 +183,6 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
     document.body.removeChild(a);
   };
 
-  // Determine active display name
   const currentDisplayName = customSkinImg
     ? customSkinName || 'Пользовательский скин'
     : DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Скин';
@@ -197,13 +193,13 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
     <div className="flex-1 flex flex-col lg:flex-row h-full overflow-hidden p-6 md:p-8 gap-6 md:gap-8 select-none z-10 relative">
       {/* Full-Window Drag & Drop Overlay */}
       {isDragging && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md border-4 border-dashed border-zinc-400 p-8 pointer-events-none animate-in fade-in duration-150">
-          <div className="flex flex-col items-center gap-3.5 p-8 rounded-3xl bg-zinc-900 border border-white/10 shadow-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center text-white">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md border-4 border-dashed border-purple-500 p-8 pointer-events-none animate-in fade-in duration-150">
+          <div className="flex flex-col items-center gap-3.5 p-8 rounded-3xl glass-floating shadow-2xl">
+            <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300">
               <Upload size={32} className="animate-bounce" />
             </div>
-            <p className="text-base font-bold text-white">Отпустите скин (.png) здесь</p>
-            <p className="text-xs text-zinc-400">Скин проверится и добавится в вашу коллекцию</p>
+            <p className="text-base font-bold text-white apple-heading">Отпустите скин (.png) здесь</p>
+            <p className="text-xs text-zinc-400 apple-body">Скин автоматически проверится и добавится в коллекцию</p>
           </div>
         </div>
       )}
@@ -211,27 +207,27 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
       {/* Confirmation Modal when Collection is Full (6/6) */}
       {pendingSkin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="bg-zinc-900 border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="glass-floating rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
                   <AlertCircle size={20} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">Коллекция заполнена</h3>
-                  <p className="text-xs text-zinc-400">Лимит: 6 скинов</p>
+                  <h3 className="text-sm font-bold text-white apple-subheading">Коллекция заполнена</h3>
+                  <p className="text-xs text-zinc-400 font-mono">Лимит: 6 скинов</p>
                 </div>
               </div>
 
               <button
                 onClick={() => setPendingSkin(null)}
-                className="p-1 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors"
+                className="p-1 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors press-feedback"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <p className="text-xs text-zinc-300 leading-relaxed">
+            <p className="text-xs text-zinc-300 leading-relaxed apple-body">
               Чтобы добавить новый скин <span className="font-semibold text-white">«{pendingSkin.name}»</span>, самый ранний скин <span className="font-semibold text-zinc-400">«{oldestSkinToReplace?.name}»</span> будет заменен.
             </p>
 
@@ -244,7 +240,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                     alt="Old"
                     className="w-14 h-14 object-contain opacity-40 [image-rendering:pixelated]"
                   />
-                  <span className="text-[10px] text-zinc-500 truncate max-w-[90px] mt-1">
+                  <span className="text-[10px] text-zinc-500 truncate max-w-[90px] mt-1 font-mono">
                     Удалится
                   </span>
                 </div>
@@ -258,7 +254,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                   alt="New"
                   className="w-14 h-14 object-contain [image-rendering:pixelated] drop-shadow-md"
                 />
-                <span className="text-[10px] text-emerald-400 font-semibold truncate max-w-[90px] mt-1">
+                <span className="text-[10px] text-emerald-400 font-semibold truncate max-w-[90px] mt-1 font-mono">
                   Новый скин
                 </span>
               </div>
@@ -267,13 +263,13 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
             <div className="flex items-center justify-end gap-2 pt-1">
               <button
                 onClick={() => setPendingSkin(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer press-feedback"
               >
                 Отмена
               </button>
               <button
                 onClick={handleConfirmReplaceSkin}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-white text-black hover:bg-neutral-200 transition-all shadow-md active:scale-95 cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-white text-black hover:bg-neutral-100 transition-all shadow-md press-feedback cursor-pointer"
               >
                 Заменить и добавить
               </button>
@@ -284,8 +280,8 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
       {/* Left Column: Character Stage Preview with Glass Depth */}
       <div className="flex-[1.1] flex flex-col items-center justify-center glass-panel rounded-3xl p-6 relative overflow-hidden">
-        {/* Subtle radial backdrop accent */}
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,transparent_70%)]" />
+        {/* Luminous stage light bloom */}
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_65%,rgba(168,85,247,0.12)_0%,transparent_65%)]" />
 
         {/* Live Chibi Character */}
         <div className="relative z-10 flex flex-col items-center">
@@ -316,7 +312,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
       </div>
 
       {/* Right Column: Control Panel with Glass Components */}
-      <div className="flex-1 flex flex-col space-y-5 overflow-y-auto pr-1 justify-center">
+      <div className="flex-1 flex flex-col space-y-4 overflow-y-auto pr-1">
         {/* Validation Error Banner */}
         {validationError && (
           <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs animate-in fade-in">
@@ -333,20 +329,20 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
           className="group flex items-center justify-between p-4 rounded-2xl glass-card cursor-pointer press-feedback"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-white/5 flex items-center justify-center text-zinc-300 group-hover:text-white transition-colors shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-300 group-hover:text-white transition-colors shadow-sm">
               <Upload size={16} />
             </div>
             <div className="flex flex-col text-left">
               <span className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors apple-subheading">
                 Загрузить скин
               </span>
-              <span className="text-[11px] text-zinc-500 apple-body">
+              <span className="text-[11px] text-zinc-400 apple-body">
                 PNG 64x64 • Перетащите файл в любое место окна
               </span>
             </div>
           </div>
 
-          <span className="text-[11px] font-medium text-zinc-400 px-2.5 py-1 rounded-lg bg-zinc-800/50 border border-white/5 group-hover:border-white/10 apple-body">
+          <span className="text-[11px] font-medium text-zinc-300 px-3 py-1 rounded-xl bg-zinc-800/80 border border-white/10 group-hover:border-white/20 apple-body">
             Обзор
           </span>
 
@@ -369,7 +365,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
               <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider apple-micro-tag">
                 Моя коллекция
               </span>
-              <span className="text-[11px] text-zinc-500 font-mono">
+              <span className="text-[11px] text-zinc-400 font-mono">
                 {library.length}/6
               </span>
             </div>
@@ -456,6 +452,54 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Section 4: Cape Presets (Плащи Quiby Season VI - Заблокировано) */}
+        <div className="glass-panel rounded-2xl p-4 space-y-2.5 relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block apple-micro-tag">
+              Плащи Quiby (Season VI)
+            </span>
+            <span className="text-[10px] text-zinc-400 font-mono flex items-center gap-1">
+              <Lock size={11} className="text-zinc-400" />
+              Скоро
+            </span>
+          </div>
+
+          {/* Locked Grid Container with Centered Lock Overlay */}
+          <div className="relative rounded-xl overflow-hidden">
+            {/* Background Dimmed Grid */}
+            <div className="grid grid-cols-2 gap-2 opacity-25 blur-[1.5px] pointer-events-none select-none">
+              {CAPE_PRESETS.map((cape) => (
+                <div
+                  key={cape.id}
+                  className="p-2.5 rounded-xl border border-white/5 bg-zinc-900/60 flex items-center gap-2.5 text-left"
+                >
+                  <div
+                    className="w-4 h-6 rounded-sm border border-white/10 shrink-0"
+                    style={{
+                      background: `linear-gradient(to bottom, ${cape.gradient[0]}, ${cape.gradient[1]})`,
+                    }}
+                  />
+                  <div className="truncate flex-1">
+                    <span className="block truncate text-[11px] font-bold text-white">
+                      {cape.name}
+                    </span>
+                    <span className="block text-[9px] text-zinc-400 font-mono">
+                      Эксклюзив
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Minimalist Center Lock Badge */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+              <div className="w-11 h-11 rounded-2xl glass-floating border border-white/15 flex items-center justify-center text-zinc-300 shadow-xl">
+                <Lock size={18} className="text-zinc-300" />
+              </div>
+            </div>
           </div>
         </div>
       </div>

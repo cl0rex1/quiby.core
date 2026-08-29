@@ -436,6 +436,26 @@
   - [x] Added comprehensive accessibility support for `prefers-reduced-motion` and `prefers-reduced-transparency`
   - [x] Verified 63 / 63 unit tests passing and completed clean production build
 
+- [x] **Stage 68: Frontend Design Polish: Hero Pedestal, Cape Wardrobe Picker, RAM Presets & Discord Modal**
+  - [x] Rebuilt Hero Stage in `CharacterStage.tsx` with luminous volumetric pedestal lighting, live server status radar ping (`play.quiby.fun`), and active cape badge
+  - [x] Integrated dedicated Cape Selection Picker into `SkinWardrobeView.tsx` with real-time swatch rendering on the Chibi model
+  - [x] Enhanced `RamSlider.tsx` with quick preset chips (`4 GB`, `6 GB`, `8 GB (Оптимально)`, `12 GB`, `16 GB`), memory breakdown, and tactile spring gauge
+  - [x] Modernized `DiscordAuthModal.tsx` with Apple glass aesthetic, animated glow headers, and clear verification states
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+- [x] **Stage 69: Locked Capes Wardrobe Section with Centered Lock Badge**
+  - [x] Locked Cape selection in `SkinWardrobeView.tsx` with `opacity-25 blur-[1.5px]` background grid and `pointer-events-none`
+  - [x] Added centered floating lock badge with `Lock` icon and "Плащи станут доступны позже • Обновление Season VI" notice
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+- [x] **Stage 70: Minimalist Centered Glass Lock Badge (Ponytail Mode)**
+  - [x] Simplified the lock overlay in `SkinWardrobeView.tsx` to a single clean centered glass icon badge (`w-11 h-11 rounded-2xl glass-floating`)
+  - [x] Removed bulky redundant text descriptions for maximum minimalist aesthetics
+  - [x] Verified 63 / 63 unit tests passing and completed clean production build
+
+
+
+
 
 
 
