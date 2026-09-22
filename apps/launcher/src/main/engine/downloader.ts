@@ -88,18 +88,41 @@ export async function syncModpackFiles(
     }
   }
 
-  // 2. Clean obsolete mods from local mods/ directory, preserving user's approved custom mods
+  // Ensure protectedModFilenames includes filename without .disabled
+  for (const filename of Array.from(protectedModFilenames)) {
+    if (filename.endsWith('.disabled')) {
+      protectedModFilenames.add(filename.slice(0, -'.disabled'.length));
+    }
+  }
+
+  // 2. Clean obsolete mods from local mods/ directory, preserving user's approved custom mods and disabled mods
   const localModsDir = path.join(gameDir, 'mods');
   if (fs.existsSync(localModsDir)) {
     const localModFiles = fs.readdirSync(localModsDir);
     for (const modFile of localModFiles) {
-      if (modFile.endsWith('.jar')) {
+      if (modFile.endsWith('.jar') || modFile.endsWith('.jar.disabled') || modFile.endsWith('.disabled')) {
         const rel = `mods/${modFile}`;
-        if (!validRelativePaths.has(rel)) {
-          // If this is a protected user custom mod, preserve it
-          if (protectedModFilenames.has(modFile) || protectedModFilenames.has(rel)) {
-            continue;
-          }
+        const cleanName = modFile.endsWith('.disabled') ? modFile.slice(0, -'.disabled'.length) : modFile;
+        const cleanRel = `mods/${cleanName}`;
+
+        // If this is a protected user custom mod, preserve it
+        if (
+          protectedModFilenames.has(modFile) ||
+          protectedModFilenames.has(rel) ||
+          protectedModFilenames.has(cleanName) ||
+          protectedModFilenames.has(cleanRel)
+        ) {
+          console.log(`Preserving user mod: ${modFile}`);
+          continue;
+        }
+
+        // Handle .disabled files gracefully (do not delete them as obsolete)
+        if (modFile.endsWith('.disabled')) {
+          console.log(`Preserving user mod: ${modFile}`);
+          continue;
+        }
+
+        if (!validRelativePaths.has(rel) && !validRelativePaths.has(cleanRel)) {
           try {
             fs.unlinkSync(path.join(localModsDir, modFile));
             console.log(`🗑️ Removed obsolete mod: ${rel}`);

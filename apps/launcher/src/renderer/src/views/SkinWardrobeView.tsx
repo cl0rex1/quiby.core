@@ -194,7 +194,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
       {/* Full-Window Drag & Drop Overlay */}
       {isDragging && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md border-4 border-dashed border-purple-500 p-8 pointer-events-none animate-in fade-in duration-150">
-          <div className="flex flex-col items-center gap-3.5 p-8 rounded-3xl glass-floating shadow-2xl">
+          <div className="flex flex-col items-center gap-3.5 p-8 rounded-3xl surface-panel shadow-2xl">
             <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300">
               <Upload size={32} className="animate-bounce" />
             </div>
@@ -207,7 +207,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
       {/* Confirmation Modal when Collection is Full (6/6) */}
       {pendingSkin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="glass-floating rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="surface-panel rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
@@ -279,7 +279,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
       )}
 
       {/* Left Column: Character Stage Preview with Glass Depth */}
-      <div className="flex-[1.1] flex flex-col items-center justify-center glass-panel rounded-3xl p-6 relative overflow-hidden">
+      <div className="flex-[1.1] flex flex-col items-center justify-center surface-panel rounded-3xl p-6 relative overflow-hidden">
         {/* Luminous stage light bloom */}
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_65%,rgba(168,85,247,0.12)_0%,transparent_65%)]" />
 
@@ -292,7 +292,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
           />
 
           {/* Minimal Floating Name Badge */}
-          <div className="mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-floating text-xs font-medium text-zinc-200 shadow-sm">
+          <div className="mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full surface-panel text-xs font-medium text-zinc-200 shadow-sm">
             <User size={12} className="text-zinc-400" />
             <span className="truncate max-w-[200px] apple-subheading">{currentDisplayName}</span>
             {customSkinImg && (
@@ -326,7 +326,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
         {/* Section 1: Upload Zone */}
         <label
-          className="group flex items-center justify-between p-4 rounded-2xl glass-card cursor-pointer press-feedback"
+          className="group flex items-center justify-between p-4 rounded-2xl surface-card cursor-pointer press-feedback"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-300 group-hover:text-white transition-colors shadow-sm">
@@ -360,7 +360,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
         {/* Section 2: Library Grid (3 on row 1, 3 on row 2, Max 6 Skins) */}
         {library.length > 0 && (
-          <div className="glass-panel rounded-2xl p-4 space-y-3">
+          <div className="surface-panel rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider apple-micro-tag">
                 Моя коллекция
@@ -381,7 +381,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                     className={`group relative flex flex-col items-center justify-center p-2 rounded-2xl border transition-all cursor-pointer aspect-square overflow-hidden press-feedback ${
                       isSelected
                         ? 'bg-zinc-800/90 border-white/30 shadow-md ring-1 ring-white/15 border-t-white/40'
-                        : 'glass-card text-zinc-400 hover:text-zinc-200'
+                        : 'surface-card text-zinc-400 hover:text-zinc-200'
                     }`}
                   >
                     {/* Live Chibi Thumbnail */}
@@ -425,7 +425,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
         )}
 
         {/* Section 3: Default Skins (Steve & Alex) */}
-        <div className="glass-panel rounded-2xl p-4 space-y-2.5">
+        <div className="surface-panel rounded-2xl p-4 space-y-2.5">
           <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block apple-micro-tag">
             Базовые скины
           </span>
@@ -456,7 +456,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
         </div>
 
         {/* Section 4: Cape Presets (Плащи Quiby Season VI - Заблокировано) */}
-        <div className="glass-panel rounded-2xl p-4 space-y-2.5 relative overflow-hidden">
+        <div className="surface-panel rounded-2xl p-4 space-y-2.5 relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block apple-micro-tag">
               Плащи Quiby (Season VI)
@@ -496,7 +496,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
             {/* Minimalist Center Lock Badge */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-              <div className="w-11 h-11 rounded-2xl glass-floating border border-white/15 flex items-center justify-center text-zinc-300 shadow-xl">
+              <div className="w-11 h-11 rounded-2xl surface-panel border border-white/15 flex items-center justify-center text-zinc-300 shadow-xl">
                 <Lock size={18} className="text-zinc-300" />
               </div>
             </div>

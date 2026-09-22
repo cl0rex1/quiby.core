@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { SplashWindowView } from './components/SplashWindowView';
+import { WindowHeader } from './components/WindowHeader';
 import { MinimalSidebar, ActiveTab } from './components/MinimalSidebar';
 import { CharacterStage } from './views/CharacterStage';
+import { InGameLaunchStage } from './views/InGameLaunchStage';
 import { SkinWardrobeView } from './views/SkinWardrobeView';
 import { ModsView, CustomModItem } from './views/ModsView';
 import { SettingsView } from './views/SettingsView';
 import { FloatingActionDeck } from './components/FloatingActionDeck';
 import { DiscordAuthModal } from './components/DiscordAuthModal';
 import { FloatingNotificationToast, ToastData } from './components/FloatingNotificationToast';
-import { NotificationsModal, NotificationItem } from './components/NotificationsModal';
+import { NotificationItem } from './components/NotificationsModal';
 import { NotificationDetailView } from './views/NotificationDetailView';
 import { FirstLaunchOnboardingModal } from './components/FirstLaunchOnboardingModal';
 import { CAPE_PRESETS, CapePreset } from './utils/chibiRenderer';
@@ -127,7 +129,7 @@ export const App: React.FC = () => {
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [selectedModIds, setSelectedModIds] = useState<string[]>([]);
 
-  // Notifications State (Morphing Email-Like Inbox)
+  // Notifications State
   const [notifications, setNotifications] = useState<NotificationItem[]>([
     {
       id: 'notif-1',
@@ -167,31 +169,56 @@ export const App: React.FC = () => {
     });
   };
 
-  // 1. Saved vs Draft Settings State
-  const [savedSettings, setSavedSettings] = useState<LauncherSettings>(defaultSettings);
-  const [draftSettings, setDraftSettings] = useState<LauncherSettings>(defaultSettings);
+  // 1. Settings State (Auto-saving)
+  const [settings, setSettings] = useState<LauncherSettings>(defaultSettings);
 
-  // 2. Saved vs Draft Wardrobe State (Persistent)
-  const [savedCape, setSavedCape] = useState<CapePreset>(CAPE_PRESETS[1]);
-  const [draftCape, setDraftCape] = useState<CapePreset>(CAPE_PRESETS[1]);
-  const [savedSkinImg, setSavedSkinImg] = useState<HTMLImageElement | null>(null);
-  const [draftSkinImg, setDraftSkinImg] = useState<HTMLImageElement | null>(null);
-  const [savedSkinName, setSavedSkinName] = useState<string | null>(null);
-  const [draftSkinName, setDraftSkinName] = useState<string | null>(null);
-  const [savedDefaultSkinIdx, setSavedDefaultSkinIdx] = useState(0);
-  const [draftDefaultSkinIdx, setDraftDefaultSkinIdx] = useState(0);
+  const handleUpdateSettings = (newSettings: LauncherSettings) => {
+    setSettings(newSettings);
+    if (window.quibyApi) {
+      window.quibyApi.saveSettings(newSettings);
+    }
+  };
 
-  // 3. Saved vs Draft Custom Mods State
-  const [savedCustomMods, setSavedCustomMods] = useState<CustomModItem[]>(initialCustomMods);
-  const [draftCustomMods, setDraftCustomMods] = useState<CustomModItem[]>(initialCustomMods);
+  // 2. Wardrobe State (Auto-saving)
+  const [selectedCape, setSelectedCape] = useState<CapePreset>(CAPE_PRESETS[1]);
+  const [customSkinImg, setCustomSkinImg] = useState<HTMLImageElement | null>(null);
+  const [customSkinName, setCustomSkinName] = useState<string | null>(null);
+  const [activeDefaultSkinIdx, setActiveDefaultSkinIdx] = useState(0);
+
+  const handleSelectCape = (cape: CapePreset) => {
+    setSelectedCape(cape);
+    localStorage.setItem('quiby_cape', cape.id);
+  };
+
+  const handleSetCustomSkin = (img: HTMLImageElement | null, name: string | null) => {
+    setCustomSkinImg(img);
+    setCustomSkinName(name);
+    if (img && img.src) {
+      localStorage.setItem('quiby_custom_skin_data', img.src);
+      localStorage.setItem('quiby_custom_skin_name', name || 'custom.png');
+    } else {
+      localStorage.removeItem('quiby_custom_skin_data');
+      localStorage.removeItem('quiby_custom_skin_name');
+    }
+  };
+
+  const handleSetDefaultSkinIdx = (idx: number) => {
+    setActiveDefaultSkinIdx(idx);
+    localStorage.setItem('quiby_default_skin_idx', String(idx));
+  };
+
+  // 3. Custom Mods State (Auto-saving)
+  const [customMods, setCustomMods] = useState<CustomModItem[]>(initialCustomMods);
+
+  const handleUpdateCustomMods = (newMods: CustomModItem[]) => {
+    setCustomMods(newMods);
+    localStorage.setItem('quiby_custom_mods', JSON.stringify(newMods));
+  };
 
   // 4. Playtime & Fast-Connect States
   const [totalPlaytimeSeconds, setTotalPlaytimeSeconds] = useState<number>(0);
   const [autoConnect, setAutoConnect] = useState<boolean>(true);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
-
-  // Shake warning state when leaving tab with unsaved changes
-  const [isShaking, setIsShaking] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Initial Load (Saved Storage & IPC)
@@ -227,8 +254,7 @@ export const App: React.FC = () => {
     if (savedCapeId) {
       const found = CAPE_PRESETS.find((c) => c.id === savedCapeId);
       if (found) {
-        setSavedCape(found);
-        setDraftCape(found);
+        setSelectedCape(found);
       }
     }
 
@@ -238,20 +264,17 @@ export const App: React.FC = () => {
     if (savedSkinData) {
       const img = new Image();
       img.onload = () => {
-        setSavedSkinImg(img);
-        setDraftSkinImg(img);
+        setCustomSkinImg(img);
       };
       img.src = savedSkinData;
-      setSavedSkinName(savedName || 'custom.png');
-      setDraftSkinName(savedName || 'custom.png');
+      setCustomSkinName(savedName || 'custom.png');
     }
 
     // Restore Default Skin Choice (Steve / Alex)
     const savedDefIdx = localStorage.getItem('quiby_default_skin_idx');
     if (savedDefIdx !== null) {
       const idx = parseInt(savedDefIdx, 10) || 0;
-      setSavedDefaultSkinIdx(idx);
-      setDraftDefaultSkinIdx(idx);
+      setActiveDefaultSkinIdx(idx);
     }
 
     // Restore Custom Mods
@@ -260,8 +283,7 @@ export const App: React.FC = () => {
       try {
         const parsed = JSON.parse(savedModsJson);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setSavedCustomMods(parsed);
-          setDraftCustomMods(parsed);
+          setCustomMods(parsed);
         }
       } catch (_) {}
     }
@@ -270,8 +292,7 @@ export const App: React.FC = () => {
     if (window.quibyApi) {
       window.quibyApi.getSettings().then((s) => {
         if (s) {
-          setSavedSettings(s);
-          setDraftSettings(s);
+          setSettings(s);
           if (s.autoJoinServer !== undefined) {
             setAutoConnect(s.autoJoinServer);
           }
@@ -328,89 +349,10 @@ export const App: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Check if current tab has unsaved modifications
-  const hasUnsavedChanges = (() => {
-    if (activeTab === 'wardrobe') {
-      return (
-        draftCape.id !== savedCape.id ||
-        draftSkinImg !== savedSkinImg ||
-        draftSkinName !== savedSkinName ||
-        draftDefaultSkinIdx !== savedDefaultSkinIdx
-      );
-    }
-    if (activeTab === 'mods') {
-      // Only compare user-configurable states: which mods exist and whether they are enabled
-      const getComparableState = (mods: CustomModItem[]) =>
-        mods.map((m) => ({ id: m.id, enabled: m.enabled }));
-      return (
-        JSON.stringify(getComparableState(draftCustomMods)) !==
-        JSON.stringify(getComparableState(savedCustomMods))
-      );
-    }
-    if (activeTab === 'settings') {
-      return JSON.stringify(draftSettings) !== JSON.stringify(savedSettings);
-    }
-    return false;
-  })();
-
-  // Handle Tab Switch (Navigation Guard)
+  // Instant, clean tab navigation without blocking guards
   const handleSelectTab = (nextTab: ActiveTab) => {
     if (nextTab === activeTab) return;
-
-    if (hasUnsavedChanges) {
-      // Block navigation and trigger red shake alert
-      setIsShaking(true);
-      setTimeout(() => setIsShaking(false), 500);
-      return;
-    }
-
     setActiveTab(nextTab);
-  };
-
-  // Save current tab modifications
-  const handleSaveCurrentTab = async () => {
-    if (activeTab === 'wardrobe') {
-      setSavedCape(draftCape);
-      setSavedSkinImg(draftSkinImg);
-      setSavedSkinName(draftSkinName);
-      setSavedDefaultSkinIdx(draftDefaultSkinIdx);
-
-      // Persist Wardrobe to LocalStorage
-      localStorage.setItem('quiby_cape', draftCape.id);
-      localStorage.setItem('quiby_default_skin_idx', String(draftDefaultSkinIdx));
-
-      if (draftSkinImg && draftSkinImg.src) {
-        localStorage.setItem('quiby_custom_skin_data', draftSkinImg.src);
-        localStorage.setItem('quiby_custom_skin_name', draftSkinName || 'custom.png');
-      } else {
-        localStorage.removeItem('quiby_custom_skin_data');
-        localStorage.removeItem('quiby_custom_skin_name');
-      }
-    } else if (activeTab === 'mods') {
-      setSavedCustomMods(draftCustomMods);
-      localStorage.setItem('quiby_custom_mods', JSON.stringify(draftCustomMods));
-      setSelectedModIds([]);
-    } else if (activeTab === 'settings') {
-      setSavedSettings(draftSettings);
-      if (window.quibyApi) {
-        await window.quibyApi.saveSettings(draftSettings);
-      }
-    }
-  };
-
-  // Cancel / Revert current tab modifications
-  const handleCancelCurrentTab = () => {
-    if (activeTab === 'wardrobe') {
-      setDraftCape(savedCape);
-      setDraftSkinImg(savedSkinImg);
-      setDraftSkinName(savedSkinName);
-      setDraftDefaultSkinIdx(savedDefaultSkinIdx);
-    } else if (activeTab === 'mods') {
-      setDraftCustomMods(savedCustomMods);
-      setSelectedModIds([]);
-    } else if (activeTab === 'settings') {
-      setDraftSettings(savedSettings);
-    }
   };
 
   const handleLoginSuccess = (newSession: AuthSession) => {
@@ -423,12 +365,13 @@ export const App: React.FC = () => {
       setIsAuthModalOpen(true);
       return;
     }
+    setActiveTab('home');
     try {
       if (window.quibyApi) {
-        const activeModFiles = savedCustomMods
+        const activeModFiles = customMods
           .filter((m) => m.enabled && m.safetyStatus === 'approved')
           .map((m) => m.filename);
-        await window.quibyApi.launchGame(session, savedSettings, SERVER_URL, activeModFiles);
+        await window.quibyApi.launchGame(session, settings, SERVER_URL, activeModFiles);
       }
     } catch (err) {
       console.error('Launch Error:', err);
@@ -439,20 +382,6 @@ export const App: React.FC = () => {
     window.quibyApi?.killGame();
   };
 
-  const handleUpdateCustomMods = (newMods: CustomModItem[]) => {
-    const getEnabledFingerprint = (mods: CustomModItem[]) =>
-      mods.map((m) => `${m.id}:${m.enabled}`).join('|');
-
-    if (
-      getEnabledFingerprint(draftCustomMods) === getEnabledFingerprint(newMods) &&
-      draftCustomMods.length === newMods.length
-    ) {
-      setSavedCustomMods(newMods);
-    }
-
-    setDraftCustomMods(newMods);
-  };
-
   // If this window is the dedicated Splash BrowserWindow:
   if (isSplashQuery) {
     return <SplashWindowView />;
@@ -460,200 +389,211 @@ export const App: React.FC = () => {
 
   // Otherwise, render the Main Launcher Window:
   return (
-    <div className="flex h-screen w-screen bg-zinc-950 text-zinc-100 overflow-hidden select-none font-sans relative">
-      {/* Subtle Radial Ambient Light */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.03)_0%,transparent_60%)] pointer-events-none" />
-      <div className="absolute bottom-0 left-1/3 w-[500px] h-[300px] bg-white/[0.015] rounded-full blur-[140px] pointer-events-none" />
+    <div className="flex flex-col h-screen w-screen bg-[#0b0e14] text-zinc-100 overflow-hidden select-none font-sans relative">
+      {/* 1. Window Controls & Dragging Header (Height: 32px / h-8) */}
+      <WindowHeader serverIp={settings.serverIp} serverStatus={serverStatus} />
 
-      {/* 1. Interactive Expandable Minimal Sidebar & Morphing Email-Like Inbox Drawer */}
-      <MinimalSidebar
-        activeTab={activeTab}
-        onSelectTab={(tab) => {
-          setIsNotificationsOpen(false);
-          handleSelectTab(tab);
-        }}
-        session={session}
-        onOpenProfile={() => setIsAuthModalOpen(true)}
-        isNotificationsOpen={isNotificationsOpen}
-        onOpenNotifications={() => {
-          setIsNotificationsOpen(true);
-          if (!selectedNotificationId && notifications.length > 0) {
-            setSelectedNotificationId(notifications[0].id);
-          }
-        }}
-        onCloseNotifications={() => setIsNotificationsOpen(false)}
-        notifications={notifications}
-        selectedNotificationId={selectedNotificationId}
-        onSelectNotification={(id) => {
-          setSelectedNotificationId(id);
-          setNotifications((prev) =>
-            prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-          );
-        }}
-        onMarkAllNotificationsRead={() =>
-          setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-        }
-        onClearAllNotifications={() => {
-          setNotifications([]);
-          setSelectedNotificationId(null);
-        }}
-        unreadNotificationsCount={notifications.filter((n) => !n.read).length}
-      />
-
-      {/* 2. Main View Content (Offset for 72px rail or 310px expanded notification inbox) */}
-      <main
-        className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          isNotificationsOpen ? 'pl-[310px]' : 'pl-[72px]'
-        }`}
-      >
-        {isNotificationsOpen ? (
-          <NotificationDetailView
-            notification={
-              notifications.find((n) => n.id === selectedNotificationId) || null
-            }
-            onDeleteNotification={(id) => {
-              const remaining = notifications.filter((n) => n.id !== id);
-              setNotifications(remaining);
-              if (selectedNotificationId === id) {
-                setSelectedNotificationId(remaining[0]?.id || null);
-              }
-            }}
-            onNavigateToMods={() => {
-              setIsNotificationsOpen(false);
-              setActiveTab('mods');
-            }}
-          />
-        ) : (
-          <>
-            {activeTab === 'home' && (
-              <CharacterStage
-                session={session}
-                serverStatus={serverStatus}
-                serverIp={savedSettings.serverIp}
-                totalPlaytimeSeconds={totalPlaytimeSeconds}
-                customSkinImg={savedSkinImg}
-                customSkinName={savedSkinName}
-                activeDefaultSkinIdx={savedDefaultSkinIdx}
-                selectedCape={savedCape}
-                isInGame={launchState.status === 'running' || launchState.status === 'starting' || launchState.status === 'updating'}
-                onOpenWardrobe={() => handleSelectTab('wardrobe')}
-                onOpenLogin={() => setIsAuthModalOpen(true)}
-                onOpenNews={() => setIsNotificationsOpen(true)}
-              />
-            )}
-
-            {activeTab === 'wardrobe' && (
-              <SkinWardrobeView
-                customSkinImg={draftSkinImg}
-                customSkinName={draftSkinName}
-                activeDefaultSkinIdx={draftDefaultSkinIdx}
-                selectedCape={draftCape}
-                onSetCustomSkin={(img, name) => {
-                  setDraftSkinImg(img);
-                  setDraftSkinName(name);
-                }}
-                onSetDefaultSkinIdx={setDraftDefaultSkinIdx}
-                onSelectCape={setDraftCape}
-              />
-            )}
-
-            {activeTab === 'mods' && (
-              <ModsView
-                manifest={manifest}
-                gameDir={draftSettings.gameDir}
-                customMods={draftCustomMods}
-                session={session}
-                selectedModIds={selectedModIds}
-                onUpdateSelectedModIds={setSelectedModIds}
-                onUpdateCustomMods={handleUpdateCustomMods}
-                onNotify={handleNotify}
-              />
-            )}
-
-            {activeTab === 'settings' && (
-              <SettingsView
-                settings={draftSettings}
-                onUpdateSettings={setDraftSettings}
-              />
-            )}
-          </>
-        )}
-      </main>
-
-      {/* 3. Floating Action Deck (Play on Home / Save & Cancel on other tabs / Batch Actions with Metaball Split) */}
-      {!isNotificationsOpen && (
-        <FloatingActionDeck
+      {/* 2. Main Content Body (Remaining Height h-[calc(100vh-32px)]) */}
+      <div className="flex flex-1 h-[calc(100vh-32px)] w-full overflow-hidden relative">
+        {/* Sleek Minimal Sidebar */}
+        <MinimalSidebar
           activeTab={activeTab}
-          session={session}
-          launchState={launchState}
-          downloadProgress={downloadProgress}
-          hasUnsavedChanges={hasUnsavedChanges}
-          isShaking={isShaking}
-          autoConnect={autoConnect}
-          onToggleAutoConnect={(val) => {
-            setAutoConnect(val);
-            localStorage.setItem('quiby_auto_connect', String(val));
-            setSavedSettings((prev) => ({ ...prev, autoJoinServer: val }));
-            setDraftSettings((prev) => ({ ...prev, autoJoinServer: val }));
+          onSelectTab={(tab) => {
+            setIsNotificationsOpen(false);
+            handleSelectTab(tab);
           }}
-          batchActions={
-            activeTab === 'mods' && selectedModIds.length > 0
-              ? {
-                  count: selectedModIds.length,
-                  totalCount: draftCustomMods.length,
-                  isAllSelected: draftCustomMods.length > 0 && selectedModIds.length === draftCustomMods.length,
-                  onSelectAll: () => {
-                    if (selectedModIds.length === draftCustomMods.length) {
-                      setSelectedModIds([]);
-                    } else {
-                      setSelectedModIds(draftCustomMods.map((m) => m.id));
-                    }
-                  },
-                  onEnableAll: () => {
-                    setDraftCustomMods((prev) =>
-                      prev.map((m) =>
-                        selectedModIds.includes(m.id) && m.safetyStatus === 'approved'
-                          ? { ...m, enabled: true }
-                          : m
-                      )
-                    );
-                  },
-                  onDisableAll: () => {
-                    setDraftCustomMods((prev) =>
-                      prev.map((m) =>
-                        selectedModIds.includes(m.id) ? { ...m, enabled: false } : m
-                      )
-                    );
-                  },
-                  onDeleteAll: () => {
-                    setDraftCustomMods((prev) =>
-                      prev.filter((m) => !selectedModIds.includes(m.id))
-                    );
-                    setSelectedModIds([]);
-                  },
-                  onClear: () => {
-                    setSelectedModIds([]);
-                  },
-                }
-              : null
+          session={session}
+          onOpenProfile={() => setIsAuthModalOpen(true)}
+          isNotificationsOpen={isNotificationsOpen}
+          onOpenNotifications={() => {
+            setIsNotificationsOpen(true);
+            if (!selectedNotificationId && notifications.length > 0) {
+              setSelectedNotificationId(notifications[0].id);
+            }
+          }}
+          onCloseNotifications={() => setIsNotificationsOpen(false)}
+          notifications={notifications}
+          selectedNotificationId={selectedNotificationId}
+          onSelectNotification={(id) => {
+            setSelectedNotificationId(id);
+            setNotifications((prev) =>
+              prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+            );
+          }}
+          onMarkAllNotificationsRead={() =>
+            setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
           }
-          logs={logs}
-          onClearLogs={() => setLogs([])}
-          onLaunch={handleLaunchGame}
-          onKill={handleKillGame}
-          onOpenLogin={() => setIsAuthModalOpen(true)}
-          onSave={handleSaveCurrentTab}
-          onCancel={handleCancelCurrentTab}
+          onClearAllNotifications={() => {
+            setNotifications([]);
+            setSelectedNotificationId(null);
+          }}
+          unreadNotificationsCount={notifications.filter((n) => !n.read).length}
         />
-      )}
 
-      {/* 4. Floating Bottom Notification Toast (Same placement as action deck) */}
+        {/* Primary View Content Container */}
+        <main
+          className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-200 ease-out ${
+            isNotificationsOpen ? 'pl-[310px]' : 'pl-[72px]'
+          }`}
+        >
+          {isNotificationsOpen ? (
+            <NotificationDetailView
+              notification={
+                notifications.find((n) => n.id === selectedNotificationId) || null
+              }
+              onDeleteNotification={(id) => {
+                const remaining = notifications.filter((n) => n.id !== id);
+                setNotifications(remaining);
+                if (selectedNotificationId === id) {
+                  setSelectedNotificationId(remaining[0]?.id || null);
+                }
+              }}
+              onNavigateToMods={() => {
+                setIsNotificationsOpen(false);
+                setActiveTab('mods');
+              }}
+            />
+          ) : (
+            <>
+              {activeTab === 'home' && (
+                launchState.status === 'updating' || launchState.status === 'starting' || launchState.status === 'running' ? (
+                  <InGameLaunchStage
+                    session={session}
+                    launchState={launchState}
+                    downloadProgress={downloadProgress}
+                    logs={logs}
+                    serverIp={settings.serverIp}
+                    totalPlaytimeSeconds={totalPlaytimeSeconds}
+                    customSkinImg={customSkinImg}
+                    customSkinName={customSkinName}
+                    activeDefaultSkinIdx={activeDefaultSkinIdx}
+                    selectedCape={selectedCape}
+                    onKill={handleKillGame}
+                    onClearLogs={() => setLogs([])}
+                  />
+                ) : (
+                  <CharacterStage
+                    session={session}
+                    serverStatus={serverStatus}
+                    serverIp={settings.serverIp}
+                    totalPlaytimeSeconds={totalPlaytimeSeconds}
+                    customSkinImg={customSkinImg}
+                    customSkinName={customSkinName}
+                    activeDefaultSkinIdx={activeDefaultSkinIdx}
+                    selectedCape={selectedCape}
+                    isInGame={false}
+                    onOpenWardrobe={() => handleSelectTab('wardrobe')}
+                    onOpenLogin={() => setIsAuthModalOpen(true)}
+                    onOpenNews={() => setIsNotificationsOpen(true)}
+                  />
+                )
+              )}
+
+              {activeTab === 'wardrobe' && (
+                <SkinWardrobeView
+                  customSkinImg={customSkinImg}
+                  customSkinName={customSkinName}
+                  activeDefaultSkinIdx={activeDefaultSkinIdx}
+                  selectedCape={selectedCape}
+                  onSetCustomSkin={handleSetCustomSkin}
+                  onSetDefaultSkinIdx={handleSetDefaultSkinIdx}
+                  onSelectCape={handleSelectCape}
+                />
+              )}
+
+              {activeTab === 'mods' && (
+                <ModsView
+                  manifest={manifest}
+                  gameDir={settings.gameDir}
+                  customMods={customMods}
+                  session={session}
+                  selectedModIds={selectedModIds}
+                  onUpdateSelectedModIds={setSelectedModIds}
+                  onUpdateCustomMods={handleUpdateCustomMods}
+                  onNotify={handleNotify}
+                />
+              )}
+
+              {activeTab === 'settings' && (
+                <SettingsView
+                  settings={settings}
+                  onUpdateSettings={handleUpdateSettings}
+                />
+              )}
+            </>
+          )}
+        </main>
+
+        {/* Solid Anchored Launch Deck & Batch Actions */}
+        {!isNotificationsOpen && (
+          <FloatingActionDeck
+            activeTab={activeTab}
+            session={session}
+            launchState={launchState}
+            downloadProgress={downloadProgress}
+            autoConnect={autoConnect}
+            onToggleAutoConnect={(val) => {
+              setAutoConnect(val);
+              localStorage.setItem('quiby_auto_connect', String(val));
+              handleUpdateSettings({ ...settings, autoJoinServer: val });
+            }}
+            batchActions={
+              activeTab === 'mods' && selectedModIds.length > 0
+                ? {
+                    count: selectedModIds.length,
+                    totalCount: customMods.length,
+                    isAllSelected: customMods.length > 0 && selectedModIds.length === customMods.length,
+                    onSelectAll: () => {
+                      if (selectedModIds.length === customMods.length) {
+                        setSelectedModIds([]);
+                      } else {
+                        setSelectedModIds(customMods.map((m) => m.id));
+                      }
+                    },
+                    onEnableAll: () => {
+                      handleUpdateCustomMods(
+                        customMods.map((m) =>
+                          selectedModIds.includes(m.id) && m.safetyStatus === 'approved'
+                            ? { ...m, enabled: true }
+                            : m
+                        )
+                      );
+                    },
+                    onDisableAll: () => {
+                      handleUpdateCustomMods(
+                        customMods.map((m) =>
+                          selectedModIds.includes(m.id) ? { ...m, enabled: false } : m
+                        )
+                      );
+                    },
+                    onDeleteAll: () => {
+                      handleUpdateCustomMods(
+                        customMods.filter((m) => !selectedModIds.includes(m.id))
+                      );
+                      setSelectedModIds([]);
+                    },
+                    onClear: () => {
+                      setSelectedModIds([]);
+                    },
+                  }
+                : null
+            }
+            logs={logs}
+            onClearLogs={() => setLogs([])}
+            onLaunch={handleLaunchGame}
+            onKill={handleKillGame}
+            onOpenLogin={() => setIsAuthModalOpen(true)}
+          />
+        )}
+      </div>
+
+      {/* Floating Bottom Notification Toast */}
       <FloatingNotificationToast
         toast={activeToast}
         onDismiss={() => setActiveToast(null)}
       />
 
-      {/* 5. Discord Auth Modal */}
+      {/* Discord Auth Modal */}
       <DiscordAuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
@@ -661,41 +601,27 @@ export const App: React.FC = () => {
         serverUrl={SERVER_URL}
       />
 
-      {/* 6. First Launch Onboarding Modal */}
+      {/* First Launch Onboarding Modal */}
       <FirstLaunchOnboardingModal
         isOpen={isOnboardingOpen}
-        settings={savedSettings}
+        settings={settings}
         onClose={() => setIsOnboardingOpen(false)}
         onApplyPreset={(updated, profile) => {
-          const merged = { ...savedSettings, ...updated };
-          setSavedSettings(merged);
-          setDraftSettings(merged);
-          if (window.quibyApi) {
-            window.quibyApi.saveSettings(merged);
-          }
+          const merged = { ...settings, ...updated };
+          handleUpdateSettings(merged);
 
           if (profile === 'clean') {
-            setSavedCustomMods((prev) => prev.map((m) => ({ ...m, enabled: false })));
-            setDraftCustomMods((prev) => prev.map((m) => ({ ...m, enabled: false })));
+            handleUpdateCustomMods(customMods.map((m) => ({ ...m, enabled: false })));
           } else if (profile === 'optimal') {
-            setSavedCustomMods((prev) =>
-              prev.map((m) => ({
-                ...m,
-                enabled: m.safetyStatus === 'approved' && !m.categories?.includes('graphics'),
-              }))
-            );
-            setDraftCustomMods((prev) =>
-              prev.map((m) => ({
+            handleUpdateCustomMods(
+              customMods.map((m) => ({
                 ...m,
                 enabled: m.safetyStatus === 'approved' && !m.categories?.includes('graphics'),
               }))
             );
           } else {
-            setSavedCustomMods((prev) =>
-              prev.map((m) => ({ ...m, enabled: m.safetyStatus === 'approved' }))
-            );
-            setDraftCustomMods((prev) =>
-              prev.map((m) => ({ ...m, enabled: m.safetyStatus === 'approved' }))
+            handleUpdateCustomMods(
+              customMods.map((m) => ({ ...m, enabled: m.safetyStatus === 'approved' }))
             );
           }
 

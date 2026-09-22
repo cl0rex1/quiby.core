@@ -7,6 +7,20 @@ export default {
   theme: {
     extend: {
       colors: {
+        surface: {
+          950: '#0b0e14',
+          900: '#11151f',
+          850: '#171d2b',
+          800: '#1e2638',
+          border: '#252f45',
+          borderLight: '#323e59',
+        },
+        create: {
+          brass: '#d4975c',
+          brassLight: '#eab683',
+          copper: '#c86a4b',
+          steel: '#475569',
+        },
         onyx: {
           950: '#040507',
           900: '#07080a',
@@ -14,15 +28,15 @@ export default {
           800: '#11141c',
           750: '#171a25',
           700: '#1e2230',
-          border: '#151822',
-          borderLight: '#232738',
+          border: '#252f45',
+          borderLight: '#323e59',
         },
         quiby: {
-          purple: '#8b5cf6',
-          purpleLight: '#a78bfa',
-          purpleDark: '#6d28d9',
-          indigo: '#6366f1',
-          accent: '#c084fc',
+          purple: '#6d28d9',
+          purpleLight: '#8b5cf6',
+          purpleDark: '#4c1d95',
+          indigo: '#4f46e5',
+          accent: '#7c3aed',
           text: '#f1f5f9',
           textMuted: '#788299',
           textDim: '#475066',
@@ -33,9 +47,7 @@ export default {
         mono: ['"JetBrains Mono"', 'monospace'],
       },
       boxShadow: {
-        'onyx-glow': '0 0 40px -10px rgba(139, 92, 246, 0.35)',
         'onyx-card': '0 10px 35px -5px rgba(0, 0, 0, 0.7)',
-        'play-btn': '0 0 30px -5px rgba(139, 92, 246, 0.5), 0 0 15px 0 rgba(99, 102, 241, 0.3)',
       }
     },
   },

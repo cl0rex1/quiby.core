@@ -56,7 +56,7 @@ export const RamSlider: React.FC<RamSliderProps> = ({
   const warning = getMinimalWarning();
 
   return (
-    <div className="glass-panel rounded-3xl p-6 space-y-6 select-none shadow-sm">
+    <div className="surface-panel rounded-3xl p-6 space-y-6 select-none shadow-sm">
       {/* Header with Specs */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5 text-white font-bold text-sm">

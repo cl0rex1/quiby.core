@@ -86,7 +86,7 @@ export const FloatingNotificationToast: React.FC<FloatingNotificationToastProps>
             : 'translate-y-8 opacity-0 scale-95 blur-[2px] pointer-events-none'
         }`}
       >
-        <div className="relative flex items-center gap-3 px-5 py-2.5 h-[52px] w-[360px] rounded-full glass-floating">
+        <div className="relative flex items-center gap-3 px-5 py-2.5 h-[52px] w-[360px] rounded-full surface-panel shadow-2xl">
           {/* Animated SVG Contour: Starts from Top-Center and draws clockwise around the entire window */}
           <svg
             className="absolute -inset-[1px] w-[362px] h-[54px] pointer-events-none overflow-visible"

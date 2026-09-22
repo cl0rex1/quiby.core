@@ -229,7 +229,7 @@ export const SchematicsExplorer: React.FC<SchematicsExplorerProps> = ({
             {filtered.map((schem, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between p-4 rounded-2xl glass-card gap-3.5 group hover:border-white/20 transition-all shadow-sm"
+                className="flex items-center justify-between p-4 rounded-2xl surface-card gap-3.5 group hover:border-white/20 transition-all shadow-sm"
               >
                 <div className="flex items-center gap-3.5 truncate">
                   {/* Schematic Icon Logo */}

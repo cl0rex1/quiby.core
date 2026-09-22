@@ -8,50 +8,40 @@
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #07080a;
+    background-color: #0b0e14;
     color: #f1f5f9;
     letter-spacing: -0.011em;
   }
 }
 
 ::selection {
-  background-color: rgba(168, 85, 247, 0.4);
+  background-color: rgba(212, 151, 92, 0.3);
   color: #ffffff;
 }
 
 /* ========================================================================= */
-/* BALANCED DESKTOP MATERIALS & SOLID GROUNDING                              */
+/* SOLID DESKTOP SURFACES & MATERIALS                                       */
 /* ========================================================================= */
 
-.glass-floating {
-  background: rgba(16, 18, 24, 0.94);
-  backdrop-filter: blur(12px) saturate(130%);
-  -webkit-backdrop-filter: blur(12px) saturate(130%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65);
+.surface-dock {
+  background-color: #0b0e14;
+  border-color: #252f45;
 }
 
-.glass-panel {
-  background: rgba(20, 23, 31, 0.88);
-  backdrop-filter: blur(12px) saturate(120%);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+.surface-panel {
+  background-color: #11151f;
+  border-color: #252f45;
 }
 
-.glass-card {
-  background: rgba(24, 28, 38, 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+.surface-card {
+  background-color: #171d2b;
+  border-color: #252f45;
+  transition: background-color 150ms ease, border-color 150ms ease;
 }
 
-.glass-card:hover {
-  background: rgba(30, 36, 50, 0.85);
-  border-color: rgba(255, 255, 255, 0.14);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+.surface-card:hover {
+  background-color: #1e2638;
+  border-color: #323e59;
 }
 
 /* Tactile pointer-down press response physics */
@@ -60,40 +50,7 @@
 }
 
 .press-feedback:active {
-  transform: scale(0.97);
-}
-
-/* ========================================================================= */
-/* OPTICAL TYPOGRAPHY SIZING & TRACKING                                      */
-/* ========================================================================= */
-
-.apple-display {
-  letter-spacing: -0.03em;
-  line-height: 1.08;
-  font-weight: 800;
-}
-
-.apple-heading {
-  letter-spacing: -0.022em;
-  line-height: 1.2;
-  font-weight: 700;
-}
-
-.apple-subheading {
-  letter-spacing: -0.015em;
-  font-weight: 600;
-}
-
-.apple-body {
-  letter-spacing: -0.006em;
-  line-height: 1.45;
-}
-
-.apple-micro-tag {
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-weight: 700;
-  font-size: 0.65rem;
+  transform: scale(0.98);
 }
 
 /* Minimalist dark scrollbar */
@@ -107,29 +64,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e2230;
+  background: #1e2638;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #333a50;
-}
-
-/* Smooth organic shake animation for unsaved changes guard */
-@keyframes smooth-shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  15%, 45%, 75% {
-    transform: translateX(-5px);
-  }
-  30%, 60%, 90% {
-    transform: translateX(5px);
-  }
-}
-
-.animate-shake {
-  animation: smooth-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  background: #323e59;
 }
 
 /* Window drag regions */
@@ -142,7 +82,7 @@
 }
 
 /* ========================================================================= */
-/* ACCESSIBILITY: REDUCED MOTION & REDUCED TRANSPARENCY                      */
+/* ACCESSIBILITY: REDUCED MOTION                                             */
 /* ========================================================================= */
 
 @media (prefers-reduced-motion: reduce) {
@@ -155,17 +95,7 @@
   .press-feedback:active {
     transform: none !important;
   }
-  .glass-card:hover {
+  .surface-card:hover {
     transform: none !important;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .glass-floating,
-  .glass-panel,
-  .glass-card {
-    background: #0f1015 !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
   }
 }

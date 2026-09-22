@@ -15,6 +15,7 @@ interface ChibiCharacterDisplayProps {
   selectedCape: CapePreset;
   animation?: 'idle' | 'walk' | 'run' | 'wave' | 'bounce';
   size?: number;
+  showShadow?: boolean;
 }
 
 export const ChibiCharacterDisplay: React.FC<ChibiCharacterDisplayProps> = ({
@@ -23,6 +24,7 @@ export const ChibiCharacterDisplay: React.FC<ChibiCharacterDisplayProps> = ({
   selectedCape,
   animation = 'idle',
   size = 320,
+  showShadow = true,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [frames, setFrames] = useState<BakedFrame[]>([]);
@@ -105,12 +107,14 @@ export const ChibiCharacterDisplay: React.FC<ChibiCharacterDisplayProps> = ({
       const cy = canvas.height / 2 + 10;
 
       // Dynamic Drop Shadow on the ground
-      ctx.save();
-      ctx.beginPath();
-      ctx.ellipse(cx, cy + 96, 68, 16, 0, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-      ctx.fill();
-      ctx.restore();
+      if (showShadow !== false) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 96, 68, 16, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.fill();
+        ctx.restore();
+      }
 
       // Render Cape (Behind Character)
       if (selectedCape && selectedCape.id !== 'none') {
@@ -204,7 +208,7 @@ export const ChibiCharacterDisplay: React.FC<ChibiCharacterDisplayProps> = ({
         cancelAnimationFrame(animRafRef.current);
       }
     };
-  }, [frames, selectedCape]);
+  }, [frames, selectedCape, showShadow]);
 
   return (
     <div className="relative flex flex-col items-center justify-center">

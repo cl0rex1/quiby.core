@@ -1,4 +1,4 @@
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, exec, ChildProcess } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { BrowserWindow } from 'electron';
@@ -239,7 +239,16 @@ export function killGameProcess(): void {
     playtimeInterval = null;
   }
   if (runningGameProcess) {
-    runningGameProcess.kill('SIGTERM');
+    if (process.platform === 'win32' && runningGameProcess.pid) {
+      const pid = runningGameProcess.pid;
+      exec(`taskkill /pid ${pid} /T /F`, (err) => {
+        if (err) {
+          console.error(`Failed to kill game process tree (PID ${pid}):`, err);
+        }
+      });
+    } else {
+      runningGameProcess.kill('SIGTERM');
+    }
     runningGameProcess = null;
   }
 }

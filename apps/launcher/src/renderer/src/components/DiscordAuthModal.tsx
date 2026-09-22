@@ -116,7 +116,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
-      <div className="glass-floating rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-white/15">
+      <div className="surface-panel rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-surface-border">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/10">
           <div className="flex items-center gap-3">
@@ -174,7 +174,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
           {/* Step 2: Minecraft IGN Binding */}
           {pendingDiscordUser ? (
             <form onSubmit={handleBindMinecraft} className="space-y-4">
-              <div className="p-3.5 rounded-2xl glass-card flex items-center gap-3">
+              <div className="p-3.5 rounded-2xl surface-card flex items-center gap-3">
                 <img
                   src={pendingDiscordUser.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                   alt="Discord Avatar"
@@ -223,7 +223,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
                 Авторизация через Discord гарантирует доступ в вайтлист сервера 6 сезона и связывает ваш ник с профилем.
               </p>
 
-              <div className="p-3.5 rounded-2xl glass-card text-left text-xs space-y-2">
+              <div className="p-3.5 rounded-2xl surface-card text-left text-xs space-y-2">
                 <div className="flex items-center gap-2 text-purple-300 font-bold apple-subheading">
                   <CheckCircle size={15} />
                   <span>Преимущества:</span>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   FolderGit2, 
   Search, 
@@ -16,7 +16,10 @@ import {
   CheckSquare,
   Layers,
   FileCode,
-  Sun
+  Sun,
+  ShieldCheck,
+  Sparkles,
+  Filter
 } from 'lucide-react';
 import { ModpackManifest, AuthSession } from '@quiby/shared';
 import { verifyCustomMod } from '../utils/modVerifier';
@@ -24,6 +27,7 @@ import { resolveModMetadata } from '../utils/knownMods';
 import { ModWhitelistModal } from '../components/ModWhitelistModal';
 import { SchematicsExplorer } from '../components/SchematicsExplorer';
 import { ShadersExplorer } from '../components/ShadersExplorer';
+import { NotificationItem } from '../components/NotificationsModal';
 
 export interface CustomModItem {
   id: string;
@@ -39,8 +43,6 @@ export interface CustomModItem {
   iconUrl?: string;
   description?: string;
 }
-
-import { NotificationItem } from '../components/NotificationsModal';
 
 interface ModsViewProps {
   manifest: ModpackManifest | null;
@@ -60,6 +62,7 @@ interface ModsViewProps {
 
 export type SwitcherMode = 'official' | 'custom';
 export type ContentCategory = 'mods' | 'schematics' | 'shaders';
+export type ModFilterCategory = 'all' | 'optimization' | 'interface' | 'audio' | 'mechanics';
 
 export const ModsView: React.FC<ModsViewProps> = ({
   manifest,
@@ -73,11 +76,12 @@ export const ModsView: React.FC<ModsViewProps> = ({
 }) => {
   const [contentCategory, setContentCategory] = useState<ContentCategory>('mods');
   const [switcherMode, setSwitcherMode] = useState<SwitcherMode>('custom');
+  const [filterCategory, setFilterCategory] = useState<ModFilterCategory>('all');
   const [search, setSearch] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [whitelistSuccessId, setWhitelistSuccessId] = useState<string | null>(null);
   const [activeWhitelistMod, setActiveWhitelistMod] = useState<CustomModItem | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const officialFiles = manifest?.files || [];
 
@@ -114,11 +118,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
       dragCounter = 0;
       setIsDragging(false);
       if (e.dataTransfer?.files) {
-        Array.from(e.dataTransfer.files).forEach((file) => {
-          if (file.name.endsWith('.jar')) {
-            handleAddCustomModFile(file);
-          }
-        });
+        handleFiles(e.dataTransfer.files);
       }
     };
 
@@ -135,19 +135,90 @@ export const ModsView: React.FC<ModsViewProps> = ({
     };
   }, [customMods]);
 
+  const handleFiles = (files: FileList | File[]) => {
+    Array.from(files).forEach((file) => {
+      if (file.name.endsWith('.jar')) {
+        handleAddCustomModFile(file);
+      }
+    });
+  };
+
+  const matchesCategory = (
+    cat: string | undefined,
+    label: string | undefined,
+    name: string,
+    filename: string
+  ) => {
+    if (filterCategory === 'all') return true;
+    const c = (cat || '').toLowerCase();
+    const l = (label || '').toLowerCase();
+    const full = (name + ' ' + filename).toLowerCase();
+
+    if (filterCategory === 'optimization') {
+      return (
+        c === 'optimization' ||
+        l.includes('оптимиз') ||
+        full.includes('sodium') ||
+        full.includes('ferrite') ||
+        full.includes('embeddium') ||
+        full.includes('memory') ||
+        full.includes('culling') ||
+        full.includes('fast')
+      );
+    }
+    if (filterCategory === 'interface') {
+      return (
+        c === 'interface' ||
+        l.includes('интерфейс') ||
+        full.includes('jei') ||
+        full.includes('rei') ||
+        full.includes('emi') ||
+        full.includes('jade') ||
+        full.includes('appleskin') ||
+        full.includes('mouse')
+      );
+    }
+    if (filterCategory === 'audio') {
+      return (
+        l.includes('звук') ||
+        l.includes('голос') ||
+        full.includes('sound') ||
+        full.includes('physics') ||
+        full.includes('voice') ||
+        full.includes('footstep') ||
+        full.includes('audio')
+      );
+    }
+    if (filterCategory === 'mechanics') {
+      return (
+        c === 'mechanisms' ||
+        l.includes('механик') ||
+        l.includes('дирижабл') ||
+        full.includes('create') ||
+        full.includes('aeronautics') ||
+        full.includes('steam') ||
+        full.includes('train')
+      );
+    }
+    return true;
+  };
+
   const filteredOfficial = officialFiles.filter((f) => {
-    const name = f.modName || f.path;
-    return (
-      name.toLowerCase().includes(search.toLowerCase()) ||
-      f.path.toLowerCase().includes(search.toLowerCase())
-    );
+    const rawName = f.modName || f.path.replace('mods/', '').replace('.jar', '');
+    const meta = resolveModMetadata(rawName, f.path);
+    const matchesSearch =
+      meta.displayName.toLowerCase().includes(search.toLowerCase()) ||
+      f.path.toLowerCase().includes(search.toLowerCase());
+    return matchesSearch && matchesCategory(meta.category, meta.categoryLabel, meta.displayName, f.path);
   });
 
-  const filteredCustom = customMods.filter(
-    (m) =>
+  const filteredCustom = customMods.filter((m) => {
+    const meta = resolveModMetadata(m.name, m.filename, m.description, m.iconUrl);
+    const matchesSearch =
       m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.filename.toLowerCase().includes(search.toLowerCase())
-  );
+      m.filename.toLowerCase().includes(search.toLowerCase());
+    return matchesSearch && matchesCategory(meta.category, meta.categoryLabel, m.name, m.filename);
+  });
 
   const toggleSelectMod = (id: string) => {
     if (selectedModIds.includes(id)) {
@@ -253,28 +324,46 @@ export const ModsView: React.FC<ModsViewProps> = ({
     return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
   };
 
+  const getMonogram = (title: string) => {
+    const cleaned = title.replace(/[^a-zA-Z0-9а-яА-Я]/g, ' ').trim();
+    const parts = cleaned.split(/\s+/);
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return (cleaned.substring(0, 2) || 'MD').toUpperCase();
+  };
+
   const isAllSelected = filteredCustom.length > 0 && selectedModIds.length === filteredCustom.length;
 
-  return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden p-6 md:p-8 space-y-5 select-none z-10 relative">
-      {/* Full-Window Drag & Drop Overlay */}
-      {isDragging && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md border-4 border-dashed border-zinc-400 p-8 pointer-events-none animate-in fade-in duration-150">
-          <div className="flex flex-col items-center gap-3.5 p-8 rounded-3xl bg-zinc-900 border border-white/10 shadow-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center text-white">
-              <Upload size={32} className="animate-bounce" />
-            </div>
-            <p className="text-base font-bold text-white">Отпустите мод (.jar) для установки</p>
-            <p className="text-xs text-zinc-400">Файл добавится в вашу личную коллекцию модов</p>
-          </div>
-        </div>
-      )}
+  const CATEGORY_CHIPS: { id: ModFilterCategory; label: string }[] = [
+    { id: 'all', label: 'Все' },
+    { id: 'optimization', label: 'Оптимизация' },
+    { id: 'interface', label: 'Интерфейс' },
+    { id: 'audio', label: 'Аудио' },
+    { id: 'mechanics', label: 'Механика' },
+  ];
 
-      {/* Top Header: Title & Content Category Segmented Switcher */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
+  return (
+    <div className="flex-1 flex flex-col h-full overflow-hidden p-5 md:p-7 space-y-4 select-none z-10 relative">
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".jar"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files) {
+            handleFiles(e.target.files);
+          }
+        }}
+      />
+
+      {/* Top Header: Title & Content Category Switcher */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
         <div>
-          <h2 className="text-xl font-extrabold text-white flex items-center gap-2.5">
-            {contentCategory === 'mods' && <Package className="text-zinc-400" size={22} />}
+          <h1 className="text-xl font-black text-white flex items-center gap-2.5 tracking-tight">
+            {contentCategory === 'mods' && <Package className="text-[#d4975c]" size={22} />}
             {contentCategory === 'schematics' && <Layers className="text-purple-400" size={22} />}
             {contentCategory === 'shaders' && <Sun className="text-amber-400" size={22} />}
             <span>
@@ -282,48 +371,51 @@ export const ModsView: React.FC<ModsViewProps> = ({
               {contentCategory === 'schematics' && 'Схематики Create'}
               {contentCategory === 'shaders' && 'Шейдерпаки'}
             </span>
-          </h2>
-          <p className="text-xs text-zinc-500 font-mono mt-0.5">
+          </h1>
+          <p className="text-xs text-zinc-400 font-mono mt-0.5">
             Minecraft 1.21.1 NeoForge • Season VI Content Hub
           </p>
         </div>
 
         {/* Master Category Selector */}
-        <div className="inline-flex p-1 rounded-2xl bg-zinc-950/90 border border-white/10 shadow-inner gap-1 backdrop-blur-md">
+        <div className="inline-flex p-1 rounded-2xl bg-surface-900 border border-surface-border shadow-inner gap-1">
           <button
+            type="button"
             onClick={() => setContentCategory('mods')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
               contentCategory === 'mods'
-                ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
+                ? 'bg-surface-800 text-white border border-[#d4975c]/40 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <Package size={13} />
-            <span className="apple-subheading">Моды</span>
+            <Package size={13} className={contentCategory === 'mods' ? 'text-[#d4975c]' : ''} />
+            <span>Моды</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setContentCategory('schematics')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
               contentCategory === 'schematics'
-                ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
+                ? 'bg-surface-800 text-white border border-[#d4975c]/40 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <Layers size={13} className="text-purple-400" />
-            <span className="apple-subheading">Схематики</span>
+            <span>Схематики</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setContentCategory('shaders')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
               contentCategory === 'shaders'
-                ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
+                ? 'bg-surface-800 text-white border border-[#d4975c]/40 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <Sun size={13} className="text-amber-400" />
-            <span className="apple-subheading">Шейдеры</span>
+            <span>Шейдеры</span>
           </button>
         </div>
       </div>
@@ -334,350 +426,421 @@ export const ModsView: React.FC<ModsViewProps> = ({
         <ShadersExplorer gameDir={gameDir} onNotify={onNotify} />
       ) : (
         <>
-          {/* Action Buttons: Add Mod & Open Folder with Apple Press Feedback */}
+          {/* In-Context Sleek Dashed Drop Banner at top */}
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className={`rounded-2xl transition-all duration-200 cursor-pointer flex items-center justify-between px-4 py-2.5 border border-dashed press-feedback ${
+              isDragging
+                ? 'border-[#d4975c] bg-[#d4975c]/15 text-white shadow-[0_0_20px_rgba(212,151,92,0.25)] scale-[1.01]'
+                : 'border-surface-borderLight hover:border-[#d4975c]/50 bg-surface-900/70 hover:bg-surface-850 text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                isDragging ? 'bg-[#d4975c] text-surface-950' : 'bg-surface-800 text-[#d4975c]'
+              }`}>
+                <Upload size={14} className={isDragging ? 'animate-bounce' : ''} />
+              </div>
+              <span className="text-xs font-medium">
+                {isDragging
+                  ? 'Отпустите .jar файл для быстрой установки мода в клиент'
+                  : 'Перетащите .jar файлы сюда или нажмите для выбора из проводника'}
+              </span>
+            </div>
+            <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline-block">
+              NeoForge 1.21.1 • Drag & Drop
+            </span>
+          </div>
+
+          {/* Sub-Header Toolbar: Switcher, Fast Actions & Folders */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-            {/* Apple-Style Segmented Control Switcher */}
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="inline-flex p-1 rounded-2xl bg-zinc-950/80 border border-white/10 shadow-inner gap-1 relative backdrop-blur-md">
+            {/* Segmented Switcher: Сборка vs Мои моды */}
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              <div className="inline-flex p-1 rounded-2xl bg-surface-900 border border-surface-border shadow-inner gap-1">
                 <button
+                  type="button"
                   onClick={() => setSwitcherMode('official')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 press-feedback ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
                     switcherMode === 'official'
-                      ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent'
+                      ? 'bg-surface-800 text-white border border-[#d4975c]/40 shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <span className="apple-subheading">Сборка ({officialFiles.length})</span>
+                  <span>Сборка ({officialFiles.length})</span>
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => setSwitcherMode('custom')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 press-feedback ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
                     switcherMode === 'custom'
-                      ? 'bg-zinc-800 text-white shadow-md border border-white/15 border-t-white/30'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent'
+                      ? 'bg-surface-800 text-white border border-[#d4975c]/40 shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <span className="apple-subheading">Мои моды ({customMods.length})</span>
-                  {isVerifying && <Loader2 size={11} className="animate-spin text-zinc-400" />}
+                  <span>Мои моды ({customMods.length})</span>
+                  {isVerifying && <Loader2 size={11} className="animate-spin text-[#d4975c]" />}
                 </button>
               </div>
 
               {/* Select All Button for Custom Mods */}
               {switcherMode === 'custom' && filteredCustom.length > 0 && (
                 <button
+                  type="button"
                   onClick={handleSelectAllCustom}
-                  className={`h-9 px-4 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-2 shadow-sm press-feedback ${
+                  className={`h-8 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 shadow-sm press-feedback ${
                     isAllSelected
-                      ? 'bg-zinc-800 border-white/20 text-white hover:bg-zinc-750 border-t-white/30'
-                      : 'bg-zinc-900/90 border-white/10 text-zinc-300 hover:text-white hover:bg-zinc-800 hover:border-white/20'
+                      ? 'bg-surface-800 border-[#d4975c]/50 text-white'
+                      : 'bg-surface-900 border-surface-border text-zinc-300 hover:text-white hover:bg-surface-850'
                   }`}
                 >
-                  <CheckSquare size={14} className={isAllSelected ? 'text-emerald-400' : 'text-zinc-400'} />
-                  <span className="apple-subheading">{isAllSelected ? 'Снять выбор' : `Выбрать все (${filteredCustom.length})`}</span>
+                  <CheckSquare size={13} className={isAllSelected ? 'text-emerald-400' : 'text-zinc-400'} />
+                  <span>{isAllSelected ? 'Снять выбор' : `Выбрать все (${filteredCustom.length})`}</span>
                 </button>
               )}
             </div>
 
-            {/* Actions & Search */}
-            <div className="flex items-center gap-2.5 w-full sm:w-auto">
-              <label className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-neutral-100 text-black text-xs font-bold transition-all cursor-pointer shadow-sm press-feedback border border-white/40">
-                <Plus size={16} className="stroke-[2.5]" />
-                <span className="apple-subheading">Добавить мод (.jar)</span>
-                <input
-                  type="file"
-                  accept=".jar"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      handleAddCustomModFile(e.target.files[0]);
-                    }
-                  }}
-                />
-              </label>
+            {/* Quick Actions */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#d4975c] hover:bg-[#eab683] text-surface-950 text-xs font-bold transition-all cursor-pointer shadow-sm press-feedback"
+              >
+                <Plus size={15} className="stroke-[2.5]" />
+                <span>Добавить мод (.jar)</span>
+              </button>
 
               <button
+                type="button"
                 onClick={handleOpenModsFolder}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm press-feedback"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-surface-border hover:border-surface-borderLight text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm press-feedback"
                 title="Открыть папку mods в проводнике"
               >
-                <FolderOpen size={14} className="text-zinc-400" />
-                <span className="apple-subheading">Папка mods</span>
+                <FolderOpen size={13} className="text-zinc-400" />
+                <span>Папка mods</span>
               </button>
             </div>
           </div>
 
-          {/* Search Input with Apple Glassmorphism */}
-          <div className="relative w-full">
-            <Search className="absolute left-3.5 top-2.5 text-zinc-500" size={13} />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск по названию мода..."
-              className="w-full bg-zinc-900/80 border border-white/10 focus:border-white/30 rounded-2xl pl-9 pr-8 py-2 text-xs text-white placeholder:text-zinc-500 focus:outline-none transition-colors backdrop-blur-md"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-2.5 top-2.5 text-zinc-500 hover:text-white press-feedback"
-              >
-                <X size={13} />
-              </button>
+          {/* Filter Bar: Category Chips & Search Bar */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-2.5 shrink-0">
+            {/* Fast Category Filter Chips */}
+            <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+              <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider flex items-center gap-1 mr-1 shrink-0">
+                <Filter size={11} className="text-[#d4975c]" />
+                <span>Категория:</span>
+              </span>
+              {CATEGORY_CHIPS.map((chip) => (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => setFilterCategory(chip.id)}
+                  className={`px-3 py-1 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer press-feedback ${
+                    filterCategory === chip.id
+                      ? 'bg-surface-800 border border-[#d4975c]/60 text-white font-semibold shadow-sm'
+                      : 'bg-surface-900 hover:bg-surface-850 border border-surface-border text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Fast Search Bar with Clear Button */}
+            <div className="relative w-full md:w-72">
+              <Search className="absolute left-3 top-2.5 text-zinc-500" size={13} />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Поиск по названию или файлу..."
+                className="w-full bg-surface-900 border border-surface-border focus:border-[#d4975c]/50 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none transition-colors"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="absolute right-2 top-2 text-zinc-500 hover:text-white p-0.5 cursor-pointer press-feedback"
+                  title="Очистить поиск"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Main Mods Grid Container */}
+          <div className="flex-1 bg-surface-950/80 border border-surface-border rounded-2xl p-3 md:p-4 overflow-y-auto shadow-sm space-y-2.5">
+            {switcherMode === 'official' ? (
+              /* Official Modpack Mods Grid */
+              filteredOfficial.length === 0 ? (
+                <div className="py-20 text-center text-zinc-500 text-xs space-y-2">
+                  <Package size={32} className="mx-auto text-zinc-600" />
+                  <p>Моды не найдены по текущему фильтру</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {filteredOfficial.map((file, idx) => {
+                    const rawName = file.modName || file.path.replace('mods/', '').replace('.jar', '');
+                    const meta = resolveModMetadata(rawName, file.path);
+
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 rounded-xl bg-surface-900 border border-surface-border hover:border-surface-borderLight transition-all duration-150 gap-3"
+                      >
+                        <div className="flex items-center gap-3 truncate">
+                          {/* Mod Logo or Monogram */}
+                          {meta.iconUrl ? (
+                            <img
+                              src={meta.iconUrl}
+                              alt={meta.displayName}
+                              className="w-10 h-10 rounded-xl object-cover border border-surface-border bg-surface-850 shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-surface-850 border border-surface-border flex items-center justify-center shrink-0 font-mono font-bold text-xs text-[#d4975c]">
+                              {getMonogram(meta.displayName)}
+                            </div>
+                          )}
+
+                          {/* Details */}
+                          <div className="truncate space-y-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-white truncate">
+                                {meta.displayName}
+                              </span>
+                              <span className="px-1.5 py-0.2 rounded bg-surface-850 border border-surface-border text-[9px] text-zinc-400 font-mono shrink-0">
+                                {meta.categoryLabel}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-zinc-400 truncate leading-snug">
+                              {meta.description}
+                            </p>
+                            <p className="text-[10px] text-zinc-500 font-mono truncate">
+                              {file.modVersion || '1.21.1'} • {formatSize(file.size)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Status badge & external link */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            <span>• Проверен</span>
+                          </span>
+
+                          <a
+                            href={`https://modrinth.com/mods?q=${encodeURIComponent(meta.displayName)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-surface-800 transition-colors press-feedback"
+                            title="Найти на Modrinth"
+                          >
+                            <ExternalLink size={13} />
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              /* Custom Player Mods Grid */
+              filteredCustom.length === 0 ? (
+                <div className="py-20 text-center text-zinc-500 text-xs space-y-2.5">
+                  <Package size={36} className="mx-auto text-zinc-600" />
+                  <div className="space-y-1">
+                    <p className="font-bold text-sm text-zinc-300">
+                      {search || filterCategory !== 'all' ? 'Моды не найдены по запросу' : 'У вас пока нет установленных модов'}
+                    </p>
+                    <p className="text-zinc-500 text-xs max-w-sm mx-auto">
+                      Перетащите файл .jar в панель сверху или нажмите «Добавить мод».
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {filteredCustom.map((mod) => {
+                    const isApproved = mod.safetyStatus === 'approved';
+                    const isPending = mod.safetyStatus === 'pending';
+                    const isBlocked = mod.safetyStatus === 'blocked';
+                    const isUnverified = !isApproved && !isPending && !isBlocked;
+                    const isSelected = selectedModIds.includes(mod.id);
+
+                    const meta = resolveModMetadata(
+                      mod.name,
+                      mod.filename,
+                      mod.description,
+                      mod.iconUrl
+                    );
+
+                    return (
+                      <div
+                        key={mod.id}
+                        className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-150 gap-3 ${
+                          isSelected
+                            ? 'bg-surface-850 border-[#d4975c]/60 shadow-md ring-1 ring-[#d4975c]/30'
+                            : isBlocked
+                            ? 'bg-rose-950/20 border-rose-500/30'
+                            : mod.enabled
+                            ? 'bg-surface-900 border-surface-border hover:border-surface-borderLight shadow-sm'
+                            : 'bg-surface-900/50 border-surface-border opacity-60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          {/* Checkbox selector */}
+                          <button
+                            type="button"
+                            onClick={() => toggleSelectMod(mod.id)}
+                            className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-all cursor-pointer press-feedback ${
+                              isSelected
+                                ? 'bg-[#d4975c] text-surface-950 shadow-sm'
+                                : 'bg-surface-850 border border-surface-border text-transparent hover:border-[#d4975c]/50'
+                            }`}
+                            title={isSelected ? 'Снять выбор' : 'Выбрать мод'}
+                          >
+                            <Check size={12} className="stroke-[3]" />
+                          </button>
+
+                          {/* Logo / Monogram */}
+                          {meta.iconUrl ? (
+                            <img
+                              src={meta.iconUrl}
+                              alt={meta.displayName}
+                              className="w-10 h-10 rounded-xl object-cover border border-surface-border bg-surface-850 shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-surface-850 border border-surface-border flex items-center justify-center shrink-0 font-mono font-bold text-xs text-[#d4975c]">
+                              {getMonogram(meta.displayName)}
+                            </div>
+                          )}
+
+                          {/* Title, Clean Filename & Status Badge */}
+                          <div className="truncate space-y-0.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-bold text-white truncate">
+                                {meta.displayName}
+                              </span>
+
+                              {/* Status Badges */}
+                              {isApproved && (
+                                <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                  <span>• Проверен</span>
+                                </span>
+                              )}
+
+                              {isPending && (
+                                <span className="text-[10px] font-mono text-amber-400 flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-amber-500/10 border border-amber-500/20">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                  <span>• Вайтлист</span>
+                                </span>
+                              )}
+
+                              {isBlocked && (
+                                <span className="text-[10px] font-mono text-rose-400 flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-rose-500/10 border border-rose-500/20">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                  <span>• Запрещен</span>
+                                </span>
+                              )}
+
+                              {isUnverified && (
+                                <span className="text-[10px] font-mono text-zinc-400 flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-zinc-800 border border-zinc-700">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+                                  <span>• В проверке</span>
+                                </span>
+                              )}
+                            </div>
+
+                            <p className="text-[11px] text-zinc-400 truncate leading-snug">
+                              {meta.description}
+                            </p>
+
+                            <div className="flex items-center gap-2 font-mono text-[10px] text-zinc-500 truncate">
+                              <span>{mod.filename}</span>
+                              <span>•</span>
+                              <span>{formatSize(mod.size)}</span>
+
+                              {isUnverified && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleOpenWhitelistModal(e, mod)}
+                                  className="px-2 py-0.5 rounded bg-surface-800 hover:bg-surface-750 text-[#eab683] border border-surface-border text-[10px] font-sans font-medium transition-colors cursor-pointer press-feedback"
+                                >
+                                  Вайтлист
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Controls: Modrinth Link, Toggle Switch & Delete */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {/* Modrinth Link */}
+                          <a
+                            href={
+                              mod.projectUrl ||
+                              `https://modrinth.com/mods?q=${encodeURIComponent(meta.displayName)}`
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-surface-800 transition-colors press-feedback"
+                            title="Открыть на Modrinth"
+                          >
+                            <ExternalLink size={13} />
+                          </a>
+
+                          {/* Toggle Switch */}
+                          <button
+                            type="button"
+                            onClick={() => toggleCustomMod(mod.id)}
+                            disabled={!isApproved}
+                            className={`p-0.5 transition-all press-feedback ${
+                              !isApproved ? 'opacity-25 cursor-not-allowed' : 'cursor-pointer'
+                            }`}
+                            title={
+                              isBlocked
+                                ? 'Запрещенный мод'
+                                : isPending
+                                ? 'Мод на рассмотрении'
+                                : isUnverified
+                                ? 'Требуется вайтлист'
+                                : mod.enabled
+                                ? 'Отключить мод'
+                                : 'Включить мод'
+                            }
+                          >
+                            {mod.enabled ? (
+                              <ToggleRight size={24} className="text-emerald-400 stroke-[2]" />
+                            ) : (
+                              <ToggleLeft size={24} className="text-zinc-500 stroke-[2]" />
+                            )}
+                          </button>
+
+                          {/* Delete */}
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteCustomMod(e, mod.id)}
+                            className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer press-feedback"
+                            title="Удалить мод"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
             )}
           </div>
-
-      {/* Main Mods Grid Container */}
-      <div className="flex-1 bg-zinc-950/40 border border-white/5 rounded-3xl p-4 md:p-5 overflow-y-auto backdrop-blur-sm shadow-sm space-y-3">
-        {switcherMode === 'official' ? (
-          /* Official Modpack Mods Grid */
-          filteredOfficial.length === 0 ? (
-            <div className="py-20 text-center text-zinc-500 text-xs space-y-2">
-              <Package size={32} className="mx-auto text-zinc-600" />
-              <p>Моды не найдены по запросу «{search}»</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {filteredOfficial.map((file, idx) => {
-                const rawName = file.modName || file.path.replace('mods/', '').replace('.jar', '');
-                const meta = resolveModMetadata(rawName, file.path);
-
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-4 rounded-2xl glass-card gap-3.5"
-                  >
-                    <div className="flex items-center gap-3.5 truncate">
-                      {/* Mod Logo Icon */}
-                      <div className="w-12 h-12 rounded-2xl bg-zinc-850/80 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-                        {meta.iconUrl ? (
-                          <img
-                            src={meta.iconUrl}
-                            alt={meta.displayName}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLElement).style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <Package size={20} className="text-zinc-400" />
-                        )}
-                      </div>
-
-                      {/* Title & Short Description */}
-                      <div className="truncate space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-white truncate apple-subheading">
-                            {meta.displayName}
-                          </span>
-                          <span className="px-1.5 py-0.5 rounded-md bg-zinc-800/80 border border-white/5 text-[9px] text-zinc-400 font-mono shrink-0">
-                            {meta.categoryLabel}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-zinc-400 truncate leading-snug apple-body">
-                          {meta.description}
-                        </p>
-                        <p className="text-[10px] text-zinc-500 font-mono truncate">
-                          {file.modVersion || '1.21.1'} • {formatSize(file.size)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <span className="px-2.5 py-1 rounded-full bg-zinc-800/60 text-[10px] font-mono text-zinc-400 border border-white/5 shrink-0 apple-micro-tag">
-                      В сборке
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )
-        ) : (
-          /* Custom Player Mods Grid */
-          filteredCustom.length === 0 ? (
-            <div className="py-20 text-center text-zinc-500 text-xs space-y-3">
-              <Package size={36} className="mx-auto text-zinc-600" />
-              <div className="space-y-1">
-                <p className="font-bold text-sm text-zinc-300 apple-subheading">У вас пока нет установленных модов</p>
-                <p className="text-zinc-500 text-xs max-w-sm mx-auto apple-body">
-                  Перетащите файл .jar в любое место окна или нажмите «Добавить мод».
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {filteredCustom.map((mod) => {
-                // Exactly 4 states: approved, pending, blocked, unverified
-                const isApproved = mod.safetyStatus === 'approved';
-                const isPending = mod.safetyStatus === 'pending';
-                const isBlocked = mod.safetyStatus === 'blocked';
-                const isUnverified = !isApproved && !isPending && !isBlocked;
-                const isSelected = selectedModIds.includes(mod.id);
-
-                const meta = resolveModMetadata(
-                  mod.name,
-                  mod.filename,
-                  mod.description,
-                  mod.iconUrl
-                );
-
-                return (
-                  <div
-                    key={mod.id}
-                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 gap-3.5 ${
-                      isSelected
-                        ? 'bg-zinc-850/90 border-white/25 shadow-md ring-1 ring-white/10 border-t-white/35'
-                        : isBlocked
-                        ? 'bg-rose-950/20 border-rose-500/20 text-rose-300'
-                        : mod.enabled
-                        ? 'glass-card shadow-sm'
-                        : 'bg-zinc-900/40 border-white/5 opacity-60'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 truncate">
-                      {/* Checkbox Selector Circle */}
-                      <button
-                        onClick={() => toggleSelectMod(mod.id)}
-                        className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all cursor-pointer press-feedback ${
-                          isSelected
-                            ? 'bg-white text-black shadow-sm'
-                            : 'bg-zinc-800/80 border border-white/10 hover:border-white/30 text-transparent'
-                        }`}
-                        title={isSelected ? 'Снять выбор' : 'Выбрать мод'}
-                      >
-                        <Check size={13} className="stroke-[3]" />
-                      </button>
-
-                      {/* Mod Logo */}
-                      <div className="w-12 h-12 rounded-2xl bg-zinc-850/80 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-                        {meta.iconUrl ? (
-                          <img
-                            src={meta.iconUrl}
-                            alt={meta.displayName}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLElement).style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <Package size={20} className="text-zinc-400" />
-                        )}
-                      </div>
-
-                      {/* Title, Exact 4 Status Badges & Description */}
-                      <div className="truncate space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold text-white truncate apple-subheading">
-                            {meta.displayName}
-                          </span>
-
-                          {/* 1. Проверен */}
-                          {isApproved && (
-                            <span className="text-[10px] text-zinc-400 font-medium flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
-                              <span className="apple-body">Проверен</span>
-                            </span>
-                          )}
-
-                          {/* 2. На рассмотрении */}
-                          {isPending && (
-                            <span className="text-[10px] text-zinc-400 font-medium flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.6)]" />
-                              <span className="apple-body">На рассмотрении</span>
-                            </span>
-                          )}
-
-                          {/* 3. Запрещен */}
-                          {isBlocked && (
-                            <span className="text-[10px] text-rose-400/90 font-medium flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.6)]" />
-                              <span className="apple-body">Запрещен</span>
-                            </span>
-                          )}
-
-                          {/* 4. Не в каталоге */}
-                          {isUnverified && (
-                            <span className="text-[10px] text-zinc-500 font-medium flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
-                              <span className="apple-body">Не в каталоге</span>
-                            </span>
-                          )}
-
-                          {mod.projectUrl && (
-                            <a
-                              href={mod.projectUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-zinc-500 hover:text-white transition-colors shrink-0 press-feedback"
-                              title="Открыть на Modrinth"
-                            >
-                              <ExternalLink size={11} />
-                            </a>
-                          )}
-                        </div>
-
-                        <p className="text-[11px] text-zinc-400 truncate leading-snug apple-body">
-                          {meta.description}
-                        </p>
-
-                        <div className="flex items-center gap-2.5 font-mono text-[10px] text-zinc-500 truncate">
-                          <span>{formatSize(mod.size)}</span>
-
-                          {isUnverified && (
-                            <button
-                              onClick={(e) => handleOpenWhitelistModal(e, mod)}
-                              className="px-2.5 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border border-white/10 text-[11px] font-medium font-sans transition-all cursor-pointer shadow-sm press-feedback flex items-center gap-1"
-                            >
-                              <span>Запросить доступ</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Enlarged Controls: Switch & Delete */}
-                    <div className="flex items-center gap-2.5 shrink-0">
-                      <button
-                        onClick={() => toggleCustomMod(mod.id)}
-                        disabled={!isApproved}
-                        className={`transition-all press-feedback ${
-                          !isApproved
-                            ? 'opacity-25 cursor-not-allowed'
-                            : 'cursor-pointer'
-                        }`}
-                        title={
-                          isBlocked
-                            ? 'Запрещенный чит-мод заблокирован античитом'
-                            : isPending
-                            ? 'Мод находится на рассмотрении администрации'
-                            : isUnverified
-                            ? 'Мод заблокирован: требуется одобрение администрацией (Запросить доступ)'
-                            : mod.enabled
-                            ? 'Отключить мод'
-                            : 'Включить мод'
-                        }
-                      >
-                        {mod.enabled ? (
-                          <ToggleRight size={28} className="text-emerald-400 stroke-[1.75]" />
-                        ) : (
-                          <ToggleLeft size={28} className="text-zinc-500 stroke-[1.75]" />
-                        )}
-                      </button>
-
-                      <button
-                        onClick={(e) => handleDeleteCustomMod(e, mod.id)}
-                        className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer press-feedback"
-                        title="Удалить мод"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )
-        )}
-      </div>
         </>
       )}
 

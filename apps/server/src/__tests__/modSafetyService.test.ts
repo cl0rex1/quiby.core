@@ -124,6 +124,44 @@ async function runTests() {
     const decodedWrong = jwt.verify(wrongPurposeToken, config.jwtSecret) as any;
     if (decodedWrong.purpose !== 'mc_binding') wrongPurposeRejected = true;
     assert(wrongPurposeRejected, 'Token with incorrect purpose is rejected for mc binding');
+
+    // 8. Test Zod Whitelist Request Validation Schema
+    const { whitelistRequestSchema } = await import('../routes/mods');
+
+    const validPayload = {
+      user_discord_id: '123456789012345678',
+      mc_username: 'Steve_Player',
+      mod_name: 'Minimap Mod',
+      filename: 'minimap-1.21.1.jar',
+      hash_sha1: 'da39a3ee5e6b4b0d3255bfef95601890afd80709',
+      reason: 'Safe minimap utility for navigation on the server',
+    };
+    const validResult = whitelistRequestSchema.safeParse(validPayload);
+    assert(validResult.success === true, 'Valid whitelist request payload passes Zod schema');
+
+    const invalidFilenameResult = whitelistRequestSchema.safeParse({
+      ...validPayload,
+      filename: 'badmod.exe',
+    });
+    assert(invalidFilenameResult.success === false, 'Non-jar filename is rejected by Zod schema');
+
+    const invalidHashResult = whitelistRequestSchema.safeParse({
+      ...validPayload,
+      hash_sha1: '12345',
+    });
+    assert(invalidHashResult.success === false, 'Invalid SHA-1 length is rejected by Zod schema');
+
+    const shortReasonResult = whitelistRequestSchema.safeParse({
+      ...validPayload,
+      reason: 'Too short',
+    });
+    assert(shortReasonResult.success === false, 'Short reason (<10 chars) is rejected by Zod schema');
+
+    const invalidMcUserResult = whitelistRequestSchema.safeParse({
+      ...validPayload,
+      mc_username: 'A!',
+    });
+    assert(invalidMcUserResult.success === false, 'Invalid mc_username format is rejected by Zod schema');
   } catch (err) {
     console.error('Test error:', err);
     failed++;

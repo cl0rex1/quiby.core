@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import {
   verifyMod,
   verifyModBatch,
@@ -7,6 +8,16 @@ import {
 } from '../services/modSafetyService';
 
 const router = Router();
+
+export const whitelistRequestSchema = z.object({
+  user_discord_id: z.string().optional(),
+  mc_username: z.string().min(3).max(16).regex(/^[a-zA-Z0-9_]+$/).optional(),
+  mod_name: z.string().min(1).max(100),
+  filename: z.string().min(1).max(255).regex(/\.jar$/i, 'Must be a .jar file'),
+  hash_sha1: z.string().length(40, 'Must be 40-char hex SHA-1').regex(/^[a-fA-F0-9]+$/),
+  reason: z.string().min(10, 'Reason must be at least 10 characters').max(1000),
+  project_url: z.string().optional(),
+});
 
 /**
  * POST /api/mods/verify
@@ -34,11 +45,17 @@ router.post('/verify', async (req: Request, res: Response) => {
  */
 router.post('/whitelist-request', async (req: Request, res: Response) => {
   try {
-    const { user_discord_id, mc_username, mod_name, filename, hash_sha1, reason } = req.body;
+    const parseResult = whitelistRequestSchema.safeParse(req.body);
 
-    if (!mod_name || !filename || !hash_sha1) {
-      return res.status(400).json({ error: 'Обязательные поля: mod_name, filename, hash_sha1' });
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: 'Ошибка валидации данных',
+        errors: parseResult.error.errors,
+        details: parseResult.error.errors,
+      });
     }
+
+    const { user_discord_id, mc_username, mod_name, filename, hash_sha1, reason, project_url } = parseResult.data;
 
     await submitWhitelistRequest({
       user_discord_id,
@@ -47,6 +64,7 @@ router.post('/whitelist-request', async (req: Request, res: Response) => {
       filename,
       hash_sha1,
       reason,
+      project_url,
     });
 
     return res.json({

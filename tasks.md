@@ -515,6 +515,13 @@
   - [x] Replaced disconnected floating action pills with anchored, solid bottom Launch Dock
   - [x] Added monorepo `build:shared`, `prebuild`, and `npm test` scripts; all 78 unit tests passing and clean monorepo build
 
+- [x] **Stage 81: Engine & Backend Hardening, Dead Code Elimination & Mod Loss Prevention**
+  - [x] Cleaned up 17 dead/unused components and views in `apps/launcher/src/renderer`
+  - [x] Fixed Windows Java process termination in `minecraftLauncher.ts` using `taskkill /pid ${pid} /T /F`
+  - [x] Resolved Mod Data Loss bug in `downloader.ts` ensuring `.jar.disabled` mods and protected user mods are gracefully preserved
+  - [x] Added Zod schema validation to `POST /api/mods/whitelist-request` in `apps/server/src/routes/mods.ts`
+  - [x] Verified full monorepo typecheck and expanded test suite (88/88 passing tests across 6 test suites)
+
 
 
 

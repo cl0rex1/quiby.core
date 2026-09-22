@@ -19,7 +19,7 @@
     "pack:cli": "npm run cli --workspace=packages/pack-builder --",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run build:shared && npm run typecheck --workspaces --if-present",
-    "test": "npx tsx --test apps/server/src/__tests__/*.test.ts apps/launcher/src/renderer/src/utils/__tests__/*.test.ts apps/launcher/src/renderer/src/utils/chibiLive/__tests__/*.test.ts"
+    "test": "npx tsx --test apps/server/src/__tests__/*.test.ts apps/launcher/src/main/engine/__tests__/*.test.ts apps/launcher/src/renderer/src/utils/__tests__/*.test.ts apps/launcher/src/renderer/src/utils/chibiLive/__tests__/*.test.ts"
   },
   "keywords": [
     "minecraft",

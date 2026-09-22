@@ -86,7 +86,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       />
 
       {/* 2. Java 21 Runtime Card (macOS Settings Group Style) */}
-      <div className="glass-panel rounded-3xl p-6 space-y-4">
+      <div className="surface-panel rounded-3xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-white font-bold text-sm">
             <Cpu size={16} className="text-zinc-400" />
@@ -140,7 +140,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* 3. Game Directory & Resolution Group */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Directory */}
-        <div className="glass-panel rounded-3xl p-6 space-y-3">
+        <div className="surface-panel rounded-3xl p-6 space-y-3">
           <div className="flex items-center gap-2 text-white font-bold text-xs">
             <Folder size={16} className="text-zinc-400" />
             <span className="apple-subheading">Папка с игрой</span>
@@ -172,7 +172,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         {/* Resolution */}
-        <div className="glass-panel rounded-3xl p-6 space-y-3">
+        <div className="surface-panel rounded-3xl p-6 space-y-3">
           <div className="flex items-center gap-2 text-white font-bold text-xs">
             <Monitor size={16} className="text-zinc-400" />
             <span className="apple-subheading">Разрешение окна</span>
@@ -209,7 +209,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       {/* 5. Presets & Fast-Connect Group */}
-      <div className="glass-panel rounded-3xl p-6 space-y-4">
+      <div className="surface-panel rounded-3xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-white font-bold text-sm">
             <Monitor size={16} className="text-purple-400" />

@@ -281,7 +281,7 @@ export const ShadersExplorer: React.FC<ShadersExplorerProps> = ({
                 className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 gap-3.5 ${
                   shader.active
                     ? 'bg-zinc-850/90 border-amber-500/40 shadow-[0_0_24px_rgba(245,158,11,0.12)] ring-1 ring-amber-500/20 border-t-amber-300/40'
-                    : 'glass-card hover:border-white/20'
+                    : 'surface-card hover:border-white/20'
                 }`}
               >
                 <div className="flex items-center gap-3.5 truncate">
