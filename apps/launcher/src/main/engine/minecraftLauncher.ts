@@ -16,7 +16,8 @@ export async function launchMinecraft(
   session: AuthSession,
   settings: LauncherSettings,
   serverBaseUrl: string,
-  win: BrowserWindow | null
+  win: BrowserWindow | null,
+  activeCustomModFilenames: string[] = []
 ): Promise<void> {
   const sendLog = (level: LogEntry['level'], message: string, source: LogEntry['source'] = 'launcher') => {
     const entry: LogEntry = {
@@ -70,9 +71,13 @@ export async function launchMinecraft(
       fs.mkdirSync(gameDir, { recursive: true });
     }
 
-    // 2. Sync Modpack Files (Mods, Configs, Shaders)
+    // 2. Sync Modpack Files (Mods, Configs, Shaders) with custom mod protection
     sendLog('info', `🔍 Проверка и синхронизация модов...`);
-    await syncModpackFiles(manifest, gameDir, serverBaseUrl, win);
+    const protectedFilenames = new Set<string>(activeCustomModFilenames);
+    if (protectedFilenames.size > 0) {
+      sendLog('info', `🛡️ Защита ${protectedFilenames.size} активных клиентских модов от очистки`);
+    }
+    await syncModpackFiles(manifest, gameDir, serverBaseUrl, win, protectedFilenames);
 
     // 3. Ensure Vanilla Minecraft 1.21.1
     sendLog('info', `📦 Подготовка файлов Minecraft ${manifest.gameVersion}...`);
@@ -104,15 +109,21 @@ export async function launchMinecraft(
       `-Dminecraft.launcher.version=1.0.0`,
     ];
 
+    // Append NeoForge specific JVM arguments (modulepath, exports, args.txt)
+    if (neoforge.jvmArgs && neoforge.jvmArgs.length > 0) {
+      jvmArgs.push(...neoforge.jvmArgs);
+    }
+
     if (settings.customJvmArgs) {
       settings.customJvmArgs.split(' ').filter(Boolean).forEach(arg => jvmArgs.push(arg));
     }
 
-    // Classpath
+    // Classpath: Merge Vanilla + NeoForge libraries
     const cpSeparator = process.platform === 'win32' ? ';' : ':';
+    const allLibraries = Array.from(new Set([...vanilla.libraries, ...neoforge.libraries]));
     const classpathEntries = [
       vanilla.clientJar,
-      ...vanilla.libraries,
+      ...allLibraries,
     ].filter(p => fs.existsSync(p));
 
     jvmArgs.push('-cp', classpathEntries.join(cpSeparator));
@@ -133,6 +144,10 @@ export async function launchMinecraft(
       '--width', settings.windowWidth.toString(),
       '--height', settings.windowHeight.toString(),
     ];
+
+    if (neoforge.gameArgs && neoforge.gameArgs.length > 0) {
+      gameArgs.push(...neoforge.gameArgs);
+    }
 
     if (settings.fullscreen) {
       gameArgs.push('--fullscreen');

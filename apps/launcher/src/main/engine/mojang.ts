@@ -98,7 +98,7 @@ export async function ensureMinecraftVanilla(
     }
   }
 
-  // 4. Download Asset Index
+  // 4. Download Asset Index and missing objects
   const assetIndexDir = path.join(gameDir, 'assets', 'indexes');
   const assetIndexPath = path.join(assetIndexDir, `${versionJson.assetIndex.id}.json`);
   if (!fs.existsSync(assetIndexPath)) {
@@ -106,5 +106,76 @@ export async function ensureMinecraftVanilla(
     await downloadFile(versionJson.assetIndex.url, assetIndexPath);
   }
 
+  await ensureMinecraftAssets(assetIndexPath, gameDir, win);
+
   return { clientJar, versionJson, libraries: libraryPaths };
+}
+
+async function ensureMinecraftAssets(
+  assetIndexPath: string,
+  gameDir: string,
+  win: BrowserWindow | null
+): Promise<void> {
+  if (!fs.existsSync(assetIndexPath)) return;
+  try {
+    const raw = fs.readFileSync(assetIndexPath, 'utf8');
+    const index = JSON.parse(raw);
+    const objects = index.objects;
+    if (!objects || typeof objects !== 'object') return;
+
+    const objectsDir = path.join(gameDir, 'assets', 'objects');
+    if (!fs.existsSync(objectsDir)) fs.mkdirSync(objectsDir, { recursive: true });
+
+    // Collect missing objects
+    const missing: Array<{ hash: string; subDir: string; destPath: string; url: string }> = [];
+    for (const key of Object.keys(objects)) {
+      const { hash } = objects[key];
+      if (!hash) continue;
+      const subDir = hash.substring(0, 2);
+      const destPath = path.join(objectsDir, subDir, hash);
+      if (!fs.existsSync(destPath)) {
+        missing.push({
+          hash,
+          subDir,
+          destPath,
+          url: `https://resources.download.minecraft.net/${subDir}/${hash}`,
+        });
+      }
+    }
+
+    if (missing.length === 0) return;
+
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('download-progress', {
+        stage: 'manifest',
+        stageLabel: `Синхронизация ассетов Minecraft (${missing.length} файлов)...`,
+        progressPercent: 35,
+      });
+    }
+
+    // Download missing assets in parallel batches of 12
+    const concurrency = 12;
+    let completed = 0;
+    for (let i = 0; i < missing.length; i += concurrency) {
+      const batch = missing.slice(i, i + concurrency);
+      await Promise.all(
+        batch.map(async (item) => {
+          try {
+            await downloadFile(item.url, item.destPath);
+          } catch (_) {}
+          completed++;
+        })
+      );
+      if (win && !win.isDestroyed() && i % 48 === 0) {
+        const pct = Math.round(35 + (completed / missing.length) * 15);
+        win.webContents.send('download-progress', {
+          stage: 'manifest',
+          stageLabel: `Синхронизация ассетов: ${completed} / ${missing.length}`,
+          progressPercent: pct,
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Non-fatal error syncing assets:', err);
+  }
 }

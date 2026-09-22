@@ -16,6 +16,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
 
   // Binding state (Step 2 of Discord auth)
   const [pendingDiscordUser, setPendingDiscordUser] = useState<any>(null);
+  const [tempBindingToken, setTempBindingToken] = useState<string | null>(null);
   const [mcUsername, setMcUsername] = useState('');
 
   // Dev login state
@@ -34,6 +35,9 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
         setError(result.error);
       } else if (result.needsBinding) {
         setPendingDiscordUser(result.discordUser);
+        if (result.tempBindingToken) {
+          setTempBindingToken(result.tempBindingToken);
+        }
       } else if (result.session) {
         onSuccess(result.session);
         onClose();
@@ -57,6 +61,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          tempBindingToken,
           discordId: pendingDiscordUser.id,
           discordUsername: pendingDiscordUser.username,
           discordGlobalName: pendingDiscordUser.globalName,

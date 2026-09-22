@@ -140,199 +140,216 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
     }, 1450);
   };
 
-  // Case 1: On Home Tab -> Primary Play Button & Morphing Sync-to-Console HUD
+  // Case 1: On Home Tab -> Anchored Bottom Launch Dock with Docked Sync/Console HUD
   if (activeTab === 'home') {
     return (
-      <div className="fixed bottom-8 right-8 z-40 flex flex-col items-end gap-3 select-none">
-        {/* Unified Morphing Sync-to-Console HUD Card with Apple Smooth Spring Physics */}
-        {isBusy && downloadProgress && !isRunning ? (
-          <div className="glass-floating rounded-3xl p-3.5 w-80 space-y-2.5 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] animate-in fade-in slide-in-from-bottom-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-white font-medium truncate apple-body flex items-center gap-2">
-                <RotateCw size={13} className="animate-spin text-emerald-400 shrink-0" />
-                <span className="truncate">{downloadProgress.stageLabel}</span>
-              </span>
-              <span className="text-emerald-400 font-mono font-bold">{downloadProgress.progressPercent}%</span>
-            </div>
-
-            <div className="w-full h-1.5 bg-zinc-800/80 rounded-full overflow-hidden border border-white/5">
-              <div
-                className="h-full bg-emerald-400 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-full"
-                style={{ width: `${Math.max(downloadProgress.progressPercent, 5)}%` }}
-              />
-            </div>
-
-            <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400">
-              {downloadProgress.currentFile ? (
-                <span className="truncate max-w-[180px]">{downloadProgress.currentFile}</span>
-              ) : (
-                <span>Синхронизация...</span>
-              )}
-              {downloadProgress.speedBps > 0 && (
-                <span className="text-zinc-200 font-bold">{formatSpeed(downloadProgress.speedBps)}</span>
-              )}
-            </div>
+      <div className="fixed bottom-0 left-[72px] right-0 h-20 bg-zinc-950/95 border-t border-white/10 backdrop-blur-md px-6 sm:px-8 flex items-center justify-between z-30 select-none">
+        {/* Left Side: Server Status & Quick Ping */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
+            </span>
+            <span className="text-xs font-mono font-bold text-zinc-200">play.quiby.fun</span>
           </div>
-        ) : isRunning ? (
-          <div
-            className={`flex flex-col bg-zinc-950/95 border border-white/15 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] backdrop-blur-2xl overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] select-none animate-in fade-in slide-in-from-bottom-3 ${
-              isLogsCollapsed
-                ? 'w-80 h-11'
-                : 'w-[520px] max-w-[calc(100vw-360px)] h-[320px]'
-            }`}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-900/80 border-b border-white/10 shrink-0">
-              <div className="flex items-center gap-2.5 truncate">
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-                </span>
-                <span className="text-xs font-bold text-white tracking-wide apple-subheading truncate">
-                  Консоль процесса
-                </span>
-                {launchState.gamePid && (
-                  <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[9px] font-mono font-bold text-emerald-400 shrink-0">
-                    PID: {launchState.gamePid}
-                  </span>
-                )}
-              </div>
+          <span className="text-zinc-600 font-bold">•</span>
+          <span className="text-xs text-emerald-400 font-mono font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">
+            Онлайн
+          </span>
+        </div>
 
-              <div className="flex items-center gap-1 shrink-0">
-                {!isLogsCollapsed && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setAutoScroll(!autoScroll)}
-                      className={`p-1.5 rounded-lg border transition-colors cursor-pointer press-feedback ${
-                        autoScroll
-                          ? 'bg-zinc-800 text-emerald-400 border-emerald-400/30'
-                          : 'bg-zinc-900 text-zinc-500 border-transparent hover:text-white'
-                      }`}
-                      title={autoScroll ? 'Автопрокрутка включена' : 'Включить автопрокрутку'}
-                    >
-                      <ArrowDownCircle size={13} />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleCopyLogs}
-                      disabled={!logs || logs.length === 0}
-                      className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-transparent hover:border-white/10 transition-colors cursor-pointer press-feedback disabled:opacity-30"
-                      title="Скопировать вывод в буфер обмена"
-                    >
-                      {copiedLogs ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={onClearLogs}
-                      disabled={!logs || logs.length === 0}
-                      className="p-1.5 rounded-lg bg-zinc-900 hover:bg-rose-950/50 text-zinc-400 hover:text-rose-400 border border-transparent hover:border-rose-500/20 transition-colors cursor-pointer press-feedback disabled:opacity-30"
-                      title="Очистить лог"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setIsLogsCollapsed(!isLogsCollapsed)}
-                  className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-transparent hover:border-white/10 transition-colors cursor-pointer press-feedback ml-1"
-                  title={isLogsCollapsed ? 'Развернуть консоль' : 'Свернуть консоль'}
-                >
-                  {isLogsCollapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Live Terminal Stream Output */}
-            {!isLogsCollapsed && (
-              <div className="flex-1 bg-black/90 p-3.5 font-mono text-[11px] overflow-y-auto space-y-1 select-text scrollbar-thin">
-                {!logs || logs.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-zinc-600 text-[11px]">
-                    <span>Ожидание вывода stdout/stderr игры...</span>
-                  </div>
-                ) : (
-                  logs.slice(-250).map((log) => (
-                    <div
-                      key={log.id}
-                      className="leading-relaxed hover:bg-white/[0.03] px-1.5 py-0.5 rounded flex items-start gap-2"
-                    >
-                      <span className="text-zinc-600 shrink-0 select-none text-[10px]">
-                        [{log.timestamp}]
-                      </span>
-                      <span className="text-purple-400/80 shrink-0 font-bold text-[9px] uppercase">
-                        [{log.source}]
-                      </span>
-                      <span className={`break-all ${getLogLevelClass(log.level)}`}>
-                        {log.message}
-                      </span>
-                    </div>
-                  ))
-                )}
-                <div ref={logsBottomRef} />
-              </div>
-            )}
-          </div>
-        ) : null}
-
-        {/* The Floating Play Button & Fast-Connect Toggle with Apple Tactile Press Feedback */}
+        {/* Center / Controls: Fast-Connect Toggle */}
         <div className="flex items-center gap-3">
           {session && !isRunning && !isBusy && (
             <button
               onClick={() => onToggleAutoConnect?.(!autoConnect)}
-              className={`flex items-center gap-2 px-4 py-3.5 rounded-full border transition-all cursor-pointer press-feedback shadow-lg select-none ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all cursor-pointer press-feedback text-xs font-semibold select-none ${
                 autoConnect
-                  ? 'bg-zinc-900/90 border-emerald-400/40 text-white border-t-emerald-300/60 shadow-[0_4px_20px_rgba(52,211,153,0.15)]'
-                  : 'bg-zinc-950/80 border-white/10 text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-zinc-900 border-emerald-500/30 text-emerald-300'
+                  : 'bg-zinc-900/50 border-white/10 text-zinc-400 hover:text-zinc-200'
               }`}
-              title="Автоматический вход сразу на сервер play.quiby.fun без захода в главное меню"
+              title="Автоматический вход сразу на сервер без перехода в главное меню"
             >
               <div
-                className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all ${
+                className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-all ${
                   autoConnect
                     ? 'bg-emerald-400 border-emerald-400 text-zinc-950'
-                    : 'border-zinc-500 bg-zinc-850'
+                    : 'border-zinc-500 bg-zinc-800'
                 }`}
               >
-                {autoConnect && <Check size={11} className="stroke-[3.5]" />}
+                {autoConnect && <Check size={10} className="stroke-[3.5]" />}
               </div>
-              <span className="text-xs font-bold apple-subheading">Сразу на сервер</span>
+              <span>Сразу на сервер</span>
             </button>
           )}
+        </div>
 
+        {/* Right Side: Primary Play Button with Docked Floating Console/Progress HUD */}
+        <div className="relative flex items-center gap-3">
+          {/* Docked Sync-to-Console HUD Card (Anchored directly above the launch bar) */}
+          {isBusy && downloadProgress && !isRunning ? (
+            <div className="absolute bottom-24 right-0 glass-floating rounded-2xl p-3.5 w-80 space-y-2.5 shadow-2xl transition-all duration-300 animate-in fade-in slide-in-from-bottom-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-white font-medium truncate flex items-center gap-2">
+                  <RotateCw size={13} className="animate-spin text-emerald-400 shrink-0" />
+                  <span className="truncate">{downloadProgress.stageLabel}</span>
+                </span>
+                <span className="text-emerald-400 font-mono font-bold">{downloadProgress.progressPercent}%</span>
+              </div>
+
+              <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden border border-white/5">
+                <div
+                  className="h-full bg-emerald-400 transition-all duration-300 rounded-full"
+                  style={{ width: `${Math.max(downloadProgress.progressPercent, 5)}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400">
+                {downloadProgress.currentFile ? (
+                  <span className="truncate max-w-[180px]">{downloadProgress.currentFile}</span>
+                ) : (
+                  <span>Синхронизация...</span>
+                )}
+                {downloadProgress.speedBps > 0 && (
+                  <span className="text-zinc-200 font-bold">{formatSpeed(downloadProgress.speedBps)}</span>
+                )}
+              </div>
+            </div>
+          ) : isRunning ? (
+            <div
+              className={`absolute bottom-24 right-0 flex flex-col bg-zinc-950 border border-white/15 rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden transition-all duration-300 select-none animate-in fade-in slide-in-from-bottom-3 ${
+                isLogsCollapsed ? 'w-80 h-11' : 'w-[520px] max-w-[calc(100vw-360px)] h-[320px]'
+              }`}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-white/10 shrink-0">
+                <div className="flex items-center gap-2.5 truncate">
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                  </span>
+                  <span className="text-xs font-bold text-white tracking-wide truncate">
+                    Консоль процесса
+                  </span>
+                  {launchState.gamePid && (
+                    <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 border border-emerald-500/30 text-[9px] font-mono font-bold text-emerald-400 shrink-0">
+                      PID: {launchState.gamePid}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  {!isLogsCollapsed && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setAutoScroll(!autoScroll)}
+                        className={`p-1.5 rounded-lg border transition-colors cursor-pointer press-feedback ${
+                          autoScroll
+                            ? 'bg-zinc-800 text-emerald-400 border-emerald-400/30'
+                            : 'bg-zinc-900 text-zinc-500 border-transparent hover:text-white'
+                        }`}
+                        title={autoScroll ? 'Автопрокрутка включена' : 'Включить автопрокрутку'}
+                      >
+                        <ArrowDownCircle size={13} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleCopyLogs}
+                        disabled={!logs || logs.length === 0}
+                        className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-transparent hover:border-white/10 transition-colors cursor-pointer press-feedback disabled:opacity-30"
+                        title="Скопировать вывод в буфер обмена"
+                      >
+                        {copiedLogs ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={onClearLogs}
+                        disabled={!logs || logs.length === 0}
+                        className="p-1.5 rounded-lg bg-zinc-900 hover:bg-rose-950/50 text-zinc-400 hover:text-rose-400 border border-transparent hover:border-rose-500/20 transition-colors cursor-pointer press-feedback disabled:opacity-30"
+                        title="Очистить лог"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setIsLogsCollapsed(!isLogsCollapsed)}
+                    className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-transparent hover:border-white/10 transition-colors cursor-pointer press-feedback ml-1"
+                    title={isLogsCollapsed ? 'Развернуть консоль' : 'Свернуть консоль'}
+                  >
+                    {isLogsCollapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Live Terminal Stream Output */}
+              {!isLogsCollapsed && (
+                <div className="flex-1 bg-black p-3 font-mono text-[11px] overflow-y-auto space-y-1 select-text scrollbar-thin">
+                  {!logs || logs.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-zinc-600 text-[11px]">
+                      <span>Ожидание вывода stdout/stderr игры...</span>
+                    </div>
+                  ) : (
+                    logs.slice(-250).map((log) => (
+                      <div
+                        key={log.id}
+                        className="leading-relaxed hover:bg-white/[0.03] px-1.5 py-0.5 rounded flex items-start gap-2"
+                      >
+                        <span className="text-zinc-600 shrink-0 select-none text-[10px]">
+                          [{log.timestamp}]
+                        </span>
+                        <span className="text-purple-400/80 shrink-0 font-bold text-[9px] uppercase">
+                          [{log.source}]
+                        </span>
+                        <span className={`break-all ${getLogLevelClass(log.level)}`}>
+                          {log.message}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                  <div ref={logsBottomRef} />
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          {/* Action Button: Login / Stop / Play */}
           {!session ? (
             <button
               onClick={onOpenLogin}
-              className="px-8 py-4 rounded-full bg-white hover:bg-neutral-100 text-black font-extrabold text-sm tracking-wide shadow-[0_12px_40px_rgba(0,0,0,0.8)] border border-white/40 press-feedback flex items-center gap-2.5 cursor-pointer uppercase"
+              className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs tracking-wide shadow-md flex items-center gap-2 cursor-pointer press-feedback"
             >
-              <User size={18} />
+              <User size={15} />
               <span>Войти в аккаунт</span>
             </button>
           ) : isRunning ? (
             <button
               onClick={onKill}
-              className="px-8 py-4 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-sm tracking-wide shadow-[0_12px_40px_rgba(225,29,72,0.5)] border border-rose-400/40 press-feedback flex items-center gap-2.5 cursor-pointer uppercase"
+              className="px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs tracking-wide shadow-md flex items-center gap-2 cursor-pointer press-feedback"
             >
-              <Square size={18} />
+              <Square size={15} />
               <span>В игре (Остановить)</span>
             </button>
           ) : (
             <button
               onClick={onLaunch}
               disabled={isBusy}
-              className="px-9 py-4 rounded-full bg-white hover:bg-neutral-100 disabled:opacity-50 text-black font-black text-base tracking-wider shadow-[0_16px_48px_rgba(0,0,0,0.85)] border border-white/50 press-feedback flex items-center gap-3 cursor-pointer uppercase"
+              className="px-7 py-3 rounded-xl bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-black text-sm tracking-wider shadow-md flex items-center gap-2.5 cursor-pointer press-feedback"
             >
               {isBusy ? (
                 <>
-                  <RotateCw size={19} className="animate-spin text-black" />
+                  <RotateCw size={16} className="animate-spin text-black" />
                   <span>СИНХРОНИЗАЦИЯ...</span>
                 </>
               ) : (
                 <>
-                  <Play size={19} className="fill-black text-black" />
+                  <Play size={16} className="fill-black text-black" />
                   <span>ИГРАТЬ (1.21.1)</span>
                 </>
               )}

@@ -254,6 +254,18 @@ export const App: React.FC = () => {
       setDraftDefaultSkinIdx(idx);
     }
 
+    // Restore Custom Mods
+    const savedModsJson = localStorage.getItem('quiby_custom_mods');
+    if (savedModsJson) {
+      try {
+        const parsed = JSON.parse(savedModsJson);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSavedCustomMods(parsed);
+          setDraftCustomMods(parsed);
+        }
+      } catch (_) {}
+    }
+
     // Restore Launcher Settings from Electron IPC
     if (window.quibyApi) {
       window.quibyApi.getSettings().then((s) => {
@@ -376,6 +388,7 @@ export const App: React.FC = () => {
       }
     } else if (activeTab === 'mods') {
       setSavedCustomMods(draftCustomMods);
+      localStorage.setItem('quiby_custom_mods', JSON.stringify(draftCustomMods));
       setSelectedModIds([]);
     } else if (activeTab === 'settings') {
       setSavedSettings(draftSettings);
@@ -412,7 +425,10 @@ export const App: React.FC = () => {
     }
     try {
       if (window.quibyApi) {
-        await window.quibyApi.launchGame(session, savedSettings, SERVER_URL);
+        const activeModFiles = savedCustomMods
+          .filter((m) => m.enabled && m.safetyStatus === 'approved')
+          .map((m) => m.filename);
+        await window.quibyApi.launchGame(session, savedSettings, SERVER_URL, activeModFiles);
       }
     } catch (err) {
       console.error('Launch Error:', err);

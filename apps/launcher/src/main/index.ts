@@ -248,9 +248,18 @@ app.whenReady().then(async () => {
   });
 
   // 7. Game Launching
-  ipcMain.handle('game:launch', async (_, session: AuthSession, settings: LauncherSettings, serverUrl: string = DEFAULT_SERVER_URL) => {
-    await launchMinecraft(session, settings, serverUrl, mainWindow);
-  });
+  ipcMain.handle(
+    'game:launch',
+    async (
+      _,
+      session: AuthSession,
+      settings: LauncherSettings,
+      serverUrl: string = DEFAULT_SERVER_URL,
+      customModFilenames: string[] = []
+    ) => {
+      await launchMinecraft(session, settings, serverUrl, mainWindow, customModFilenames);
+    }
+  );
 
   ipcMain.handle('game:kill', () => {
     killGameProcess();

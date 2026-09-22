@@ -10,13 +10,16 @@
   "scripts": {
     "dev:server": "npm run dev --workspace=apps/server",
     "dev:launcher": "npm run dev --workspace=apps/launcher",
+    "build:shared": "npm run build --workspace=packages/shared",
+    "prebuild": "npm run build:shared",
     "build": "npm run build --workspaces --if-present",
     "build:server": "npm run build --workspace=apps/server",
     "build:launcher": "npm run build --workspace=apps/launcher",
     "build:pack-builder": "npm run build --workspace=packages/pack-builder",
     "pack:cli": "npm run cli --workspace=packages/pack-builder --",
     "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run build:shared && npm run typecheck --workspaces --if-present",
+    "test": "npx tsx --test apps/server/src/__tests__/*.test.ts apps/launcher/src/renderer/src/utils/__tests__/*.test.ts apps/launcher/src/renderer/src/utils/chibiLive/__tests__/*.test.ts"
   },
   "keywords": [
     "minecraft",

@@ -20,16 +20,22 @@ if (!fs.existsSync(filesDir)) {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     // Relative target path passed in headers or body
-    const relPath = req.headers['x-file-path'] as string || '';
-    const dir = path.join(filesDir, path.dirname(relPath));
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    const rawRelPath = (req.headers['x-file-path'] as string) || '';
+    const safeRelPath = path.normalize(rawRelPath).replace(/^(\.\.[\/\\])+/, '');
+    const targetDir = path.resolve(filesDir, path.dirname(safeRelPath));
+    const resolvedBase = path.resolve(filesDir);
+    if (!targetDir.startsWith(resolvedBase)) {
+      return cb(new Error('Invalid destination path: Path traversal detected'), filesDir);
     }
-    cb(null, dir);
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+    cb(null, targetDir);
   },
   filename: (req, file, cb) => {
-    const relPath = req.headers['x-file-path'] as string || file.originalname;
-    cb(null, path.basename(relPath));
+    const rawRelPath = (req.headers['x-file-path'] as string) || file.originalname;
+    const safeFilename = path.basename(path.normalize(rawRelPath));
+    cb(null, safeFilename);
   },
 });
 

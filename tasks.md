@@ -505,6 +505,15 @@
   - [x] Removed awkward right-left look jumping; tabs now transition smoothly with 100% position symmetry
   - [x] Verified 74 / 74 unit tests passing and clean monorepo production build
 
+- [x] **Stage 80: Comprehensive Engine Launch Architecture, Backend Hardening & Non-AI Grounded UI Redesign**
+  - [x] Implemented NeoForge version.json parser extracting libraries, JVM arguments (Java 21 modulepath, win_args.txt/unix_args.txt), and game arguments into launch process
+  - [x] Built parallel batch downloader in `mojang.ts` for missing Minecraft sound, font, and language assets
+  - [x] Protected custom client mods in `downloader.ts` by passing `protectedModFilenames`, preventing silent mod deletion
+  - [x] Hardened `/api/auth/bind-mc` with cryptographic temporary JWT token (`tempBindingToken`) preventing account impersonation
+  - [x] Protected `/api/auth/dev-login` against production execution and sanitized file uploads against Path Traversal in `admin.ts`
+  - [x] De-AI-fied UI: eliminated float-nebula and paint spill keyframes, tamed heavy glassmorphism into crisp 12px blur, and built solid, grounded 2-column stage with Season 6 patch notes
+  - [x] Replaced disconnected floating action pills with anchored, solid bottom Launch Dock
+  - [x] Added monorepo `build:shared`, `prebuild`, and `npm test` scripts; all 78 unit tests passing and clean monorepo build
 
 
 

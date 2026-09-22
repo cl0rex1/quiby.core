@@ -49,7 +49,8 @@ export async function syncModpackFiles(
   manifest: ModpackManifest,
   gameDir: string,
   serverBaseUrl: string,
-  win: BrowserWindow | null
+  win: BrowserWindow | null,
+  protectedModFilenames: Set<string> = new Set()
 ): Promise<void> {
   const sendProgress = (p: Partial<DownloadProgress>) => {
     if (win && !win.isDestroyed()) {
@@ -87,7 +88,7 @@ export async function syncModpackFiles(
     }
   }
 
-  // 2. Clean obsolete mods from local mods/ directory
+  // 2. Clean obsolete mods from local mods/ directory, preserving user's approved custom mods
   const localModsDir = path.join(gameDir, 'mods');
   if (fs.existsSync(localModsDir)) {
     const localModFiles = fs.readdirSync(localModsDir);
@@ -95,6 +96,10 @@ export async function syncModpackFiles(
       if (modFile.endsWith('.jar')) {
         const rel = `mods/${modFile}`;
         if (!validRelativePaths.has(rel)) {
+          // If this is a protected user custom mod, preserve it
+          if (protectedModFilenames.has(modFile) || protectedModFilenames.has(rel)) {
+            continue;
+          }
           try {
             fs.unlinkSync(path.join(localModsDir, modFile));
             console.log(`🗑️ Removed obsolete mod: ${rel}`);

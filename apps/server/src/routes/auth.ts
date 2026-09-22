@@ -65,8 +65,22 @@ router.post('/discord/callback', async (req: Request, res: Response) => {
 
     if (!existingUser) {
       // User needs to choose their Minecraft username (one-time binding)
+      const tempBindingToken = jwt.sign(
+        {
+          discordId: discordUser.id,
+          discordUsername: discordUser.username,
+          discordGlobalName: discordUser.global_name || null,
+          discordAvatar: discordUser.avatar || null,
+          roles: guildStatus.roles || [],
+          purpose: 'mc_binding',
+        },
+        config.jwtSecret,
+        { expiresIn: '15m' }
+      );
+
       return res.json({
         needsBinding: true,
+        tempBindingToken,
         discordUser: {
           id: discordUser.id,
           username: discordUser.username,
@@ -122,12 +136,12 @@ router.post('/discord/callback', async (req: Request, res: Response) => {
   }
 });
 
-// 3. Bind Minecraft IGN to Discord Account (1:1 strict binding)
+// 3. Bind Minecraft IGN to Discord Account (1:1 strict binding with cryptographic verification)
 router.post('/bind-mc', async (req: Request, res: Response) => {
-  const { discordId, discordUsername, discordGlobalName, discordAvatar, roles, mcUsername } = req.body;
+  const { tempBindingToken, mcUsername } = req.body;
 
-  if (!discordId || !discordUsername || !mcUsername) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  if (!mcUsername) {
+    return res.status(400).json({ error: 'Missing required Minecraft username' });
   }
 
   // Validate Minecraft IGN format
@@ -137,6 +151,42 @@ router.post('/bind-mc', async (req: Request, res: Response) => {
   }
 
   const cleanUsername = parseResult.data;
+
+  let discordId: string;
+  let discordUsername: string;
+  let discordGlobalName: string | null = null;
+  let discordAvatar: string | null = null;
+  let roles: string[] = [];
+
+  if (tempBindingToken) {
+    try {
+      const decoded = jwt.verify(tempBindingToken, config.jwtSecret) as any;
+      if (decoded.purpose !== 'mc_binding' || !decoded.discordId) {
+        return res.status(400).json({ error: 'Invalid Discord binding token' });
+      }
+      discordId = decoded.discordId;
+      discordUsername = decoded.discordUsername;
+      discordGlobalName = decoded.discordGlobalName || null;
+      discordAvatar = decoded.discordAvatar || null;
+      roles = decoded.roles || [];
+    } catch (_) {
+      return res.status(401).json({ error: 'Expired or invalid Discord authorization. Please log in again.' });
+    }
+  } else {
+    // In production, tempBindingToken is mandatory to prevent account hijacking
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(401).json({ error: 'Missing verified Discord authorization token' });
+    }
+    discordId = req.body.discordId;
+    discordUsername = req.body.discordUsername;
+    discordGlobalName = req.body.discordGlobalName || null;
+    discordAvatar = req.body.discordAvatar || null;
+    roles = req.body.roles || [];
+
+    if (!discordId || !discordUsername) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+  }
 
   // Check if Discord ID is already bound
   const existingDiscord = await dbGet<any>('SELECT * FROM users WHERE discord_id = ?', [discordId]);
@@ -158,11 +208,11 @@ router.post('/bind-mc', async (req: Request, res: Response) => {
     [
       discordId,
       discordUsername,
-      discordGlobalName || null,
-      discordAvatar || null,
+      discordGlobalName,
+      discordAvatar,
       cleanUsername,
       uuid,
-      JSON.stringify(roles || []),
+      JSON.stringify(roles),
     ]
   );
 
@@ -177,7 +227,7 @@ router.post('/bind-mc', async (req: Request, res: Response) => {
     mcUsername: cleanUsername,
     uuid,
     isWhitelisted: true,
-    roles: roles || [],
+    roles,
     joinedAt: new Date().toISOString(),
   };
 
@@ -198,6 +248,9 @@ router.post('/bind-mc', async (req: Request, res: Response) => {
 
 // 4. Dev / Local Test Login
 router.post('/dev-login', async (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ error: 'Dev login is disabled in production environment' });
+  }
   const { username, discordTag } = req.body;
   const cleanUsername = (username || 'QuibyPlayer').trim();
   const cleanTag = (discordTag || 'quiby_tester#0001').trim();

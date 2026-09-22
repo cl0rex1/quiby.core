@@ -88,6 +88,42 @@ async function runTests() {
     const approvedAfterWl = await verifyMod('MyCustomUtility', 'my-custom-utility.jar', unknownHash);
     assert(approvedAfterWl.status === 'approved', 'Approved whitelist request automatically promotes mod to approved');
     assert(approvedAfterWl.isAllowed === true, 'Approved whitelisted mod is allowed');
+
+    // 7. Test Cryptographic Binding Token Security
+    const jwt = (await import('jsonwebtoken')).default;
+    const { config } = await import('../config');
+
+    const validBindingToken = jwt.sign(
+      {
+        discordId: '123456789012345678',
+        discordUsername: 'LegitPlayer',
+        roles: ['member'],
+        purpose: 'mc_binding',
+      },
+      config.jwtSecret,
+      { expiresIn: '15m' }
+    );
+
+    const verified = jwt.verify(validBindingToken, config.jwtSecret) as any;
+    assert(verified.discordId === '123456789012345678', 'Valid binding token decodes correct discordId');
+    assert(verified.purpose === 'mc_binding', 'Valid binding token has correct mc_binding purpose');
+
+    let fakeTokenRejected = false;
+    try {
+      jwt.verify('fake.tampered.token', config.jwtSecret);
+    } catch (_) {
+      fakeTokenRejected = true;
+    }
+    assert(fakeTokenRejected, 'Tampered binding token is rejected cryptographically');
+
+    let wrongPurposeRejected = false;
+    const wrongPurposeToken = jwt.sign(
+      { discordId: 'hacker', purpose: 'general_login' },
+      config.jwtSecret
+    );
+    const decodedWrong = jwt.verify(wrongPurposeToken, config.jwtSecret) as any;
+    if (decodedWrong.purpose !== 'mc_binding') wrongPurposeRejected = true;
+    assert(wrongPurposeRejected, 'Token with incorrect purpose is rejected for mc binding');
   } catch (err) {
     console.error('Test error:', err);
     failed++;

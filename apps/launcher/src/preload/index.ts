@@ -27,8 +27,8 @@ export const quibyApi = {
   getShaderpacks: (gameDir: string) => ipcRenderer.invoke('shaderpacks:list', gameDir),
 
   // Game Engine
-  launchGame: (session: AuthSession, settings: LauncherSettings, serverUrl?: string) =>
-    ipcRenderer.invoke('game:launch', session, settings, serverUrl),
+  launchGame: (session: AuthSession, settings: LauncherSettings, serverUrl?: string, customModFilenames?: string[]) =>
+    ipcRenderer.invoke('game:launch', session, settings, serverUrl, customModFilenames),
   killGame: () => ipcRenderer.invoke('game:kill'),
 
   // Event Listeners
