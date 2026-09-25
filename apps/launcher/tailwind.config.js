@@ -8,17 +8,17 @@ export default {
     extend: {
       colors: {
         surface: {
-          950: '#0b0e14',
-          900: '#11151f',
-          850: '#171d2b',
-          800: '#1e2638',
-          border: '#252f45',
-          borderLight: '#323e59',
+          950: '#100e16',
+          900: '#191622',
+          850: '#211d2b',
+          800: '#292333',
+          border: '#3a3244',
+          borderLight: '#4c4056',
         },
         create: {
-          brass: '#d4975c',
-          brassLight: '#eab683',
-          copper: '#c86a4b',
+          brass: '#bb74ff',
+          brassLight: '#d7b6ff',
+          copper: '#a452dc',
           steel: '#475569',
         },
         onyx: {
@@ -28,8 +28,8 @@ export default {
           800: '#11141c',
           750: '#171a25',
           700: '#1e2230',
-          border: '#252f45',
-          borderLight: '#323e59',
+          border: '#3a3244',
+          borderLight: '#4c4056',
         },
         quiby: {
           purple: '#6d28d9',
@@ -43,8 +43,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        sans: ['"Golos Text"', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'monospace'],
       },
       boxShadow: {
         'onyx-card': '0 10px 35px -5px rgba(0, 0, 0, 0.7)',

@@ -27,25 +27,20 @@ export const WindowHeader: React.FC<WindowHeaderProps> = ({
   };
 
   return (
-    <header className="h-8 w-full bg-[#0b0e14] border-b border-[#252f45] flex items-center justify-between px-3 select-none app-drag shrink-0 z-50">
+    <header className="launcher-window-header h-8 w-full border-b flex items-center justify-between px-3 select-none app-drag shrink-0 z-50">
       {/* Left: small clean brand mark `quiby.` + version `Season VI: Aeronautics` with subtle monospace tag */}
       <div className="flex items-center gap-2.5">
         <span className="text-xs font-black text-white tracking-tight">quiby.</span>
-        <span className="text-[10px] font-mono text-zinc-400 bg-surface-850 px-1.5 py-0.5 rounded border border-surface-border">
-          Season VI: Aeronautics
-        </span>
+        <span className="header-edition">S6 / LAUNCHER</span>
       </div>
 
       {/* Center: status indicator (e.g. server host ping pill or empty drag area) */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-900 border border-surface-border text-[10px] font-mono text-zinc-400">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
-          </span>
+        <div className="header-status flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-mono text-zinc-400">
+          <span className={serverStatus?.online ? 'status-dot is-online' : 'status-dot'} />
           <span>{serverIp}</span>
-          <span className="text-emerald-400 font-semibold">
-            {serverStatus?.online ? `${serverStatus.players.online}/${serverStatus.players.max}` : 'Онлайн'}
+          <span className={serverStatus?.online ? 'fact-online' : ''}>
+            {serverStatus?.online ? `${serverStatus.players.online}/${serverStatus.players.max}` : serverStatus ? 'Оффлайн' : 'Нет данных'}
           </span>
         </div>
       </div>

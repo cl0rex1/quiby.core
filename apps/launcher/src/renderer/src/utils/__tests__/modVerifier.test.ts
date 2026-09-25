@@ -53,6 +53,9 @@ async function runTests() {
 
     const cleanScan = await scanFileForMalware(null, 'voicechat-neoforge-1.21.1.jar', 'Simple Voice Chat');
     assert(cleanScan.isSafe === true, 'Simple Voice Chat passes malware scan');
+
+    const integrationScan = await scanFileForMalware(null, 'integration-tools.jar', 'Integration Tools');
+    assert(integrationScan.isSafe === true, 'Integration is not blocked by a short substring');
   } catch (err) {
     console.error('Test error:', err);
     failed++;

@@ -10,7 +10,7 @@ import {
   ToggleLeft,
   CheckSquare
 } from 'lucide-react';
-import { AuthSession, DownloadProgress, LaunchState, LogEntry } from '@quiby/shared';
+import { AuthSession, DownloadProgress, LaunchState, LogEntry, ServerStatus } from '@quiby/shared';
 import { ActiveTab } from './MinimalSidebar';
 
 export interface BatchActionConfig {
@@ -27,6 +27,8 @@ export interface BatchActionConfig {
 interface FloatingActionDeckProps {
   activeTab: ActiveTab;
   session: AuthSession | null;
+  serverStatus: ServerStatus | null;
+  serverIp: string;
   launchState: LaunchState;
   downloadProgress: DownloadProgress | null;
   logs?: LogEntry[];
@@ -45,6 +47,8 @@ interface FloatingActionDeckProps {
 export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   activeTab,
   session,
+  serverStatus,
+  serverIp,
   launchState,
   autoConnect = true,
   onToggleAutoConnect,
@@ -75,20 +79,12 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
     }
 
     return (
-      <div className="fixed bottom-0 left-[72px] right-0 h-20 bg-[#0b0e14] border-t border-[#252f45] px-6 sm:px-8 flex items-center justify-between z-30 select-none surface-dock">
+      <div className="launcher-dock fixed bottom-0 left-44 right-0 h-20 border-t px-6 sm:px-8 flex items-center justify-between z-30 select-none surface-dock">
         {/* Left Side: Server Status & Quick Ping */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-            </span>
-            <span className="text-xs font-mono font-bold text-zinc-200">play.quiby.fun</span>
-          </div>
-          <span className="text-zinc-600 font-bold">•</span>
-          <span className="text-xs text-emerald-400 font-mono font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">
-            Онлайн
-          </span>
+          <span className={serverStatus?.online ? 'status-dot is-online' : 'status-dot'} />
+          <span className="dock-address">{serverIp}</span>
+          <span className="dock-status">{serverStatus?.online ? 'Сервер доступен' : serverStatus ? 'Сервер выключен' : 'Нет данных'}</span>
         </div>
 
         {/* Center / Controls: Fast-Connect Toggle */}
@@ -99,7 +95,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
               onClick={() => onToggleAutoConnect?.(!autoConnect)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors cursor-pointer press-feedback text-xs font-semibold select-none ${
                 autoConnect
-                  ? 'bg-surface-850 border-[#d4975c]/40 text-[#eab683]'
+                  ? 'bg-surface-850 border-[#bb74ff]/40 text-[#d7b6ff]'
                   : 'bg-surface-900 border-surface-border text-zinc-400 hover:text-zinc-200'
               }`}
               title="Автоматический вход сразу на сервер без перехода в главное меню"
@@ -107,7 +103,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
               <div
                 className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-all ${
                   autoConnect
-                    ? 'bg-[#d4975c] border-[#d4975c] text-[#0b0e14]'
+                    ? 'bg-[#bb74ff] border-[#bb74ff] text-[#100e16]'
                     : 'border-zinc-600 bg-surface-800'
                 }`}
               >
@@ -124,7 +120,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
             <button
               type="button"
               onClick={onOpenLogin}
-              className="px-6 py-2.5 rounded-xl bg-surface-800 hover:bg-surface-750 border border-surface-border text-white font-bold text-xs tracking-wide shadow-sm flex items-center gap-2 cursor-pointer press-feedback transition-colors"
+              className="launcher-primary-button flex items-center gap-2 cursor-pointer press-feedback"
             >
               <User size={15} />
               <span>Войти в аккаунт</span>
@@ -134,10 +130,10 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
             <button
               type="button"
               onClick={onLaunch}
-              className="px-8 py-3 rounded-xl bg-[#d4975c] hover:bg-[#eab683] text-[#0b0e14] font-black text-sm tracking-wider shadow-sm flex items-center gap-2.5 cursor-pointer press-feedback transition-colors"
+              className="launcher-primary-button flex items-center gap-2.5 cursor-pointer press-feedback"
             >
-              <Play size={16} className="fill-[#0b0e14] text-[#0b0e14]" />
-              <span>ИГРАТЬ (1.21.1)</span>
+              <Play size={16} fill="currentColor" />
+              <span>Запустить игру</span>
             </button>
           )}
         </div>
@@ -232,7 +228,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
               <button
                 type="button"
                 onClick={() => onSave()}
-                className="px-5 py-2 rounded-full bg-[#d4975c] hover:bg-[#eab683] text-[#0b0e14] text-xs font-black shadow-sm flex items-center gap-1.5 cursor-pointer press-feedback transition-colors shrink-0"
+                className="px-5 py-2 rounded-full bg-[#bb74ff] hover:bg-[#d7b6ff] text-[#100e16] text-xs font-black shadow-sm flex items-center gap-1.5 cursor-pointer press-feedback transition-colors shrink-0"
               >
                 <Save size={13} />
                 <span>Сохранить</span>

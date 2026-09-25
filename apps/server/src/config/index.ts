@@ -1,14 +1,19 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import crypto from 'crypto';
 
 dotenv.config();
 
+if (process.env.NODE_ENV === 'production' && ((process.env.JWT_SECRET?.length || 0) < 32 || (process.env.ADMIN_API_KEY?.length || 0) < 32)) {
+  throw new Error('JWT_SECRET and ADMIN_API_KEY must each contain at least 32 characters in production');
+}
+
 export const config = {
   port: parseInt(process.env.PORT || '3001', 10),
-  host: process.env.HOST || '0.0.0.0',
-  jwtSecret: process.env.JWT_SECRET || 'quiby-super-secret-jwt-key-change-in-prod-2026',
+  host: process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1'),
+  jwtSecret: process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '30d',
-  adminApiKey: process.env.ADMIN_API_KEY || 'quiby-admin-secret-key-s6',
+  adminApiKey: process.env.ADMIN_API_KEY || crypto.randomBytes(32).toString('hex'),
   
   // Discord OAuth2 Configuration
   discord: {

@@ -6,19 +6,27 @@ import { AuthSession, LauncherSettings, LaunchState, LogEntry, ModpackManifest }
 import { syncModpackFiles } from './downloader';
 import { ensureMinecraftVanilla } from './mojang';
 import { ensureNeoForge } from './neoforge';
+import { hashCustomModFile, requireApprovedCustomMod } from './customModVerification';
 import { updateDiscordRpcStatus } from '../rpc/discordRpc';
 
 let runningGameProcess: ChildProcess | null = null;
 let gameStartTime: number | null = null;
 let playtimeInterval: NodeJS.Timeout | null = null;
+let launchInProgress = false;
+let trackedPlaytimeSeconds = 0;
 
 export async function launchMinecraft(
   session: AuthSession,
   settings: LauncherSettings,
   serverBaseUrl: string,
   win: BrowserWindow | null,
-  activeCustomModFilenames: string[] = []
+  activeCustomModFilenames: string[] = [],
+  disabledCustomModFilenames: string[] = []
 ): Promise<void> {
+  if (launchInProgress || runningGameProcess) {
+    throw new Error('Minecraft уже запускается или запущен');
+  }
+  launchInProgress = true;
   const sendLog = (level: LogEntry['level'], message: string, source: LogEntry['source'] = 'launcher') => {
     const entry: LogEntry = {
       id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -46,9 +54,10 @@ export async function launchMinecraft(
     if (gameStartTime) {
       const elapsedSec = Math.round((Date.now() - gameStartTime) / 1000);
       if (win && !win.isDestroyed()) {
-        win.webContents.send('playtime-session-end', elapsedSec);
+        win.webContents.send('playtime-session-end', Math.max(0, elapsedSec - trackedPlaytimeSeconds));
       }
       gameStartTime = null;
+      trackedPlaytimeSeconds = 0;
     }
   };
 
@@ -71,9 +80,39 @@ export async function launchMinecraft(
       fs.mkdirSync(gameDir, { recursive: true });
     }
 
+    const modsDir = path.join(gameDir, 'mods');
+    fs.mkdirSync(modsDir, { recursive: true });
+    const officialMods = new Set(manifest.files.map((file) => file.path.replace(/\\/g, '/')));
+    for (const filename of disabledCustomModFilenames) {
+      if (!/^[^/\\]+\.jar$/i.test(filename) || officialMods.has(`mods/${filename}`)) continue;
+      const activePath = path.join(modsDir, filename);
+      if (fs.existsSync(activePath)) fs.renameSync(activePath, `${activePath}.disabled`);
+    }
+    for (const filename of activeCustomModFilenames) {
+      if (!/^[^/\\]+\.jar$/i.test(filename) || officialMods.has(`mods/${filename}`)) continue;
+      const activePath = path.join(modsDir, filename);
+      if (!fs.existsSync(activePath) && fs.existsSync(`${activePath}.disabled`)) {
+        fs.renameSync(`${activePath}.disabled`, activePath);
+      }
+    }
+
+    const approvedCustomMods = new Map<string, string>();
+    for (const filename of new Set(activeCustomModFilenames)) {
+      if (!/^[^/\\]+\.jar$/i.test(filename) || officialMods.has(`mods/${filename}`)) continue;
+      const modPath = path.join(modsDir, filename);
+      if (!fs.existsSync(modPath)) continue;
+      const stat = fs.lstatSync(modPath);
+      if (!stat.isFile() || stat.size > 100 * 1024 * 1024) {
+        throw new Error(`Недопустимый пользовательский мод: ${filename}`);
+      }
+      const hash = await hashCustomModFile(modPath);
+      await requireApprovedCustomMod(filename, hash, stat.size, serverBaseUrl);
+      approvedCustomMods.set(filename, hash);
+    }
+
     // 2. Sync Modpack Files (Mods, Configs, Shaders) with custom mod protection
     sendLog('info', `🔍 Проверка и синхронизация модов...`);
-    const protectedFilenames = new Set<string>(activeCustomModFilenames);
+    const protectedFilenames = new Set(approvedCustomMods.keys());
     if (protectedFilenames.size > 0) {
       sendLog('info', `🛡️ Защита ${protectedFilenames.size} активных клиентских модов от очистки`);
     }
@@ -161,6 +200,11 @@ export async function launchMinecraft(
 
     const fullArgs = [...jvmArgs, ...gameArgs];
 
+    for (const [filename, approvedHash] of approvedCustomMods) {
+      const currentHash = await hashCustomModFile(path.join(modsDir, filename));
+      if (currentHash !== approvedHash) throw new Error(`Мод ${filename} изменился после проверки. Запустите игру снова.`);
+    }
+
     sendLog('info', `🚀 Запуск Java процесса: ${settings.javaPath}`);
     setLaunchState({ status: 'starting' });
 
@@ -170,12 +214,28 @@ export async function launchMinecraft(
       env: { ...process.env },
     });
 
+    await new Promise<void>((resolve, reject) => {
+      const onSpawn = () => {
+        gameProcess.off('error', onError);
+        resolve();
+      };
+      const onError = (error: Error) => {
+        gameProcess.off('spawn', onSpawn);
+        reject(error);
+      };
+      gameProcess.once('spawn', onSpawn);
+      gameProcess.once('error', onError);
+    });
+
     runningGameProcess = gameProcess;
+    launchInProgress = false;
     gameStartTime = Date.now();
+    trackedPlaytimeSeconds = 0;
 
     // Start 60-second heartbeat playtime tracker
     if (playtimeInterval) clearInterval(playtimeInterval);
     playtimeInterval = setInterval(() => {
+      trackedPlaytimeSeconds += 60;
       if (win && !win.isDestroyed()) {
         win.webContents.send('playtime-tick', 60);
       }
@@ -226,6 +286,7 @@ export async function launchMinecraft(
     });
 
   } catch (error: any) {
+    launchInProgress = false;
     stopPlaytimeTracking();
     sendLog('error', `Критическая ошибка запуска: ${error.message}`);
     setLaunchState({ status: 'crashed', error: error.message });
@@ -249,6 +310,5 @@ export function killGameProcess(): void {
     } else {
       runningGameProcess.kill('SIGTERM');
     }
-    runningGameProcess = null;
   }
 }

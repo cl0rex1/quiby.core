@@ -24,7 +24,7 @@ const storage = multer.diskStorage({
     const safeRelPath = path.normalize(rawRelPath).replace(/^(\.\.[\/\\])+/, '');
     const targetDir = path.resolve(filesDir, path.dirname(safeRelPath));
     const resolvedBase = path.resolve(filesDir);
-    if (!targetDir.startsWith(resolvedBase)) {
+    if (targetDir !== resolvedBase && !targetDir.startsWith(resolvedBase + path.sep)) {
       return cb(new Error('Invalid destination path: Path traversal detected'), filesDir);
     }
     if (!fs.existsSync(targetDir)) {

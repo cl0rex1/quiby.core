@@ -46,12 +46,13 @@ export interface CustomModItem {
 
 interface ModsViewProps {
   manifest: ModpackManifest | null;
+  serverUrl: string;
   gameDir: string;
   customMods: CustomModItem[];
   session?: AuthSession | null;
   selectedModIds: string[];
   onUpdateSelectedModIds: (ids: string[]) => void;
-  onUpdateCustomMods: (mods: CustomModItem[]) => void;
+  onUpdateCustomMods: (mods: React.SetStateAction<CustomModItem[]>) => void;
   onNotify?: (
     title: string,
     message?: string,
@@ -66,6 +67,7 @@ export type ModFilterCategory = 'all' | 'optimization' | 'interface' | 'audio' |
 
 export const ModsView: React.FC<ModsViewProps> = ({
   manifest,
+  serverUrl,
   gameDir,
   customMods,
   session,
@@ -246,15 +248,27 @@ export const ModsView: React.FC<ModsViewProps> = ({
     onUpdateCustomMods(updated);
   };
 
-  const handleDeleteCustomMod = (e: React.MouseEvent, id: string) => {
+  const handleDeleteCustomMod = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    const target = customMods.find((m) => m.id === id);
+    if (target && window.quibyApi) {
+      try {
+        await window.quibyApi.removeCustomMod(gameDir, target.filename);
+      } catch (error) {
+        onNotify?.('Не удалось удалить мод', error instanceof Error ? error.message : 'Проверьте папку mods.', 'error');
+        return;
+      }
+    }
     const updated = customMods.filter((m) => m.id !== id);
     onUpdateCustomMods(updated);
     onUpdateSelectedModIds(selectedModIds.filter((item) => item !== id));
   };
 
   const handleAddCustomModFile = async (file: File) => {
-    if (!file.name.endsWith('.jar')) return;
+    if (!file.name.toLowerCase().endsWith('.jar') || file.size > 100 * 1024 * 1024) {
+      onNotify?.('Неверный файл', 'Нужен .jar размером до 100 МБ.', 'error');
+      return;
+    }
 
     const tempId = `custom-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     const meta = resolveModMetadata(file.name.replace('.jar', ''), file.name);
@@ -270,13 +284,19 @@ export const ModsView: React.FC<ModsViewProps> = ({
       description: meta.description,
     };
 
-    const nextList = [initialMod, ...customMods];
-    onUpdateCustomMods(nextList);
+    onUpdateCustomMods((previous) => [initialMod, ...previous]);
     setSwitcherMode('custom');
 
     setIsVerifying(true);
     try {
-      const result = await verifyCustomMod(file);
+      const result = await verifyCustomMod(file, serverUrl);
+      if (result.isAllowed) {
+        if (manifest?.files.some((entry) => entry.path.replace(/\\/g, '/') === `mods/${file.name}`)) {
+          throw new Error('Этот мод уже входит в сборку сервера');
+        }
+        if (!window.quibyApi) throw new Error('Установка модов доступна только в приложении лаунчера');
+        await window.quibyApi.installCustomMod(gameDir, file.name, new Uint8Array(await file.arrayBuffer()));
+      }
       const verifiedMeta = resolveModMetadata(
         result.name || initialMod.name,
         file.name,
@@ -297,11 +317,14 @@ export const ModsView: React.FC<ModsViewProps> = ({
         enabled: result.isAllowed,
       };
 
-      onUpdateCustomMods(
-        nextList.map((m) => (m.id === tempId ? verifiedMod : m))
-      );
+      onUpdateCustomMods((previous) => previous.map((m) => (m.id === tempId ? verifiedMod : m)));
+      if (result.isAllowed) onNotify?.('Мод добавлен', `${file.name} установлен в папку mods.`, 'success');
+      else if (result.status === 'unverified') onNotify?.('Мод ожидает одобрения', 'Файл пока не установлен. После одобрения добавьте его повторно.', 'warning');
+      else onNotify?.('Мод заблокирован', result.reason, 'error');
     } catch (e) {
       console.error('Failed to verify mod file:', e);
+      onUpdateCustomMods((previous) => previous.filter((m) => m.id !== tempId));
+      onNotify?.('Не удалось добавить мод', e instanceof Error ? e.message : 'Проверьте файл и попробуйте снова.', 'error');
     } finally {
       setIsVerifying(false);
     }
@@ -363,7 +386,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
         <div>
           <h1 className="text-xl font-black text-white flex items-center gap-2.5 tracking-tight">
-            {contentCategory === 'mods' && <Package className="text-[#d4975c]" size={22} />}
+            {contentCategory === 'mods' && <Package className="text-[#bb74ff]" size={22} />}
             {contentCategory === 'schematics' && <Layers className="text-purple-400" size={22} />}
             {contentCategory === 'shaders' && <Sun className="text-amber-400" size={22} />}
             <span>
@@ -384,11 +407,11 @@ export const ModsView: React.FC<ModsViewProps> = ({
             onClick={() => setContentCategory('mods')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
               contentCategory === 'mods'
-                ? 'bg-surface-800 text-white border border-[#d4975c]/40 shadow-sm'
+                ? 'bg-surface-800 text-white border border-[#bb74ff]/40 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <Package size={13} className={contentCategory === 'mods' ? 'text-[#d4975c]' : ''} />
+            <Package size={13} className={contentCategory === 'mods' ? 'text-[#bb74ff]' : ''} />
             <span>Моды</span>
           </button>
 
@@ -397,7 +420,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
             onClick={() => setContentCategory('schematics')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
               contentCategory === 'schematics'
-                ? 'bg-surface-800 text-white border border-[#d4975c]/40 shadow-sm'
+                ? 'bg-surface-800 text-white border border-[#bb74ff]/40 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
@@ -410,7 +433,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
             onClick={() => setContentCategory('shaders')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
               contentCategory === 'shaders'
-                ? 'bg-surface-800 text-white border border-[#d4975c]/40 shadow-sm'
+                ? 'bg-surface-800 text-white border border-[#bb74ff]/40 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
@@ -431,13 +454,13 @@ export const ModsView: React.FC<ModsViewProps> = ({
             onClick={() => fileInputRef.current?.click()}
             className={`rounded-2xl transition-all duration-200 cursor-pointer flex items-center justify-between px-4 py-2.5 border border-dashed press-feedback ${
               isDragging
-                ? 'border-[#d4975c] bg-[#d4975c]/15 text-white shadow-[0_0_20px_rgba(212,151,92,0.25)] scale-[1.01]'
-                : 'border-surface-borderLight hover:border-[#d4975c]/50 bg-surface-900/70 hover:bg-surface-850 text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#bb74ff] bg-[#bb74ff]/15 text-white shadow-[0_0_20px_rgba(212,151,92,0.25)] scale-[1.01]'
+                : 'border-surface-borderLight hover:border-[#bb74ff]/50 bg-surface-900/70 hover:bg-surface-850 text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <div className="flex items-center gap-2.5">
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                isDragging ? 'bg-[#d4975c] text-surface-950' : 'bg-surface-800 text-[#d4975c]'
+                isDragging ? 'bg-[#bb74ff] text-surface-950' : 'bg-surface-800 text-[#bb74ff]'
               }`}>
                 <Upload size={14} className={isDragging ? 'animate-bounce' : ''} />
               </div>
@@ -462,7 +485,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                   onClick={() => setSwitcherMode('official')}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
                     switcherMode === 'official'
-                      ? 'bg-surface-800 text-white border border-[#d4975c]/40 shadow-sm'
+                      ? 'bg-surface-800 text-white border border-[#bb74ff]/40 shadow-sm'
                       : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
@@ -474,12 +497,12 @@ export const ModsView: React.FC<ModsViewProps> = ({
                   onClick={() => setSwitcherMode('custom')}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
                     switcherMode === 'custom'
-                      ? 'bg-surface-800 text-white border border-[#d4975c]/40 shadow-sm'
+                      ? 'bg-surface-800 text-white border border-[#bb74ff]/40 shadow-sm'
                       : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
                   <span>Мои моды ({customMods.length})</span>
-                  {isVerifying && <Loader2 size={11} className="animate-spin text-[#d4975c]" />}
+                  {isVerifying && <Loader2 size={11} className="animate-spin text-[#bb74ff]" />}
                 </button>
               </div>
 
@@ -490,7 +513,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                   onClick={handleSelectAllCustom}
                   className={`h-8 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 shadow-sm press-feedback ${
                     isAllSelected
-                      ? 'bg-surface-800 border-[#d4975c]/50 text-white'
+                      ? 'bg-surface-800 border-[#bb74ff]/50 text-white'
                       : 'bg-surface-900 border-surface-border text-zinc-300 hover:text-white hover:bg-surface-850'
                   }`}
                 >
@@ -505,7 +528,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#d4975c] hover:bg-[#eab683] text-surface-950 text-xs font-bold transition-all cursor-pointer shadow-sm press-feedback"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#bb74ff] hover:bg-[#d7b6ff] text-surface-950 text-xs font-bold transition-all cursor-pointer shadow-sm press-feedback"
               >
                 <Plus size={15} className="stroke-[2.5]" />
                 <span>Добавить мод (.jar)</span>
@@ -528,7 +551,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
             {/* Fast Category Filter Chips */}
             <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
               <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider flex items-center gap-1 mr-1 shrink-0">
-                <Filter size={11} className="text-[#d4975c]" />
+                <Filter size={11} className="text-[#bb74ff]" />
                 <span>Категория:</span>
               </span>
               {CATEGORY_CHIPS.map((chip) => (
@@ -538,7 +561,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                   onClick={() => setFilterCategory(chip.id)}
                   className={`px-3 py-1 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer press-feedback ${
                     filterCategory === chip.id
-                      ? 'bg-surface-800 border border-[#d4975c]/60 text-white font-semibold shadow-sm'
+                      ? 'bg-surface-800 border border-[#bb74ff]/60 text-white font-semibold shadow-sm'
                       : 'bg-surface-900 hover:bg-surface-850 border border-surface-border text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
@@ -555,7 +578,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Поиск по названию или файлу..."
-                className="w-full bg-surface-900 border border-surface-border focus:border-[#d4975c]/50 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none transition-colors"
+                className="w-full bg-surface-900 border border-surface-border focus:border-[#bb74ff]/50 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none transition-colors"
               />
               {search && (
                 <button
@@ -602,7 +625,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                               }}
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-xl bg-surface-850 border border-surface-border flex items-center justify-center shrink-0 font-mono font-bold text-xs text-[#d4975c]">
+                            <div className="w-10 h-10 rounded-xl bg-surface-850 border border-surface-border flex items-center justify-center shrink-0 font-mono font-bold text-xs text-[#bb74ff]">
                               {getMonogram(meta.displayName)}
                             </div>
                           )}
@@ -683,7 +706,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                         key={mod.id}
                         className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-150 gap-3 ${
                           isSelected
-                            ? 'bg-surface-850 border-[#d4975c]/60 shadow-md ring-1 ring-[#d4975c]/30'
+                            ? 'bg-surface-850 border-[#bb74ff]/60 shadow-md ring-1 ring-[#bb74ff]/30'
                             : isBlocked
                             ? 'bg-rose-950/20 border-rose-500/30'
                             : mod.enabled
@@ -698,8 +721,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
                             onClick={() => toggleSelectMod(mod.id)}
                             className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-all cursor-pointer press-feedback ${
                               isSelected
-                                ? 'bg-[#d4975c] text-surface-950 shadow-sm'
-                                : 'bg-surface-850 border border-surface-border text-transparent hover:border-[#d4975c]/50'
+                                ? 'bg-[#bb74ff] text-surface-950 shadow-sm'
+                                : 'bg-surface-850 border border-surface-border text-transparent hover:border-[#bb74ff]/50'
                             }`}
                             title={isSelected ? 'Снять выбор' : 'Выбрать мод'}
                           >
@@ -717,7 +740,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                               }}
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-xl bg-surface-850 border border-surface-border flex items-center justify-center shrink-0 font-mono font-bold text-xs text-[#d4975c]">
+                            <div className="w-10 h-10 rounded-xl bg-surface-850 border border-surface-border flex items-center justify-center shrink-0 font-mono font-bold text-xs text-[#bb74ff]">
                               {getMonogram(meta.displayName)}
                             </div>
                           )}
@@ -772,7 +795,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                                 <button
                                   type="button"
                                   onClick={(e) => handleOpenWhitelistModal(e, mod)}
-                                  className="px-2 py-0.5 rounded bg-surface-800 hover:bg-surface-750 text-[#eab683] border border-surface-border text-[10px] font-sans font-medium transition-colors cursor-pointer press-feedback"
+                                  className="px-2 py-0.5 rounded bg-surface-800 hover:bg-surface-750 text-[#d7b6ff] border border-surface-border text-[10px] font-sans font-medium transition-colors cursor-pointer press-feedback"
                                 >
                                   Вайтлист
                                 </button>
@@ -850,6 +873,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
         onClose={() => setActiveWhitelistMod(null)}
         mod={activeWhitelistMod}
         session={session}
+        serverUrl={serverUrl}
         onSuccess={(modId, modName) => {
           const modItem = customMods.find((m) => m.id === modId);
           onUpdateCustomMods(

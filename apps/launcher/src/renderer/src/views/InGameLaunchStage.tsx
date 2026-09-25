@@ -156,8 +156,8 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
             {/* Launch Status Badge */}
             <div className="mt-2">
               {launchState.status === 'updating' ? (
-                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#d4975c]/15 border border-[#d4975c]/30 text-xs font-bold text-[#eab683] animate-pulse">
-                  <RotateCw size={13} className="animate-spin text-[#d4975c]" />
+                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#bb74ff]/15 border border-[#bb74ff]/30 text-xs font-bold text-[#d7b6ff] animate-pulse">
+                  <RotateCw size={13} className="animate-spin text-[#bb74ff]" />
                   <span>Синхронизация</span>
                 </div>
               ) : launchState.status === 'starting' ? (
@@ -171,7 +171,7 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
                   </span>
-                  <span>В игре на Season 6</span>
+                  <span>Процесс Minecraft запущен</span>
                 </div>
               )}
             </div>
@@ -182,14 +182,11 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
             {/* Server Status Pill */}
             <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-surface-850/90 border border-surface-border text-xs text-zinc-300">
               <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-                </span>
+                <span className="status-dot" />
                 <span className="font-mono font-bold">{serverIp}</span>
               </div>
-              <span className="text-[10px] text-emerald-400 font-mono font-semibold">
-                Онлайн
+              <span className="text-[10px] text-zinc-400 font-mono font-semibold">
+                Адрес сервера
               </span>
             </div>
 
@@ -229,17 +226,17 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
             <div className="rounded-2xl bg-surface-900/85 backdrop-blur-md p-4 border border-surface-border/70 space-y-2.5 shadow-xl shrink-0 animate-in fade-in slide-in-from-top-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-white font-medium truncate flex items-center gap-2">
-                  <RotateCw size={13} className="animate-spin text-[#d4975c] shrink-0" />
+                  <RotateCw size={13} className="animate-spin text-[#bb74ff] shrink-0" />
                   <span className="truncate">{downloadProgress.stageLabel}</span>
                 </span>
-                <span className="text-[#d4975c] font-mono font-bold text-sm">
+                <span className="text-[#bb74ff] font-mono font-bold text-sm">
                   {downloadProgress.progressPercent}%
                 </span>
               </div>
 
               <div className="w-full h-2 bg-surface-950 rounded-full overflow-hidden border border-surface-border/80">
                 <div
-                  className="h-full bg-gradient-to-r from-[#d4975c] to-[#f3c99f] transition-all duration-200 rounded-full"
+                  className="h-full bg-gradient-to-r from-[#bb74ff] to-[#f3c99f] transition-all duration-200 rounded-full"
                   style={{ width: `${Math.max(downloadProgress.progressPercent, 2)}%` }}
                 />
               </div>
@@ -262,11 +259,11 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
           )}
 
           {/* Full-Height Live Terminal Console Stream */}
-          <div className="flex-1 flex flex-col rounded-2xl bg-[#0b0e14]/90 backdrop-blur-md border border-surface-border/70 overflow-hidden shadow-xl min-h-0">
+          <div className="flex-1 flex flex-col rounded-2xl bg-[#100e16]/90 backdrop-blur-md border border-surface-border/70 overflow-hidden shadow-xl min-h-0">
             {/* Terminal Header Bar */}
             <div className="flex items-center justify-between px-4 py-2.5 bg-surface-900/90 border-b border-surface-border/80 shrink-0">
               <div className="flex items-center gap-2.5">
-                <Terminal size={14} className="text-[#d4975c]" />
+                <Terminal size={14} className="text-[#bb74ff]" />
                 <span className="text-xs font-bold text-white tracking-wide">
                   Консоль процесса
                 </span>
@@ -281,7 +278,7 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
                   onClick={() => setAutoScroll(!autoScroll)}
                   className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer press-feedback ${
                     autoScroll
-                      ? 'bg-surface-800 text-[#d4975c] border-[#d4975c]/30'
+                      ? 'bg-surface-800 text-[#bb74ff] border-[#bb74ff]/30'
                       : 'bg-surface-900 text-zinc-500 border-transparent hover:text-white'
                   }`}
                   title={autoScroll ? 'Автопрокрутка включена' : 'Включить автопрокрутку'}
@@ -329,7 +326,7 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
                     <span className="text-zinc-600 shrink-0 select-none text-[10px]">
                       [{log.timestamp}]
                     </span>
-                    <span className="text-[#d4975c]/80 shrink-0 font-bold text-[9px] uppercase">
+                    <span className="text-[#bb74ff]/80 shrink-0 font-bold text-[9px] uppercase">
                       [{log.source}]
                     </span>
                     <span className={`break-all ${getLogLevelClass(log.level)}`}>

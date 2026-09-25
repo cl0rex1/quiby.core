@@ -41,6 +41,8 @@ async function runTests() {
     assert(safeResult.isAllowed === true, 'Safe optimization mod (Sodium) is allowed');
     assert(safeResult.status === 'approved', 'Safe mod status is approved');
     assert(safeResult.source === 'modrinth', 'Safe mod source is modrinth');
+    const renamedCheat = await verifyMod('XRay', 'xray-client.jar', safeHash);
+    assert(renamedCheat.isAllowed === false, 'Known cheat filename is blocked even when the hash has a cached approval');
 
     // 3. Test Blocked Cheat Mod Caching & Verification
     const cheatHash = 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef';

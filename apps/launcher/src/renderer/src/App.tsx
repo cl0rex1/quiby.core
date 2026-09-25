@@ -21,10 +21,11 @@ import {
   LaunchState, 
   LogEntry, 
   ModpackManifest, 
+  NewsArticle,
   ServerStatus 
 } from '@quiby/shared';
 
-const SERVER_URL = 'http://localhost:3001';
+const SERVER_URL = (import.meta.env.VITE_QUIBY_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 
 const defaultSettings: LauncherSettings = {
   ramMinMb: 4096,
@@ -40,89 +41,15 @@ const defaultSettings: LauncherSettings = {
   serverIp: 'play.quiby.fun:25565',
 };
 
-const initialCustomMods: CustomModItem[] = [
-  {
-    id: 'test-1',
-    name: 'Embeddium',
-    filename: 'embeddium-0.3.31+mc1.21.1.jar',
-    size: 3450000,
-    enabled: true,
-    safetyStatus: 'approved',
-    safetyReason: 'Одобрен • Modrinth (безопасный клиентский мод)',
-    categories: ['optimization', 'shaders'],
-    projectUrl: 'https://modrinth.com/mod/embeddium',
-    iconUrl: 'https://cdn.modrinth.com/data/sk9gg7Kq/icon.png',
-    description: 'Оптимизация рендеринга мира и повышение частоты кадров',
-  },
-  {
-    id: 'test-2',
-    name: 'Sound Physics Remastered',
-    filename: 'soundphysics-neoforge-1.21.1-1.4.6.jar',
-    size: 2100000,
-    enabled: true,
-    safetyStatus: 'approved',
-    safetyReason: 'Одобрен администрацией сервера (Вайтлист)',
-    categories: ['audio', 'graphics'],
-    projectUrl: 'https://modrinth.com/mod/sound-physics-remastered',
-    iconUrl: 'https://cdn.modrinth.com/data/qyVF9oeo/icon.png',
-    description: 'Реалистичная акустика, эхо в пещерах и затухание звука',
-  },
-  {
-    id: 'test-3',
-    name: 'Simple Voice Chat',
-    filename: 'voicechat-neoforge-1.21.1-2.5.18.jar',
-    size: 4200000,
-    enabled: false,
-    hashSha1: '7fa52e8964b10b0a8813bc6218d8442e97da60f1',
-    safetyStatus: 'unverified',
-    safetyReason: 'Мод не найден в публичном каталоге. Доступен запрос на одобрение.',
-    categories: ['voice', 'utility'],
-    iconUrl: 'https://cdn.modrinth.com/data/9eGKb6K1/icon.png',
-    description: 'Позиционный 3D голосовой чат для общения на сервере',
-  },
-  {
-    id: 'test-pending',
-    name: 'Custom HUD Tweaks',
-    filename: 'custom-hud-1.21.1.jar',
-    size: 1540000,
-    enabled: false,
-    hashSha1: '3bc948a7d1840294829103847291038472910384',
-    safetyStatus: 'pending',
-    safetyReason: 'Заявка отправлена модераторам в Discord и находится на рассмотрении',
-    categories: ['interface', 'utility'],
-    description: 'Кастомизация интерфейса, координат и компаса на экране',
-  },
-  {
-    id: 'test-4',
-    name: 'X-Ray Ultimate Plus',
-    filename: 'XRay-Ultimate-1.21.1-cheat.jar',
-    size: 890000,
-    enabled: false,
-    safetyStatus: 'blocked',
-    safetyReason: 'Запрещен: содержит сигнатуры читов/рентгена руд (xray)',
-    categories: ['cheat', 'xray'],
-    description: 'Запрещенный чит-мод для поиска скрытых руд сквозь стены',
-  },
-  {
-    id: 'test-6',
-    name: 'Jade (WAILA Tooltips)',
-    filename: 'Jade-1.21.1-NeoForge-15.1.0.jar',
-    size: 680000,
-    enabled: true,
-    safetyStatus: 'approved',
-    safetyReason: 'Одобрен • Modrinth (безопасный клиентский мод)',
-    categories: ['interface'],
-    projectUrl: 'https://modrinth.com/mod/jade',
-    iconUrl: 'https://cdn.modrinth.com/data/nvQzSEkH/icon.png',
-    description: 'Информативные всплывающие подсказки на блоках и мобах',
-  },
-];
+const initialCustomMods: CustomModItem[] = [];
 
 export const App: React.FC = () => {
   const isSplashQuery = new URLSearchParams(window.location.search).get('view') === 'splash';
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [session, setSession] = useState<AuthSession | null>(null);
   const [manifest, setManifest] = useState<ModpackManifest | null>(null);
+  const [news, setNews] = useState<NewsArticle[]>([]);
+  const [newsAvailable, setNewsAvailable] = useState(false);
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [launchState, setLaunchState] = useState<LaunchState>({ status: 'idle' });
@@ -130,17 +57,8 @@ export const App: React.FC = () => {
   const [selectedModIds, setSelectedModIds] = useState<string[]>([]);
 
   // Notifications State
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: 'notif-1',
-      title: 'Quiby Core готов к запуску',
-      message: 'Сезон VI запущен. Все моды и оптимизации готовы к игре на сервере!',
-      type: 'info',
-      timestamp: Date.now() - 1000 * 60 * 10,
-      read: false,
-    },
-  ]);
-  const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>('notif-1');
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>(null);
   const [activeToast, setActiveToast] = useState<ToastData | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
@@ -210,9 +128,12 @@ export const App: React.FC = () => {
   // 3. Custom Mods State (Auto-saving)
   const [customMods, setCustomMods] = useState<CustomModItem[]>(initialCustomMods);
 
-  const handleUpdateCustomMods = (newMods: CustomModItem[]) => {
-    setCustomMods(newMods);
-    localStorage.setItem('quiby_custom_mods', JSON.stringify(newMods));
+  const handleUpdateCustomMods = (update: React.SetStateAction<CustomModItem[]>) => {
+    setCustomMods((previous) => {
+      const next = typeof update === 'function' ? update(previous) : update;
+      localStorage.setItem('quiby_custom_mods', JSON.stringify(next));
+      return next;
+    });
   };
 
   // 4. Playtime & Fast-Connect States
@@ -227,7 +148,9 @@ export const App: React.FC = () => {
     const savedSession = localStorage.getItem('quiby_session');
     if (savedSession) {
       try {
-        setSession(JSON.parse(savedSession));
+        const restored = JSON.parse(savedSession) as AuthSession;
+        if (restored.expiresAt > Date.now()) setSession(restored);
+        else localStorage.removeItem('quiby_session');
       } catch (_) {}
     }
 
@@ -282,9 +205,7 @@ export const App: React.FC = () => {
     if (savedModsJson) {
       try {
         const parsed = JSON.parse(savedModsJson);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setCustomMods(parsed);
-        }
+        if (Array.isArray(parsed)) setCustomMods(parsed.filter((mod) => !String(mod.id).startsWith('test-')));
       } catch (_) {}
     }
 
@@ -319,28 +240,38 @@ export const App: React.FC = () => {
         });
       });
 
+      const unsubscribePlaytimeEnd = window.quibyApi.onPlaytimeSessionEnd?.((sec) => {
+        setTotalPlaytimeSeconds((prev) => {
+          const next = prev + sec;
+          localStorage.setItem('quiby_total_playtime', String(next));
+          return next;
+        });
+      });
+
       return () => {
         unsubscribeProgress?.();
         unsubscribeLog?.();
         unsubscribeState?.();
         unsubscribePlaytime?.();
+        unsubscribePlaytimeEnd?.();
       };
     }
   }, []);
 
   // Fetch Remote Manifest & Server Ping
   const fetchRemoteData = async () => {
-    try {
-      const manRes = await fetch(`${SERVER_URL}/api/modpack/latest`);
-      if (manRes.ok) {
-        setManifest(await manRes.json());
-      }
-
-      const statusRes = await fetch(`${SERVER_URL}/api/status`);
-      if (statusRes.ok) {
-        setServerStatus(await statusRes.json());
-      }
-    } catch (_) {}
+    const getJson = (path: string) => fetch(`${SERVER_URL}${path}`)
+      .then((response) => response.ok ? response.json() : null)
+      .catch(() => null);
+    const [nextManifest, nextStatus, nextNews] = await Promise.all([
+      getJson('/api/modpack/latest'),
+      getJson('/api/status'),
+      getJson('/api/news'),
+    ]);
+    setManifest(nextManifest);
+    setServerStatus(nextStatus);
+    setNews(Array.isArray(nextNews) ? nextNews : []);
+    setNewsAvailable(Array.isArray(nextNews));
   };
 
   useEffect(() => {
@@ -361,7 +292,9 @@ export const App: React.FC = () => {
   };
 
   const handleLaunchGame = async () => {
-    if (!session) {
+    if (!session || session.expiresAt <= Date.now()) {
+      setSession(null);
+      localStorage.removeItem('quiby_session');
       setIsAuthModalOpen(true);
       return;
     }
@@ -371,10 +304,14 @@ export const App: React.FC = () => {
         const activeModFiles = customMods
           .filter((m) => m.enabled && m.safetyStatus === 'approved')
           .map((m) => m.filename);
-        await window.quibyApi.launchGame(session, settings, SERVER_URL, activeModFiles);
+        const disabledModFiles = customMods
+          .filter((m) => !m.enabled || m.safetyStatus !== 'approved')
+          .map((m) => m.filename);
+        await window.quibyApi.launchGame(session, settings, activeModFiles, disabledModFiles);
       }
     } catch (err) {
       console.error('Launch Error:', err);
+      handleNotify('Не удалось запустить игру', err instanceof Error ? err.message : 'Проверьте соединение и попробуйте снова.', 'error');
     }
   };
 
@@ -389,7 +326,7 @@ export const App: React.FC = () => {
 
   // Otherwise, render the Main Launcher Window:
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#0b0e14] text-zinc-100 overflow-hidden select-none font-sans relative">
+    <div className="launcher-app flex flex-col h-screen w-screen bg-[#100e16] text-zinc-100 overflow-hidden select-none font-sans relative">
       {/* 1. Window Controls & Dragging Header (Height: 32px / h-8) */}
       <WindowHeader serverIp={settings.serverIp} serverStatus={serverStatus} />
 
@@ -433,11 +370,13 @@ export const App: React.FC = () => {
         {/* Primary View Content Container */}
         <main
           className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-200 ease-out ${
-            isNotificationsOpen ? 'pl-[310px]' : 'pl-[72px]'
+            isNotificationsOpen ? 'pl-[310px]' : 'pl-44'
           }`}
         >
           {isNotificationsOpen ? (
             <NotificationDetailView
+              news={news}
+              newsAvailable={newsAvailable}
               notification={
                 notifications.find((n) => n.id === selectedNotificationId) || null
               }
@@ -474,6 +413,7 @@ export const App: React.FC = () => {
                 ) : (
                   <CharacterStage
                     session={session}
+                    manifest={manifest}
                     serverStatus={serverStatus}
                     serverIp={settings.serverIp}
                     totalPlaytimeSeconds={totalPlaytimeSeconds}
@@ -504,6 +444,7 @@ export const App: React.FC = () => {
               {activeTab === 'mods' && (
                 <ModsView
                   manifest={manifest}
+                  serverUrl={SERVER_URL}
                   gameDir={settings.gameDir}
                   customMods={customMods}
                   session={session}
@@ -529,6 +470,8 @@ export const App: React.FC = () => {
           <FloatingActionDeck
             activeTab={activeTab}
             session={session}
+            serverStatus={serverStatus}
+            serverIp={settings.serverIp}
             launchState={launchState}
             downloadProgress={downloadProgress}
             autoConnect={autoConnect}
@@ -566,11 +509,18 @@ export const App: React.FC = () => {
                         )
                       );
                     },
-                    onDeleteAll: () => {
-                      handleUpdateCustomMods(
-                        customMods.filter((m) => !selectedModIds.includes(m.id))
-                      );
-                      setSelectedModIds([]);
+                    onDeleteAll: async () => {
+                      try {
+                        if (window.quibyApi) {
+                          await Promise.all(customMods
+                            .filter((m) => selectedModIds.includes(m.id))
+                            .map((m) => window.quibyApi.removeCustomMod(settings.gameDir, m.filename)));
+                        }
+                        handleUpdateCustomMods(customMods.filter((m) => !selectedModIds.includes(m.id)));
+                        setSelectedModIds([]);
+                      } catch (error) {
+                        handleNotify('Не удалось удалить моды', error instanceof Error ? error.message : 'Проверьте папку mods.', 'error');
+                      }
                     },
                     onClear: () => {
                       setSelectedModIds([]);
@@ -625,7 +575,7 @@ export const App: React.FC = () => {
             );
           }
 
-          handleNotify('Настройки применены', 'Параметры графики и состав сборки сконфигурированы.', 'success');
+          handleNotify('Настройки сохранены', 'Память и клиентские моды настроены.', 'success');
         }}
       />
     </div>

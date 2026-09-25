@@ -137,30 +137,24 @@ export async function ensureNeoForge(
 
   await downloadFile(installerUrl, installerPath);
 
-  // Run headless installer if java is available
-  if (fs.existsSync(javaPath)) {
-    if (win && !win.isDestroyed()) {
-      win.webContents.send('download-progress', {
-        stage: 'neoforge',
-        stageLabel: `Установка профиля NeoForge ${loaderVersion}...`,
-        progressPercent: 75,
-      });
-    }
-
-    await new Promise<void>((resolve) => {
-      execFile(
-        javaPath,
-        ['-jar', installerPath, '--installClient', gameDir],
-        { cwd: gameDir },
-        (error, _stdout, stderr) => {
-          if (error) {
-            console.warn('NeoForge automated installer notice:', stderr || error.message);
-          }
-          resolve();
-        }
-      );
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('download-progress', {
+      stage: 'neoforge',
+      stageLabel: `Установка профиля NeoForge ${loaderVersion}...`,
+      progressPercent: 75,
     });
   }
+
+  await new Promise<void>((resolve, reject) => {
+    execFile(
+      javaPath || 'java',
+      ['-jar', installerPath, '--installClient', gameDir],
+      { cwd: gameDir, maxBuffer: 10 * 1024 * 1024 },
+      (error, _stdout, stderr) => error ? reject(new Error(`NeoForge не установлен: ${stderr || error.message}`)) : resolve()
+    );
+  });
+
+  if (!fs.existsSync(versionJsonPath)) throw new Error('Установщик NeoForge не создал профиль игры');
 
   return readProfileDetails();
 }

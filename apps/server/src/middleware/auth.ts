@@ -41,7 +41,7 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
 }
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  const apiKey = req.headers['x-admin-key'] || req.query.adminKey;
+  const apiKey = req.headers['x-admin-key'];
   if (apiKey && apiKey === config.adminApiKey) {
     return next();
   }

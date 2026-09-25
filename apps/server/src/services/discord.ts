@@ -73,9 +73,9 @@ export async function fetchDiscordUser(accessToken: string): Promise<DiscordUser
 }
 
 export async function checkGuildMembership(userId: string): Promise<{ isMember: boolean; roles: string[] }> {
-  // If guild checking is disabled / unconfigured, grant pass
+  // Local development may skip guild checks; production must not.
   if (!config.discord.botToken || !config.discord.guildId) {
-    return { isMember: true, roles: [] };
+    return { isMember: process.env.NODE_ENV !== 'production', roles: [] };
   }
 
   try {
@@ -89,7 +89,7 @@ export async function checkGuildMembership(userId: string): Promise<{ isMember: 
 
     if (!response.ok) {
       console.warn(`Discord Guild check warning: ${response.status}`);
-      return { isMember: true, roles: [] }; // fallback to avoid blocking users on Discord API hiccups
+      return { isMember: false, roles: [] };
     }
 
     const member = (await response.json()) as DiscordGuildMember;
@@ -101,7 +101,7 @@ export async function checkGuildMembership(userId: string): Promise<{ isMember: 
     };
   } catch (err) {
     console.error('Error querying Discord Guild API:', err);
-    return { isMember: true, roles: [] };
+    return { isMember: false, roles: [] };
   }
 }
 

@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { Readable, Transform } from 'stream';
+import { pipeline } from 'stream/promises';
 import { DownloadProgress, ModpackFile, ModpackManifest } from '@quiby/shared';
 import { BrowserWindow } from 'electron';
 
@@ -17,6 +19,7 @@ export async function computeFileSha256(filePath: string): Promise<string> {
 
 export async function downloadFile(url: string, destPath: string, onBytes?: (bytes: number) => void): Promise<void> {
   const dir = path.dirname(destPath);
+  const tempPath = `${destPath}.part`;
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -26,23 +29,26 @@ export async function downloadFile(url: string, destPath: string, onBytes?: (byt
     throw new Error(`Failed to download ${url}: ${res.status} ${res.statusText}`);
   }
 
-  const fileStream = fs.createWriteStream(destPath);
-  const reader = res.body?.getReader();
-  if (!reader) {
-    const buffer = Buffer.from(await res.arrayBuffer());
-    fs.writeFileSync(destPath, buffer);
-    if (onBytes) onBytes(buffer.length);
-    return;
+  try {
+    if (!res.body) {
+      const buffer = Buffer.from(await res.arrayBuffer());
+      fs.writeFileSync(tempPath, buffer);
+      onBytes?.(buffer.length);
+    } else {
+      await pipeline(
+        Readable.fromWeb(res.body as any),
+        new Transform({ transform(chunk, _encoding, callback) {
+          onBytes?.(chunk.length);
+          callback(null, chunk);
+        } }),
+        fs.createWriteStream(tempPath)
+      );
+    }
+    fs.renameSync(tempPath, destPath);
+  } catch (error) {
+    await fs.promises.rm(tempPath, { force: true }).catch(() => {});
+    throw error;
   }
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    fileStream.write(Buffer.from(value));
-    if (onBytes) onBytes(value.length);
-  }
-
-  fileStream.end();
 }
 
 export async function syncModpackFiles(
@@ -52,6 +58,17 @@ export async function syncModpackFiles(
   win: BrowserWindow | null,
   protectedModFilenames: Set<string> = new Set()
 ): Promise<void> {
+  const gameRoot = path.resolve(gameDir);
+  const safeFilePath = (relativePath: string) => {
+    const normalized = relativePath.replace(/\\/g, '/');
+    if (normalized.startsWith('/') || /^[A-Za-z]:/.test(normalized) || normalized.split('/').includes('..')) {
+      throw new Error(`Недопустимый путь в манифесте: ${relativePath}`);
+    }
+    const resolved = path.resolve(gameRoot, normalized);
+    if (!resolved.startsWith(gameRoot + path.sep)) throw new Error(`Недопустимый путь в манифесте: ${relativePath}`);
+    return resolved;
+  };
+  for (const file of manifest.files) safeFilePath(file.path);
   const sendProgress = (p: Partial<DownloadProgress>) => {
     if (win && !win.isDestroyed()) {
       win.webContents.send('download-progress', {
@@ -76,7 +93,7 @@ export async function syncModpackFiles(
 
   for (const file of manifest.files) {
     validRelativePaths.add(file.path.replace(/\\/g, '/'));
-    const localPath = path.join(gameDir, file.path);
+    const localPath = safeFilePath(file.path);
 
     if (!fs.existsSync(localPath)) {
       filesToDownload.push(file);
@@ -151,7 +168,7 @@ export async function syncModpackFiles(
   let currentSpeed = 0;
 
   for (const file of filesToDownload) {
-    const destPath = path.join(gameDir, file.path);
+    const destPath = safeFilePath(file.path);
     const downloadUrl = file.downloadUrl?.startsWith('http')
       ? file.downloadUrl
       : `${serverBaseUrl.replace(/\/$/, '')}${file.downloadUrl || `/api/modpack/files/${file.path}`}`;

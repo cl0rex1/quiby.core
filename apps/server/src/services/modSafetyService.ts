@@ -56,6 +56,14 @@ const FORBIDDEN_KEYWORDS = [
   'cheststealer',
 ];
 
+const BLOCKED_FILE_NAMES = [
+  'xray', 'x-ray', 'meteor', 'wurst', 'baritone', 'liquidbounce',
+  'killaura', 'kill-aura', 'autoclicker', 'auto-clicker', 'freecam',
+  'cheststealer', 'seedcracker', 'bleachhack', 'aimbot',
+  'fractureiser', 'token-grabber', 'tokengrabber', 'infostealer',
+  'keylogger', 'ransomware',
+];
+
 const MODRINTH_USER_AGENT = 'quiby-launcher/6.0.0 (security@quiby.fun)';
 
 /**
@@ -67,6 +75,22 @@ export async function verifyMod(
   hashSha1: string
 ): Promise<ModVerificationResult> {
   const normalizedHash = hashSha1.toLowerCase().trim();
+
+  const blockedName = BLOCKED_FILE_NAMES.find((keyword) =>
+    `${name} ${filename}`.toLowerCase().includes(keyword)
+  );
+  if (blockedName) {
+    return {
+      hashSha1: normalizedHash,
+      name,
+      filename,
+      isAllowed: false,
+      status: 'blocked',
+      source: 'none',
+      reason: `Запрещен: в названии обнаружена сигнатура читов или вредоносного ПО (${blockedName})`,
+      categories: ['blocked-name'],
+    };
+  }
 
   // 1. Check local SQLite cache
   const cached = await dbGet<any>(
@@ -271,7 +295,7 @@ export async function submitWhitelistRequest(req: {
                 { name: '📁 Имя файла', value: `\`${req.filename}\``, inline: true },
                 { name: '👤 Игрок', value: req.mc_username || 'Player', inline: true },
                 { name: '🔑 SHA-1 хэш', value: `\`${normalizedHash}\``, inline: false },
-                { name: '🦠 Антивирусный статус', value: '🟢 **Чист** (Проверен встроенным сканером лаунчера перед отправкой)', inline: false },
+                { name: '🦠 Проверка файла', value: 'Файл не передаётся на сервер; его содержимое администрацией ещё не проверено.', inline: false },
                 { name: '💬 Назначение / Причина', value: req.reason || 'Не указана', inline: false },
                 ...(req.project_url ? [{ name: '🔗 Ссылка на проект', value: req.project_url, inline: false }] : []),
               ],

@@ -248,7 +248,7 @@ router.post('/bind-mc', async (req: Request, res: Response) => {
 
 // 4. Dev / Local Test Login
 router.post('/dev-login', async (req: Request, res: Response) => {
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' || (process.env.npm_lifecycle_event !== 'dev' && process.env.ALLOW_DEV_LOGIN !== 'true')) {
     return res.status(403).json({ error: 'Dev login is disabled in production environment' });
   }
   const { username, discordTag } = req.body;
@@ -326,7 +326,7 @@ router.post('/verify-session', async (req: Request, res: Response) => {
     }
 
     const user = await dbGet<any>('SELECT * FROM users WHERE discord_id = ?', [payload.discordId]);
-    if (!user || !user.is_whitelisted) {
+    if (!user || !user.is_whitelisted || user.mc_username.toLowerCase() !== username.toLowerCase() || (uuid && user.uuid.toLowerCase() !== uuid.toLowerCase())) {
       return res.status(403).json({ valid: false, error: 'Player is not whitelisted on quiby.' });
     }
 

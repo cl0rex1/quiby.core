@@ -213,7 +213,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-white font-bold text-sm">
             <Monitor size={16} className="text-purple-400" />
-            <span className="apple-subheading">Быстрые пресеты графики и сборки</span>
+            <span className="apple-subheading">Профили памяти</span>
           </div>
         </div>
 
@@ -226,7 +226,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 ramMaxMb: 4096,
                 ramMinMb: 2048,
                 graphicsPreset: 'potato',
-                modpackProfile: 'clean',
               });
             }}
             className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 press-feedback ${
@@ -236,24 +235,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-lg">🥔</span>
+              <span className="text-lg font-mono">04</span>
               <span className="text-[10px] font-mono text-zinc-400">4 GB</span>
             </div>
             <div>
-              <p className="text-xs font-bold text-white apple-subheading">Пресет: Картошка</p>
-              <p className="text-[10px] text-zinc-500">Чистая сборка, макс. FPS</p>
+              <p className="text-xs font-bold text-white apple-subheading">Минимум</p>
+              <p className="text-[10px] text-zinc-500">4 ГБ для игры</p>
             </div>
           </button>
 
           <button
             type="button"
+            disabled={totalRamGb < 10}
             onClick={() => {
               onUpdateSettings({
                 ...settings,
                 ramMaxMb: 8192,
                 ramMinMb: 4096,
                 graphicsPreset: 'optimal',
-                modpackProfile: 'optimal',
               });
             }}
             className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 press-feedback ${
@@ -263,24 +262,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-lg">⚡</span>
+              <span className="text-lg font-mono">08</span>
               <span className="text-[10px] font-mono text-emerald-400 font-bold">8 GB</span>
             </div>
             <div>
-              <p className="text-xs font-bold text-white apple-subheading">Пресет: Оптимально</p>
-              <p className="text-[10px] text-emerald-400/90">Рекомендовано для Create S6</p>
+              <p className="text-xs font-bold text-white apple-subheading">Оптимально</p>
+              <p className="text-[10px] text-zinc-500">8 ГБ для игры</p>
             </div>
           </button>
 
           <button
             type="button"
+            disabled={totalRamGb < 14}
             onClick={() => {
               onUpdateSettings({
                 ...settings,
                 ramMaxMb: 12288,
                 ramMinMb: 4096,
                 graphicsPreset: 'ultra',
-                modpackProfile: 'full',
               });
             }}
             className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 press-feedback ${
@@ -290,12 +289,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-lg">✨</span>
+              <span className="text-lg font-mono">12</span>
               <span className="text-[10px] font-mono text-purple-400 font-bold">12+ GB</span>
             </div>
             <div>
-              <p className="text-xs font-bold text-white apple-subheading">Пресет: Ультра</p>
-              <p className="text-[10px] text-purple-400/90">Шейдеры и полная сборка</p>
+              <p className="text-xs font-bold text-white apple-subheading">С запасом</p>
+              <p className="text-[10px] text-zinc-500">12 ГБ для игры</p>
             </div>
           </button>
         </div>

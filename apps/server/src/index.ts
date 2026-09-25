@@ -50,7 +50,6 @@ async function bootstrap() {
   const server = app.listen(config.port, config.host, () => {
     console.log(`🚀 quiby.core backend running at http://${config.host}:${config.port}`);
     console.log(`🎮 Target Minecraft: ${config.minecraft.targetGameVersion} (${config.minecraft.targetLoader} ${config.minecraft.targetLoaderVersion})`);
-    console.log(`🔑 Admin API Key: ${config.adminApiKey}`);
   });
 
   server.on('error', (err: any) => {

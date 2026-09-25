@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Play, 
   Shirt, 
@@ -48,7 +48,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
   onClearAllNotifications,
   unreadNotificationsCount = 0,
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
+  const isHovered = true;
 
   const navItems = [
     { id: 'home' as ActiveTab, label: 'Главная', icon: Play, size: 19 },
@@ -69,22 +69,15 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
 
   return (
     <aside
-      onMouseEnter={() => !isNotificationsOpen && setIsHovered(true)}
-      onMouseLeave={() => !isNotificationsOpen && setIsHovered(false)}
-      className={`fixed top-8 left-0 bottom-0 z-40 bg-[#11151f] border-r border-[#252f45] select-none transition-all duration-200 ease-out shadow-xl overflow-hidden ${
-        isNotificationsOpen
-          ? 'w-[310px]'
-          : isHovered
-          ? 'w-60'
-          : 'w-[72px]'
-      }`}
+      className={`launcher-sidebar fixed top-8 left-0 bottom-0 z-40 bg-[#191622] border-r border-[#3a3244] select-none transition-all duration-200 ease-out overflow-hidden ${isNotificationsOpen ? 'w-[310px]' : 'w-44'}`}
     >
       {/* ========================================================= */}
       {/* 1. STANDARD SIDEBAR RAIL VIEW                             */}
       {/* ========================================================= */}
       <div
+        aria-hidden={isNotificationsOpen}
         className={`flex flex-col justify-between h-full w-full py-4 px-2.5 transition-all duration-200 ${
-          isNotificationsOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          isNotificationsOpen ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100'
         }`}
       >
         {/* Top Brand Mark: Letter 'q' (closed) -> Clean Full 'quiby' logo (expanded) */}
@@ -140,7 +133,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
               >
                 {/* Sleek vertical active indicator bar (brass accent) */}
                 {isActive && (
-                  <div className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r bg-[#d4975c]" />
+                  <div className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r bg-[#bb74ff]" />
                 )}
 
                 {/* Fixed icon slot for perfect center alignment */}
@@ -148,7 +141,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                   <Icon
                     size={item.size}
                     strokeWidth={isActive ? 2.5 : 2}
-                    className={isActive ? 'text-[#d4975c]' : ''}
+                    className={isActive ? 'text-[#bb74ff]' : ''}
                   />
                 </div>
 
@@ -179,7 +172,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
             <div className="w-12 h-11 flex items-center justify-center shrink-0 relative">
               <Mail size={18} />
               {unreadNotificationsCount > 0 && (
-                <span className="absolute top-2.5 right-3 w-2 h-2 rounded-full bg-[#d4975c] ring-2 ring-[#11151f]" />
+                <span className="absolute top-2.5 right-3 w-2 h-2 rounded-full bg-[#bb74ff] ring-2 ring-[#191622]" />
               )}
             </div>
             <div
@@ -191,7 +184,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
             >
               <span className="text-xs font-medium">Почта</span>
               {unreadNotificationsCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-[#d4975c]/20 border border-[#d4975c]/30 text-[10px] font-mono text-[#eab683]">
+                <span className="px-1.5 py-0.5 rounded-full bg-[#bb74ff]/20 border border-[#bb74ff]/30 text-[10px] font-mono text-[#d7b6ff]">
                   {unreadNotificationsCount}
                 </span>
               )}
@@ -262,16 +255,17 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
       {/* 2. SOLID INBOX DRAWER                                                     */}
       {/* ========================================================================= */}
       <div
-        className={`absolute inset-0 z-30 flex flex-col bg-[#11151f] p-4 transition-all duration-200 ease-out overflow-hidden ${
+        aria-hidden={!isNotificationsOpen}
+        className={`absolute inset-0 z-30 flex flex-col bg-[#191622] p-4 transition-all duration-200 ease-out overflow-hidden ${
           isNotificationsOpen
-            ? 'opacity-100 translate-x-0 pointer-events-auto'
-            : 'opacity-0 -translate-x-6 pointer-events-none'
+            ? 'visible opacity-100 translate-x-0 pointer-events-auto'
+            : 'invisible opacity-0 -translate-x-6 pointer-events-none'
         }`}
       >
         {/* Top Bar: Title & Quick Actions */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#252f45] shrink-0">
+        <div className="flex items-center justify-between pb-3 border-b border-[#3a3244] shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-surface-800 border border-surface-border flex items-center justify-center text-[#d4975c] shadow-sm">
+            <div className="w-7 h-7 rounded-lg bg-surface-800 border border-surface-border flex items-center justify-center text-[#bb74ff] shadow-sm">
               <Mail size={13} />
             </div>
             <div className="flex items-center gap-1.5">
@@ -315,7 +309,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
         <div className="flex-1 overflow-y-auto space-y-1.5 py-3 pr-1">
           {notifications.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center p-6 text-center text-zinc-500">
-              <Mail size={24} className="opacity-30 mb-2 text-[#d4975c]" />
+              <Mail size={24} className="opacity-30 mb-2 text-[#bb74ff]" />
               <p className="text-xs font-medium text-zinc-300">Нет писем и уведомлений</p>
               <p className="text-[10px] text-zinc-500 mt-0.5">Почтовый ящик пуст</p>
             </div>
@@ -333,7 +327,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                   onClick={() => onSelectNotification?.(n.id)}
                   className={`w-full p-2.5 rounded-xl border text-left cursor-pointer relative group flex flex-col gap-1 press-feedback transition-colors ${
                     isSelected
-                      ? 'bg-surface-800 border-[#d4975c]/40 shadow-sm text-white'
+                      ? 'bg-surface-800 border-[#bb74ff]/40 shadow-sm text-white'
                       : n.read
                       ? 'bg-surface-900 hover:bg-surface-850 border-surface-border text-zinc-400 hover:text-zinc-200'
                       : 'bg-surface-850 hover:bg-surface-800 border-surface-borderLight text-zinc-200'
@@ -341,7 +335,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                 >
                   {/* Unread indicator dot */}
                   {!n.read && (
-                    <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#d4975c] ring-2 ring-[#11151f]" />
+                    <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#bb74ff] ring-2 ring-[#191622]" />
                   )}
 
                   {/* Top status row */}
@@ -378,7 +372,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
         </div>
 
         {/* Bottom Back Button */}
-        <div className="pt-3 border-t border-[#252f45] shrink-0">
+        <div className="pt-3 border-t border-[#3a3244] shrink-0">
           <button
             type="button"
             onClick={onCloseNotifications}

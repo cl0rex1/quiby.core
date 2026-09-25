@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { syncModpackFiles, computeFileSha256 } from '../downloader';
+import http from 'http';
+import crypto from 'crypto';
+import { syncModpackFiles, computeFileSha256, downloadFile } from '../downloader';
 import { ModpackManifest } from '@quiby/shared';
 
 async function runTests() {
@@ -83,6 +85,34 @@ async function runTests() {
     const protectedWithDisabled = new Set(['another-mod.jar.disabled']);
     await syncModpackFiles(mockManifest, tempDir, 'http://localhost:3001', null, protectedWithDisabled);
     assert(fs.existsSync(customMod2Path), 'Mod is preserved when protectedModFilenames contains .disabled variant');
+
+    let rejectedTraversal = false;
+    try {
+      await syncModpackFiles(
+        { ...mockManifest, files: [{ ...mockManifest.files[0], path: '../outside.jar' }] },
+        tempDir,
+        'http://localhost:3001',
+        null
+      );
+    } catch (_) {
+      rejectedTraversal = true;
+    }
+    assert(rejectedTraversal, 'Manifest path traversal is rejected before writing files');
+
+    const payload = Buffer.alloc(2 * 1024 * 1024, 0x5a);
+    const server = http.createServer((_req, res) => res.end(payload));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    try {
+      const port = (server.address() as { port: number }).port;
+      const downloadedPath = path.join(tempDir, 'large-download.jar');
+      await downloadFile(`http://127.0.0.1:${port}/file`, downloadedPath);
+      assert(
+        await computeFileSha256(downloadedPath) === crypto.createHash('sha256').update(payload).digest('hex'),
+        'Download resolves only after the complete file reaches disk'
+      );
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
 
   } catch (err) {
     console.error('Test execution error:', err);

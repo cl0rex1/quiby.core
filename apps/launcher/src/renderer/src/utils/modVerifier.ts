@@ -67,7 +67,6 @@ export const MALWARE_KEYWORDS = [
   'redline',
   'skyrage',
   'kurium',
-  'rat',
   'trojan',
   'backdoor',
   'payload',
@@ -170,6 +169,20 @@ export async function verifyCustomMod(
       source: 'none',
       reason: `Запрещен античитом: обнаружена сигнатура читов (${localScan.signature})`,
       categories: ['cheat', localScan.signature!],
+    };
+  }
+
+  const malwareScan = await scanFileForMalware(file, file.name, rawName);
+  if (!malwareScan.isSafe) {
+    return {
+      hashSha1,
+      name: rawName,
+      filename: file.name,
+      isAllowed: false,
+      status: 'blocked',
+      source: 'none',
+      reason: malwareScan.details || 'Обнаружена известная подозрительная сигнатура',
+      categories: ['malware', malwareScan.threat || 'suspicious'],
     };
   }
 

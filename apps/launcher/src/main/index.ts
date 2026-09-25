@@ -6,12 +6,13 @@ import { AuthSession, LauncherSettings } from '@quiby/shared';
 import { startDiscordOAuthFlow } from './auth/discordAuth';
 import { detectInstalledJava, getRecommendedJava } from './engine/javaDetector';
 import { launchMinecraft, killGameProcess } from './engine/minecraftLauncher';
+import { hashCustomModBytes, requireApprovedCustomMod } from './engine/customModVerification';
 import { initDiscordRpc } from './rpc/discordRpc';
 
 let mainWindow: BrowserWindow | null = null;
 let splashWindow: BrowserWindow | null = null;
 
-const DEFAULT_SERVER_URL = 'http://localhost:3001';
+const DEFAULT_SERVER_URL = (process.env.QUIBY_API_URL || import.meta.env.VITE_QUIBY_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 
 function getDefaultGameDir(): string {
   if (process.platform === 'win32') {
@@ -247,6 +248,27 @@ app.whenReady().then(async () => {
     }
   });
 
+  ipcMain.handle('mods:install', async (_, gameDir: string, filename: string, bytes: Uint8Array) => {
+    if (!/^[^/\\]+\.jar$/i.test(filename) || !bytes?.length || bytes.length > 100 * 1024 * 1024) {
+      throw new Error('Недопустимое имя или размер мода');
+    }
+    const modBytes = Buffer.from(bytes);
+    await requireApprovedCustomMod(filename, hashCustomModBytes(modBytes), modBytes.length, DEFAULT_SERVER_URL);
+    const modsDir = path.join(gameDir?.trim() || getDefaultGameDir(), 'mods');
+    fs.mkdirSync(modsDir, { recursive: true });
+    fs.writeFileSync(path.join(modsDir, filename), modBytes);
+    return true;
+  });
+
+  ipcMain.handle('mods:remove', (_, gameDir: string, filename: string) => {
+    if (!/^[^/\\]+\.jar$/i.test(filename)) throw new Error('Недопустимое имя мода');
+    const modPath = path.join(gameDir?.trim() || getDefaultGameDir(), 'mods', filename);
+    for (const candidate of [modPath, `${modPath}.disabled`]) {
+      if (fs.existsSync(candidate)) fs.unlinkSync(candidate);
+    }
+    return true;
+  });
+
   // 7. Game Launching
   ipcMain.handle(
     'game:launch',
@@ -254,10 +276,17 @@ app.whenReady().then(async () => {
       _,
       session: AuthSession,
       settings: LauncherSettings,
-      serverUrl: string = DEFAULT_SERVER_URL,
-      customModFilenames: string[] = []
+      customModFilenames: string[] = [],
+      disabledCustomModFilenames: string[] = []
     ) => {
-      await launchMinecraft(session, settings, serverUrl, mainWindow, customModFilenames);
+      await launchMinecraft(
+        session,
+        { ...settings, gameDir: settings.gameDir?.trim() || getDefaultGameDir() },
+        DEFAULT_SERVER_URL,
+        mainWindow,
+        customModFilenames,
+        disabledCustomModFilenames
+      );
     }
   );
 

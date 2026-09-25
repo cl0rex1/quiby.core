@@ -25,10 +25,14 @@ export const quibyApi = {
   // Schematics & Shaders
   getSchematics: (gameDir: string) => ipcRenderer.invoke('schematics:list', gameDir),
   getShaderpacks: (gameDir: string) => ipcRenderer.invoke('shaderpacks:list', gameDir),
+  installCustomMod: (gameDir: string, filename: string, bytes: Uint8Array) =>
+    ipcRenderer.invoke('mods:install', gameDir, filename, bytes),
+  removeCustomMod: (gameDir: string, filename: string) =>
+    ipcRenderer.invoke('mods:remove', gameDir, filename),
 
   // Game Engine
-  launchGame: (session: AuthSession, settings: LauncherSettings, serverUrl?: string, customModFilenames?: string[]) =>
-    ipcRenderer.invoke('game:launch', session, settings, serverUrl, customModFilenames),
+  launchGame: (session: AuthSession, settings: LauncherSettings, customModFilenames?: string[], disabledCustomModFilenames?: string[]) =>
+    ipcRenderer.invoke('game:launch', session, settings, customModFilenames, disabledCustomModFilenames),
   killGame: () => ipcRenderer.invoke('game:kill'),
 
   // Event Listeners

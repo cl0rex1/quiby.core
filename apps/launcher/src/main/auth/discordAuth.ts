@@ -1,4 +1,5 @@
 import http from 'http';
+import crypto from 'crypto';
 import { shell } from 'electron';
 import { AuthSession } from '@quiby/shared';
 
@@ -21,6 +22,7 @@ export interface DiscordAuthResult {
 export function startDiscordOAuthFlow(serverBaseUrl: string): Promise<DiscordAuthResult> {
   return new Promise((resolve, reject) => {
     let server: http.Server | null = null;
+    const expectedState = crypto.randomBytes(32).toString('hex');
 
     const cleanup = () => {
       if (server) {
@@ -35,6 +37,13 @@ export function startDiscordOAuthFlow(serverBaseUrl: string): Promise<DiscordAut
       if (urlObj.pathname === '/callback') {
         const code = urlObj.searchParams.get('code');
         const error = urlObj.searchParams.get('error');
+
+        if (urlObj.searchParams.get('state') !== expectedState) {
+          res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('Invalid authorization state. Return to the launcher and try again.');
+          cleanup();
+          return resolve({ needsBinding: false, error: 'Invalid Discord authorization state' });
+        }
 
         if (error || !code) {
           res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -55,7 +64,7 @@ export function startDiscordOAuthFlow(serverBaseUrl: string): Promise<DiscordAut
 
           if (!response.ok) {
             res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(`<html><body style="background:#0b0f17;color:#f87171;font-family:sans-serif;text-align:center;padding-top:50px;"><h2>⚠️ quiby. Access Notice</h2><p>${data.error || 'Access denied'}</p></body></html>`);
+            res.end('<html><body style="background:#0b0f17;color:#f87171;font-family:sans-serif;text-align:center;padding-top:50px;"><h2>quiby. Access denied</h2><p>Return to the launcher for details.</p></body></html>');
             cleanup();
             return resolve({ needsBinding: false, error: data.error });
           }
@@ -82,6 +91,7 @@ export function startDiscordOAuthFlow(serverBaseUrl: string): Promise<DiscordAut
         if (data.url) {
           const discordAuthUrl = new URL(data.url);
           discordAuthUrl.searchParams.set('redirect_uri', `http://localhost:${LOCAL_PORT}/callback`);
+          discordAuthUrl.searchParams.set('state', expectedState);
           shell.openExternal(discordAuthUrl.toString());
         } else {
           cleanup();
