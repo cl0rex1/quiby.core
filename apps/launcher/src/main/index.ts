@@ -7,6 +7,7 @@ import { startDiscordOAuthFlow } from './auth/discordAuth';
 import { detectInstalledJava, getRecommendedJava } from './engine/javaDetector';
 import { launchMinecraft, killGameProcess } from './engine/minecraftLauncher';
 import { hashCustomModBytes, requireApprovedCustomMod } from './engine/customModVerification';
+import { contentDirectory, contentFilePath, installLocalContent, listLocalContent, ContentKind } from './engine/localContent';
 import { initDiscordRpc } from './rpc/discordRpc';
 
 let mainWindow: BrowserWindow | null = null;
@@ -197,55 +198,20 @@ app.whenReady().then(async () => {
   });
 
   // 6. Schematics & Shaders filesystem handlers
-  ipcMain.handle('schematics:list', async (_, gameDir: string) => {
-    const targetDir = path.join(gameDir || getDefaultGameDir(), 'schematics');
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-      return [];
-    }
-    try {
-      const files = fs.readdirSync(targetDir);
-      return files
-        .filter((f) => f.endsWith('.nbt') || f.endsWith('.schem') || f.endsWith('.schematic'))
-        .map((f) => {
-          const stat = fs.statSync(path.join(targetDir, f));
-          return {
-            name: f,
-            filename: f,
-            path: path.join(targetDir, f),
-            size: stat.size,
-            updatedAt: stat.mtimeMs,
-          };
-        });
-    } catch (_) {
-      return [];
-    }
+  for (const kind of ['schematics', 'shaderpacks'] as const) {
+    ipcMain.handle(`${kind}:list`, (_, gameDir: string) => listLocalContent(gameDir?.trim() || getDefaultGameDir(), kind));
+  }
+  ipcMain.handle('content:install', async (_, gameDir: string, kind: ContentKind, filename: string, bytes: Uint8Array) => {
+    await installLocalContent(gameDir?.trim() || getDefaultGameDir(), kind, filename, Buffer.from(bytes));
   });
-
-  ipcMain.handle('shaderpacks:list', async (_, gameDir: string) => {
-    const targetDir = path.join(gameDir || getDefaultGameDir(), 'shaderpacks');
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-      return [];
-    }
-    try {
-      const files = fs.readdirSync(targetDir);
-      return files
-        .filter((f) => f.endsWith('.zip') || fs.statSync(path.join(targetDir, f)).isDirectory())
-        .map((f) => {
-          const stat = fs.statSync(path.join(targetDir, f));
-          return {
-            name: f.replace('.zip', ''),
-            filename: f,
-            path: path.join(targetDir, f),
-            size: stat.size,
-            isDirectory: stat.isDirectory(),
-            updatedAt: stat.mtimeMs,
-          };
-        });
-    } catch (_) {
-      return [];
-    }
+  ipcMain.handle('content:trash', async (_, gameDir: string, kind: ContentKind, filename: string) => {
+    await shell.trashItem(contentFilePath(gameDir?.trim() || getDefaultGameDir(), kind, filename));
+  });
+  ipcMain.handle('content:open-folder', async (_, gameDir: string, kind: ContentKind) => {
+    const dir = contentDirectory(gameDir?.trim() || getDefaultGameDir(), kind);
+    await fs.promises.mkdir(dir, { recursive: true });
+    const error = await shell.openPath(dir);
+    if (error) throw new Error(error);
   });
 
   ipcMain.handle('mods:install', async (_, gameDir: string, filename: string, bytes: Uint8Array) => {

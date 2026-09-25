@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Minus, Square, Copy, X } from 'lucide-react';
+import { MotionToggle } from './MotionProvider';
 import { ServerStatus } from '@quiby/shared';
 
 interface WindowHeaderProps {
@@ -35,7 +36,8 @@ export const WindowHeader: React.FC<WindowHeaderProps> = ({
       </div>
 
       {/* Center: status indicator (e.g. server host ping pill or empty drag area) */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
+        <MotionToggle compact />
         <div className="header-status flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-mono text-zinc-400">
           <span className={serverStatus?.online ? 'status-dot is-online' : 'status-dot'} />
           <span>{serverIp}</span>

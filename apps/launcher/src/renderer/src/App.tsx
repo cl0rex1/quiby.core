@@ -92,6 +92,10 @@ export const App: React.FC = () => {
 
   const handleUpdateSettings = (newSettings: LauncherSettings) => {
     setSettings(newSettings);
+    if (newSettings.autoJoinServer !== undefined) {
+      setAutoConnect(newSettings.autoJoinServer);
+      localStorage.setItem('quiby_auto_connect', String(newSettings.autoJoinServer));
+    }
     if (window.quibyApi) {
       window.quibyApi.saveSettings(newSettings);
     }

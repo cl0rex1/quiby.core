@@ -1,3 +1,4 @@
+import { useMotion } from '../../components/MotionProvider';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ChibiLiveConfig,
@@ -23,11 +24,11 @@ export const ChibiLiveCanvas: React.FC<ChibiLiveCanvasProps> = ({
   size = 280,
   className = '',
 }) => {
+  const { active: motionActive } = useMotion();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [frames, setFrames] = useState<BakedFrame[]>([]);
   const frameIdxRef = useRef(0);
-  const lastTimeRef = useRef(0);
-  const animRafRef = useRef<number>(0);
+  const animationTimerRef = useRef<number>(0);
 
   const fullConfig: ChibiLiveConfig = {
     ...createDefaultChibiConfig(),
@@ -90,7 +91,6 @@ export const ChibiLiveCanvas: React.FC<ChibiLiveCanvasProps> = ({
     if (!ctx) return;
 
     frameIdxRef.current = 0;
-    lastTimeRef.current = 0;
 
     const renderFrame = (curFrame: BakedFrame) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -113,32 +113,24 @@ export const ChibiLiveCanvas: React.FC<ChibiLiveCanvasProps> = ({
 
     renderFrame(frames[0]);
 
-    if (frames.length <= 1) return;
+    if (frames.length <= 1 || !motionActive) return;
 
     const speed = fullConfig.export?.gifSpeed || 0.75;
 
-    const tick = (time: number) => {
-      if (!lastTimeRef.current) lastTimeRef.current = time;
-      const cur = frames[frameIdxRef.current % frames.length];
-      const targetDelay = (cur.delay || 500) / speed;
-
-      if (time - lastTimeRef.current >= targetDelay) {
-        lastTimeRef.current = time;
-        frameIdxRef.current = (frameIdxRef.current + 1) % frames.length;
-        renderFrame(frames[frameIdxRef.current]);
-      }
-
-      animRafRef.current = requestAnimationFrame(tick);
+    const tick = () => {
+      frameIdxRef.current = (frameIdxRef.current + 1) % frames.length;
+      const frame = frames[frameIdxRef.current];
+      renderFrame(frame);
+      animationTimerRef.current = window.setTimeout(tick, (frame.delay || 500) / speed);
     };
-
-    animRafRef.current = requestAnimationFrame(tick);
+    animationTimerRef.current = window.setTimeout(tick, (frames[0].delay || 500) / speed);
 
     return () => {
-      if (animRafRef.current) {
-        cancelAnimationFrame(animRafRef.current);
+      if (animationTimerRef.current) {
+        window.clearTimeout(animationTimerRef.current);
       }
     };
-  }, [frames, fullConfig.export?.gifSpeed]);
+  }, [frames, fullConfig.export?.gifSpeed, motionActive]);
 
   return (
     <div className={`relative flex items-center justify-center ${className}`}>

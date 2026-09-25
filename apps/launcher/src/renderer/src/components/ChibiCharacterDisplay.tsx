@@ -1,3 +1,4 @@
+import { useMotion } from './MotionProvider';
 import React, { useEffect, useRef, useState } from 'react';
 import { CapePreset, DEFAULT_SKINS } from '../utils/chibiRenderer';
 import {
@@ -26,11 +27,11 @@ export const ChibiCharacterDisplay: React.FC<ChibiCharacterDisplayProps> = ({
   size = 320,
   showShadow = true,
 }) => {
+  const { active: motionActive } = useMotion();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [frames, setFrames] = useState<BakedFrame[]>([]);
   const frameIdxRef = useRef(0);
-  const lastTimeRef = useRef(0);
-  const animRafRef = useRef<number>(0);
+  const animationTimerRef = useRef<number>(0);
 
   const activeDefaultSkin = DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length];
   const isDefaultSteve = activeDefaultSkin?.id === 'steve';
@@ -51,8 +52,8 @@ export const ChibiCharacterDisplay: React.FC<ChibiCharacterDisplayProps> = ({
       const config: ChibiLiveConfig = {
         ...createDefaultChibiConfig(),
         model: {
-          bodyType: 'steve',
-          resolved: 'steve',
+          bodyType,
+          resolved: bodyType,
         },
         style: 'live',
         detail: 'blocky',
@@ -98,7 +99,6 @@ export const ChibiCharacterDisplay: React.FC<ChibiCharacterDisplayProps> = ({
     if (!ctx) return;
 
     frameIdxRef.current = 0;
-    lastTimeRef.current = 0;
 
     const renderScene = (curFrame: BakedFrame) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -183,32 +183,24 @@ export const ChibiCharacterDisplay: React.FC<ChibiCharacterDisplayProps> = ({
 
     renderScene(frames[0]);
 
-    if (frames.length <= 1) return;
+    if (frames.length <= 1 || !motionActive) return;
 
     const gifSpeed = 0.75;
 
-    const tick = (time: number) => {
-      if (!lastTimeRef.current) lastTimeRef.current = time;
-      const cur = frames[frameIdxRef.current % frames.length];
-      const targetDelay = (cur.delay || 500) / gifSpeed;
-
-      if (time - lastTimeRef.current >= targetDelay) {
-        lastTimeRef.current = time;
-        frameIdxRef.current = (frameIdxRef.current + 1) % frames.length;
-        renderScene(frames[frameIdxRef.current]);
-      }
-
-      animRafRef.current = requestAnimationFrame(tick);
+    const tick = () => {
+      frameIdxRef.current = (frameIdxRef.current + 1) % frames.length;
+      const frame = frames[frameIdxRef.current];
+      renderScene(frame);
+      animationTimerRef.current = window.setTimeout(tick, (frame.delay || 500) / gifSpeed);
     };
-
-    animRafRef.current = requestAnimationFrame(tick);
+    animationTimerRef.current = window.setTimeout(tick, (frames[0].delay || 500) / gifSpeed);
 
     return () => {
-      if (animRafRef.current) {
-        cancelAnimationFrame(animRafRef.current);
+      if (animationTimerRef.current) {
+        window.clearTimeout(animationTimerRef.current);
       }
     };
-  }, [frames, selectedCape, showShadow]);
+  }, [frames, selectedCape, showShadow, motionActive]);
 
   return (
     <div className="relative flex flex-col items-center justify-center">

@@ -3,6 +3,7 @@ import { ArrowUpRight, Check, Copy, Shirt } from 'lucide-react';
 import { AuthSession, ModpackManifest, ServerStatus } from '@quiby/shared';
 import { DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
 import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
+import { usePointerDepth } from '../hooks/usePointerDepth';
 import quibySeasonLogo from '../assets/quiby_season6_logo.png';
 
 interface CharacterStageProps {
@@ -37,6 +38,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
   onOpenLogin,
   onOpenNews,
 }) => {
+  const depth = usePointerDepth<HTMLDivElement>();
   const [copied, setCopied] = useState(false);
   const skinName = customSkinName || DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve';
   const hours = Math.floor(totalPlaytimeSeconds / 3600);
@@ -55,11 +57,11 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
   };
 
   return (
-    <div className="launcher-home">
+    <div {...depth} className="launcher-home view-enter">
       <div className="home-heading">
         <div>
           <p className="home-kicker">QUIBY / СЕЗОН 06</p>
-          <h1>Готов к игре?</h1>
+          <h1>Твой мир. Твой ход.</h1>
         </div>
         <button type="button" onClick={copyIp} className="home-address" title="Скопировать адрес сервера">
           <span className={serverStatus?.online ? 'status-dot is-online' : 'status-dot'} />
@@ -75,7 +77,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
             <span>{session ? 'АККАУНТ ПОДКЛЮЧЁН' : 'ГОСТЬ'}</span>
           </div>
           <button type="button" className="pilot-figure" onClick={onOpenWardrobe} title="Открыть гардероб">
-            <span className="pilot-figure-number" aria-hidden="true">06</span>
+            <span className="pilot-plinth" aria-hidden="true" /><span className="pilot-figure-number" aria-hidden="true">06</span>
             <ChibiCharacterDisplay
               customSkinImg={customSkinImg}
               activeDefaultSkinIdx={activeDefaultSkinIdx}

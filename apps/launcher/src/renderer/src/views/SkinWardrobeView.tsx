@@ -190,12 +190,14 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   const oldestSkinToReplace = library.length >= 6 ? library[library.length - 1] : null;
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row h-full overflow-hidden p-6 md:p-8 gap-6 md:gap-8 select-none z-10 relative">
+    <div className="wardrobe-page view-enter">
+      <header className="page-heading"><div><p className="page-kicker">ТВОЙ ПЕРСОНАЖ</p><h1>Будь собой.</h1><p>Скины, детали и узнаваемый силуэт.</p></div><span className="content-edition">ГАРДЕРОБ / S6</span></header>
+      <div className="wardrobe-layout">
       {/* Full-Window Drag & Drop Overlay */}
       {isDragging && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md border-4 border-dashed border-purple-500 p-8 pointer-events-none animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90  border-4 border-dashed border-[#bb74ff] p-8 pointer-events-none animate-in fade-in duration-150">
           <div className="flex flex-col items-center gap-3.5 p-8 rounded-3xl surface-panel shadow-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300">
+            <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-[#bb74ff]/30 flex items-center justify-center text-purple-300">
               <Upload size={32} className="animate-bounce" />
             </div>
             <p className="text-base font-bold text-white apple-heading">Отпустите скин (.png) здесь</p>
@@ -206,7 +208,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
       {/* Confirmation Modal when Collection is Full (6/6) */}
       {pendingSkin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90  p-4 animate-in fade-in duration-200">
           <div className="surface-panel rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -281,7 +283,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
       {/* Left Column: Character Stage Preview with Glass Depth */}
       <div className="flex-[1.1] flex flex-col items-center justify-center surface-panel rounded-3xl p-6 relative overflow-hidden">
         {/* Luminous stage light bloom */}
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_65%,rgba(168,85,247,0.12)_0%,transparent_65%)]" />
+        <div className="absolute inset-0 pointer-events-none wardrobe-stage-grid" />
 
         {/* Live Chibi Character */}
         <div className="relative z-10 flex flex-col items-center">
@@ -329,7 +331,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
           className="group flex items-center justify-between p-4 rounded-2xl surface-card cursor-pointer press-feedback"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-300 group-hover:text-white transition-colors shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-[#bb74ff]/25 flex items-center justify-center text-purple-300 group-hover:text-white transition-colors shadow-sm">
               <Upload size={16} />
             </div>
             <div className="flex flex-col text-left">
@@ -502,6 +504,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

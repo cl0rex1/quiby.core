@@ -1,302 +1,337 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Sliders, 
-  Cpu, 
-  Folder, 
-  RefreshCw, 
-  FolderOpen, 
-  Monitor 
+import React, { useEffect, useState } from 'react';
+import {
+  Cpu,
+  FolderOpen,
+  RefreshCw,
+  Monitor,
+  ArrowUpRight,
+  Check,
+  SlidersHorizontal,
+  Waves,
 } from 'lucide-react';
 import { LauncherSettings } from '@quiby/shared';
 import { RamSlider } from '../components/RamSlider';
+import { MotionToggle, useMotion } from '../components/MotionProvider';
 
 interface SettingsViewProps {
   settings: LauncherSettings;
   onUpdateSettings: (newSettings: LauncherSettings) => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({
-  settings,
-  onUpdateSettings,
-}) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSettings }) => {
+  const [section, setSection] = useState<'game' | 'appearance' | 'files'>('game');
   const [totalRamGb, setTotalRamGb] = useState(16);
-  const [javaList, setJavaList] = useState<any[]>([]);
+  const [javaList, setJavaList] = useState<Array<{ path: string; version: number; versionString: string }>>(
+    [],
+  );
   const [detectingJava, setDetectingJava] = useState(false);
-
-  useEffect(() => {
-    handleDetectJava();
-  }, []);
-
-  const handleDetectJava = async () => {
+  const [error, setError] = useState('');
+  const { reduced, systemReduced } = useMotion();
+  const update = (patch: Partial<LauncherSettings>) => onUpdateSettings({ ...settings, ...patch });
+  const detectJava = async () => {
+    if (!window.quibyApi) return;
     setDetectingJava(true);
+    setError('');
     try {
-      const res = await window.quibyApi?.detectJava();
-      if (res) {
-        setJavaList(res.installations || []);
-        if (res.totalRamMb) {
-          setTotalRamGb(Math.round(res.totalRamMb / 1024));
-        }
-      }
-    } catch (_) {}
-    finally {
+      const res = await window.quibyApi.detectJava();
+      setJavaList(res.installations || []);
+      if (res.totalRamMb) setTotalRamGb(Math.round(res.totalRamMb / 1024));
+    } catch {
+      setError('Не удалось найти Java. Укажите путь вручную.');
+    } finally {
       setDetectingJava(false);
     }
   };
-
-  const handleBrowseJava = async () => {
-    const selected = await window.quibyApi?.selectJavaPath();
-    if (selected) {
-      onUpdateSettings({ ...settings, javaPath: selected });
-    }
-  };
-
-  const handleBrowseGameDir = async () => {
-    const selected = await window.quibyApi?.selectGameDir();
-    if (selected) {
-      onUpdateSettings({ ...settings, gameDir: selected });
+  useEffect(() => {
+    void detectJava();
+  }, []);
+  const browse = async (kind: 'java' | 'game') => {
+    try {
+      const selected =
+        kind === 'java' ? await window.quibyApi?.selectJavaPath() : await window.quibyApi?.selectGameDir();
+      if (selected) update(kind === 'java' ? { javaPath: selected } : { gameDir: selected });
+    } catch {
+      setError('Не удалось открыть выбор файла. Попробуйте ещё раз.');
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto p-8 space-y-6 select-none z-10">
-      {/* Header with Apple Typography */}
-      <div className="flex items-center justify-between">
+    <div className="settings-page view-enter">
+      <header className="page-heading">
         <div>
-          <h2 className="text-xl font-extrabold text-white flex items-center gap-2.5 apple-heading">
-            <Sliders className="text-zinc-400" size={22} />
-            <span>Настройки лаунчера</span>
-          </h2>
-          <p className="text-xs text-zinc-500 font-mono mt-0.5 apple-body">
-            Память RAM, среда Java 21 и параметры запуска
-          </p>
+          <p className="page-kicker">ТВОЁ ПРОСТРАНСТВО</p>
+          <h1>Под тебя.</h1>
+          <p>Комфорт в деталях. Всё сохраняется автоматически.</p>
         </div>
-      </div>
-
-      {/* 1. Interactive RAM Memory Slider */}
-      <RamSlider
-        ramMb={settings.ramMaxMb}
-        totalSystemRamGb={totalRamGb}
-        onChange={(ramMb) => {
-          onUpdateSettings({
-            ...settings,
-            ramMaxMb: ramMb,
-            ramMinMb: Math.min(settings.ramMinMb, ramMb),
-          });
-        }}
-      />
-
-      {/* 2. Java 21 Runtime Card (macOS Settings Group Style) */}
-      <div className="surface-panel rounded-3xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-white font-bold text-sm">
-            <Cpu size={16} className="text-zinc-400" />
-            <span className="apple-subheading">Исполняемая среда Java 21</span>
-          </div>
-          <button
-            type="button"
-            onClick={handleDetectJava}
-            disabled={detectingJava}
-            className="flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white px-3 py-1 rounded-full bg-zinc-850 border border-white/10 hover:border-white/20 transition-colors cursor-pointer press-feedback shadow-sm"
-          >
-            <RefreshCw size={12} className={detectingJava ? 'animate-spin' : ''} />
-            <span className="apple-body">Автопоиск</span>
-          </button>
-        </div>
-
-        <div className="space-y-3">
-          {javaList.length > 0 && (
-            <select
-              value={settings.javaPath}
-              onChange={(e) => onUpdateSettings({ ...settings, javaPath: e.target.value })}
-              className="w-full bg-zinc-900/90 border border-white/10 rounded-2xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-white/30 cursor-pointer transition-colors backdrop-blur-md"
+        <span className="quiet-status">
+          <Check size={13} /> Автосохранение
+        </span>
+      </header>
+      <div className="settings-layout">
+        <nav className="settings-nav" aria-label="Разделы настроек">
+          {(
+            [
+              ['game', 'Игра', Monitor],
+              ['appearance', 'Интерфейс', Waves],
+              ['files', 'Файлы и Java', Cpu],
+            ] as const
+          ).map(([id, label, Icon]) => (
+            <button
+              type="button"
+              key={id}
+              aria-current={section === id ? 'page' : undefined}
+              onClick={() => setSection(id)}
             >
-              {javaList.map((j, idx) => (
-                <option key={idx} value={j.path}>
-                  {j.versionString} (Java {j.version}) — {j.path}
-                </option>
-              ))}
-            </select>
+              <Icon size={17} />
+              <span>{label}</span>
+              <ArrowUpRight size={13} />
+            </button>
+          ))}
+          <div className="settings-note">
+            <span>QUIBY CORE</span>
+            <p>
+              Minecraft 1.21.1
+              <br />
+              NeoForge · Java 21
+            </p>
+          </div>
+        </nav>
+        <div className="settings-body view-enter" key={section}>
+          {error && (
+            <p className="inline-error" role="alert">
+              {error}
+            </p>
           )}
-
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={settings.javaPath}
-              onChange={(e) => onUpdateSettings({ ...settings, javaPath: e.target.value })}
-              placeholder="java или /usr/bin/java"
-              className="flex-1 bg-zinc-900/90 border border-white/10 focus:border-white/30 rounded-2xl px-4 py-2 text-xs text-white font-mono focus:outline-none transition-colors backdrop-blur-md"
-            />
-            <button
-              type="button"
-              onClick={handleBrowseJava}
-              className="px-4 py-2 rounded-2xl bg-zinc-850 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-xs text-zinc-300 hover:text-white transition-colors cursor-pointer press-feedback shadow-sm"
-            >
-              Обзор...
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Game Directory & Resolution Group */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Directory */}
-        <div className="surface-panel rounded-3xl p-6 space-y-3">
-          <div className="flex items-center gap-2 text-white font-bold text-xs">
-            <Folder size={16} className="text-zinc-400" />
-            <span className="apple-subheading">Папка с игрой</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={settings.gameDir}
-              onChange={(e) => onUpdateSettings({ ...settings, gameDir: e.target.value })}
-              className="flex-1 bg-zinc-900/90 border border-white/10 focus:border-white/30 rounded-2xl px-4 py-2 text-xs text-white font-mono focus:outline-none truncate transition-colors backdrop-blur-md"
-            />
-            <button
-              type="button"
-              onClick={handleBrowseGameDir}
-              className="px-4 py-2 rounded-2xl bg-zinc-850 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-xs text-zinc-300 hover:text-white transition-colors cursor-pointer press-feedback shadow-sm"
-            >
-              Обзор
-            </button>
-            <button
-              type="button"
-              onClick={() => window.quibyApi?.openPath(settings.gameDir)}
-              className="p-2 rounded-2xl bg-zinc-850 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white transition-colors cursor-pointer press-feedback shadow-sm"
-              title="Открыть папку"
-            >
-              <FolderOpen size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* Resolution */}
-        <div className="surface-panel rounded-3xl p-6 space-y-3">
-          <div className="flex items-center gap-2 text-white font-bold text-xs">
-            <Monitor size={16} className="text-zinc-400" />
-            <span className="apple-subheading">Разрешение окна</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                value={settings.windowWidth}
-                onChange={(e) => onUpdateSettings({ ...settings, windowWidth: parseInt(e.target.value, 10) || 1280 })}
-                className="w-20 bg-zinc-900/90 border border-white/10 focus:border-white/30 rounded-2xl px-2.5 py-2 text-xs text-white font-mono text-center transition-colors backdrop-blur-md"
+          {section === 'game' && (
+            <>
+              <RamSlider
+                ramMb={settings.ramMaxMb}
+                totalSystemRamGb={totalRamGb}
+                onChange={(ramMb) =>
+                  update({ ramMaxMb: ramMb, ramMinMb: Math.min(settings.ramMinMb, ramMb) })
+                }
               />
-              <span className="text-zinc-500">×</span>
-              <input
-                type="number"
-                value={settings.windowHeight}
-                onChange={(e) => onUpdateSettings({ ...settings, windowHeight: parseInt(e.target.value, 10) || 720 })}
-                className="w-20 bg-zinc-900/90 border border-white/10 focus:border-white/30 rounded-2xl px-2.5 py-2 text-xs text-white font-mono text-center transition-colors backdrop-blur-md"
-              />
-            </div>
-
-            <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer ml-auto hover:text-white transition-colors press-feedback">
-              <input
-                type="checkbox"
-                checked={settings.fullscreen}
-                onChange={(e) => onUpdateSettings({ ...settings, fullscreen: e.target.checked })}
-                className="rounded accent-white cursor-pointer"
-              />
-              <span className="apple-body">Полноэкранный</span>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. Presets & Fast-Connect Group */}
-      <div className="surface-panel rounded-3xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-white font-bold text-sm">
-            <Monitor size={16} className="text-purple-400" />
-            <span className="apple-subheading">Профили памяти</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              onUpdateSettings({
-                ...settings,
-                ramMaxMb: 4096,
-                ramMinMb: 2048,
-                graphicsPreset: 'potato',
-              });
-            }}
-            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 press-feedback ${
-              settings.graphicsPreset === 'potato'
-                ? 'bg-zinc-800/90 border-white/30 ring-1 ring-white/20'
-                : 'bg-zinc-900/40 hover:bg-zinc-900/80 border-white/5 text-zinc-400'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-mono">04</span>
-              <span className="text-[10px] font-mono text-zinc-400">4 GB</span>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-white apple-subheading">Минимум</p>
-              <p className="text-[10px] text-zinc-500">4 ГБ для игры</p>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            disabled={totalRamGb < 10}
-            onClick={() => {
-              onUpdateSettings({
-                ...settings,
-                ramMaxMb: 8192,
-                ramMinMb: 4096,
-                graphicsPreset: 'optimal',
-              });
-            }}
-            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 press-feedback ${
-              settings.graphicsPreset === 'optimal' || !settings.graphicsPreset
-                ? 'bg-zinc-800/90 border-emerald-400/40 ring-1 ring-emerald-400/30'
-                : 'bg-zinc-900/40 hover:bg-zinc-900/80 border-white/5 text-zinc-400'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-mono">08</span>
-              <span className="text-[10px] font-mono text-emerald-400 font-bold">8 GB</span>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-white apple-subheading">Оптимально</p>
-              <p className="text-[10px] text-zinc-500">8 ГБ для игры</p>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            disabled={totalRamGb < 14}
-            onClick={() => {
-              onUpdateSettings({
-                ...settings,
-                ramMaxMb: 12288,
-                ramMinMb: 4096,
-                graphicsPreset: 'ultra',
-              });
-            }}
-            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 press-feedback ${
-              settings.graphicsPreset === 'ultra'
-                ? 'bg-zinc-800/90 border-purple-400/40 ring-1 ring-purple-400/30'
-                : 'bg-zinc-900/40 hover:bg-zinc-900/80 border-white/5 text-zinc-400'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-mono">12</span>
-              <span className="text-[10px] font-mono text-purple-400 font-bold">12+ GB</span>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-white apple-subheading">С запасом</p>
-              <p className="text-[10px] text-zinc-500">12 ГБ для игры</p>
-            </div>
-          </button>
+              <div className="memory-presets" aria-label="Профили памяти">
+                {(
+                  [
+                    { gb: 4, name: 'Легко' },
+                    { gb: 8, name: 'Сбалансированно' },
+                    { gb: 12, name: 'С запасом' },
+                  ] as const
+                ).map(({ gb, name }) => (
+                  <button
+                    key={gb}
+                    type="button"
+                    disabled={totalRamGb < gb + 2}
+                    aria-pressed={settings.ramMaxMb === gb * 1024}
+                    onClick={() => update({ ramMaxMb: gb * 1024, ramMinMb: Math.min(4096, gb * 512) })}
+                  >
+                    <span>
+                      <strong>{gb}</strong> ГБ
+                    </span>
+                    <small>{name}</small>
+                    {settings.ramMaxMb === gb * 1024 && <Check size={13} />}
+                  </button>
+                ))}
+              </div>
+              <section className="settings-group">
+                <div className="settings-group-heading">
+                  <Monitor size={17} />
+                  <h2>Окно игры</h2>
+                </div>
+                <div className="setting-row">
+                  <div>
+                    <strong>Разрешение</strong>
+                    <p>Размер окна Minecraft в пикселях.</p>
+                  </div>
+                  <div className="resolution-fields">
+                    <input
+                      aria-label="Ширина окна"
+                      type="number"
+                      min={640}
+                      max={7680}
+                      value={settings.windowWidth}
+                      onChange={(e) => {
+                        const n = Number(e.target.value);
+                        if (n > 0) update({ windowWidth: n });
+                      }}
+                    />
+                    <span>×</span>
+                    <input
+                      aria-label="Высота окна"
+                      type="number"
+                      min={360}
+                      max={4320}
+                      value={settings.windowHeight}
+                      onChange={(e) => {
+                        const n = Number(e.target.value);
+                        if (n > 0) update({ windowHeight: n });
+                      }}
+                    />
+                  </div>
+                </div>
+                <label className="setting-row">
+                  <div>
+                    <strong>На весь экран</strong>
+                    <p>Запускать Minecraft в полноэкранном режиме.</p>
+                  </div>
+                  <input
+                    className="setting-switch"
+                    type="checkbox"
+                    checked={settings.fullscreen}
+                    onChange={(e) => update({ fullscreen: e.target.checked })}
+                  />
+                </label>
+                <label className="setting-row">
+                  <div>
+                    <strong>Сразу на сервер</strong>
+                    <p>Подключаться после запуска игры.</p>
+                  </div>
+                  <input
+                    className="setting-switch"
+                    type="checkbox"
+                    checked={settings.autoJoinServer !== false}
+                    onChange={(e) => update({ autoJoinServer: e.target.checked })}
+                  />
+                </label>
+              </section>
+            </>
+          )}
+          {section === 'appearance' && (
+            <>
+              <section className="motion-showcase">
+                <div className="motion-sample" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </div>
+                <div>
+                  <span className="page-kicker">ONYX / MOTION</span>
+                  <h2>
+                    Глубина.
+                    <br />
+                    Без лишнего.
+                  </h2>
+                  <p>
+                    {reduced
+                      ? 'Спокойный интерфейс. Пространственные эффекты и движение персонажей отключены.'
+                      : 'Короткие переходы и объём реагируют на действия. В фоне анимации приостанавливаются.'}
+                  </p>
+                </div>
+              </section>
+              <section className="settings-group">
+                <div className="setting-row">
+                  <div>
+                    <strong>Уменьшить движение</strong>
+                    <p>
+                      {systemReduced
+                        ? 'Включено в настройках операционной системы.'
+                        : 'Отключает наклоны, появления и анимацию персонажа.'}
+                    </p>
+                  </div>
+                  <MotionToggle />
+                </div>
+                <div className="setting-row">
+                  <div>
+                    <strong>Onyx Black</strong>
+                    <p>Нейтральные поверхности. Фиолетовый для акцентов.</p>
+                  </div>
+                  <div className="theme-swatches" aria-label="Чёрный, графитовый, фиолетовый">
+                    <i />
+                    <i />
+                    <i />
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
+          {section === 'files' && (
+            <>
+              <section className="settings-group">
+                <div className="settings-group-heading">
+                  <Cpu size={17} />
+                  <h2>Среда Java</h2>
+                  <button
+                    className="ui-button"
+                    type="button"
+                    disabled={detectingJava || !window.quibyApi}
+                    onClick={detectJava}
+                  >
+                    <RefreshCw size={13} className={detectingJava ? 'animate-spin' : ''} />
+                    {detectingJava ? 'Поиск…' : 'Найти Java'}
+                  </button>
+                </div>
+                <p className="section-copy">
+                  Для сборки нужна Java 21. Выберите установленную версию или укажите путь.
+                </p>
+                {javaList.length > 0 && (
+                  <select
+                    aria-label="Установленные версии Java"
+                    value={settings.javaPath}
+                    onChange={(e) => update({ javaPath: e.target.value })}
+                  >
+                    <option value={settings.javaPath}>{settings.javaPath}</option>
+                    {javaList
+                      .filter((j) => j.path !== settings.javaPath)
+                      .map((j) => (
+                        <option key={j.path} value={j.path}>
+                          {j.versionString} — {j.path}
+                        </option>
+                      ))}
+                  </select>
+                )}
+                <label className="field-label" htmlFor="java-path">
+                  Исполняемый файл
+                </label>
+                <div className="path-field">
+                  <input
+                    id="java-path"
+                    value={settings.javaPath}
+                    onChange={(e) => update({ javaPath: e.target.value })}
+                    placeholder="java или /usr/bin/java"
+                  />
+                  <button className="ui-button" onClick={() => browse('java')} disabled={!window.quibyApi}>
+                    Выбрать
+                  </button>
+                </div>
+              </section>
+              <section className="settings-group">
+                <div className="settings-group-heading">
+                  <FolderOpen size={17} />
+                  <h2>Папка игры</h2>
+                </div>
+                <p className="section-copy">Здесь хранятся сборка, шейдеры и схематики.</p>
+                <label className="field-label" htmlFor="game-dir">
+                  Расположение
+                </label>
+                <div className="path-field">
+                  <input
+                    id="game-dir"
+                    value={settings.gameDir}
+                    onChange={(e) => update({ gameDir: e.target.value })}
+                    placeholder="Папка по умолчанию"
+                  />
+                  <button className="ui-button" onClick={() => browse('game')} disabled={!window.quibyApi}>
+                    Выбрать
+                  </button>
+                </div>
+              </section>
+              <details className="settings-group">
+                <summary>
+                  <SlidersHorizontal size={15} /> Дополнительные параметры Java
+                </summary>
+                <label className="field-label" htmlFor="jvm-args">
+                  Аргументы JVM
+                </label>
+                <input
+                  id="jvm-args"
+                  value={settings.customJvmArgs}
+                  onChange={(e) => update({ customJvmArgs: e.target.value })}
+                  placeholder="Необязательно"
+                />
+              </details>
+            </>
+          )}
         </div>
       </div>
     </div>

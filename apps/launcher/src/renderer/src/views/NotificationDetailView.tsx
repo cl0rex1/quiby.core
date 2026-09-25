@@ -24,8 +24,8 @@ export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({ 
   };
 
   return (
-    <div className="message-hub flex-1 h-full overflow-y-auto p-6 md:p-8">
-      <header className="message-hub-header">
+    <div className="message-hub view-enter flex-1 h-full overflow-y-auto p-6 md:p-8">
+      <header className="message-hub-header page-heading">
         <div><p className="home-kicker">QUIBY / СВЯЗЬ</p><h1>Новости и уведомления</h1></div>
         <div className="message-hub-tabs" role="tablist" aria-label="Разделы сообщений">
           <button type="button" role="tab" aria-selected={tab === 'news'} onClick={() => setTab('news')}><Newspaper size={15} /> Новости</button>

@@ -15,7 +15,7 @@
   --color-neutral-dot: #727277;
   --color-warning: #efb08f;
   --color-overlay: rgb(8 8 9 / 88%);
-  --font-poster: 'Oswald', 'Arial Narrow', sans-serif;
+  --font-poster: 'Unbounded', 'Golos Text', sans-serif;
   --font-display: 'Unbounded', 'Golos Text', sans-serif;
   --font-body: 'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
@@ -24,7 +24,7 @@
   --space-md: 1rem;
   --space-lg: 1.5rem;
   --space-xl: 2rem;
-  --radius-card: 12px;
+  --radius-card: 16px;
   --radius-input: 8px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-short: 180ms;

@@ -85,10 +85,11 @@ export const ModsView: React.FC<ModsViewProps> = ({
   const [activeWhitelistMod, setActiveWhitelistMod] = useState<CustomModItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const officialFiles = manifest?.files || [];
+  const officialFiles = (manifest?.files || []).filter(file => /^mods\/.*\.jar$/i.test(file.path.replace(/\\/g, '/')));
 
   // Window-wide drag & drop listener for .jar files
   useEffect(() => {
+    if (contentCategory !== 'mods') return;
     let dragCounter = 0;
 
     const handleDragEnter = (e: DragEvent) => {
@@ -135,7 +136,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
       window.removeEventListener('dragleave', handleDragLeave);
       window.removeEventListener('drop', handleDrop);
     };
-  }, [customMods]);
+  }, [customMods, contentCategory]);
 
   const handleFiles = (files: FileList | File[]) => {
     Array.from(files).forEach((file) => {
@@ -367,7 +368,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
   ];
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden p-5 md:p-7 space-y-4 select-none z-10 relative">
+    <div className="content-page view-enter">
       {/* Hidden File Input */}
       <input
         ref={fileInputRef}
@@ -382,66 +383,10 @@ export const ModsView: React.FC<ModsViewProps> = ({
         }}
       />
 
-      {/* Top Header: Title & Content Category Switcher */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
-        <div>
-          <h1 className="text-xl font-black text-white flex items-center gap-2.5 tracking-tight">
-            {contentCategory === 'mods' && <Package className="text-[#bb74ff]" size={22} />}
-            {contentCategory === 'schematics' && <Layers className="text-purple-400" size={22} />}
-            {contentCategory === 'shaders' && <Sun className="text-amber-400" size={22} />}
-            <span>
-              {contentCategory === 'mods' && 'Модификации'}
-              {contentCategory === 'schematics' && 'Схематики Create'}
-              {contentCategory === 'shaders' && 'Шейдерпаки'}
-            </span>
-          </h1>
-          <p className="text-xs text-zinc-400 font-mono mt-0.5">
-            Minecraft 1.21.1 NeoForge • Season VI Content Hub
-          </p>
-        </div>
-
-        {/* Master Category Selector */}
-        <div className="inline-flex p-1 rounded-2xl bg-surface-900 border border-surface-border shadow-inner gap-1">
-          <button
-            type="button"
-            onClick={() => setContentCategory('mods')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
-              contentCategory === 'mods'
-                ? 'bg-surface-800 text-white border border-[#bb74ff]/40 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <Package size={13} className={contentCategory === 'mods' ? 'text-[#bb74ff]' : ''} />
-            <span>Моды</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setContentCategory('schematics')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
-              contentCategory === 'schematics'
-                ? 'bg-surface-800 text-white border border-[#bb74ff]/40 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <Layers size={13} className="text-purple-400" />
-            <span>Схематики</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setContentCategory('shaders')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
-              contentCategory === 'shaders'
-                ? 'bg-surface-800 text-white border border-[#bb74ff]/40 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <Sun size={13} className="text-amber-400" />
-            <span>Шейдеры</span>
-          </button>
-        </div>
-      </div>
+      <header className="page-heading"><div><p className="page-kicker">БИБЛИОТЕКА QUIBY</p><h1>Твой контент.</h1><p>Больше возможностей для твоего мира.</p></div><span className="content-edition">1.21.1 / NEOFORGE</span></header>
+      <nav className="content-category-nav" aria-label="Тип контента">
+        {([['mods', 'Моды', 'Механики и возможности', Package], ['shaders', 'Шейдеры', 'Свет и атмосфера', Sun], ['schematics', 'Схематики', 'Идеи и постройки', Layers]] as const).map(([id, label, description, Icon]) => <button key={id} type="button" aria-current={contentCategory === id ? 'page' : undefined} onClick={() => { setContentCategory(id); onUpdateSelectedModIds([]); }}><Icon size={19}/><span><strong>{label}</strong><small>{description}</small></span><span className="category-arrow">↗</span></button>)}
+      </nav>
 
       {contentCategory === 'schematics' ? (
         <SchematicsExplorer gameDir={gameDir} onNotify={onNotify} />
@@ -449,34 +394,12 @@ export const ModsView: React.FC<ModsViewProps> = ({
         <ShadersExplorer gameDir={gameDir} onNotify={onNotify} />
       ) : (
         <>
-          {/* In-Context Sleek Dashed Drop Banner at top */}
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className={`rounded-2xl transition-all duration-200 cursor-pointer flex items-center justify-between px-4 py-2.5 border border-dashed press-feedback ${
-              isDragging
-                ? 'border-[#bb74ff] bg-[#bb74ff]/15 text-white shadow-[0_0_20px_rgba(212,151,92,0.25)] scale-[1.01]'
-                : 'border-surface-borderLight hover:border-[#bb74ff]/50 bg-surface-900/70 hover:bg-surface-850 text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                isDragging ? 'bg-[#bb74ff] text-surface-950' : 'bg-surface-800 text-[#bb74ff]'
-              }`}>
-                <Upload size={14} className={isDragging ? 'animate-bounce' : ''} />
-              </div>
-              <span className="text-xs font-medium">
-                {isDragging
-                  ? 'Отпустите .jar файл для быстрой установки мода в клиент'
-                  : 'Перетащите .jar файлы сюда или нажмите для выбора из проводника'}
-              </span>
-            </div>
-            <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline-block">
-              NeoForge 1.21.1 • Drag & Drop
-            </span>
-          </div>
+          <button type="button" onClick={() => fileInputRef.current?.click()} className={`content-dropzone ${isDragging ? 'is-dragging' : ''}`}>
+            <Upload size={17}/><span>{isDragging ? 'Отпустите файлы для проверки' : 'Перетащите моды сюда'}</span><small>.JAR / ДО 100 МБ</small>
+          </button>
 
           {/* Sub-Header Toolbar: Switcher, Fast Actions & Folders */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+          <div className="content-toolbar">
             {/* Segmented Switcher: Сборка vs Мои моды */}
             <div className="flex items-center gap-2.5 w-full sm:w-auto">
               <div className="inline-flex p-1 rounded-2xl bg-surface-900 border border-surface-border shadow-inner gap-1">
@@ -528,26 +451,26 @@ export const ModsView: React.FC<ModsViewProps> = ({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#bb74ff] hover:bg-[#d7b6ff] text-surface-950 text-xs font-bold transition-all cursor-pointer shadow-sm press-feedback"
+                className="ui-button is-primary"
               >
                 <Plus size={15} className="stroke-[2.5]" />
-                <span>Добавить мод (.jar)</span>
+                <span>Добавить файл</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleOpenModsFolder}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-surface-border hover:border-surface-borderLight text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm press-feedback"
+                className="ui-button"
                 title="Открыть папку mods в проводнике"
               >
                 <FolderOpen size={13} className="text-zinc-400" />
-                <span>Папка mods</span>
+                <span>Открыть папку</span>
               </button>
             </div>
           </div>
 
           {/* Filter Bar: Category Chips & Search Bar */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-2.5 shrink-0">
+          <div className="mod-filterbar">
             {/* Fast Category Filter Chips */}
             <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
               <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider flex items-center gap-1 mr-1 shrink-0">
@@ -594,7 +517,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
           </div>
 
           {/* Main Mods Grid Container */}
-          <div className="flex-1 bg-surface-950/80 border border-surface-border rounded-2xl p-3 md:p-4 overflow-y-auto shadow-sm space-y-2.5">
+          <div className="mod-results library-scroll">
             {switcherMode === 'official' ? (
               /* Official Modpack Mods Grid */
               filteredOfficial.length === 0 ? (
@@ -674,14 +597,14 @@ export const ModsView: React.FC<ModsViewProps> = ({
             ) : (
               /* Custom Player Mods Grid */
               filteredCustom.length === 0 ? (
-                <div className="py-20 text-center text-zinc-500 text-xs space-y-2.5">
-                  <Package size={36} className="mx-auto text-zinc-600" />
+                <div className="library-empty mod-empty">
+                  <div className="library-emblem" aria-hidden="true"><i/><i/><Package size={44}/></div>
                   <div className="space-y-1">
-                    <p className="font-bold text-sm text-zinc-300">
-                      {search || filterCategory !== 'all' ? 'Моды не найдены по запросу' : 'У вас пока нет установленных модов'}
-                    </p>
+                    <h2>
+                      {search || filterCategory !== 'all' ? 'Моды не найдены по запросу' : 'Твои моды. Твои возможности.'}
+                    </h2>
                     <p className="text-zinc-500 text-xs max-w-sm mx-auto">
-                      Перетащите файл .jar в панель сверху или нажмите «Добавить мод».
+                      Добавьте .jar — проверим файл перед установкой. Неизвестным модам потребуется одобрение.
                     </p>
                   </div>
                 </div>

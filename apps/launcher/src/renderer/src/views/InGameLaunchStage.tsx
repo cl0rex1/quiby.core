@@ -13,6 +13,7 @@ import {
 import { AuthSession, DownloadProgress, LaunchState, LogEntry } from '@quiby/shared';
 import { CapePreset, DEFAULT_SKINS } from '../utils/chibiRenderer';
 import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
+import { useMotion } from '../components/MotionProvider';
 import quibySeasonLogo from '../assets/quiby_season6_logo.png';
 
 export interface InGameLaunchStageProps {
@@ -46,15 +47,23 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
   onClearLogs,
   backgroundVideoUrl,
 }) => {
+  const { active: motionActive, reduced } = useMotion();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (motionActive) void video.play().catch(() => {});
+    else video.pause();
+  }, [motionActive, backgroundVideoUrl]);
   const [autoScroll, setAutoScroll] = useState(true);
   const [copiedLogs, setCopiedLogs] = useState(false);
   const logsBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (autoScroll) {
-      logsBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (autoScroll && !document.hidden) {
+      logsBottomRef.current?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
     }
-  }, [logs, autoScroll]);
+  }, [logs, autoScroll, reduced]);
 
   const formatPlaytime = (seconds: number) => {
     if (seconds < 60) return '< 1 мин';
@@ -97,33 +106,34 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
     : (DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve');
 
   return (
-    <div className="relative flex-1 flex flex-col p-6 sm:p-8 overflow-hidden select-none z-10 h-full">
+    <div className="game-session view-enter relative flex-1 flex flex-col p-6 overflow-hidden select-none z-10 h-full">
       {/* Ambient Media Background Layer (Video / GIF / Photo Support) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {backgroundVideoUrl ? (
           <video
-            autoPlay
+            ref={videoRef}
+            poster={quibySeasonLogo}
             loop
             muted
             playsInline
             src={backgroundVideoUrl}
-            className="absolute inset-0 w-full h-full object-cover opacity-20 filter blur-[2px] scale-105"
+            className="absolute inset-0 w-full h-full object-cover opacity-20"
           />
         ) : (
           <img
             src={quibySeasonLogo}
             alt="Season Ambient Background"
-            className="absolute inset-0 w-full h-full object-cover opacity-15 filter blur-[3px] scale-105"
+            className="absolute inset-0 w-full h-full object-cover opacity-10"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-surface-950 via-surface-950/80 to-surface-950/50" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(11,14,20,0.75)_100%)]" />
+        <div className="absolute inset-0 bg-black/30" />
       </div>
 
       {/* Main 2-Column In-Game Grid */}
-      <div className="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden items-stretch min-h-0">
-        {/* Left Column (lg:col-span-4 / w-80): Walking Chibi, Status, PID, Playtime & Kill Button */}
-        <div className="lg:col-span-4 rounded-2xl bg-surface-900/85 backdrop-blur-md p-6 border border-surface-border/70 flex flex-col items-center justify-between relative overflow-hidden shadow-xl shrink-0">
+      <div className="session-layout relative z-10 flex-1 grid gap-6 overflow-hidden items-stretch min-h-0">
+        {/* Left Column (/ w-80): Walking Chibi, Status, PID, Playtime & Kill Button */}
+        <div className="rounded-2xl bg-surface-900 p-6 border border-surface-border/70 flex flex-col items-center justify-between relative overflow-hidden shadow-xl shrink-0">
           {/* Top Info Bar: Playtime & PID indicator */}
           <div className="w-full flex items-center justify-between text-xs text-zinc-400">
             <div className="flex items-center gap-1.5">
@@ -219,11 +229,11 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
           </div>
         </div>
 
-        {/* Right Column (lg:col-span-8 / flex-1): Download Progress (if updating) + Full-Height Live Console */}
-        <div className="lg:col-span-8 flex flex-col gap-4 overflow-hidden h-full min-h-0">
+        {/* Right Column (/ flex-1): Download Progress (if updating) + Full-Height Live Console */}
+        <div className="flex flex-col gap-4 overflow-hidden h-full min-h-0">
           {/* Synchronizing Progress Bar (shown when updating) */}
           {launchState.status === 'updating' && downloadProgress && (
-            <div className="rounded-2xl bg-surface-900/85 backdrop-blur-md p-4 border border-surface-border/70 space-y-2.5 shadow-xl shrink-0 animate-in fade-in slide-in-from-top-2">
+            <div className="rounded-2xl bg-surface-900 p-4 border border-surface-border/70 space-y-2.5 shadow-xl shrink-0 animate-in fade-in slide-in-from-top-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-white font-medium truncate flex items-center gap-2">
                   <RotateCw size={13} className="animate-spin text-[#bb74ff] shrink-0" />
@@ -236,8 +246,8 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
 
               <div className="w-full h-2 bg-surface-950 rounded-full overflow-hidden border border-surface-border/80">
                 <div
-                  className="h-full bg-gradient-to-r from-[#bb74ff] to-[#f3c99f] transition-all duration-200 rounded-full"
-                  style={{ width: `${Math.max(downloadProgress.progressPercent, 2)}%` }}
+                  className="h-full w-full origin-left bg-[#bb74ff] transition-transform duration-200 rounded-full"
+                  style={{ transform: `scaleX(${Math.max(0, Math.min(100, downloadProgress.progressPercent)) / 100})` }}
                 />
               </div>
 
@@ -259,7 +269,7 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
           )}
 
           {/* Full-Height Live Terminal Console Stream */}
-          <div className="flex-1 flex flex-col rounded-2xl bg-[#0c0c0d]/90 backdrop-blur-md border border-surface-border/70 overflow-hidden shadow-xl min-h-0">
+          <div className="flex-1 flex flex-col rounded-2xl bg-surface-950 border border-surface-border/70 overflow-hidden shadow-xl min-h-0">
             {/* Terminal Header Bar */}
             <div className="flex items-center justify-between px-4 py-2.5 bg-surface-900/90 border-b border-surface-border/80 shrink-0">
               <div className="flex items-center gap-2.5">
@@ -312,7 +322,7 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
             </div>
 
             {/* Live Monospace Terminal Logs */}
-            <div className="flex-1 bg-[#07090e] p-3 sm:p-4 font-mono text-[11px] overflow-y-auto space-y-1 select-text scrollbar-thin min-h-0">
+            <div className="flex-1 bg-surface-950 p-3 sm:p-4 font-mono text-[11px] overflow-y-auto space-y-1 select-text scrollbar-thin min-h-0">
               {!logs || logs.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-zinc-600 text-xs">
                   <span>Ожидание вывода Minecraft...</span>

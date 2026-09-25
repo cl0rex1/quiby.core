@@ -7,9 +7,12 @@ import homeScreen from '../assets/auth/launcher-home.png';
 import wardrobeScreen from '../assets/auth/launcher-wardrobe.png';
 import modsScreen from '../assets/auth/launcher-mods.png';
 import settingsScreen from '../assets/auth/launcher-settings.png';
+import shadersScreen from '../assets/auth/launcher-shaders.png';
+import schematicsScreen from '../assets/auth/launcher-schematics.png';
 import './auth.css';
+import { usePointerDepth } from '../hooks/usePointerDepth';
 
-const screenWall = [homeScreen, wardrobeScreen, settingsScreen, modsScreen, settingsScreen, homeScreen, wardrobeScreen, modsScreen, homeScreen, settingsScreen, modsScreen, wardrobeScreen];
+const screenWall = [homeScreen, wardrobeScreen, shadersScreen, modsScreen, settingsScreen, homeScreen, schematicsScreen, modsScreen, homeScreen, settingsScreen, shadersScreen, wardrobeScreen];
 
 interface DiscordAuthModalProps {
   isOpen: boolean;
@@ -19,6 +22,7 @@ interface DiscordAuthModalProps {
 }
 
 export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onClose, onSuccess, serverUrl }) => {
+  const depth = usePointerDepth<HTMLElement>();
   const [mode, setMode] = useState<'discord' | 'dev'>('discord');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -134,7 +138,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <main className="auth-page" aria-labelledby="auth-title">
+    <main {...depth} className="auth-page" aria-labelledby="auth-title">
       <div className="auth-gallery" aria-hidden="true">
         <div className="auth-screen-wall">
           {screenWall.map((screen, index) => (
