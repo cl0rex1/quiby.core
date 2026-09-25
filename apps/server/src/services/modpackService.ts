@@ -10,7 +10,7 @@ export async function getLatestManifest(): Promise<ModpackManifest | null> {
     'SELECT manifest_json FROM modpack_versions WHERE is_active = 1 ORDER BY id DESC LIMIT 1'
   );
   if (!row) return null;
-  return JSON.parse(row.manifest_json) as ModpackManifest;
+  return withConfiguredServerAddress(JSON.parse(row.manifest_json) as ModpackManifest);
 }
 
 export async function getManifestByVersion(versionId: string): Promise<ModpackManifest | null> {
@@ -19,7 +19,16 @@ export async function getManifestByVersion(versionId: string): Promise<ModpackMa
     [versionId]
   );
   if (!row) return null;
-  return JSON.parse(row.manifest_json) as ModpackManifest;
+  return withConfiguredServerAddress(JSON.parse(row.manifest_json) as ModpackManifest);
+}
+
+function withConfiguredServerAddress(manifest: ModpackManifest): ModpackManifest {
+  return {
+    ...manifest,
+    serverAddress: config.minecraft.serverIp
+      ? `${config.minecraft.serverIp}:${config.minecraft.serverPort}`
+      : '',
+  };
 }
 
 export async function getAllVersions(): Promise<Array<{ version_id: string; name: string; game_version: string; loader_type: string; loader_version: string; is_active: boolean; changelog: string; created_at: string }>> {

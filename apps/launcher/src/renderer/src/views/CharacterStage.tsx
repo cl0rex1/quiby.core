@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowUpRight, Check, Copy, Shirt } from 'lucide-react';
+import React from 'react';
+import { ArrowUpRight, Shirt } from 'lucide-react';
 import { AuthSession, ModpackManifest, ServerStatus } from '@quiby/shared';
 import { DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
 import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
@@ -10,7 +10,6 @@ interface CharacterStageProps {
   session: AuthSession | null;
   manifest: ModpackManifest | null;
   serverStatus: ServerStatus | null;
-  serverIp: string;
   totalPlaytimeSeconds?: number;
   customSkinImg: HTMLImageElement | null;
   customSkinName: string | null;
@@ -27,7 +26,6 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
   session,
   manifest,
   serverStatus,
-  serverIp,
   totalPlaytimeSeconds = 0,
   customSkinImg,
   customSkinName,
@@ -39,22 +37,15 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
   onOpenNews,
 }) => {
   const depth = usePointerDepth<HTMLDivElement>();
-  const [copied, setCopied] = useState(false);
   const skinName = customSkinName || DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve';
   const hours = Math.floor(totalPlaytimeSeconds / 3600);
   const minutes = Math.floor((totalPlaytimeSeconds % 3600) / 60);
   const playtime = hours ? `${hours} ч ${minutes} мин` : `${minutes} мин`;
-  const statusText = serverStatus?.online ? `${serverStatus.players.online} / ${serverStatus.players.max} игроков` : serverStatus ? 'Сервер недоступен' : 'Нет соединения с API';
-
-  const copyIp = async () => {
-    try {
-      await navigator.clipboard.writeText(serverIp);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch (_) {
-      setCopied(false);
-    }
-  };
+  const statusText = serverStatus?.online
+    ? `${serverStatus.players.online} / ${serverStatus.players.max} игроков`
+    : serverStatus && !serverStatus.ip
+      ? 'Сервер готовится'
+      : serverStatus ? 'Сервер недоступен' : 'Статус неизвестен';
 
   return (
     <div {...depth} className="launcher-home view-enter">
@@ -63,11 +54,10 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
           <p className="home-kicker">QUIBY / СЕЗОН 06</p>
           <h1>Твой мир. Твой ход.</h1>
         </div>
-        <button type="button" onClick={copyIp} className="home-address" title="Скопировать адрес сервера">
+        <span className="home-address">
           <span className={serverStatus?.online ? 'status-dot is-online' : 'status-dot'} />
-          <span>{serverIp}</span>
-          {copied ? <Check size={14} /> : <Copy size={14} />}
-        </button>
+          <span>{statusText}</span>
+        </span>
       </div>
 
       <div className="home-content">

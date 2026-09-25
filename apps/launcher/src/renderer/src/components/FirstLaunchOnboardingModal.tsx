@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { LauncherSettings } from '@quiby/shared';
 import { BUILD_PROFILES, BuildId, selectedBuild } from '../utils/buildProfiles';
+import { buildScreenshots } from '../utils/buildScreenshots';
 import { MotionToggle } from './MotionProvider';
 
 interface Props {
@@ -23,11 +24,6 @@ interface Props {
     profile: 'clean' | 'optimal' | 'full',
   ) => Promise<void>;
 }
-const images = import.meta.glob('../assets/builds/**/*.{png,jpg,jpeg,webp}', {
-  eager: true,
-  query: '?url',
-  import: 'default',
-}) as Record<string, string>;
 const icons = { visual: Sparkles, standard: Layers, draft: PencilRuler };
 
 export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyPreset }: Props) {
@@ -39,10 +35,7 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
   const [error, setError] = useState('');
   const dialog = useRef<HTMLDialogElement>(null);
   const build = BUILD_PROFILES.find((item) => item.id === buildId)!;
-  const screenshots = Object.entries(images)
-    .filter(([path]) => path.includes('/' + buildId + '/'))
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([, url]) => url);
+  const screenshots = buildScreenshots(buildId);
   const firstRun = !localStorage.getItem('quiby_onboarded');
   useEffect(() => {
     if (!isOpen) {

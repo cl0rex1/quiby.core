@@ -33,7 +33,7 @@ export const config = {
 
   // Minecraft Server
   minecraft: {
-    serverIp: process.env.MC_SERVER_IP || 'play.quiby.fun',
+    serverIp: process.env.MC_SERVER_IP || '',
     serverPort: parseInt(process.env.MC_SERVER_PORT || '25565', 10),
     targetGameVersion: '1.21.1',
     targetLoader: 'neoforge',

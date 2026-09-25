@@ -77,9 +77,6 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
     <aside
       className={`launcher-sidebar fixed top-8 left-0 bottom-0 z-40 bg-[#141415] border-r border-[#2c2c30] select-none overflow-hidden ${collapsed ? 'is-collapsed' : ''}`}
     >
-      {!isNotificationsOpen && <button type="button" className="sidebar-toggle" onClick={onToggleCollapsed} aria-expanded={!collapsed} aria-controls="launcher-navigation" aria-label={collapsed ? 'Развернуть меню' : 'Свернуть меню'} title={collapsed ? 'Развернуть меню' : 'Свернуть меню'}>
-        {collapsed ? <PanelLeftOpen size={17}/> : <PanelLeftClose size={17}/>}
-      </button>}
       {/* ========================================================= */}
       {/* 1. STANDARD SIDEBAR RAIL VIEW                             */}
       {/* ========================================================= */}
@@ -122,6 +119,29 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
           </div>
         </div>
 
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          className="sidebar-collapse flex items-center w-full h-11 mt-3 rounded-xl cursor-pointer press-feedback text-zinc-400 hover:text-white hover:bg-surface-850 transition-colors shrink-0"
+          aria-expanded={!collapsed}
+          aria-controls="launcher-navigation"
+          aria-label={collapsed ? 'Развернуть меню' : 'Свернуть меню'}
+          title={collapsed ? 'Развернуть меню' : undefined}
+        >
+          <span className="w-12 h-11 flex items-center justify-center shrink-0">
+            {collapsed ? <PanelLeftOpen size={19} /> : <PanelLeftClose size={19} />}
+          </span>
+          <span
+            className={`sidebar-label text-xs font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ease-out pl-1 ${
+              expanded
+                ? 'max-w-[130px] opacity-100 translate-x-0'
+                : 'max-w-0 opacity-0 -translate-x-3 pointer-events-none'
+            }`}
+          >
+            {collapsed ? 'Развернуть' : 'Свернуть'}
+          </span>
+        </button>
+
         {/* Navigation Icons Centered Vertically */}
         <nav id="launcher-navigation" aria-label="Разделы лаунчера" className="flex flex-col space-y-1.5 w-full my-auto shrink-0">
           {navItems.map((item) => {
@@ -158,7 +178,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
 
                 {/* Smooth Animated Label */}
                 <span
-                  className={`text-xs font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ease-out pl-1 ${
+                  className={`sidebar-label text-xs font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ease-out pl-1 ${
                     expanded
                       ? 'max-w-[130px] opacity-100 translate-x-0'
                       : 'max-w-0 opacity-0 -translate-x-3 pointer-events-none'
@@ -193,7 +213,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                   : 'max-w-0 opacity-0 -translate-x-3 pointer-events-none'
               }`}
             >
-              <span className="text-xs font-medium">Почта</span>
+              <span className="sidebar-label text-xs font-medium">Почта</span>
               {unreadNotificationsCount > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full bg-[#bb74ff]/20 border border-[#bb74ff]/30 text-[10px] font-mono text-[#d7b6ff]">
                   {unreadNotificationsCount}
@@ -249,7 +269,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                 <LogIn size={18} />
               </div>
               <span
-                className={`text-xs font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ease-out pl-1 ${
+                className={`sidebar-label text-xs font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ease-out pl-1 ${
                   expanded
                     ? 'max-w-[130px] opacity-100 translate-x-0'
                     : 'max-w-0 opacity-0 -translate-x-3 pointer-events-none'

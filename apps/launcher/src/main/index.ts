@@ -55,13 +55,17 @@ function loadSettings(): LauncherSettings {
     autoCloseLauncher: false,
     gameDir: getDefaultGameDir(),
     enableDiscordRpc: true,
-    serverIp: 'play.quiby.fun:25565',
   };
 
   if (fs.existsSync(filePath)) {
     try {
       const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-      return { ...defaults, ...data };
+      delete data.serverIp; // Drop the obsolete saved address from earlier launcher versions.
+      const saved = { ...defaults, ...data };
+      saved.ramMaxMb = Number.isFinite(saved.ramMaxMb)
+        ? Math.round(saved.ramMaxMb / 1024) * 1024
+        : defaults.ramMaxMb;
+      return saved;
     } catch (_) {}
   }
 

@@ -14,6 +14,18 @@ export async function getServerStatus(): Promise<ServerStatus> {
 
   const { serverIp, serverPort } = config.minecraft;
 
+  if (!serverIp) {
+    return {
+      online: false,
+      ip: '',
+      port: serverPort,
+      version: config.minecraft.targetGameVersion,
+      players: { online: 0, max: 0, sample: [] },
+      motd: { raw: 'Сервер готовится', clean: 'Сервер готовится' },
+      latencyMs: 0,
+    };
+  }
+
   try {
     const result = await util.status(serverIp, serverPort, {
       timeout: 3000,

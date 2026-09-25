@@ -7,6 +7,5 @@
   "loaderVersion": "21.1.65",
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "serverAddress": "play.quiby.fun:25565",
   "changelog": "🚀 Official launch of quiby. Season 6 on Minecraft 1.21.1 NeoForge featuring Create Aeronautics, performance optimizations, and Discord whitelist integration."
 }

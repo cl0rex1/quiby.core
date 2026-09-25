@@ -15,7 +15,6 @@ export interface PackConfig {
   recommendedRamMb?: number;
   minRamMb?: number;
   jvmArgs?: string[];
-  serverAddress?: string;
   changelog?: string;
 }
 
@@ -39,7 +38,6 @@ export async function buildManifestFromDir(
     loaderVersion: '21.1.65',
     recommendedRamMb: 8192,
     minRamMb: 4096,
-    serverAddress: 'play.quiby.fun:25565',
     changelog: options.changelog || 'Season 6 update',
   };
 
@@ -126,7 +124,7 @@ export async function buildManifestFromDir(
     totalSize,
     files,
     changelog: options.changelog || packConfig.changelog || 'Season 6 update',
-    serverAddress: packConfig.serverAddress || 'play.quiby.fun:25565',
+    serverAddress: '',
     updatedAt: new Date().toISOString(),
   };
 

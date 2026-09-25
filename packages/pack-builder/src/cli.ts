@@ -51,7 +51,6 @@ program
       loaderVersion: '21.1.65',
       recommendedRamMb: 8192,
       minRamMb: 4096,
-      serverAddress: 'play.quiby.fun:25565',
       changelog: '🚀 Initial release of Season 6 with Create Aeronautics & NeoForge 1.21.1',
     };
 

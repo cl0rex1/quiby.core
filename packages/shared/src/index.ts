@@ -26,7 +26,7 @@ export interface ModpackManifest {
   totalSize: number;
   files: ModpackFile[];
   changelog: string;
-  serverAddress: string; // e.g. "play.quiby.fun:25565"
+  serverAddress: string; // Empty until the Minecraft server is configured.
   updatedAt: string;
 }
 
@@ -93,7 +93,6 @@ export interface LauncherSettings {
   autoCloseLauncher: boolean;
   gameDir: string;
   enableDiscordRpc: boolean;
-  serverIp: string;
   autoJoinServer?: boolean;
   totalPlaytimeSeconds?: number;
   graphicsPreset?: 'potato' | 'optimal' | 'ultra';

@@ -1088,9 +1088,6 @@ html[data-motion-paused='true'] *::after {
   color: var(--color-warning);
 }
 
-.session-layout {
-  grid-template-columns: minmax(250px, 0.8fr) minmax(0, 1.6fr);
-}
 .launcher-app .transition-all {
   transition-property: transform, opacity, color, background-color, border-color;
 }

@@ -28,7 +28,7 @@ interface FloatingActionDeckProps {
   activeTab: ActiveTab;
   session: AuthSession | null;
   serverStatus: ServerStatus | null;
-  serverIp: string;
+  hasServerAddress: boolean;
   launchState: LaunchState;
   downloadProgress: DownloadProgress | null;
   logs?: LogEntry[];
@@ -48,7 +48,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   activeTab,
   session,
   serverStatus,
-  serverIp,
+  hasServerAddress,
   launchState,
   autoConnect = true,
   onToggleAutoConnect,
@@ -83,13 +83,13 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
         {/* Left Side: Server Status & Quick Ping */}
         <div className="flex items-center gap-3">
           <span className={serverStatus?.online ? 'status-dot is-online' : 'status-dot'} />
-          <span className="dock-address">{serverIp}</span>
-          <span className="dock-status">{serverStatus?.online ? 'Сервер доступен' : serverStatus ? 'Сервер выключен' : 'Нет данных'}</span>
+          <span className="dock-address">QUIBY / СЕРВЕР</span>
+          <span className="dock-status">{serverStatus?.online ? 'Сервер доступен' : !hasServerAddress ? 'Сервер готовится' : serverStatus ? 'Сервер выключен' : 'Нет данных'}</span>
         </div>
 
         {/* Center / Controls: Fast-Connect Toggle */}
         <div className="flex items-center gap-3">
-          {session && (
+          {session && hasServerAddress && (
             <button
               type="button"
               onClick={() => onToggleAutoConnect?.(!autoConnect)}

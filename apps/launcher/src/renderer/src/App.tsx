@@ -38,7 +38,6 @@ const defaultSettings: LauncherSettings = {
   autoCloseLauncher: false,
   gameDir: '',
   enableDiscordRpc: true,
-  serverIp: 'play.quiby.fun:25565',
 };
 
 const initialCustomMods: CustomModItem[] = [];
@@ -336,7 +335,7 @@ export const App: React.FC = () => {
   return (
     <div style={{ '--sidebar-width': isNotificationsOpen ? '310px' : sidebarCollapsed ? '72px' : '192px' } as React.CSSProperties} className="launcher-app flex flex-col h-screen w-screen bg-[#0c0c0d] text-zinc-100 overflow-hidden select-none font-sans relative">
       {/* 1. Window Controls & Dragging Header (Height: 32px / h-8) */}
-      <WindowHeader serverIp={settings.serverIp} serverStatus={serverStatus} />
+      <WindowHeader serverStatus={serverStatus} />
 
       {!isAuthModalOpen && <>
       {/* 2. Main Content Body (Remaining Height h-[calc(100vh-32px)]) */}
@@ -413,7 +412,6 @@ export const App: React.FC = () => {
                     launchState={launchState}
                     downloadProgress={downloadProgress}
                     logs={logs}
-                    serverIp={settings.serverIp}
                     totalPlaytimeSeconds={totalPlaytimeSeconds}
                     customSkinImg={customSkinImg}
                     customSkinName={customSkinName}
@@ -427,7 +425,6 @@ export const App: React.FC = () => {
                     session={session}
                     manifest={manifest}
                     serverStatus={serverStatus}
-                    serverIp={settings.serverIp}
                     totalPlaytimeSeconds={totalPlaytimeSeconds}
                     customSkinImg={customSkinImg}
                     customSkinName={customSkinName}
@@ -472,6 +469,7 @@ export const App: React.FC = () => {
                   settings={settings}
                   onUpdateSettings={handleUpdateSettings}
                   onChooseBuild={() => setIsOnboardingOpen(true)}
+                  hasServerAddress={Boolean(manifest?.serverAddress)}
                 />
               )}
             </>
@@ -484,7 +482,7 @@ export const App: React.FC = () => {
             activeTab={activeTab}
             session={session}
             serverStatus={serverStatus}
-            serverIp={settings.serverIp}
+            hasServerAddress={Boolean(manifest?.serverAddress)}
             launchState={launchState}
             downloadProgress={downloadProgress}
             autoConnect={autoConnect}

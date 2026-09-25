@@ -188,7 +188,7 @@ export async function initDatabase(): Promise<void> {
       totalSize: 0,
       files: [],
       changelog: '🚀 Welcome to quiby. Season 6! Modded survival featuring Create, Create Aeronautics, optimized performance mods, shaders, and custom mechanics on Minecraft 1.21.1 NeoForge.',
-      serverAddress: `${config.minecraft.serverIp}:${config.minecraft.serverPort}`,
+      serverAddress: config.minecraft.serverIp ? `${config.minecraft.serverIp}:${config.minecraft.serverPort}` : '',
       updatedAt: new Date().toISOString()
     };
 

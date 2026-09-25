@@ -49,13 +49,17 @@ function buildFastConnectArgs(serverIp: string, autoConnect: boolean): string[] 
 }
 
 test('Fast-Connect args are appended when enabled', () => {
-  const args = buildFastConnectArgs('play.quiby.fun:25565', true);
-  assert.deepStrictEqual(args, ['--quickPlayMultiplayer', 'play.quiby.fun:25565']);
+  const args = buildFastConnectArgs('configured-address', true);
+  assert.deepStrictEqual(args, ['--quickPlayMultiplayer', 'configured-address']);
 });
 
 test('Fast-Connect args are omitted when disabled', () => {
-  const args = buildFastConnectArgs('play.quiby.fun:25565', false);
+  const args = buildFastConnectArgs('configured-address', false);
   assert.deepStrictEqual(args, []);
+});
+
+test('Fast-Connect args are omitted until a server address is configured', () => {
+  assert.deepStrictEqual(buildFastConnectArgs('', true), []);
 });
 
 // 3. Graphics Preset Config Test

@@ -437,7 +437,7 @@
   - [x] Verified 63 / 63 unit tests passing and completed clean production build
 
 - [x] **Stage 68: Frontend Design Polish: Hero Pedestal, Cape Wardrobe Picker, RAM Presets & Discord Modal**
-  - [x] Rebuilt Hero Stage in `CharacterStage.tsx` with luminous volumetric pedestal lighting, live server status radar ping (`play.quiby.fun`), and active cape badge
+  - [x] Rebuilt Hero Stage in `CharacterStage.tsx` with luminous volumetric pedestal lighting, server status area, and active cape badge
   - [x] Integrated dedicated Cape Selection Picker into `SkinWardrobeView.tsx` with real-time swatch rendering on the Chibi model
   - [x] Enhanced `RamSlider.tsx` with quick preset chips (`4 GB`, `6 GB`, `8 GB (Оптимально)`, `12 GB`, `16 GB`), memory breakdown, and tactile spring gauge
   - [x] Modernized `DiscordAuthModal.tsx` with Apple glass aesthetic, animated glow headers, and clear verification states
@@ -460,7 +460,7 @@
 - [x] **Stage 72: Playtime Tracking, Content Hub (Schematics/Shaders/Mods), Onboarding Presets & Fast-Connect Auto-Join**
   - [x] Integrated real-time process heartbeat playtime tracker (`playtime-tick`) and cumulative season hours display (`14.5 ч в игре`) in `CharacterStage.tsx`
   - [x] Rebuilt Mods view into unified 3-segment Content Hub (`Контент`): `Моды` (official/custom), `Схематики Create` (`.nbt` explorer with drag-and-drop), and `Шейдеры` (`.zip` shaderpacks)
-  - [x] Added `[✓] Сразу на сервер` Fast-Connect toggle beside Play button passing `--quickPlayMultiplayer play.quiby.fun`
+  - [x] Added `[✓] Сразу на сервер` Fast-Connect toggle beside Play button; available after server configuration
   - [x] Created `FirstLaunchOnboardingModal.tsx` and quick presets card in `SettingsView.tsx` (Potato 4GB / Optimal 8GB / Ultra 12GB+)
   - [x] Enhanced Discord mod whitelist webhook with pre-verified antivirus status, SHA-1, player IGN, and project links
   - [x] Added test suite `contentFeatures.test.ts`; 71 / 71 unit tests passing and completed clean production build
@@ -521,7 +521,6 @@
   - [x] Resolved Mod Data Loss bug in `downloader.ts` ensuring `.jar.disabled` mods and protected user mods are gracefully preserved
   - [x] Added Zod schema validation to `POST /api/mods/whitelist-request` in `apps/server/src/routes/mods.ts`
   - [x] Verified full monorepo typecheck and expanded test suite (88/88 passing tests across 6 test suites)
-
 
 
 

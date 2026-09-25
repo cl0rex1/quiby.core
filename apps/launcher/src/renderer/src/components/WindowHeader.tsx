@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import { Minus, Square, Copy, X } from 'lucide-react';
-import { MotionToggle } from './MotionProvider';
 import { ServerStatus } from '@quiby/shared';
 
 interface WindowHeaderProps {
-  serverIp?: string;
   serverStatus?: ServerStatus | null;
 }
 
 export const WindowHeader: React.FC<WindowHeaderProps> = ({
-  serverIp = 'play.quiby.fun',
   serverStatus,
 }) => {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -37,12 +34,11 @@ export const WindowHeader: React.FC<WindowHeaderProps> = ({
 
       {/* Center: status indicator (e.g. server host ping pill or empty drag area) */}
       <div className="flex items-center gap-4">
-        <MotionToggle compact />
         <div className="header-status flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-mono text-zinc-400">
           <span className={serverStatus?.online ? 'status-dot is-online' : 'status-dot'} />
-          <span>{serverIp}</span>
+          <span>СЕРВЕР</span>
           <span className={serverStatus?.online ? 'fact-online' : ''}>
-            {serverStatus?.online ? `${serverStatus.players.online}/${serverStatus.players.max}` : serverStatus ? 'Оффлайн' : 'Нет данных'}
+            {serverStatus?.online ? `${serverStatus.players.online}/${serverStatus.players.max}` : serverStatus && !serverStatus.ip ? 'Готовится' : serverStatus ? 'Оффлайн' : 'Нет данных'}
           </span>
         </div>
       </div>

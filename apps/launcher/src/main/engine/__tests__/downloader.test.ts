@@ -50,7 +50,7 @@ async function runTests() {
       recommendedRamMb: 8192,
       minRamMb: 4096,
       changelog: 'Initial release',
-      serverAddress: 'play.quiby.fun:25565',
+      serverAddress: '',
       updatedAt: new Date().toISOString(),
       files: [
         {

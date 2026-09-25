@@ -193,9 +193,9 @@ export async function launchMinecraft(
     }
 
     // Fast-Connect Auto-Join flag
-    if (settings.autoJoinServer !== false && settings.serverIp) {
-      sendLog('info', `⚡ Быстрый вход (Fast-Connect) на сервер: ${settings.serverIp}`);
-      gameArgs.push('--quickPlayMultiplayer', settings.serverIp);
+    if (settings.autoJoinServer !== false && manifest.serverAddress) {
+      sendLog('info', '⚡ Быстрый вход на сервер');
+      gameArgs.push('--quickPlayMultiplayer', manifest.serverAddress);
     }
 
     const fullArgs = [...jvmArgs, ...gameArgs];
