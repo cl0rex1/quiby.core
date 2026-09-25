@@ -1,0 +1,59 @@
+/* Hallmark · macrostructure: screen-wall + entrance · tone: onyx · anchor hue: violet accent
+ * pre-emit critique: P4 H4 E4 S5 R4 V4 */
+.auth-page {
+  position: absolute;
+  inset: 32px 0 0;
+  isolation: isolate;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+.auth-gallery { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: -1; }
+.auth-gallery::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(12 12 13 / 25%) 0%, rgb(12 12 13 / 10%) 22%, var(--color-paper) 78%), linear-gradient(90deg, rgb(12 12 13 / 45%), transparent 60%); }
+.auth-screen-wall { position: absolute; top: -220px; left: -30px; width: calc(100% + 180px); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; transform: perspective(1600px) rotateX(12deg) rotateY(-9deg) rotateZ(-12deg); transform-origin: center 30%; }
+.auth-screen { aspect-ratio: 1.38; display: flex; align-items: center; justify-content: center; padding: 12px; background: var(--color-paper-hover); border: 1px solid var(--color-rule); border-radius: 12px; overflow: hidden; box-shadow: 0 18px 24px rgb(0 0 0 / 35%); }
+.auth-screen:nth-child(3n) { transform: translateY(28px); }
+.auth-screen img { width: 100%; border-radius: 4px; box-shadow: 0 4px 16px rgb(0 0 0 / 30%); }
+.auth-screen .auth-wall-logo { width: 75%; box-shadow: none; }
+.auth-topbar { display: flex; align-items: center; justify-content: space-between; padding: 27px 42px; gap: 20px; }
+.auth-brand { width: 91px; height: 37px; object-fit: contain; object-position: left; filter: grayscale(1) brightness(3); }
+.auth-skip { display: inline-flex; align-items: center; gap: 9px; font-size: 12px; color: var(--color-ink); padding: 9px 12px; border: 1px solid var(--color-rule); border-radius: 7px; background: var(--color-paper); cursor: pointer; }
+.auth-skip:hover { border-color: var(--color-ink-2); }
+.auth-content { display: grid; grid-template-columns: minmax(0, 1fr) 340px; align-items: end; gap: 48px; margin-top: auto; padding: 140px 48px 28px; }
+.auth-season { display: flex; align-items: center; gap: 9px; margin: 0 0 18px; font: 500 10px var(--font-mono); letter-spacing: .055em; color: var(--color-ink-2); }
+.auth-season > span { width: 6px; height: 6px; background: var(--color-accent); }
+.auth-intro h1 { margin: 0 0 19px; font: 700 clamp(56px, 7.4vw, 91px)/1.12 var(--font-poster); letter-spacing: -.035em; }
+.auth-intro h1 > span { color: var(--color-accent); }
+.auth-description { font-size: 14px; line-height: 1.65; color: var(--color-ink-2); margin: 0; }
+.auth-edition { display: flex; align-items: center; gap: 14px; margin: 24px 0 0; color: var(--color-ink-2); font: 9px var(--font-mono); letter-spacing: .06em; }
+.auth-edition span { border-left: 1px solid var(--color-rule); padding-left: 14px; }
+.auth-page:has(.auth-form) .auth-content { padding-top: 40px; }
+.auth-form-panel { background: var(--color-paper-2); border: 1px solid var(--color-rule); border-radius: 16px; padding: 27px; box-shadow: 0 16px 48px rgb(0 0 0 / 22%); }
+.auth-form-eyebrow { color: var(--color-ink-2); font: 9px var(--font-mono); letter-spacing: .08em; }
+.auth-form-panel h2 { font-size: 26px; line-height: 1.2; font-weight: 700; letter-spacing: -.04em; margin: 14px 0 12px; }
+.auth-form-copy { font-size: 12px; line-height: 1.65; color: var(--color-ink-2); margin: 0 0 23px; }
+.auth-submit { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 47px; width: 100%; border: none; border-radius: 8px; background: var(--color-ink); color: var(--color-paper); padding: 12px; font-size: 12px; font-weight: 700; cursor: pointer; transition: transform 120ms var(--ease-out); }
+.auth-submit:hover { background: var(--color-focus); }
+.auth-submit:active { transform: translateY(1px); }
+.auth-submit > svg:last-child:not(:first-child) { margin-left: auto; }
+.auth-submit:disabled, .auth-skip:disabled, .auth-dev-toggle:disabled { opacity: .55; cursor: wait; }
+.auth-help { margin: 13px 0 0; font-size: 10px; text-align: center; color: var(--color-ink-2); line-height: 1.6; }
+.auth-error { display: flex; gap: 9px; margin-bottom: 16px; padding: 11px; border-left: 2px solid var(--color-warning); background: var(--color-paper); color: var(--color-warning); font-size: 11px; line-height: 1.5; }
+.auth-error svg { flex: none; margin-top: 2px; }
+.auth-form { display: flex; flex-direction: column; gap: 9px; }
+.auth-form label { font-size: 11px; font-weight: 500; }
+.auth-form input { min-height: 42px; width: 100%; border: 1px solid var(--color-rule); color: var(--color-ink); padding: 10px 12px; font-size: 12px; }
+.auth-form .auth-submit { margin-top: 7px; }
+.auth-dev-toggle { display: block; margin: 19px auto 0; padding: 0; color: var(--color-ink-2); font-size: 10px; cursor: pointer; }
+.auth-dev-toggle:hover { color: var(--color-ink); }
+.auth-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin: 0 48px; padding: 17px 0 20px; border-top: 1px solid var(--color-rule); font: 8px var(--font-mono); letter-spacing: .07em; color: var(--color-ink-2); }
+.auth-spinner { animation: auth-spin 1s linear infinite; }
+@keyframes auth-spin { to { transform: rotate(360deg); } }
+@media (max-height: 680px) { .auth-content { padding-top: 60px; } .auth-intro h1 { font-size: 65px; } }
+@media (max-width: 800px) { .auth-content { gap: 24px; padding-inline: 28px; grid-template-columns: minmax(0, 1fr) 320px; } .auth-intro h1 { font-size: 56px; } .auth-topbar { padding-inline: 28px; } .auth-footer { margin-inline: 28px; } .auth-footer span:last-child { display: none; } }
+@media (max-width: 620px) { .auth-content { grid-template-columns: 1fr; padding-top: 130px; } .auth-intro h1 { font-size: clamp(44px, 13vw, 58px); } .auth-form-panel { max-width: 440px; width: 100%; } .auth-screen-wall { width: 1000px; left: -130px; } .auth-edition { margin-top: 15px; } }
+@media (prefers-reduced-motion: reduce) { .auth-spinner { animation: none; } .auth-submit:active { transform: none; } }
+
+@media (max-width: 620px) { .launcher-window-header .header-status { display: none; } }

@@ -103,7 +103,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
               <div
                 className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-all ${
                   autoConnect
-                    ? 'bg-[#bb74ff] border-[#bb74ff] text-[#100e16]'
+                    ? 'bg-[#bb74ff] border-[#bb74ff] text-[#0c0c0d]'
                     : 'border-zinc-600 bg-surface-800'
                 }`}
               >
@@ -228,7 +228,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
               <button
                 type="button"
                 onClick={() => onSave()}
-                className="px-5 py-2 rounded-full bg-[#bb74ff] hover:bg-[#d7b6ff] text-[#100e16] text-xs font-black shadow-sm flex items-center gap-1.5 cursor-pointer press-feedback transition-colors shrink-0"
+                className="px-5 py-2 rounded-full bg-[#bb74ff] hover:bg-[#d7b6ff] text-[#0c0c0d] text-xs font-black shadow-sm flex items-center gap-1.5 cursor-pointer press-feedback transition-colors shrink-0"
               >
                 <Save size={13} />
                 <span>Сохранить</span>

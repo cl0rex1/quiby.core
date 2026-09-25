@@ -259,7 +259,7 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
           )}
 
           {/* Full-Height Live Terminal Console Stream */}
-          <div className="flex-1 flex flex-col rounded-2xl bg-[#100e16]/90 backdrop-blur-md border border-surface-border/70 overflow-hidden shadow-xl min-h-0">
+          <div className="flex-1 flex flex-col rounded-2xl bg-[#0c0c0d]/90 backdrop-blur-md border border-surface-border/70 overflow-hidden shadow-xl min-h-0">
             {/* Terminal Header Bar */}
             <div className="flex items-center justify-between px-4 py-2.5 bg-surface-900/90 border-b border-surface-border/80 shrink-0">
               <div className="flex items-center gap-2.5">

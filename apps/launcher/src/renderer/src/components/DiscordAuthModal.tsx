@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
-import { X, CheckCircle, AlertCircle, User, ShieldCheck, Gamepad2, ArrowRight, Sparkles } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AlertCircle, ArrowRight, Loader2, Check } from 'lucide-react';
 import { AuthSession } from '@quiby/shared';
+import quibyLogo from '../assets/quiby_logo.png';
+import seasonLogo from '../assets/quiby_season6_logo.png';
+import homeScreen from '../assets/auth/launcher-home.png';
+import wardrobeScreen from '../assets/auth/launcher-wardrobe.png';
+import modsScreen from '../assets/auth/launcher-mods.png';
+import settingsScreen from '../assets/auth/launcher-settings.png';
+import './auth.css';
+
+const screenWall = [homeScreen, wardrobeScreen, settingsScreen, modsScreen, settingsScreen, homeScreen, wardrobeScreen, modsScreen, homeScreen, settingsScreen, modsScreen, wardrobeScreen];
 
 interface DiscordAuthModalProps {
   isOpen: boolean;
@@ -23,6 +32,15 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
   const [devUsername, setDevUsername] = useState('Cl0rex');
   const [devTag, setDevTag] = useState('cl0rex#0001');
 
+  useEffect(() => {
+    if (!isOpen) {
+      setPendingDiscordUser(null);
+      setTempBindingToken(null);
+      setError(null);
+      setMode('discord');
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleStartDiscordAuth = async () => {
@@ -30,6 +48,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
     setError(null);
 
     try {
+      if (!window.quibyApi) throw new Error('Вход через Discord доступен в приложении лаунчера. Откройте quiby на компьютере.');
       const result = await window.quibyApi.startDiscordLogin(serverUrl);
       if (result.error) {
         setError(result.error);
@@ -115,180 +134,80 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
-      <div className="surface-panel rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-surface-border">
-        {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 shadow-sm">
-              <ShieldCheck size={20} />
+    <main className="auth-page" aria-labelledby="auth-title">
+      <div className="auth-gallery" aria-hidden="true">
+        <div className="auth-screen-wall">
+          {screenWall.map((screen, index) => (
+            <div className={`auth-screen auth-screen-${index}`} key={index}>
+              {index === 5 ? <img className="auth-wall-logo" src={seasonLogo} alt="" /> : <img src={screen} alt="" />}
             </div>
-            <div>
-              <h3 className="font-extrabold text-white text-base apple-heading">Авторизация Quiby</h3>
-              <p className="text-xs text-zinc-400 font-mono">Discord OAuth2 и вайтлист Season VI</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-zinc-400 hover:text-white p-1.5 rounded-full hover:bg-zinc-800 transition-colors press-feedback"
-          >
-            <X size={18} />
-          </button>
+          ))}
+        </div>
+      </div>
+
+      <header className="auth-topbar">
+        <img src={quibyLogo} alt="quiby." className="auth-brand" />
+        <button type="button" className="auth-skip" onClick={onClose} disabled={loading}>
+          К лаунчеру <ArrowRight size={14} />
+        </button>
+      </header>
+
+      <div className="auth-content">
+        <div className="auth-intro">
+          <p className="auth-season"><span /> СЕЗОН 06 · CREATE & AERONAUTICS</p>
+          <h1 id="auth-title">СОЗДАВАЙ<br />СВОЙ МИР<span>.</span></h1>
+          <p className="auth-description">Большие механизмы. Смелые постройки.<br />И люди, с которыми хочется играть.</p>
+          <p className="auth-edition">MINECRAFT 1.21.1 <span>NEOFORGE</span></p>
         </div>
 
-        {/* Tab Switcher */}
-        {!pendingDiscordUser && (
-          <div className="flex border-b border-white/10 bg-zinc-950/40 px-5 pt-3 gap-6">
-            <button
-              onClick={() => setMode('discord')}
-              className={`pb-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer press-feedback ${
-                mode === 'discord'
-                  ? 'border-purple-400 text-white'
-                  : 'border-transparent text-zinc-400 hover:text-white'
-              }`}
-            >
-              Discord OAuth2
-            </button>
-            <button
-              onClick={() => setMode('dev')}
-              className={`pb-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer press-feedback ${
-                mode === 'dev'
-                  ? 'border-purple-400 text-white'
-                  : 'border-transparent text-zinc-400 hover:text-white'
-              }`}
-            >
-              Локальный тест (Dev)
-            </button>
-          </div>
-        )}
+        <section className="auth-form-panel" aria-labelledby="auth-form-title" aria-busy={loading}>
+          <span className="auth-form-eyebrow">ТВОЯ ИСТОРИЯ НА QUIBY</span>
+          <h2 id="auth-form-title">{pendingDiscordUser ? 'Как тебя зовут в игре?' : mode === 'dev' ? 'Локальный вход' : 'Увидимся в игре.'}</h2>
+          <p className="auth-form-copy">{pendingDiscordUser
+            ? `Discord ${pendingDiscordUser.globalName || pendingDiscordUser.username} подключён. Осталось привязать Minecraft-ник.`
+            : mode === 'dev' ? 'Вход для проверки локальной сборки.'
+            : 'Войди через Discord, чтобы связать профиль с ником Minecraft и получить доступ к серверу.'}</p>
 
-        {/* Body */}
-        <div className="p-6 space-y-4">
-          {error && (
-            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
-              <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-400" />
-              <span className="apple-body">{error}</span>
-            </div>
-          )}
+          {error && <div className="auth-error" role="alert"><AlertCircle size={16} /><span>{error}</span></div>}
 
-          {/* Step 2: Minecraft IGN Binding */}
           {pendingDiscordUser ? (
-            <form onSubmit={handleBindMinecraft} className="space-y-4">
-              <div className="p-3.5 rounded-2xl surface-card flex items-center gap-3">
-                <img
-                  src={pendingDiscordUser.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png'}
-                  alt="Discord Avatar"
-                  className="w-10 h-10 rounded-full border border-white/10"
-                />
-                <div>
-                  <div className="text-[11px] text-zinc-400">Discord профиль:</div>
-                  <div className="text-sm font-bold text-white apple-subheading">@{pendingDiscordUser.username}</div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-white mb-1.5 apple-subheading">
-                  Укажите ник в Minecraft (IGN):
-                </label>
-                <div className="relative">
-                  <Gamepad2 className="absolute left-3.5 top-3 text-zinc-500" size={16} />
-                  <input
-                    type="text"
-                    required
-                    pattern="^[a-zA-Z0-9_]{3,16}$"
-                    value={mcUsername}
-                    onChange={(e) => setMcUsername(e.target.value)}
-                    placeholder="Например: Cl0rex"
-                    className="w-full bg-zinc-900/90 border border-white/10 focus:border-purple-400 rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white font-mono focus:outline-none transition-colors"
-                  />
-                </div>
-                <p className="text-[11px] text-zinc-500 mt-1 pl-1 apple-body">
-                  * Ник привязывается к вашему Discord аккаунту для вайтлиста сервера.
-                </p>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading || !mcUsername.trim()}
-                className="w-full py-3 rounded-full bg-white hover:bg-neutral-100 disabled:opacity-50 text-black font-extrabold text-sm flex items-center justify-center gap-2 shadow-md transition-all press-feedback cursor-pointer"
-              >
-                <span>{loading ? 'Привязка...' : 'Подтвердить и войти'}</span>
-                <ArrowRight size={16} />
+            <form onSubmit={handleBindMinecraft} className="auth-form">
+              <label htmlFor="auth-mc-name">Ник в Minecraft</label>
+              <input id="auth-mc-name" value={mcUsername} onChange={(e) => setMcUsername(e.target.value)}
+                placeholder="Твой игровой ник" autoComplete="username" minLength={3} maxLength={16}
+                pattern="[a-zA-Z0-9_]{3,16}" title="От 3 до 16 латинских букв, цифр или знаков подчёркивания"
+                required disabled={loading} autoFocus />
+              <button className="auth-submit" disabled={loading || !tempBindingToken}>
+                {loading ? <Loader2 className="auth-spinner" size={18} /> : <Check size={18} />}
+                {loading ? 'Привязываем ник…' : 'Начать играть'}
               </button>
             </form>
           ) : mode === 'discord' ? (
-            /* Step 1: Discord OAuth2 */
-            <div className="space-y-4 text-center">
-              <p className="text-xs text-zinc-300 leading-relaxed text-left apple-body">
-                Авторизация через Discord гарантирует доступ в вайтлист сервера 6 сезона и связывает ваш ник с профилем.
-              </p>
-
-              <div className="p-3.5 rounded-2xl surface-card text-left text-xs space-y-2">
-                <div className="flex items-center gap-2 text-purple-300 font-bold apple-subheading">
-                  <CheckCircle size={15} />
-                  <span>Преимущества:</span>
-                </div>
-                <ul className="text-zinc-400 space-y-1 pl-1 text-[11px] apple-body">
-                  <li>• Защита от мультиаккаунтов и автоматический вайтлист</li>
-                  <li>• Доступ к сборке Minecraft 1.21.1 NeoForge</li>
-                  <li>• Синхронизация ролей в Discord</li>
-                </ul>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleStartDiscordAuth}
-                disabled={loading}
-                className="w-full py-3.5 rounded-full bg-white hover:bg-neutral-100 disabled:opacity-50 text-black font-extrabold text-sm flex items-center justify-center gap-2.5 shadow-md transition-all press-feedback cursor-pointer"
-              >
-                <User size={18} />
-                <span>{loading ? 'Ожидание браузера...' : 'Войти через Discord'}</span>
+            <>
+              <button type="button" className="auth-submit" onClick={handleStartDiscordAuth} disabled={loading}>
+                {loading ? <Loader2 className="auth-spinner" size={19} /> : (
+                  <svg width="21" height="17" viewBox="0 0 24 20" fill="currentColor" aria-hidden="true"><path d="M20.3 1.8A19.7 19.7 0 0 0 15.5.3l-.6 1.3a18.3 18.3 0 0 0-5.8 0L8.5.3a19.7 19.7 0 0 0-4.8 1.5C.7 6.2-.1 10.5.3 14.8a19.8 19.8 0 0 0 5.9 3l1.2-2a12 12 0 0 1-1.8-.9l.4-.3c3.8 1.7 8.2 1.7 12 0l.4.3a12 12 0 0 1-1.8.9l1.2 2a19.8 19.8 0 0 0 5.9-3c.5-5-1-9.3-3.4-13ZM8 12.3c-1.2 0-2.1-1.1-2.1-2.4S6.8 7.5 8 7.5s2.1 1.1 2.1 2.4-.9 2.4-2.1 2.4Zm8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.1 1.1 2.1 2.4-.9 2.4-2.1 2.4Z" /></svg>
+                )}
+                {loading ? 'Ожидаем вход в браузере…' : 'Продолжить с Discord'}
+                {!loading && <ArrowRight size={16} />}
               </button>
-            </div>
+              <p className="auth-help">{loading ? 'Заверши вход в открывшемся браузере. Лаунчер продолжит автоматически.' : 'Откроем безопасную страницу входа в браузере.'}</p>
+            </>
           ) : (
-            /* Dev Login */
-            <form onSubmit={handleDevLogin} className="space-y-3.5">
-              <p className="text-xs text-zinc-400 apple-body">
-                Быстрый вход для локального тестирования без Discord API.
-              </p>
-
-              <div>
-                <label className="block text-xs font-bold text-white mb-1.5 apple-subheading">
-                  Minecraft Ник:
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={devUsername}
-                  onChange={(e) => setDevUsername(e.target.value)}
-                  className="w-full bg-zinc-900/90 border border-white/10 focus:border-purple-400 rounded-2xl px-4 py-2 text-sm text-white font-mono focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-white mb-1.5 apple-subheading">
-                  Тестовый Discord Tag:
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={devTag}
-                  onChange={(e) => setDevTag(e.target.value)}
-                  className="w-full bg-zinc-900/90 border border-white/10 focus:border-purple-400 rounded-2xl px-4 py-2 text-sm text-white font-mono focus:outline-none transition-colors"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 rounded-full bg-white hover:bg-neutral-100 disabled:opacity-50 text-black font-extrabold text-sm flex items-center justify-center gap-2 shadow-md transition-all press-feedback cursor-pointer mt-2"
-              >
-                <span>{loading ? 'Вход...' : 'Войти в тестовом режиме'}</span>
-              </button>
+            <form onSubmit={handleDevLogin} className="auth-form">
+              <label htmlFor="auth-dev-name">Ник Minecraft</label>
+              <input id="auth-dev-name" value={devUsername} onChange={(e) => setDevUsername(e.target.value)} required disabled={loading} />
+              <label htmlFor="auth-dev-tag">Тестовый Discord Tag</label>
+              <input id="auth-dev-tag" value={devTag} onChange={(e) => setDevTag(e.target.value)} required disabled={loading} />
+              <button className="auth-submit" disabled={loading}>{loading ? 'Входим…' : 'Войти локально'}<ArrowRight size={16} /></button>
             </form>
           )}
-        </div>
+          {import.meta.env.DEV && !pendingDiscordUser && <button type="button" className="auth-dev-toggle" disabled={loading} onClick={() => { setMode(mode === 'discord' ? 'dev' : 'discord'); setError(null); }}>
+            {mode === 'discord' ? 'Локальный вход для разработки' : 'Вернуться к Discord'}
+          </button>}
+        </section>
       </div>
-    </div>
+      <footer className="auth-footer"><span>QUIBY. MADE TO PLAY TOGETHER.</span><span>ТВОЙ НОВЫЙ СЕЗОН НАЧИНАЕТСЯ ЗДЕСЬ</span></footer>
+    </main>
   );
 };

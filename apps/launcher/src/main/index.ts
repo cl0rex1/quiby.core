@@ -83,7 +83,7 @@ function createSplashWindow(): void {
   if (process.env.VITE_DEV_SERVER_URL) {
     splashWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}?view=splash`);
   } else {
-    splashWindow.loadFile(path.join(__dirname, '../renderer/index.html'), {
+    splashWindow.loadFile(path.join(__dirname, '../index.html'), {
       query: { view: 'splash' },
     });
   }
@@ -113,7 +113,7 @@ function createMainWindow(): void {
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+    mainWindow.loadFile(path.join(__dirname, '../index.html'));
   }
 
   mainWindow.on('closed', () => {

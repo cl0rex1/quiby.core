@@ -8,12 +8,12 @@ export default {
     extend: {
       colors: {
         surface: {
-          950: '#100e16',
-          900: '#191622',
-          850: '#211d2b',
-          800: '#292333',
-          border: '#3a3244',
-          borderLight: '#4c4056',
+          950: '#0c0c0d',
+          900: '#141415',
+          850: '#1b1b1d',
+          800: '#242426',
+          border: '#2c2c30',
+          borderLight: '#3b3b40',
         },
         create: {
           brass: '#bb74ff',
@@ -28,8 +28,8 @@ export default {
           800: '#11141c',
           750: '#171a25',
           700: '#1e2230',
-          border: '#3a3244',
-          borderLight: '#4c4056',
+          border: '#2c2c30',
+          borderLight: '#3b3b40',
         },
         quiby: {
           purple: '#6d28d9',

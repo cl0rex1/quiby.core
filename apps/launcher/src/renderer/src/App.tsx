@@ -140,7 +140,12 @@ export const App: React.FC = () => {
   const [totalPlaytimeSeconds, setTotalPlaytimeSeconds] = useState<number>(0);
   const [autoConnect, setAutoConnect] = useState<boolean>(true);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('quiby_session') || 'null');
+      return !saved || !(saved.expiresAt > Date.now());
+    } catch { return true; }
+  });
 
   // Initial Load (Saved Storage & IPC)
   useEffect(() => {
@@ -326,10 +331,11 @@ export const App: React.FC = () => {
 
   // Otherwise, render the Main Launcher Window:
   return (
-    <div className="launcher-app flex flex-col h-screen w-screen bg-[#100e16] text-zinc-100 overflow-hidden select-none font-sans relative">
+    <div className="launcher-app flex flex-col h-screen w-screen bg-[#0c0c0d] text-zinc-100 overflow-hidden select-none font-sans relative">
       {/* 1. Window Controls & Dragging Header (Height: 32px / h-8) */}
       <WindowHeader serverIp={settings.serverIp} serverStatus={serverStatus} />
 
+      {!isAuthModalOpen && <>
       {/* 2. Main Content Body (Remaining Height h-[calc(100vh-32px)]) */}
       <div className="flex flex-1 h-[calc(100vh-32px)] w-full overflow-hidden relative">
         {/* Sleek Minimal Sidebar */}
@@ -543,7 +549,9 @@ export const App: React.FC = () => {
         onDismiss={() => setActiveToast(null)}
       />
 
-      {/* Discord Auth Modal */}
+      </>}
+
+      {/* Discord Auth Page */}
       <DiscordAuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
@@ -553,7 +561,7 @@ export const App: React.FC = () => {
 
       {/* First Launch Onboarding Modal */}
       <FirstLaunchOnboardingModal
-        isOpen={isOnboardingOpen}
+        isOpen={isOnboardingOpen && !isAuthModalOpen}
         settings={settings}
         onClose={() => setIsOnboardingOpen(false)}
         onApplyPreset={(updated, profile) => {

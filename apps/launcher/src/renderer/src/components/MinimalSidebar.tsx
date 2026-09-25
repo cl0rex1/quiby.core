@@ -69,7 +69,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
 
   return (
     <aside
-      className={`launcher-sidebar fixed top-8 left-0 bottom-0 z-40 bg-[#191622] border-r border-[#3a3244] select-none transition-all duration-200 ease-out overflow-hidden ${isNotificationsOpen ? 'w-[310px]' : 'w-44'}`}
+      className={`launcher-sidebar fixed top-8 left-0 bottom-0 z-40 bg-[#141415] border-r border-[#2c2c30] select-none transition-all duration-200 ease-out overflow-hidden ${isNotificationsOpen ? 'w-[310px]' : 'w-44'}`}
     >
       {/* ========================================================= */}
       {/* 1. STANDARD SIDEBAR RAIL VIEW                             */}
@@ -172,7 +172,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
             <div className="w-12 h-11 flex items-center justify-center shrink-0 relative">
               <Mail size={18} />
               {unreadNotificationsCount > 0 && (
-                <span className="absolute top-2.5 right-3 w-2 h-2 rounded-full bg-[#bb74ff] ring-2 ring-[#191622]" />
+                <span className="absolute top-2.5 right-3 w-2 h-2 rounded-full bg-[#bb74ff] ring-2 ring-[#141415]" />
               )}
             </div>
             <div
@@ -256,14 +256,14 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
       {/* ========================================================================= */}
       <div
         aria-hidden={!isNotificationsOpen}
-        className={`absolute inset-0 z-30 flex flex-col bg-[#191622] p-4 transition-all duration-200 ease-out overflow-hidden ${
+        className={`absolute inset-0 z-30 flex flex-col bg-[#141415] p-4 transition-all duration-200 ease-out overflow-hidden ${
           isNotificationsOpen
             ? 'visible opacity-100 translate-x-0 pointer-events-auto'
             : 'invisible opacity-0 -translate-x-6 pointer-events-none'
         }`}
       >
         {/* Top Bar: Title & Quick Actions */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#3a3244] shrink-0">
+        <div className="flex items-center justify-between pb-3 border-b border-[#2c2c30] shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-surface-800 border border-surface-border flex items-center justify-center text-[#bb74ff] shadow-sm">
               <Mail size={13} />
@@ -335,7 +335,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                 >
                   {/* Unread indicator dot */}
                   {!n.read && (
-                    <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#bb74ff] ring-2 ring-[#191622]" />
+                    <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#bb74ff] ring-2 ring-[#141415]" />
                   )}
 
                   {/* Top status row */}
@@ -372,7 +372,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
         </div>
 
         {/* Bottom Back Button */}
-        <div className="pt-3 border-t border-[#3a3244] shrink-0">
+        <div className="pt-3 border-t border-[#2c2c30] shrink-0">
           <button
             type="button"
             onClick={onCloseNotifications}
