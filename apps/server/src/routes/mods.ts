@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import { requireAuth, requireAdmin, AuthenticatedRequest } from '../middleware/auth';
 import {
   verifyMod,
   verifyModBatch,
@@ -16,7 +17,7 @@ export const whitelistRequestSchema = z.object({
   filename: z.string().min(1).max(255).regex(/\.jar$/i, 'Must be a .jar file'),
   hash_sha1: z.string().length(40, 'Must be 40-char hex SHA-1').regex(/^[a-fA-F0-9]+$/),
   reason: z.string().min(10, 'Reason must be at least 10 characters').max(1000),
-  project_url: z.string().optional(),
+  project_url: z.union([z.literal(''), z.string().max(2048).url().refine(value => /^https?:\/\//i.test(value))]).optional(),
 });
 
 /**
@@ -43,7 +44,7 @@ router.post('/verify', async (req: Request, res: Response) => {
  * POST /api/mods/whitelist-request
  * Allows a player to submit an unindexed/custom mod for review and whitelisting.
  */
-router.post('/whitelist-request', async (req: Request, res: Response) => {
+router.post('/whitelist-request', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const parseResult = whitelistRequestSchema.safeParse(req.body);
 
@@ -55,11 +56,11 @@ router.post('/whitelist-request', async (req: Request, res: Response) => {
       });
     }
 
-    const { user_discord_id, mc_username, mod_name, filename, hash_sha1, reason, project_url } = parseResult.data;
+    const { mod_name, filename, hash_sha1, reason, project_url } = parseResult.data;
 
-    await submitWhitelistRequest({
-      user_discord_id,
-      mc_username,
+    const request = await submitWhitelistRequest({
+      user_discord_id: req.user!.discordId,
+      mc_username: req.user!.mcUsername,
       mod_name,
       filename,
       hash_sha1,
@@ -69,6 +70,7 @@ router.post('/whitelist-request', async (req: Request, res: Response) => {
 
     return res.json({
       success: true,
+      request,
       message: 'Запрос на добавление мода в вайтлист успешно отправлен администрации.',
     });
   } catch (error: any) {
@@ -81,7 +83,7 @@ router.post('/whitelist-request', async (req: Request, res: Response) => {
  * GET /api/mods/whitelist-requests
  * Lists all submitted mod whitelist requests.
  */
-router.get('/whitelist-requests', async (req: Request, res: Response) => {
+router.get('/whitelist-requests', requireAdmin, async (req: Request, res: Response) => {
   try {
     const requests = await getWhitelistRequests();
     return res.json({ requests });

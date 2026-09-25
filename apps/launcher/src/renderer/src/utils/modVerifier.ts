@@ -236,10 +236,11 @@ export async function submitModWhitelistRequest(
   serverUrl = 'http://localhost:3001',
   extra?: { mc_username?: string; reason?: string; project_url?: string }
 ): Promise<{ success: boolean; message: string }> {
+  if (!session?.token) return { success: false, message: 'Войдите в аккаунт, чтобы отправить заявку.' };
   try {
     const res = await fetch(`${serverUrl}/api/mods/whitelist-request`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.token },
       body: JSON.stringify({
         user_discord_id: session?.user?.discordId,
         mc_username: extra?.mc_username || session?.user?.mcUsername || 'Player',

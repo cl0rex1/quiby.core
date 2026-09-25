@@ -10,15 +10,17 @@ import {
   Waves,
 } from 'lucide-react';
 import { LauncherSettings } from '@quiby/shared';
+import { selectedBuild } from '../utils/buildProfiles';
 import { RamSlider } from '../components/RamSlider';
 import { MotionToggle, useMotion } from '../components/MotionProvider';
 
 interface SettingsViewProps {
+  onChooseBuild: () => void;
   settings: LauncherSettings;
   onUpdateSettings: (newSettings: LauncherSettings) => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSettings }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSettings, onChooseBuild }) => {
   const [section, setSection] = useState<'game' | 'appearance' | 'files'>('game');
   const [totalRamGb, setTotalRamGb] = useState(16);
   const [javaList, setJavaList] = useState<Array<{ path: string; version: number; versionString: string }>>(
@@ -104,6 +106,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
           )}
           {section === 'game' && (
             <>
+              <button type="button" className="current-build" onClick={onChooseBuild}>
+                <span><small>ТВОЯ СБОРКА</small><strong>{selectedBuild(settings).name}</strong><span>{selectedBuild(settings).tagline}</span></span>
+                <span className="current-build-action">Выбрать сборку <ArrowUpRight size={17}/></span>
+              </button>
               <RamSlider
                 ramMb={settings.ramMaxMb}
                 totalSystemRamGb={totalRamGb}

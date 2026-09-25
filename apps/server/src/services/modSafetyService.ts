@@ -92,6 +92,21 @@ export async function verifyMod(
     };
   }
 
+  // Manual decisions are authoritative even after cache eviction or an in-flight catalog lookup.
+  const review = await dbGet<any>(
+    "SELECT * FROM mod_whitelist_requests WHERE hash_sha1 = ? AND status IN ('approved', 'rejected') ORDER BY COALESCE(review_sequence, 0) DESC, id DESC LIMIT 1",
+    [normalizedHash]
+  );
+  if (review) {
+    const approved = review.status === 'approved';
+    return {
+      hashSha1: normalizedHash, name, filename, isAllowed: approved,
+      status: approved ? 'approved' : 'blocked', source: 'whitelist',
+      reason: review.decision_reason || (approved ? 'Одобрен администрацией сервера' : 'Отклонён администрацией сервера'),
+      categories: ['whitelist'],
+    };
+  }
+
   // 1. Check local SQLite cache
   const cached = await dbGet<any>(
     'SELECT * FROM verified_mods WHERE hash_sha1 = ?',
@@ -113,32 +128,6 @@ export async function verifyMod(
       source: cached.source as any,
       reason: cached.reason || '',
       categories: parsedCats,
-    };
-  }
-
-  // 2. Check if approved in manual whitelist requests
-  const wlRequest = await dbGet<any>(
-    'SELECT * FROM mod_whitelist_requests WHERE hash_sha1 = ? AND status = "approved"',
-    [normalizedHash]
-  );
-
-  if (wlRequest) {
-    // Cache approved whitelist result
-    await dbRun(
-      `INSERT OR REPLACE INTO verified_mods (hash_sha1, mod_id, name, summary, source, is_allowed, status, reason, categories_json)
-       VALUES (?, ?, ?, ?, ?, 1, 'approved', ?, '["whitelist"]')`,
-      [normalizedHash, 'whitelist-mod', name, 'Approved via Admin Whitelist', 'whitelist', 'Одобрен администрацией сервера']
-    );
-
-    return {
-      hashSha1: normalizedHash,
-      name,
-      filename,
-      isAllowed: true,
-      status: 'approved',
-      source: 'whitelist',
-      reason: 'Одобрен администрацией сервера',
-      categories: ['whitelist'],
     };
   }
 
@@ -252,68 +241,36 @@ export async function verifyModBatch(
   );
 }
 
-/**
- * Submits a player request to whitelist an unverified custom mod and forwards to Discord channel.
- */
 export async function submitWhitelistRequest(req: {
-  user_discord_id?: string;
-  mc_username?: string;
-  mod_name: string;
-  filename: string;
-  hash_sha1: string;
-  reason?: string;
-  project_url?: string;
-}): Promise<void> {
-  const normalizedHash = req.hash_sha1.toLowerCase().trim();
+  user_discord_id?: string; mc_username?: string; mod_name: string; filename: string;
+  hash_sha1: string; reason?: string; project_url?: string;
+}): Promise<{ id: number; status: string }> {
+  const hash = req.hash_sha1.toLowerCase().trim();
   await dbRun(
-    `INSERT INTO mod_whitelist_requests (user_discord_id, mc_username, mod_name, filename, hash_sha1, reason, status)
-     VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-    [
-      req.user_discord_id || null,
-      req.mc_username || 'Player',
-      req.mod_name,
-      req.filename,
-      normalizedHash,
-      req.reason || 'Запрос от игрока через форму лаунчера',
-    ]
+    `INSERT INTO mod_whitelist_requests (user_discord_id, mc_username, mod_name, filename, hash_sha1, reason, project_url, status)
+     SELECT ?, ?, ?, ?, ?, ?, ?, 'pending'
+     WHERE NOT EXISTS (SELECT 1 FROM mod_whitelist_requests WHERE user_discord_id IS ? AND hash_sha1 = ? AND status = 'pending')`,
+    [req.user_discord_id || null, req.mc_username || 'Player', req.mod_name, req.filename, hash,
+      req.reason || 'Запрос от игрока', req.project_url || null, req.user_discord_id || null, hash]
   );
-
-  // Optional: Forward to Discord Webhook / Bot Channel
-  const webhookUrl = process.env.DISCORD_MOD_WHITELIST_WEBHOOK;
-  if (webhookUrl) {
-    try {
-      await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          embeds: [
-            {
-              title: '🛡️ Новая заявка на добавление мода в вайтлист',
-              color: 0x10b981, // Emerald
-              fields: [
-                { name: '📦 Название мода', value: req.mod_name, inline: true },
-                { name: '📁 Имя файла', value: `\`${req.filename}\``, inline: true },
-                { name: '👤 Игрок', value: req.mc_username || 'Player', inline: true },
-                { name: '🔑 SHA-1 хэш', value: `\`${normalizedHash}\``, inline: false },
-                { name: '🦠 Проверка файла', value: 'Файл не передаётся на сервер; его содержимое администрацией ещё не проверено.', inline: false },
-                { name: '💬 Назначение / Причина', value: req.reason || 'Не указана', inline: false },
-                ...(req.project_url ? [{ name: '🔗 Ссылка на проект', value: req.project_url, inline: false }] : []),
-              ],
-              footer: { text: 'Quiby Core • Season VI Anti-Cheat Bot' },
-              timestamp: new Date().toISOString(),
-            },
-          ],
-        }),
-      });
-    } catch (err) {
-      console.warn('Failed to forward whitelist request to Discord webhook:', err);
-    }
-  }
+  return (await dbGet<{ id: number; status: string }>(
+    "SELECT id, status FROM mod_whitelist_requests WHERE user_discord_id IS ? AND hash_sha1 = ? AND status = 'pending' ORDER BY id DESC LIMIT 1",
+    [req.user_discord_id || null, hash]
+  ))!;
 }
 
-/**
- * Retrieves all pending whitelist requests.
- */
 export async function getWhitelistRequests(): Promise<any[]> {
-  return dbAll('SELECT * FROM mod_whitelist_requests ORDER BY created_at DESC');
+  return dbAll('SELECT * FROM mod_whitelist_requests ORDER BY id DESC');
+}
+
+export async function reviewWhitelistRequest(id: number, status: 'approved' | 'rejected', reviewer: string, reason: string) {
+  const update = await dbRun(
+    "UPDATE mod_whitelist_requests SET status = ?, reviewer_discord_id = ?, decision_reason = ?, reviewed_at = CURRENT_TIMESTAMP, review_sequence = (SELECT COALESCE(MAX(review_sequence), 0) + 1 FROM mod_whitelist_requests) WHERE id = ? AND status = 'pending'",
+    [status, reviewer, reason, id]
+  );
+  const request = await dbGet<any>('SELECT * FROM mod_whitelist_requests WHERE id = ?', [id]);
+  if (!request) return { code: 404, error: 'Заявка не найдена' };
+  if (!update.changes && request.status !== status) return { code: 409, error: 'Заявка уже рассмотрена', request };
+  // Same-decision retries return the original reviewer and timestamp unchanged.
+  return { code: 200, request };
 }

@@ -8,6 +8,10 @@ if (process.env.NODE_ENV === 'production' && ((process.env.JWT_SECRET?.length ||
   throw new Error('JWT_SECRET and ADMIN_API_KEY must each contain at least 32 characters in production');
 }
 
+if (process.env.MOD_REVIEW_BOT_API_KEY && process.env.MOD_REVIEW_BOT_API_KEY.length < 32) {
+  throw new Error('MOD_REVIEW_BOT_API_KEY must contain at least 32 characters');
+}
+
 export const config = {
   port: parseInt(process.env.PORT || '3001', 10),
   host: process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1'),
@@ -15,6 +19,8 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '30d',
   adminApiKey: process.env.ADMIN_API_KEY || crypto.randomBytes(32).toString('hex'),
   
+  modReviewBotApiKey: process.env.MOD_REVIEW_BOT_API_KEY || '',
+
   // Discord OAuth2 Configuration
   discord: {
     clientId: process.env.DISCORD_CLIENT_ID || '',

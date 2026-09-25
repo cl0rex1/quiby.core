@@ -13,6 +13,7 @@ export const quibyApi = {
   saveSettings: (settings: LauncherSettings): Promise<boolean> => ipcRenderer.invoke('settings:save', settings),
 
   // System & Java
+  getTotalRamMb: (): Promise<number> => ipcRenderer.invoke('system:memory'),
   detectJava: (): Promise<{ installations: any[]; recommended: any; totalRamMb: number }> =>
     ipcRenderer.invoke('system:detect-java'),
   selectJavaPath: (): Promise<string | null> => ipcRenderer.invoke('system:select-java-path'),

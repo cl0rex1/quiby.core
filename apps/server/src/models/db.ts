@@ -122,6 +122,35 @@ export async function initDatabase(): Promise<void> {
     )
   `);
 
+  // Additive migration for existing installations.
+  const requestColumns = await dbAll<{ name: string }>('PRAGMA table_info(mod_whitelist_requests)');
+  for (const name of ['project_url', 'reviewer_discord_id', 'decision_reason', 'reviewed_at']) {
+    if (!requestColumns.some(column => column.name === name)) {
+      await dbRun('ALTER TABLE mod_whitelist_requests ADD COLUMN ' + name + ' TEXT');
+    }
+  }
+  if (!requestColumns.some(column => column.name === 'review_sequence')) {
+    await dbRun('ALTER TABLE mod_whitelist_requests ADD COLUMN review_sequence INTEGER');
+  }
+  await dbRun('CREATE INDEX IF NOT EXISTS mod_requests_hash_review ON mod_whitelist_requests(hash_sha1, review_sequence DESC)');
+  await dbRun('CREATE INDEX IF NOT EXISTS mod_requests_queue ON mod_whitelist_requests(status, id)');
+  // The review and verification cache change in the same SQLite statement/transaction.
+  await dbRun(`
+    CREATE TRIGGER IF NOT EXISTS mod_request_review_cache
+    AFTER UPDATE OF status ON mod_whitelist_requests
+    WHEN NEW.status IN ('approved', 'rejected') AND NEW.status != OLD.status
+    BEGIN
+      INSERT INTO verified_mods (hash_sha1, name, source, is_allowed, status, reason, categories_json, checked_at)
+      VALUES (NEW.hash_sha1, NEW.mod_name, 'whitelist', NEW.status = 'approved',
+        CASE WHEN NEW.status = 'approved' THEN 'approved' ELSE 'blocked' END,
+        COALESCE(NEW.decision_reason, 'Решение администрации'), '["whitelist"]', CURRENT_TIMESTAMP)
+      ON CONFLICT(hash_sha1) DO UPDATE SET
+        name = excluded.name, source = excluded.source, is_allowed = excluded.is_allowed,
+        status = excluded.status, reason = excluded.reason,
+        categories_json = excluded.categories_json, checked_at = excluded.checked_at;
+    END
+  `);
+
   // Seed default Season 6 modpack version if table is empty
   const count = await dbGet<{ count: number }>('SELECT count(*) as count FROM modpack_versions');
   if (!count || count.count === 0) {
@@ -223,3 +252,7 @@ export async function initDatabase(): Promise<void> {
     }
   }
 }
+
+export const closeDatabase = (): Promise<void> => new Promise((resolve, reject) => {
+  db.close(error => error ? reject(error) : resolve());
+});

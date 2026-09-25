@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SplashWindowView } from './components/SplashWindowView';
+import { applyBuildToMods } from './utils/buildProfiles';
 import { WindowHeader } from './components/WindowHeader';
 import { MinimalSidebar, ActiveTab } from './components/MinimalSidebar';
 import { CharacterStage } from './views/CharacterStage';
@@ -44,7 +44,7 @@ const defaultSettings: LauncherSettings = {
 const initialCustomMods: CustomModItem[] = [];
 
 export const App: React.FC = () => {
-  const isSplashQuery = new URLSearchParams(window.location.search).get('view') === 'splash';
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('quiby_sidebar_collapsed') === 'true');
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [session, setSession] = useState<AuthSession | null>(null);
   const [manifest, setManifest] = useState<ModpackManifest | null>(null);
@@ -90,14 +90,18 @@ export const App: React.FC = () => {
   // 1. Settings State (Auto-saving)
   const [settings, setSettings] = useState<LauncherSettings>(defaultSettings);
 
-  const handleUpdateSettings = (newSettings: LauncherSettings) => {
+  const handleUpdateSettings = async (newSettings: LauncherSettings) => {
     setSettings(newSettings);
     if (newSettings.autoJoinServer !== undefined) {
       setAutoConnect(newSettings.autoJoinServer);
       localStorage.setItem('quiby_auto_connect', String(newSettings.autoJoinServer));
     }
-    if (window.quibyApi) {
-      window.quibyApi.saveSettings(newSettings);
+    try {
+      if (window.quibyApi) await window.quibyApi.saveSettings(newSettings);
+      return true;
+    } catch {
+      handleNotify('Не удалось сохранить настройки', 'Проверьте доступ к папке лаунчера.', 'error');
+      return false;
     }
   };
 
@@ -328,14 +332,9 @@ export const App: React.FC = () => {
     window.quibyApi?.killGame();
   };
 
-  // If this window is the dedicated Splash BrowserWindow:
-  if (isSplashQuery) {
-    return <SplashWindowView />;
-  }
-
   // Otherwise, render the Main Launcher Window:
   return (
-    <div className="launcher-app flex flex-col h-screen w-screen bg-[#0c0c0d] text-zinc-100 overflow-hidden select-none font-sans relative">
+    <div style={{ '--sidebar-width': isNotificationsOpen ? '310px' : sidebarCollapsed ? '72px' : '192px' } as React.CSSProperties} className="launcher-app flex flex-col h-screen w-screen bg-[#0c0c0d] text-zinc-100 overflow-hidden select-none font-sans relative">
       {/* 1. Window Controls & Dragging Header (Height: 32px / h-8) */}
       <WindowHeader serverIp={settings.serverIp} serverStatus={serverStatus} />
 
@@ -344,6 +343,11 @@ export const App: React.FC = () => {
       <div className="flex flex-1 h-[calc(100vh-32px)] w-full overflow-hidden relative">
         {/* Sleek Minimal Sidebar */}
         <MinimalSidebar
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={() => setSidebarCollapsed(previous => {
+            localStorage.setItem('quiby_sidebar_collapsed', String(!previous));
+            return !previous;
+          })}
           activeTab={activeTab}
           onSelectTab={(tab) => {
             setIsNotificationsOpen(false);
@@ -379,9 +383,7 @@ export const App: React.FC = () => {
 
         {/* Primary View Content Container */}
         <main
-          className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-200 ease-out ${
-            isNotificationsOpen ? 'pl-[310px]' : 'pl-44'
-          }`}
+          className="launcher-workspace flex-1 flex flex-col overflow-hidden relative"
         >
           {isNotificationsOpen ? (
             <NotificationDetailView
@@ -469,6 +471,7 @@ export const App: React.FC = () => {
                 <SettingsView
                   settings={settings}
                   onUpdateSettings={handleUpdateSettings}
+                  onChooseBuild={() => setIsOnboardingOpen(true)}
                 />
               )}
             </>
@@ -568,24 +571,11 @@ export const App: React.FC = () => {
         isOpen={isOnboardingOpen && !isAuthModalOpen}
         settings={settings}
         onClose={() => setIsOnboardingOpen(false)}
-        onApplyPreset={(updated, profile) => {
+        onApplyPreset={async (updated, profile) => {
           const merged = { ...settings, ...updated };
-          handleUpdateSettings(merged);
+          if (!await handleUpdateSettings(merged)) throw new Error("Settings save failed");
 
-          if (profile === 'clean') {
-            handleUpdateCustomMods(customMods.map((m) => ({ ...m, enabled: false })));
-          } else if (profile === 'optimal') {
-            handleUpdateCustomMods(
-              customMods.map((m) => ({
-                ...m,
-                enabled: m.safetyStatus === 'approved' && !m.categories?.includes('graphics'),
-              }))
-            );
-          } else {
-            handleUpdateCustomMods(
-              customMods.map((m) => ({ ...m, enabled: m.safetyStatus === 'approved' }))
-            );
-          }
+          handleUpdateCustomMods(applyBuildToMods(customMods, profile));
 
           handleNotify('Настройки сохранены', 'Память и клиентские моды настроены.', 'success');
         }}

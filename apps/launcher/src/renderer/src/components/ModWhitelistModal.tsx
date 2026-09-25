@@ -138,6 +138,8 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
           </button>
         </div>
 
+        {!session?.token && <p className="inline-error">Войдите в аккаунт, чтобы отправить заявку.</p>}
+        <p className="text-xs text-zinc-400">Администрация рассмотрит конкретную версию файла. После одобрения повторите проверку мода.</p>
         {/* Minimal Form: 2 Inputs Only */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
@@ -157,6 +159,8 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
               onChange={(e) => setReason(e.target.value)}
               placeholder="Для чего нужен этот мод на сервере..."
               rows={3}
+              minLength={10}
+              maxLength={1000}
               className="w-full bg-zinc-950/80 border border-white/10 rounded-2xl p-3.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 resize-none leading-relaxed"
               required
               disabled={isSubmitting}
@@ -191,7 +195,7 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
 
             <button
               type="submit"
-              disabled={isSubmitting || !reason.trim()}
+              disabled={isSubmitting || reason.trim().length < 10 || !session?.token}
               className="flex items-center gap-2 px-5 py-2 rounded-2xl bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all cursor-pointer shadow-md active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (

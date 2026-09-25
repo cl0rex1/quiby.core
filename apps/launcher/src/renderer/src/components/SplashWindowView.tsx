@@ -1,54 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { MotionToggle } from './MotionProvider';
 
-interface SplashWindowViewProps {
-  onFinish?: () => void;
-}
-
-export const SplashWindowView: React.FC<SplashWindowViewProps> = ({ onFinish }) => {
-  const [progress, setProgress] = useState(10);
-
+export function SplashWindowView() {
   useEffect(() => {
-    const steps = [
-      { p: 35, delay: 250 },
-      { p: 70, delay: 600 },
-      { p: 100, delay: 950 },
-    ];
-
-    const timeouts = steps.map((s) =>
-      setTimeout(() => {
-        setProgress(s.p);
-      }, s.delay)
-    );
-
-    const finishTimeout = setTimeout(() => {
-      onFinish?.();
-      window.quibyApi?.splashReady();
-    }, 1250);
-
+    let secondFrame = 0;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        void window.quibyApi?.splashReady();
+      });
+    });
     return () => {
-      timeouts.forEach(clearTimeout);
-      clearTimeout(finishTimeout);
+      cancelAnimationFrame(firstFrame);
+      cancelAnimationFrame(secondFrame);
     };
-  }, [onFinish]);
-
+  }, []);
   return (
-    <div className="w-screen h-screen bg-onyx-950 flex flex-col justify-between p-7 select-none overflow-hidden relative border border-onyx-border">
-      {/* Top Left: Clean 'quiby.' Title */}
-      <div className="flex items-center">
-        <span className="font-black text-xl tracking-tight text-white">
-          quiby<span className="text-quiby-purple">.</span>
+    <main className="splash-screen">
+      <header>
+        <span className="splash-wordmark">
+          quiby<span>.</span>
         </span>
-      </div>
-
-      {/* Bottom: Clean Slider-Track Progress Bar (No stick, no icons, no clutter) */}
-      <div className="w-full">
-        <div className="relative w-full h-1.5 bg-onyx-800 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-quiby-purple via-quiby-purpleLight to-quiby-accent rounded-full transition-all duration-300 ease-out"
-            style={{ width: `${progress}%` }}
-          />
+        <span>CORE / S6</span>
+      </header>
+      <section>
+        <div className="splash-orbit" aria-hidden="true">
+          <i />
+          <i />
+          <i />
         </div>
-      </div>
-    </div>
+        <p className="page-kicker">CREATE / AERONAUTICS</p>
+        <h1>Мир ждёт.</h1>
+      </section>
+      <footer>
+        <div className="splash-status" role="status">
+          <span>Открываем лаунчер</span>
+          <span className="splash-ellipsis">···</span>
+        </div>
+        <div className="splash-progress" aria-hidden="true">
+          <i />
+        </div>
+        <div className="splash-bottom">
+          <span>MINECRAFT 1.21.1</span>
+          <MotionToggle compact />
+        </div>
+      </footer>
+    </main>
   );
-};
+}

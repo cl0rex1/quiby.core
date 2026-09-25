@@ -17,11 +17,16 @@ export function MotionProvider({ children }: { children: React.ReactNode }) {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const onMedia = () => setSystemReduced(media.matches);
     const onVisibility = () => setVisible(!document.hidden);
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === 'quiby_reduce_motion') setManualReduced(event.newValue === 'true');
+    };
     media.addEventListener('change', onMedia);
     document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('storage', onStorage);
     return () => {
       media.removeEventListener('change', onMedia);
       document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('storage', onStorage);
     };
   }, []);
   useLayoutEffect(() => {

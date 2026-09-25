@@ -8,7 +8,9 @@ import {
   Mail, 
   ArrowLeft,
   CheckCheck,
-  Trash2
+  Trash2,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { AuthSession } from '@quiby/shared';
 import { NotificationItem } from './NotificationsModal';
@@ -18,6 +20,8 @@ import quibyQLogo from '../assets/quiby_q_logo.png';
 export type ActiveTab = 'home' | 'wardrobe' | 'mods' | 'settings';
 
 interface MinimalSidebarProps {
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
   activeTab: ActiveTab;
   onSelectTab: (tab: ActiveTab) => void;
   session: AuthSession | null;
@@ -34,6 +38,8 @@ interface MinimalSidebarProps {
 }
 
 export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
+  collapsed,
+  onToggleCollapsed,
   activeTab,
   onSelectTab,
   session,
@@ -48,7 +54,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
   onClearAllNotifications,
   unreadNotificationsCount = 0,
 }) => {
-  const isHovered = true;
+  const expanded = !collapsed;
 
   const navItems = [
     { id: 'home' as ActiveTab, label: 'Главная', icon: Play, size: 19 },
@@ -69,8 +75,11 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
 
   return (
     <aside
-      className={`launcher-sidebar fixed top-8 left-0 bottom-0 z-40 bg-[#141415] border-r border-[#2c2c30] select-none transition-all duration-200 ease-out overflow-hidden ${isNotificationsOpen ? 'w-[310px]' : 'w-44'}`}
+      className={`launcher-sidebar fixed top-8 left-0 bottom-0 z-40 bg-[#141415] border-r border-[#2c2c30] select-none overflow-hidden ${collapsed ? 'is-collapsed' : ''}`}
     >
+      {!isNotificationsOpen && <button type="button" className="sidebar-toggle" onClick={onToggleCollapsed} aria-expanded={!collapsed} aria-controls="launcher-navigation" aria-label={collapsed ? 'Развернуть меню' : 'Свернуть меню'} title={collapsed ? 'Развернуть меню' : 'Свернуть меню'}>
+        {collapsed ? <PanelLeftOpen size={17}/> : <PanelLeftClose size={17}/>}
+      </button>}
       {/* ========================================================= */}
       {/* 1. STANDARD SIDEBAR RAIL VIEW                             */}
       {/* ========================================================= */}
@@ -81,11 +90,11 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
         }`}
       >
         {/* Top Brand Mark: Letter 'q' (closed) -> Clean Full 'quiby' logo (expanded) */}
-        <div className="w-full flex items-center h-12 shrink-0 relative">
+        <div className="sidebar-brand w-full flex items-center h-12 shrink-0 relative">
           {/* 1. Closed state: Single Letter 'q' logo centered */}
           <div
             className={`w-12 h-12 flex items-center justify-center shrink-0 relative transition-all duration-200 ease-out ${
-              isHovered
+              expanded
                 ? 'opacity-0 scale-75 pointer-events-none -translate-x-4'
                 : 'opacity-100 scale-100 translate-x-0'
             }`}
@@ -100,7 +109,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
           {/* 2. Expanded state: Clean Full 'quiby' wordmark */}
           <div
             className={`absolute inset-0 flex items-center justify-center px-3 transition-all duration-200 ease-out ${
-              isHovered
+              expanded
                 ? 'opacity-100 scale-100 translate-x-0 pointer-events-auto'
                 : 'opacity-0 scale-95 translate-x-4 pointer-events-none'
             }`}
@@ -114,7 +123,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
         </div>
 
         {/* Navigation Icons Centered Vertically */}
-        <div className="flex flex-col space-y-1.5 w-full my-auto shrink-0">
+        <nav id="launcher-navigation" aria-label="Разделы лаунчера" className="flex flex-col space-y-1.5 w-full my-auto shrink-0">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -129,7 +138,9 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                     ? 'bg-surface-800 text-white font-semibold'
                     : 'text-zinc-400 hover:text-white hover:bg-surface-850'
                 }`}
-                title={!isHovered ? item.label : undefined}
+                aria-label={item.label}
+                aria-current={isActive ? "page" : undefined}
+                title={!expanded ? item.label : undefined}
               >
                 {/* Sleek vertical active indicator bar (brass accent) */}
                 {isActive && (
@@ -148,7 +159,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                 {/* Smooth Animated Label */}
                 <span
                   className={`text-xs font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ease-out pl-1 ${
-                    isHovered
+                    expanded
                       ? 'max-w-[130px] opacity-100 translate-x-0'
                       : 'max-w-0 opacity-0 -translate-x-3 pointer-events-none'
                   }`}
@@ -158,7 +169,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
               </button>
             );
           })}
-        </div>
+        </nav>
 
         {/* Bottom Section: Mail & User Profile */}
         <div className="w-full shrink-0 space-y-1.5">
@@ -167,7 +178,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
             type="button"
             onClick={onOpenNotifications}
             className="flex items-center w-full h-11 rounded-xl cursor-pointer text-zinc-400 hover:text-white hover:bg-surface-850 transition-colors press-feedback relative"
-            title={!isHovered ? 'Почта' : undefined}
+            title={!expanded ? 'Почта' : undefined}
           >
             <div className="w-12 h-11 flex items-center justify-center shrink-0 relative">
               <Mail size={18} />
@@ -177,7 +188,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
             </div>
             <div
               className={`flex items-center justify-between whitespace-nowrap overflow-hidden transition-all duration-200 ease-out pl-1 flex-1 pr-3 ${
-                isHovered
+                expanded
                   ? 'max-w-[130px] opacity-100 translate-x-0'
                   : 'max-w-0 opacity-0 -translate-x-3 pointer-events-none'
               }`}
@@ -197,7 +208,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
               type="button"
               onClick={onOpenProfile}
               className="flex items-center w-full h-11 rounded-xl cursor-pointer hover:bg-surface-850 transition-colors press-feedback"
-              title={!isHovered ? `Профиль: ${session.user.mcUsername}` : undefined}
+              title={!expanded ? `Профиль: ${session.user.mcUsername}` : undefined}
             >
               <div className="w-12 h-11 flex items-center justify-center shrink-0">
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-surface-border shrink-0 relative shadow-sm">
@@ -213,7 +224,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
               </div>
               <div
                 className={`flex flex-col whitespace-nowrap overflow-hidden transition-all duration-200 ease-out pl-1 text-left ${
-                  isHovered
+                  expanded
                     ? 'max-w-[130px] opacity-100 translate-x-0'
                     : 'max-w-0 opacity-0 -translate-x-3 pointer-events-none'
                 }`}
@@ -232,14 +243,14 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
               type="button"
               onClick={onOpenProfile}
               className="flex items-center w-full h-11 rounded-xl cursor-pointer text-zinc-400 hover:text-white hover:bg-surface-850 transition-colors press-feedback"
-              title={!isHovered ? 'Войти через Discord' : undefined}
+              title={!expanded ? 'Войти через Discord' : undefined}
             >
               <div className="w-12 h-11 flex items-center justify-center shrink-0">
                 <LogIn size={18} />
               </div>
               <span
                 className={`text-xs font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ease-out pl-1 ${
-                  isHovered
+                  expanded
                     ? 'max-w-[130px] opacity-100 translate-x-0'
                     : 'max-w-0 opacity-0 -translate-x-3 pointer-events-none'
                 }`}

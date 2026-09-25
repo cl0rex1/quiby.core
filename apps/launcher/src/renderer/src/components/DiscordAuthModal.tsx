@@ -10,7 +10,6 @@ import settingsScreen from '../assets/auth/launcher-settings.png';
 import shadersScreen from '../assets/auth/launcher-shaders.png';
 import schematicsScreen from '../assets/auth/launcher-schematics.png';
 import './auth.css';
-import { usePointerDepth } from '../hooks/usePointerDepth';
 
 const screenWall = [homeScreen, wardrobeScreen, shadersScreen, modsScreen, settingsScreen, homeScreen, schematicsScreen, modsScreen, homeScreen, settingsScreen, shadersScreen, wardrobeScreen];
 
@@ -22,7 +21,6 @@ interface DiscordAuthModalProps {
 }
 
 export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onClose, onSuccess, serverUrl }) => {
-  const depth = usePointerDepth<HTMLElement>();
   const [mode, setMode] = useState<'discord' | 'dev'>('discord');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -138,14 +136,19 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <main {...depth} className="auth-page" aria-labelledby="auth-title">
+    <main className="auth-page" aria-labelledby="auth-title">
       <div className="auth-gallery" aria-hidden="true">
         <div className="auth-screen-wall">
-          {screenWall.map((screen, index) => (
-            <div className={`auth-screen auth-screen-${index}`} key={index}>
-              {index === 5 ? <img className="auth-wall-logo" src={seasonLogo} alt="" /> : <img src={screen} alt="" />}
-            </div>
-          ))}
+          {[0, 1, 2, 3].map(column => {
+            const screens = Array.from({ length: 5 }, (_, row) => screenWall[(column + row * 4) % screenWall.length]);
+            return <div className="auth-column" key={column}>
+              {[0, 1].map(copy => <div className="auth-column-group" key={copy}>
+                {screens.map((screen, index) => <div className="auth-screen" key={index}>
+                  {column === 1 && index === 1 ? <img className="auth-wall-logo" src={seasonLogo} alt="" /> : <img src={screen} alt="" decoding="async" />}
+                </div>)}
+              </div>)}
+            </div>;
+          })}
         </div>
       </div>
 

@@ -12,6 +12,14 @@ import { initDiscordRpc } from './rpc/discordRpc';
 
 let mainWindow: BrowserWindow | null = null;
 let splashWindow: BrowserWindow | null = null;
+let mainReady = false;
+let splashReady = false;
+function revealMainWindow() {
+  if (!mainReady || !splashReady || !mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.show();
+  mainWindow.focus();
+  splashWindow?.close();
+}
 
 const DEFAULT_SERVER_URL = (process.env.QUIBY_API_URL || import.meta.env.VITE_QUIBY_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 
@@ -67,13 +75,13 @@ function saveSettings(settings: LauncherSettings): void {
 
 function createSplashWindow(): void {
   splashWindow = new BrowserWindow({
-    width: 440,
-    height: 160,
+    width: 500,
+    height: 300,
     frame: false,
     resizable: false,
     center: true,
     alwaysOnTop: true,
-    backgroundColor: '#07080a',
+    backgroundColor: '#0c0c0d',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       nodeIntegration: false,
@@ -95,6 +103,7 @@ function createSplashWindow(): void {
 }
 
 function createMainWindow(): void {
+  mainReady = false;
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 720,
@@ -102,7 +111,7 @@ function createMainWindow(): void {
     minHeight: 620,
     frame: false,
     show: false, // Hidden until splash is ready
-    backgroundColor: '#07080a',
+    backgroundColor: '#0c0c0d',
     titleBarStyle: 'hidden',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
@@ -117,6 +126,8 @@ function createMainWindow(): void {
     mainWindow.loadFile(path.join(__dirname, '../index.html'));
   }
 
+  mainWindow.once('ready-to-show', () => { mainReady = true; revealMainWindow(); });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -129,14 +140,8 @@ app.whenReady().then(async () => {
 
   // 1. Splash Window Transition
   ipcMain.handle('splash:ready', () => {
-    if (splashWindow && !splashWindow.isDestroyed()) {
-      splashWindow.close();
-      splashWindow = null;
-    }
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.show();
-      mainWindow.focus();
-    }
+    splashReady = true;
+    revealMainWindow();
     return true;
   });
 
@@ -159,6 +164,7 @@ app.whenReady().then(async () => {
   });
 
   // 4. Java & System Inspection
+  ipcMain.handle('system:memory', () => Math.floor(os.totalmem() / (1024 * 1024)));
   ipcMain.handle('system:detect-java', async () => {
     const installations = await detectInstalledJava();
     const recommended = getRecommendedJava(installations);
