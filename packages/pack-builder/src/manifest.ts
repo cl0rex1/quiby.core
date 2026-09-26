@@ -84,6 +84,8 @@ export async function buildManifestFromDir(
         modId: meta.modId,
         modName: meta.modName,
         modVersion: meta.modVersion,
+        modDescription: meta.description,
+        modProjectUrl: meta.projectUrl,
       };
     }
 

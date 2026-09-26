@@ -85,7 +85,7 @@ export async function verifyMod(
 ): Promise<ModVerificationResult> {
   const normalizedHash = hashSha1.toLowerCase().trim();
 
-  const blockedName = BLOCKED_FILE_NAMES.find((keyword) =>
+  const blockedName = (/(^|[^a-z0-9])esp([^a-z0-9]|$)/i.test(`${name} ${filename}`) ? 'esp' : undefined) || BLOCKED_FILE_NAMES.find((keyword) =>
     `${name} ${filename}`.toLowerCase().includes(keyword)
   );
   if (blockedName) {
@@ -139,6 +139,9 @@ export async function verifyMod(
       source: cached.source as any,
       reason: cached.reason || '',
       categories: parsedCats,
+      description: cached.summary || undefined,
+      iconUrl: cached.icon_url || undefined,
+      projectUrl: cached.project_url || (cached.source === 'modrinth' && cached.mod_id ? `https://modrinth.com/mod/${cached.mod_id}` : undefined),
     };
   }
 
@@ -189,9 +192,9 @@ export async function verifyMod(
           // Blocked cheat mod
           const reason = `Запрещен: содержит признаки читов/гриферства (${matchedForbidden})`;
           await dbRun(
-            `INSERT OR REPLACE INTO verified_mods (hash_sha1, mod_id, name, summary, source, is_allowed, status, reason, categories_json)
-             VALUES (?, ?, ?, ?, 'modrinth', 0, 'blocked', ?, ?)`,
-            [normalizedHash, projectId, projectData.title || name, description || '', reason, JSON.stringify(categories)]
+            `INSERT OR REPLACE INTO verified_mods (hash_sha1, mod_id, name, summary, source, is_allowed, status, reason, categories_json, icon_url, project_url)
+             VALUES (?, ?, ?, ?, 'modrinth', 0, 'blocked', ?, ?, ?, ?)`,
+            [normalizedHash, projectId, projectData.title || name, description || '', reason, JSON.stringify(categories), iconUrl || null, `https://modrinth.com/mod/${projectData.slug || projectId}`]
           );
 
           return {
@@ -212,9 +215,9 @@ export async function verifyMod(
         // Safe approved mod
         const reason = VERIFIED_REASON;
         await dbRun(
-          `INSERT OR REPLACE INTO verified_mods (hash_sha1, mod_id, name, summary, source, is_allowed, status, reason, categories_json)
-           VALUES (?, ?, ?, ?, 'modrinth', 1, 'approved', ?, ?)`,
-          [normalizedHash, projectId, projectData.title || name, description || '', reason, JSON.stringify(categories)]
+          `INSERT OR REPLACE INTO verified_mods (hash_sha1, mod_id, name, summary, source, is_allowed, status, reason, categories_json, icon_url, project_url)
+           VALUES (?, ?, ?, ?, 'modrinth', 1, 'approved', ?, ?, ?, ?)`,
+          [normalizedHash, projectId, projectData.title || name, description || '', reason, JSON.stringify(categories), iconUrl || null, `https://modrinth.com/mod/${projectData.slug || projectId}`]
         );
 
         return {

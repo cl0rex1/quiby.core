@@ -1,7 +1,13 @@
-import { initDatabase, dbRun, dbGet } from '../models/db';
-import { verifyMod, submitWhitelistRequest, getWhitelistRequests } from '../services/modSafetyService';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 
 async function runTests() {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'quiby-safety-'));
+  process.env.DB_PATH = path.join(dir, 'test.sqlite');
+  process.env.STORAGE_PATH = dir;
+  const { initDatabase, dbRun, dbGet, closeDatabase } = await import('../models/db');
+  const { verifyMod, submitWhitelistRequest, getWhitelistRequests } = await import('../services/modSafetyService');
   console.log('🧪 Starting Anti-Cheat & Mod Safety Test Suite...\n');
   let passed = 0;
   let failed = 0;
@@ -167,6 +173,9 @@ async function runTests() {
   } catch (err) {
     console.error('Test error:', err);
     failed++;
+  } finally {
+    await closeDatabase();
+    await fs.rm(dir, { recursive: true, force: true });
   }
 
   console.log('\n========================================');

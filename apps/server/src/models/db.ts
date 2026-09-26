@@ -108,6 +108,12 @@ export async function initDatabase(): Promise<void> {
   `);
 
   // Anti-Cheat: Player Mod Whitelist Requests Table
+  const modColumns = await dbAll<{ name: string }>('PRAGMA table_info(verified_mods)');
+  for (const column of ['icon_url', 'project_url']) {
+    if (!modColumns.some(item => item.name === column)) await dbRun(`ALTER TABLE verified_mods ADD COLUMN ${column} TEXT`);
+  }
+
+  // Anti-Cheat: Player Mod Whitelist Requests Table
   await dbRun(`
     CREATE TABLE IF NOT EXISTS mod_whitelist_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

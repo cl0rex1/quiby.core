@@ -27,7 +27,8 @@ import { resolveModMetadata } from '../utils/knownMods';
 import { ModWhitelistModal } from '../components/ModWhitelistModal';
 import { SchematicsExplorer } from '../components/SchematicsExplorer';
 import { ShadersExplorer } from '../components/ShadersExplorer';
-import { NotificationItem } from '../components/NotificationsModal';
+import type { NotificationItem } from '../utils/notifications';
+import { ModIcon } from '../components/ModIcon';
 
 export interface CustomModItem {
   id: string;
@@ -348,15 +349,6 @@ export const ModsView: React.FC<ModsViewProps> = ({
     return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
   };
 
-  const getMonogram = (title: string) => {
-    const cleaned = title.replace(/[^a-zA-Z0-9а-яА-Я]/g, ' ').trim();
-    const parts = cleaned.split(/\s+/);
-    if (parts.length >= 2 && parts[0] && parts[1]) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return (cleaned.substring(0, 2) || 'MD').toUpperCase();
-  };
-
   const isAllSelected = filteredCustom.length > 0 && selectedModIds.length === filteredCustom.length;
 
   const CATEGORY_CHIPS: { id: ModFilterCategory; label: string }[] = [
@@ -529,7 +521,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                   {filteredOfficial.map((file, idx) => {
                     const rawName = file.modName || file.path.replace('mods/', '').replace('.jar', '');
-                    const meta = resolveModMetadata(rawName, file.path);
+                    const iconUrl = file.modIconUrl?.startsWith('/') ? `${serverUrl}${file.modIconUrl}` : file.modIconUrl;
+                    const meta = resolveModMetadata(rawName, file.path, file.modDescription, iconUrl);
 
                     return (
                       <div
@@ -538,20 +531,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                       >
                         <div className="flex items-center gap-3 truncate">
                           {/* Mod Logo or Monogram */}
-                          {meta.iconUrl ? (
-                            <img
-                              src={meta.iconUrl}
-                              alt={meta.displayName}
-                              className="w-10 h-10 rounded-xl object-cover border border-surface-border bg-surface-850 shrink-0"
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-xl bg-surface-850 border border-surface-border flex items-center justify-center shrink-0 font-mono font-bold text-xs text-[#bb74ff]">
-                              {getMonogram(meta.displayName)}
-                            </div>
-                          )}
+                          <ModIcon src={meta.iconUrl} name={meta.displayName} />
 
                           {/* Details */}
                           <div className="truncate space-y-0.5">
@@ -580,11 +560,11 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           </span>
 
                           <a
-                            href={`https://modrinth.com/mods?q=${encodeURIComponent(meta.displayName)}`}
+                            href={file.modProjectUrl || meta.projectUrl || `https://modrinth.com/mods?q=${encodeURIComponent(rawName)}`}
                             target="_blank"
                             rel="noreferrer"
                             className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-surface-800 transition-colors press-feedback"
-                            title="Найти на Modrinth"
+                            title={file.modProjectUrl || meta.projectUrl ? 'Открыть страницу мода' : 'Найти на Modrinth'}
                           >
                             <ExternalLink size={13} />
                           </a>
@@ -653,20 +633,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           </button>
 
                           {/* Logo / Monogram */}
-                          {meta.iconUrl ? (
-                            <img
-                              src={meta.iconUrl}
-                              alt={meta.displayName}
-                              className="w-10 h-10 rounded-xl object-cover border border-surface-border bg-surface-850 shrink-0"
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-xl bg-surface-850 border border-surface-border flex items-center justify-center shrink-0 font-mono font-bold text-xs text-[#bb74ff]">
-                              {getMonogram(meta.displayName)}
-                            </div>
-                          )}
+                          <ModIcon src={meta.iconUrl} name={meta.displayName} />
 
                           {/* Title, Clean Filename & Status Badge */}
                           <div className="truncate space-y-0.5">
@@ -732,7 +699,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           {/* Modrinth Link */}
                           <a
                             href={
-                              mod.projectUrl ||
+                              mod.projectUrl || meta.projectUrl ||
                               `https://modrinth.com/mods?q=${encodeURIComponent(meta.displayName)}`
                             }
                             target="_blank"

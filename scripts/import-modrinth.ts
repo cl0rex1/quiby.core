@@ -38,11 +38,20 @@ async function add(relative: string, sourcePath: string, profiles?: ModpackFile[
   await fs.writeFile(destination, data);
   const isMod = relative.startsWith('mods/');
   const metadata = isMod ? extractModMetadata(sourcePath) : undefined;
+  let modIconUrl: string | undefined;
+  if (metadata?.iconData && metadata.iconExtension) {
+    const iconHash = crypto.createHash('sha256').update(metadata.iconData).digest('hex');
+    const iconRelative = `imported/icons/${iconHash}${metadata.iconExtension}`;
+    const iconPath = path.join(config.storagePath, 'files', iconRelative);
+    await fs.mkdir(path.dirname(iconPath), { recursive: true });
+    await fs.writeFile(iconPath, metadata.iconData);
+    modIconUrl = `/api/modpack/files/${iconRelative}`;
+  }
   files.push({
     path: relative, sha256, size: data.length, profiles,
     downloadUrl: `/api/modpack/files/${storageRelative.split('/').map(encodeURIComponent).join('/')}`,
     action: /^(mods|resourcepacks|shaderpacks|config\/explosionoverhaul)\//.test(relative) ? 'sync' : 'keep_local',
-    ...(metadata ? { modId: metadata.modId, modName: metadata.modName, modVersion: metadata.modVersion } : {}),
+    ...(metadata ? { modId: metadata.modId, modName: metadata.modName, modVersion: metadata.modVersion, modDescription: metadata.description, modProjectUrl: metadata.projectUrl, modIconUrl } : {}),
   });
 }
 

@@ -23,7 +23,7 @@ test('Modrinth approval requires the exact NeoForge 1.21.1 mod file', async () =
     const requested = String(url).split('/version_file/')[1]?.split('?')[0];
     const body = requested
       ? version(requested === 'd'.repeat(40) ? '0'.repeat(40) : requested, requested === 'b'.repeat(40) ? ['fabric'] : ['neoforge'])
-      : { project_type: projectType, title: 'Utility', categories: ['optimization'], slug: 'utility', description: 'A utility' };
+      : { project_type: projectType, title: 'Utility', categories: ['optimization'], slug: 'utility', description: 'A utility', icon_url: 'https://cdn.modrinth.com/utility.png' };
     return new Response(JSON.stringify(body), { status: 200 });
   };
   try {
@@ -31,7 +31,11 @@ test('Modrinth approval requires the exact NeoForge 1.21.1 mod file', async () =
     assert.equal(approved.status, 'approved');
     assert.equal(approved.source, 'modrinth');
     assert.equal(calls, 2);
-    assert.equal((await verifyMod('Utility', 'utility.jar', 'a'.repeat(40))).status, 'approved');
+    const cached = await verifyMod('Utility', 'utility.jar', 'a'.repeat(40));
+    assert.equal(cached.status, 'approved');
+    assert.equal(cached.iconUrl, approved.iconUrl);
+    assert.equal(cached.projectUrl, approved.projectUrl);
+    assert.equal(cached.iconUrl, 'https://cdn.modrinth.com/utility.png');
     assert.equal(calls, 2, 'validated result is cached');
     const incompatible = await verifyMod('Utility', 'utility.jar', 'b'.repeat(40));
     assert.equal(incompatible.status, 'unverified');

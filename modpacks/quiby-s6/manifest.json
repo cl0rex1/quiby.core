@@ -774,7 +774,9 @@
       "action": "sync",
       "modId": "aeroworks",
       "modName": "Create: Aeroworks",
-      "modVersion": "1.5.0"
+      "modVersion": "1.5.0",
+      "modDescription": "A collection of various addons for Create Aeronautics.",
+      "modIconUrl": "/api/modpack/files/imported/icons/95bab96e4c382377194174871c1cf49f59908deb7654f60e0489a7b666e65737.png"
     },
     {
       "path": "mods/architectury-13.0.11-neoforge.jar",
@@ -789,7 +791,9 @@
       "action": "sync",
       "modId": "architectury",
       "modName": "Architectury",
-      "modVersion": "13.0.11"
+      "modVersion": "13.0.11",
+      "modDescription": "A intermediary api aimed to ease developing multiplatform mods.",
+      "modIconUrl": "/api/modpack/files/imported/icons/4557520b0d65c4cbc6457d69195484f6b18b427b88e9e18904b961c9ece8ffd3.png"
     },
     {
       "path": "mods/BadOptimizations-2.4.1-1.21.1.jar",
@@ -803,7 +807,8 @@
       "action": "sync",
       "modId": "badoptimizations",
       "modName": "BadOptimizations",
-      "modVersion": "2.4.1"
+      "modVersion": "2.4.1",
+      "modDescription": "Optimization mod that focuses on things other than rendering"
     },
     {
       "path": "mods/balm-neoforge-1.21.1-21.0.66.jar",
@@ -817,7 +822,10 @@
       "action": "sync",
       "modId": "balm",
       "modName": "Balm",
-      "modVersion": "21.0.66"
+      "modVersion": "21.0.66",
+      "modDescription": "Abstraction Layer (but not really) for Blay's multiplatform mods",
+      "modProjectUrl": "https://mods.twelveiterations.com/",
+      "modIconUrl": "/api/modpack/files/imported/icons/b0fca145610251c81e12b28b2aeab7d905f1c52a036756af5554252e4a3534d2.png"
     },
     {
       "path": "mods/BetterPingDisplay-1.21.1-1.1.jar",
@@ -831,7 +839,9 @@
       "action": "sync",
       "modId": "betterpingdisplay",
       "modName": "Better Ping Display",
-      "modVersion": "1.1"
+      "modVersion": "1.1",
+      "modDescription": "Shows the actual ping number instead of just bars in the player list.",
+      "modIconUrl": "/api/modpack/files/imported/icons/4e037c01e80607e25fe7c1829f69a288cc474b93e17b8e8832ce7e8437cc0621.png"
     },
     {
       "path": "mods/c2me-neoforge-mc1.21.1-0.4.0-alpha.0.122.jar",
@@ -845,7 +855,10 @@
       "action": "sync",
       "modId": "c2me",
       "modName": "Concurrent Chunk Management Engine",
-      "modVersion": "0.4.0-alpha.0.122+1.21.1"
+      "modVersion": "0.4.0-alpha.0.122+1.21.1",
+      "modDescription": "A NeoForge mod designed to improve the chunk performance of Minecraft.",
+      "modProjectUrl": "https://github.com/RelativityMC/C2ME-neoforge",
+      "modIconUrl": "/api/modpack/files/imported/icons/3ab1a37accad4b73fdd302393e9acc9edfe99ee698f1f863cd523ccaba6d9be0.png"
     },
     {
       "path": "mods/cbc_compact_mount-1.2.2.jar",
@@ -860,7 +873,9 @@
       "action": "sync",
       "modId": "cbc_compact_mount",
       "modName": "CBC: Compact Mount",
-      "modVersion": "1.2.2"
+      "modVersion": "1.2.2",
+      "modDescription": "Ports the Compact Mount from Create Big Cannons: Modern Warfare as a single item \nForked from YMW, which was made by: Тризубний",
+      "modIconUrl": "/api/modpack/files/imported/icons/85a81d95f55caefbb6e322bffad52629f848bc151c8d7b7c5bd7dece36ccc76c.png"
     },
     {
       "path": "mods/chat_heads-0.15.7-neoforge-1.21.jar",
@@ -873,7 +888,9 @@
       "action": "sync",
       "modId": "chat_heads",
       "modName": "Chat Heads",
-      "modVersion": "0.15.7"
+      "modVersion": "0.15.7",
+      "modDescription": "See who are you chatting with!\nThis mod adds player heads next to their chat messages.",
+      "modIconUrl": "/api/modpack/files/imported/icons/08e8b5f6aa105396fd3669d25fcbf5cb17b1294b34f053db5490ae8ad504de4c.png"
     },
     {
       "path": "mods/cloth-config-15.0.140-neoforge.jar",
@@ -888,7 +905,8 @@
       "action": "sync",
       "modId": "cloth_config",
       "modName": "Cloth Config v15 API",
-      "modVersion": "15.0.140"
+      "modVersion": "15.0.140",
+      "modDescription": "An API for config screens."
     },
     {
       "path": "mods/Clumps-neoforge-1.21.1-19.0.0.1.jar",
@@ -902,7 +920,10 @@
       "action": "sync",
       "modId": "clumps",
       "modName": "Clumps",
-      "modVersion": "19.0.0.1"
+      "modVersion": "19.0.0.1",
+      "modDescription": "Clumps xp orbs together.",
+      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/clumps",
+      "modIconUrl": "/api/modpack/files/imported/icons/0f837ec718ec79dfa87f5311b772f667e2d6b42f0fb38750f16f34adce883183.png"
     },
     {
       "path": "mods/contraption-lights-neoforge-1.21.1-1.5.1.jar",
@@ -915,7 +936,8 @@
       "action": "sync",
       "modId": "contraptionlights",
       "modName": "Contraption Lights",
-      "modVersion": "1.5.1"
+      "modVersion": "1.5.1",
+      "modDescription": "Adds coloured dynamic lights that move with your Create contraptions and Sable sub-levels, flowing both ways between your builds and the world."
     },
     {
       "path": "mods/Controlling-neoforge-1.21.1-19.0.5.jar",
@@ -929,7 +951,10 @@
       "action": "sync",
       "modId": "controlling",
       "modName": "Controlling",
-      "modVersion": "19.0.5"
+      "modVersion": "19.0.5",
+      "modDescription": "Adds the ability to search for keybinds using their name in the KeyBinding menu, this allows players to easily find a key binding in the menu.",
+      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/controlling",
+      "modIconUrl": "/api/modpack/files/imported/icons/4cd83f1cd4921750b0c985197221170e2bd41d87fe1828c699ee87ba262f80e7.png"
     },
     {
       "path": "mods/coolrain-1.21.1-NeoForge-1.0.2.jar",
@@ -942,7 +967,8 @@
       "action": "sync",
       "modId": "coolrain",
       "modName": "Cool Rain",
-      "modVersion": "1.0.2"
+      "modVersion": "1.0.2",
+      "modDescription": ""
     },
     {
       "path": "mods/copycats-3.0.9+mc.1.21.1-neoforge.jar",
@@ -957,7 +983,10 @@
       "action": "sync",
       "modId": "copycats",
       "modName": "Create: Copycats+",
-      "modVersion": "3.0.9+mc.1.21.1-neoforge"
+      "modVersion": "3.0.9+mc.1.21.1-neoforge",
+      "modDescription": "All the copycats you've ever wanted, combined into a single mod!",
+      "modProjectUrl": "https://github.com/copycats-plus/copycats",
+      "modIconUrl": "/api/modpack/files/imported/icons/c9ba39f94232bc598e077bc01f8ba137125e25c9b95a36a884b46ed7ae73fe0c.png"
     },
     {
       "path": "mods/create_aeronautics_transmission_linkage-0.2.8.jar",
@@ -972,7 +1001,9 @@
       "action": "sync",
       "modId": "aeronautics_utility_objects",
       "modName": "Create Aeronautics: Transmission & Linkage",
-      "modVersion": "0.2.8"
+      "modVersion": "0.2.8",
+      "modDescription": "Adds universal joints, hydraulic links and kinetic converters for connecting and transmitting motion between Aeronautics structures.",
+      "modIconUrl": "/api/modpack/files/imported/icons/85244feade4801e64eff2df79979565d8ca9e1a9dd07a26ec93b1440a8bbfd94.png"
     },
     {
       "path": "mods/create_connected-1.3.3-mc1.21.1.jar",
@@ -987,7 +1018,10 @@
       "action": "sync",
       "modId": "create_connected",
       "modName": "Create: Connected",
-      "modVersion": "1.3.3-mc1.21.1"
+      "modVersion": "1.3.3-mc1.21.1",
+      "modDescription": "Quality-of-life blocks that you wish existed in Create.",
+      "modProjectUrl": "https://github.com/hlysine/create_connected",
+      "modIconUrl": "/api/modpack/files/imported/icons/8e20dfe1d5b74b5e454e23ac79183dbbbe39d1d60c6064ed62cb16b3b911d63d.png"
     },
     {
       "path": "mods/create_pattern_schematics-2.0.10.jar",
@@ -1002,7 +1036,9 @@
       "action": "sync",
       "modId": "create_pattern_schematics",
       "modName": "Create: Pattern Schematics",
-      "modVersion": "2.0.10"
+      "modVersion": "2.0.10",
+      "modDescription": "Create repeating schematic designs!",
+      "modIconUrl": "/api/modpack/files/imported/icons/684364f563e853d56604f76706edafd5576a8779d821f64f1e59efb3aa2c72c3.png"
     },
     {
       "path": "mods/create_radar-5.0-EA-2.0.2-1.21.1.jar",
@@ -1017,7 +1053,8 @@
       "action": "sync",
       "modId": "create_radar",
       "modName": "Create: Radars",
-      "modVersion": "5.0-EA-2.0.2-1.21.1"
+      "modVersion": "5.0-EA-2.0.2-1.21.1",
+      "modDescription": "Welcome to Create Radars, a mod offering a variety of tools and blocks for Surveillance, Detection, and Controlling Weapons."
     },
     {
       "path": "mods/create-1.21.1-6.0.10.jar",
@@ -1032,7 +1069,10 @@
       "action": "sync",
       "modId": "create",
       "modName": "Create",
-      "modVersion": "6.0.10"
+      "modVersion": "6.0.10",
+      "modDescription": "Technology that empowers the player.",
+      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/create",
+      "modIconUrl": "/api/modpack/files/imported/icons/075cd96b98d182688c1119c6026761be644d6d9c8e2cce43c2761cb1ec946374.png"
     },
     {
       "path": "mods/create-aeronautics-bundled-1.21.1-1.3.2.jar",
@@ -1047,7 +1087,9 @@
       "action": "sync",
       "modId": "aeronautics_bundled",
       "modName": "Create Aeronautics",
-      "modVersion": "1.3.2"
+      "modVersion": "1.3.2",
+      "modDescription": "Expands the Create mod with physics-based contraptions, to build anything from cars to planes. This is a bundled JAR that contains Simulated, Aeronautics, and Offroad.",
+      "modIconUrl": "/api/modpack/files/imported/icons/0c96b8e50536f5af1005d29b985fe3d460ea4666c03e36cb7d0ee70f2b28d92d.png"
     },
     {
       "path": "mods/createbetterfps-1.21.1-1.1.5.jar",
@@ -1060,7 +1102,8 @@
       "action": "sync",
       "modId": "createbetterfps",
       "modName": "CreateBetterFps",
-      "modVersion": "1.1.5"
+      "modVersion": "1.1.5",
+      "modDescription": ""
     },
     {
       "path": "mods/createbigcannons-5.11.7+mc.1.21.1.jar",
@@ -1075,7 +1118,9 @@
       "action": "sync",
       "modId": "createbigcannons",
       "modName": "Create Big Cannons",
-      "modVersion": "5.11.7"
+      "modVersion": "5.11.7",
+      "modDescription": "Artillery engineering comes to Create\nAttributions:\nLogo by Milkyfur\nTextures by rbasamoyai, Milkyfur, and LopyLuna",
+      "modIconUrl": "/api/modpack/files/imported/icons/a4537b85f5087b70a2f7d1e4e46770458cf46d46c611a97f153c6fd84c930b95.png"
     },
     {
       "path": "mods/createdeco-2.1.3.jar",
@@ -1090,7 +1135,9 @@
       "action": "sync",
       "modId": "createdeco",
       "modName": "Create Deco",
-      "modVersion": "2.1.3"
+      "modVersion": "2.1.3",
+      "modDescription": "Decorative options for your Create factory",
+      "modIconUrl": "/api/modpack/files/imported/icons/7b0cda2b59356cbcd146b5359f1047f0f4c1fe3a09b18e97740ddb2b2dfc370d.png"
     },
     {
       "path": "mods/createdieselgenerators-1.21.1-1.3.15.jar",
@@ -1105,7 +1152,8 @@
       "action": "sync",
       "modId": "createdieselgenerators",
       "modName": "Create Diesel Generators",
-      "modVersion": "1.21.1-1.3.15"
+      "modVersion": "1.21.1-1.3.15",
+      "modDescription": "Diesel Generators, Oil processing."
     },
     {
       "path": "mods/curios-neoforge-9.5.1+1.21.1.jar",
@@ -1120,7 +1168,9 @@
       "action": "sync",
       "modId": "curios",
       "modName": "Curios API",
-      "modVersion": "9.5.1+1.21.1"
+      "modVersion": "9.5.1+1.21.1",
+      "modDescription": "A flexible and expandable accessory/equipment API for users and developers.",
+      "modProjectUrl": "https://github.com/TheIllusiveC4/Curios"
     },
     {
       "path": "mods/cwb-neoforge-3.0.0+mc1.21.jar",
@@ -1134,7 +1184,10 @@
       "action": "sync",
       "modId": "cubes_without_borders",
       "modName": "Cubes Without Borders",
-      "modVersion": "3.0.0+mc1.21"
+      "modVersion": "3.0.0+mc1.21",
+      "modDescription": "Allows you to play Minecraft in a borderless fullscreen window.",
+      "modProjectUrl": "https://github.com/Kir-Antipov/cubes-without-borders",
+      "modIconUrl": "/api/modpack/files/imported/icons/eeaae737aba76ab1f7b5647db2b658e071da495bcfcb026231dc08fc5acb4ebb.png"
     },
     {
       "path": "mods/DistantHorizons-3.3.2-1.21.1-fabric-neoforge.jar",
@@ -1147,7 +1200,10 @@
       "action": "sync",
       "modId": "distanthorizons",
       "modName": "Distant Horizons",
-      "modVersion": "3.3.2"
+      "modVersion": "3.3.2",
+      "modDescription": "This mod generates and renders simplified terrain beyond the normal view distance at a low performance cost. Allowing you to see much farther without turning your game into a slideshow.",
+      "modProjectUrl": "https://modrinth.com/mod/distanthorizons",
+      "modIconUrl": "/api/modpack/files/imported/icons/c09f183303af8256ddf1650d5160eb3dfabdab1f874e7c62170636d9818791ec.png"
     },
     {
       "path": "mods/entity_model_features-3.3.9-1.21-neoforge.jar",
@@ -1160,7 +1216,9 @@
       "action": "sync",
       "modId": "entity_model_features",
       "modName": "Entity Model Features",
-      "modVersion": "3.3.9"
+      "modVersion": "3.3.9",
+      "modDescription": "This is an expansion of the ETF mod, it adds support for OptiFine format Custom Entity Model (CEM) resource packs.\nWhile still allowing to you disable this to use a different model mod :)",
+      "modIconUrl": "/api/modpack/files/imported/icons/bdf7e32e80b18537f8227fd5ce41091dc864d037a5daac96279dc2fcef72f67b.png"
     },
     {
       "path": "mods/entity_texture_features-7.2.4-1.21-neoforge.jar",
@@ -1173,7 +1231,9 @@
       "action": "sync",
       "modId": "entity_texture_features",
       "modName": "Entity Texture Features",
-      "modVersion": "7.2.4"
+      "modVersion": "7.2.4",
+      "modDescription": "Adds support for resource-pack driven features for entity textures including some OptiFine features\nSupports OptiFine:\n - Random & Custom textures\n - Emissive textures\nWith more features such as:\n - Blinking textures\n - Player Skin support",
+      "modIconUrl": "/api/modpack/files/imported/icons/dbee86f827aecd0d71ebcf2235e1120a88451d53148e6b127024e9add21611d6.png"
     },
     {
       "path": "mods/entityculling-neoforge-1.11.2-mc1.21.1.jar",
@@ -1187,7 +1247,10 @@
       "action": "sync",
       "modId": "entityculling",
       "modName": "EntityCulling",
-      "modVersion": "1.11.2"
+      "modVersion": "1.11.2",
+      "modDescription": "This mod uses async path-tracing to hide Tiles/Entities that are not visible.",
+      "modProjectUrl": "https://modrinth.com/mod/entityculling",
+      "modIconUrl": "/api/modpack/files/imported/icons/55dd496b9ac0cf7fd0eb7dc2980b9c8d2d2b75c5c622e53a02ca1b8f084b3931.png"
     },
     {
       "path": "mods/explosionoverhaul-0.2.3.0-neoforge.jar",
@@ -1202,7 +1265,8 @@
       "action": "sync",
       "modId": "explosionoverhaul",
       "modName": "Explosion Overhaul: A new level of destruction",
-      "modVersion": "0.2.3.0-neoforge"
+      "modVersion": "0.2.3.0-neoforge",
+      "modDescription": "This mod completely rethinks explosions in Minecraft, making them incredibly realistic and dynamic. Enjoy unique explosion sounds that change depending on the distance and environment, tangible shockwaves and concussions, as well as realistic visual effects, including plasma sparks and fire clouds. Experience the true destructive power of explosions like never before"
     },
     {
       "path": "mods/FarmersDelight-1.21.1-1.3.4.jar",
@@ -1217,7 +1281,10 @@
       "action": "sync",
       "modId": "farmersdelight",
       "modName": "Farmer's Delight",
-      "modVersion": "1.3.4"
+      "modVersion": "1.3.4",
+      "modDescription": "A cozy farming and cooking expansion for Minecraft!",
+      "modProjectUrl": "https://github.com/vectorwing/FarmersDelight",
+      "modIconUrl": "/api/modpack/files/imported/icons/6c1fd924c54c5048e882845374ece6a8ab27080b2931508b52a6bf8f84403e97.png"
     },
     {
       "path": "mods/ferritecore-7.0.3-neoforge.jar",
@@ -1231,7 +1298,9 @@
       "action": "sync",
       "modId": "ferritecore",
       "modName": "Ferrite Core",
-      "modVersion": "7.0.3"
+      "modVersion": "7.0.3",
+      "modDescription": "Reduces memory usage.",
+      "modIconUrl": "/api/modpack/files/imported/icons/036c25f15ff47be4cd6e87c58674a30b499336465c1b7d12acf2ea67cd02607e.png"
     },
     {
       "path": "mods/fxntstorage-1.3.5+mc-1.21.1-neoforge.jar",
@@ -1246,7 +1315,10 @@
       "action": "sync",
       "modId": "fxntstorage",
       "modName": "Create: Storage",
-      "modVersion": "1.3.5"
+      "modVersion": "1.3.5",
+      "modDescription": "A lightweight storage addon for the Create Mod featuring Storage Boxes and Backpacks.",
+      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/create-storage-neo-forge",
+      "modIconUrl": "/api/modpack/files/imported/icons/06110ece72819d7c0348ac2794868bd4fba40914db63985291b54d2d057d8ebc.png"
     },
     {
       "path": "mods/geckolib-neoforge-1.21.1-4.9.3.jar",
@@ -1261,7 +1333,10 @@
       "action": "sync",
       "modId": "geckolib",
       "modName": "GeckoLib 4",
-      "modVersion": "4.9.3"
+      "modVersion": "4.9.3",
+      "modDescription": "GeckoLib is an animation engine for Minecraft Mods, with support for complex 3D keyframe-based animations, 30+ easings, concurrent animation support, sound and particle keyframes, event keyframes, and more.",
+      "modProjectUrl": "http://geckolib.com/",
+      "modIconUrl": "/api/modpack/files/imported/icons/d8067ada45a6e862c7524d3908e535dc2445c478d38346fde5108ad697835795.png"
     },
     {
       "path": "mods/ImmediatelyFast-NeoForge-1.6.14+1.21.1.jar",
@@ -1275,7 +1350,10 @@
       "action": "sync",
       "modId": "immediatelyfast",
       "modName": "ImmediatelyFast",
-      "modVersion": "1.6.14+1.21.1"
+      "modVersion": "1.6.14+1.21.1",
+      "modDescription": "Speed up and optimize immediate mode rendering in Minecraft",
+      "modProjectUrl": "https://github.com/RaphiMC/ImmediatelyFast",
+      "modIconUrl": "/api/modpack/files/imported/icons/985ac7bc84f72a564d0c3fda47f64c0c465397c836dc0fb6d4ba6ef865bd1294.png"
     },
     {
       "path": "mods/InvMove-0.9.3+1.21.1-NeoForge.jar",
@@ -1289,7 +1367,9 @@
       "action": "sync",
       "modId": "invmove",
       "modName": "InvMove",
-      "modVersion": "0.9.3"
+      "modVersion": "0.9.3",
+      "modDescription": "Lets you move while in inventories.",
+      "modIconUrl": "/api/modpack/files/imported/icons/6436256b12c8c3776c3e9273b6e4b25a11eb35385f7aa34dc5d9d9c19153c188.png"
     },
     {
       "path": "mods/iris-neoforge-1.8.14-beta.1+mc1.21.1.jar",
@@ -1302,7 +1382,9 @@
       "action": "sync",
       "modId": "iris",
       "modName": "Iris",
-      "modVersion": "1.8.14-beta.1+mc1.21.1"
+      "modVersion": "1.8.14-beta.1+mc1.21.1",
+      "modDescription": "Iris is a modern shaders mod for Minecraft intended to be compatible with existing OptiFine shader packs.",
+      "modIconUrl": "/api/modpack/files/imported/icons/b1c7a2025910dfe43bd54ed4be19760a9c2332aa7734e250c2841fa3b124098c.png"
     },
     {
       "path": "mods/Jade-1.21.1-NeoForge-15.10.6.jar",
@@ -1316,7 +1398,10 @@
       "action": "sync",
       "modId": "jade",
       "modName": "Jade",
-      "modVersion": "${file.jarVersion}"
+      "modVersion": "15.10.6+neoforge",
+      "modDescription": "Minecraft mod shows what you are looking at. (Hwyla fork)",
+      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/jade",
+      "modIconUrl": "/api/modpack/files/imported/icons/db278b858ddc24d767f2c33454433595ab949aff6e410b75dcf0e0395936714d.png"
     },
     {
       "path": "mods/krypton_fnp-neoforge-1.21.1-0.2.28.1-1.21.1.jar",
@@ -1330,7 +1415,10 @@
       "action": "sync",
       "modId": "krypton_fnp",
       "modName": "Krypton FNP",
-      "modVersion": "0.2.28.1-1.21.1"
+      "modVersion": "0.2.28.1-1.21.1",
+      "modDescription": "Provides powerful network optimization capabilities for all mainstream systems.",
+      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/krypton-fnp",
+      "modIconUrl": "/api/modpack/files/imported/icons/5463bb794492728e8e27aed46b08269ca9b4f634ad44f80d202e8d37ae5f6747.png"
     },
     {
       "path": "mods/lambdynamiclights-4.8.11+1.21.1.jar",
@@ -1343,7 +1431,10 @@
       "action": "sync",
       "modId": "lambdynlights",
       "modName": "LambDynamicLights",
-      "modVersion": "4.8.11+1.21.1"
+      "modVersion": "4.8.11+1.21.1",
+      "modDescription": "The most feature-complete dynamic lighting mod.",
+      "modProjectUrl": "https://lambdaurora.dev/projects/lambdynamiclights",
+      "modIconUrl": "/api/modpack/files/imported/icons/5c1a828eee47e11cd31c7e7af8a272a5da46db1e584c349e12bd2e174ce170e1.png"
     },
     {
       "path": "mods/lithium-neoforge-0.15.4+mc1.21.1.jar",
@@ -1357,7 +1448,9 @@
       "action": "sync",
       "modId": "lithium",
       "modName": "Lithium",
-      "modVersion": "0.15.4+mc1.21.1"
+      "modVersion": "0.15.4+mc1.21.1",
+      "modDescription": "Lithium is a free and open-source optimization mod for Minecraft which makes a wide range of performance improvements to the game.",
+      "modIconUrl": "/api/modpack/files/imported/icons/a3ac47c2f3ec2d32671f00b94b5e4248dbd08bbf94ca532d09cff6fa08303dd5.png"
     },
     {
       "path": "mods/modernfix-neoforge-5.27.24+mc1.21.1.jar",
@@ -1371,7 +1464,10 @@
       "action": "sync",
       "modId": "modernfix",
       "modName": "ModernFix",
-      "modVersion": "5.27.24+mc1.21.1"
+      "modVersion": "5.27.24+mc1.21.1",
+      "modDescription": "Egregious, yet effective performance improvements for modern Minecraft",
+      "modProjectUrl": "https://modrinth.com/mod/modernfix",
+      "modIconUrl": "/api/modpack/files/imported/icons/e30d761b508179789c8abb27f84f877b550cb1b8e0a38c231b88c0706e795483.png"
     },
     {
       "path": "mods/MouseTweaks-neoforge-mc1.21-2.26.1.jar",
@@ -1385,7 +1481,10 @@
       "action": "sync",
       "modId": "mousetweaks",
       "modName": "Mouse Tweaks",
-      "modVersion": "2.26.1"
+      "modVersion": "2.26.1",
+      "modDescription": "A mod that enhances the inventory management by adding various additional functions to the usual mouse buttons.",
+      "modProjectUrl": "https://minecraft.curseforge.com/projects/mouse-tweaks",
+      "modIconUrl": "/api/modpack/files/imported/icons/43e8e2d2ea11cc999a282da455eae3374884717be6cb6741a2911dbacfef490c.png"
     },
     {
       "path": "mods/packetfixer-3.3.1-1.20.5-1.21.X-merged.jar",
@@ -1399,7 +1498,9 @@
       "action": "sync",
       "modId": "packetfixer",
       "modName": "PacketFixer",
-      "modVersion": "3.3.1"
+      "modVersion": "3.3.1",
+      "modDescription": "A simple mod to solve various problems with packets.",
+      "modIconUrl": "/api/modpack/files/imported/icons/fe49e1e1b3d48e9975fb6599b30886d2cca2009ce22428aad64c3cf99c088c30.png"
     },
     {
       "path": "mods/powergrid-mc1.21.1-0.6.2.jar",
@@ -1414,7 +1515,9 @@
       "action": "sync",
       "modId": "powergrid",
       "modName": "Create: Power Grid",
-      "modVersion": "0.6.2"
+      "modVersion": "0.6.2",
+      "modDescription": "Providing electricity to a world near you.",
+      "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
       "path": "mods/quiby-1.21.1-1.0.0.jar",
@@ -1428,7 +1531,9 @@
       "action": "sync",
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.0.0"
+      "modVersion": "1.0.0",
+      "modDescription": "Официальный клиентский и серверный мод для 6 сезона проекта Quiby.\nВключает полную русскую локализацию модов сборки, фирменные ресурсы и оптимизации.",
+      "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },
     {
       "path": "mods/ragdoll_corpse-1.21.1-0.3.0.jar",
@@ -1443,7 +1548,9 @@
       "action": "sync",
       "modId": "ragdoll_corpse",
       "modName": "Sable: Ragdoll Corpse",
-      "modVersion": "0.3.0"
+      "modVersion": "0.3.0",
+      "modDescription": "Leaves a physical ragdoll corpse behind on death!",
+      "modIconUrl": "/api/modpack/files/imported/icons/15cf7dfb1806589cc25472970a0e2965fe0d3209af7f03b6f7ce24f9db374c59.png"
     },
     {
       "path": "mods/ragdoll_reactions-1.21.1-0.7.0.jar",
@@ -1458,7 +1565,9 @@
       "action": "sync",
       "modId": "ragdoll_reactions",
       "modName": "Ragdoll Reactions",
-      "modVersion": "0.7.0"
+      "modVersion": "0.7.0",
+      "modDescription": "Players and mobs ragdoll in reaction to the world around them! Crashes, explosions, damage, and more send them tumbling.",
+      "modIconUrl": "/api/modpack/files/imported/icons/0c3d93f54c564f9af12490bab3d6c6a473ae8bbd984d8cbaf2819e8a84915b2d.png"
     },
     {
       "path": "mods/rejei-0.1.0.jar",
@@ -1472,7 +1581,10 @@
       "action": "sync",
       "modId": "rejei",
       "modName": "ReJei",
-      "modVersion": "0.1.0"
+      "modVersion": "0.1.0",
+      "modDescription": "Adds Create machine recipe categories to Roughly Enough Items (REI).",
+      "modProjectUrl": "https://github.com/peperehobbits01/rcif",
+      "modIconUrl": "/api/modpack/files/imported/icons/e8a95c452e859f2a036584a119726516afec9a617a7e7f744ea225aaa68147d0.png"
     },
     {
       "path": "mods/ritchiesprojectilelib-2.1.2+mc.1.21.1-neoforge.jar",
@@ -1487,7 +1599,9 @@
       "action": "sync",
       "modId": "ritchiesprojectilelib",
       "modName": "Ritchie's Projectile Library",
-      "modVersion": "2.1.2"
+      "modVersion": "2.1.2",
+      "modDescription": "A Minecraft modding library for better projectiles.",
+      "modIconUrl": "/api/modpack/files/imported/icons/c5f924f42f45741ad8fe64b62e7eecc4ec0a65410700239c6cdb07fe312a2094.png"
     },
     {
       "path": "mods/RoughlyEnoughItems-16.0.799-neoforge.jar",
@@ -1501,7 +1615,8 @@
       "action": "sync",
       "modId": "roughlyenoughitems",
       "modName": "Roughly Enough Items (REI)",
-      "modVersion": "16.0.799"
+      "modVersion": "16.0.799",
+      "modDescription": "To allow players to view items and recipes."
     },
     {
       "path": "mods/sable_player_ragdoll_patch-1.21.1-1.9.jar",
@@ -1516,7 +1631,9 @@
       "action": "sync",
       "modId": "sable_player_ragdoll_patch",
       "modName": "Sable Ragdolls Patch",
-      "modVersion": "1.9"
+      "modVersion": "1.9",
+      "modDescription": "This mod adds patches and features to Sable-Player-Ragdoll and Sable-Ragdoll-Corpse.",
+      "modIconUrl": "/api/modpack/files/imported/icons/5e31eeadcc73dfda2018a1e6fa95d6addc8fa5e8510db81d15a0b967b5ecd862.png"
     },
     {
       "path": "mods/sable_player_ragdoll-1.21.1-0.7.5.jar",
@@ -1531,7 +1648,9 @@
       "action": "sync",
       "modId": "sable_player_ragdoll",
       "modName": "Sable Ragdolls",
-      "modVersion": "0.7.5"
+      "modVersion": "0.7.5",
+      "modDescription": "Ragdoll physics API for Sable. Provides the core ragdoll system and API for addon mods.",
+      "modIconUrl": "/api/modpack/files/imported/icons/6a6975d9b450b16d162fddd2e84b49f0f8a45dd4036b70f8bbf37b1fc375887c.png"
     },
     {
       "path": "mods/sable_ragdoll_dummies-1.0.0-neoforge-1.21.1.jar",
@@ -1546,7 +1665,10 @@
       "action": "sync",
       "modId": "sable_ragdoll_dummies",
       "modName": "Sable: Ragdoll Dummies",
-      "modVersion": "1.0.0"
+      "modVersion": "1.0.0",
+      "modDescription": "Spawn ragdoll dummies without the use of commands",
+      "modProjectUrl": "https://modrinth.com/project/sable-ragdoll-dummies",
+      "modIconUrl": "/api/modpack/files/imported/icons/f717379896024acd900d78c5f1220ada5af72bc27b33311b156f4e3cc8956394.png"
     },
     {
       "path": "mods/sable_ragdoll_revival-1.2.2.jar",
@@ -1561,7 +1683,8 @@
       "action": "sync",
       "modId": "sable_ragdoll_revival",
       "modName": "Sable: Ragdoll Revival",
-      "modVersion": "1.2.2"
+      "modVersion": "1.2.2",
+      "modDescription": "An addon for Sable: Ragdolls where you can heal and revive downed players with food :)"
     },
     {
       "path": "mods/sable-cool-rain-1.0.1+1.21.1+neoforge.jar",
@@ -1574,7 +1697,10 @@
       "action": "sync",
       "modId": "sable_cool_rain",
       "modName": "Sable: Cool Rain",
-      "modVersion": "1.0.1+1.21.1+neoforge"
+      "modVersion": "1.0.1+1.21.1+neoforge",
+      "modDescription": "Compatibility addon that makes Cool Rain Reforged rain sounds work with Sable structures.",
+      "modProjectUrl": "https://modrinth.com/mod/sable-cool-rain",
+      "modIconUrl": "/api/modpack/files/imported/icons/9da76082332c6addf4b47033ed6de4a2a45158ac33a909677840a01b07b91c68.png"
     },
     {
       "path": "mods/sable-neoforge-1.21.1-2.0.5.jar",
@@ -1589,7 +1715,9 @@
       "action": "sync",
       "modId": "sable",
       "modName": "Sable",
-      "modVersion": "2.0.5"
+      "modVersion": "2.0.5",
+      "modDescription": "Interactive moving block structures with physics.",
+      "modIconUrl": "/api/modpack/files/imported/icons/63c80250ee219ecc628bba0820c210c34990859a26284f42b3c622c2d21e1286.png"
     },
     {
       "path": "mods/sabledramaticimpact-1.0.0.jar",
@@ -1602,7 +1730,10 @@
       "action": "sync",
       "modId": "sabledramaticimpact",
       "modName": "Sable: Dramatic Impact",
-      "modVersion": "1.0.0"
+      "modVersion": "1.0.0",
+      "modDescription": "Add explosion effects to sable physics collisions!",
+      "modProjectUrl": "https://github.com/SHsuperCM/sable-dramatic-impact",
+      "modIconUrl": "/api/modpack/files/imported/icons/3891938d810d12d3f5eda619a450a560f9387e5d3533992cf064946988668a24.png"
     },
     {
       "path": "mods/Searchables-neoforge-1.21.1-1.0.2.jar",
@@ -1616,7 +1747,10 @@
       "action": "sync",
       "modId": "searchables",
       "modName": "Searchables",
-      "modVersion": "1.0.2"
+      "modVersion": "1.0.2",
+      "modDescription": "A library mod to facilitate adding search bars with auto complete and search types.",
+      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/searchables",
+      "modIconUrl": "/api/modpack/files/imported/icons/0e041a45ef527e2509132df4cc76c4bd653a5c42232049eb12be341e16b91ed4.png"
     },
     {
       "path": "mods/sodium-neoforge-0.8.13+mc1.21.1.jar",
@@ -1630,7 +1764,9 @@
       "action": "sync",
       "modId": "sodium",
       "modName": "Sodium",
-      "modVersion": "0.8.13+mc1.21.1"
+      "modVersion": "0.8.13+mc1.21.1",
+      "modDescription": "Sodium is a powerful rendering engine for Minecraft which improves frame rates and reduces lag spikes.",
+      "modIconUrl": "/api/modpack/files/imported/icons/bdda8134b19f01f44316fc71c47946a4ad85a160550d45670b08588ac1551bc0.png"
     },
     {
       "path": "mods/visuality-forge-3.0.0.jar",
@@ -1643,7 +1779,10 @@
       "action": "sync",
       "modId": "visuality",
       "modName": "Visuality: Reforged",
-      "modVersion": "3.0.0"
+      "modVersion": "3.0.0",
+      "modDescription": "Little visual improvements by adding a bunch of new particles.",
+      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/visuality-forge",
+      "modIconUrl": "/api/modpack/files/imported/icons/92a55f3c9376033ac274972ac5f3d6229992b4297c9bf0f9c0c31fa4460623f3.png"
     },
     {
       "path": "mods/voicechat-neoforge-1.21.1-2.6.24.jar",
@@ -1658,7 +1797,10 @@
       "action": "sync",
       "modId": "voicechat",
       "modName": "Simple Voice Chat",
-      "modVersion": "1.21.1-2.6.24"
+      "modVersion": "1.21.1-2.6.24",
+      "modDescription": "A working voice chat in Minecraft!",
+      "modProjectUrl": "https://modrepo.de/minecraft/voicechat/overview",
+      "modIconUrl": "/api/modpack/files/imported/icons/fd7cd8cd9908bfbe0d90917339b0bcbc608051d112b733d6984ccabb97ac6356.png"
     },
     {
       "path": "options.txt",
@@ -1694,5 +1836,5 @@
   ],
   "changelog": "Visual, Standard и Draft из профиля quiby. s6; исходные настройки и Complementary Unbound.",
   "serverAddress": "",
-  "updatedAt": "2026-09-26T11:05:37.076Z"
+  "updatedAt": "2026-09-26T12:47:50.796Z"
 }

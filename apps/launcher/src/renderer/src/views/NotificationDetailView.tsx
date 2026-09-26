@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowUpRight, Copy, Mail, Newspaper, Trash2 } from 'lucide-react';
 import { NewsArticle } from '@quiby/shared';
-import { NotificationItem } from '../components/NotificationsModal';
+import type { NotificationItem } from '../utils/notifications';
 
 interface NotificationDetailViewProps {
   news: NewsArticle[];
@@ -9,26 +9,24 @@ interface NotificationDetailViewProps {
   notification: NotificationItem | null;
   onDeleteNotification: (id: string) => void;
   onNavigateToMods: () => void;
+  onToast: (title: string, type: 'success' | 'error') => void;
 }
 
-export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({ news, newsAvailable, notification, onDeleteNotification, onNavigateToMods }) => {
+export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({ news, newsAvailable, notification, onDeleteNotification, onNavigateToMods, onToast }) => {
   const [tab, setTab] = useState<'news' | 'notifications'>(notification ? 'notifications' : 'news');
-  const [copyState, setCopyState] = useState('');
 
   useEffect(() => {
     if (notification) setTab('notifications');
   }, [notification?.id]);
-
-  useEffect(() => { setCopyState(''); }, [notification?.id]);
 
   const copyNotification = async () => {
     if (!notification) return;
     const lines = [notification.title, notification.message, notification.modInfo?.name && `Мод: ${notification.modInfo.name}`, notification.modInfo?.filename && `Файл: ${notification.modInfo.filename}`, notification.modInfo?.hashSha1 && `SHA-1: ${notification.modInfo.hashSha1}`];
     try {
       await navigator.clipboard.writeText(lines.filter(Boolean).join('\n'));
-      setCopyState('Скопировано');
+      onToast('Уведомление скопировано', 'success');
     } catch {
-      setCopyState('Не удалось скопировать');
+      onToast('Не удалось скопировать уведомление', 'error');
     }
   };
 
@@ -61,8 +59,7 @@ export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({ 
       ) : notification ? (
         <article className="message-article message-detail">
           <div className="message-meta"><span>{notification.type}</span><time dateTime={new Date(notification.timestamp).toISOString()}>{dateLabel(notification.timestamp)}</time></div>
-          <div className="message-detail-title"><h2>{notification.title}</h2><button type="button" onClick={copyNotification} title="Скопировать уведомление" aria-label="Скопировать уведомление"><Copy size={17} /></button><button type="button" onClick={() => onDeleteNotification(notification.id)} title="Удалить уведомление"><Trash2 size={17} /></button></div>
-          {copyState && <span role="status">{copyState}</span>}
+          <div className="message-detail-title"><h2>{notification.title}</h2><div className="message-actions"><button className="message-copy" type="button" onClick={copyNotification} title="Скопировать уведомление"><Copy size={15} /><span>Копировать</span></button><button type="button" onClick={() => onDeleteNotification(notification.id)} title="Удалить уведомление" aria-label="Удалить уведомление"><Trash2 size={16} /></button></div></div>
           {notification.message && <p>{notification.message}</p>}
           {notification.modInfo && (
             <dl className="message-mod-info">

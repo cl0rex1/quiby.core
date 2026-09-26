@@ -76,6 +76,7 @@ export const MALWARE_KEYWORDS = [
  */
 export function quickScanForCheatSignatures(filename: string, name: string): { isCheat: boolean; signature?: string } {
   const lower = (filename + ' ' + name).toLowerCase();
+  if (/(^|[^a-z0-9])esp([^a-z0-9]|$)/.test(lower)) return { isCheat: true, signature: 'esp' };
   for (const kw of CHEAT_KEYWORDS) {
     if (lower.includes(kw)) {
       return { isCheat: true, signature: kw };

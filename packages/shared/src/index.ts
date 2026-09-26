@@ -9,6 +9,9 @@ export interface ModpackFile {
   modId?: string;
   modName?: string;
   modVersion?: string;
+  modDescription?: string;
+  modProjectUrl?: string;
+  modIconUrl?: string;
 }
 
 export interface ModpackManifest {

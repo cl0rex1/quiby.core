@@ -9,6 +9,7 @@ import { ensureNeoForge } from './neoforge';
 import { hashCustomModFile, requireApprovedCustomMod } from './customModVerification';
 import { updateDiscordRpcStatus } from '../rpc/discordRpc';
 import { selectModpackProfile } from '../../shared/modpackProfiles';
+import { resolveJava21 } from './javaDetector';
 
 let runningGameProcess: ChildProcess | null = null;
 let gameStartTime: number | null = null;
@@ -74,6 +75,7 @@ export async function launchMinecraft(
       throw new Error(`Не удалось получить манифест сборки с сервера: ${manifestRes.statusText}`);
     }
     const manifest = selectModpackProfile(await manifestRes.json() as ModpackManifest, settings.modpackProfile);
+    const javaBin = await resolveJava21(settings.javaPath);
     sendLog('info', `📦 Загружен манифест версии: ${manifest.name} (v${manifest.version})`);
 
     const gameDir = path.resolve(settings.gameDir);
@@ -125,7 +127,7 @@ export async function launchMinecraft(
 
     // 4. Ensure NeoForge Loader
     sendLog('info', `⚙️ Проверка загрузчика ${manifest.loader.type} ${manifest.loader.version}...`);
-    const neoforge = await ensureNeoForge(manifest.gameVersion, manifest.loader.version, gameDir, settings.javaPath, win);
+    const neoforge = await ensureNeoForge(manifest.gameVersion, manifest.loader.version, gameDir, javaBin, win);
 
     // 5. Construct Launch Arguments
     sendLog('info', `🛠️ Формирование аргументов запуска JVM (Память: ${settings.ramMinMb}MB - ${settings.ramMaxMb}MB)...`);
@@ -162,7 +164,6 @@ export async function launchMinecraft(
     const cpSeparator = process.platform === 'win32' ? ';' : ':';
     const allLibraries = Array.from(new Set([...vanilla.libraries, ...neoforge.libraries]));
     const classpathEntries = [
-      vanilla.clientJar,
       ...allLibraries,
     ].filter(p => fs.existsSync(p));
 
@@ -178,7 +179,8 @@ export async function launchMinecraft(
       '--assetsDir', path.join(gameDir, 'assets'),
       '--assetIndex', vanilla.versionJson.assetIndex.id,
       '--uuid', session.user.uuid,
-      '--accessToken', session.token,
+      // The Discord/API session is not a Minecraft credential and must stay out of the game process.
+      '--accessToken', '0',
       '--userType', 'mojang',
       '--versionType', 'quiby-s6',
       '--width', settings.windowWidth.toString(),
@@ -206,13 +208,13 @@ export async function launchMinecraft(
       if (currentHash !== approvedHash) throw new Error(`Мод ${filename} изменился после проверки. Запустите игру снова.`);
     }
 
-    sendLog('info', `🚀 Запуск Java процесса: ${settings.javaPath}`);
+    sendLog('info', `🚀 Запуск Java 21: ${javaBin}`);
     setLaunchState({ status: 'starting' });
 
-    const javaBin = settings.javaPath || 'java';
     const gameProcess = spawn(javaBin, fullArgs, {
       cwd: gameDir,
       env: { ...process.env },
+      windowsHide: true,
     });
 
     await new Promise<void>((resolve, reject) => {

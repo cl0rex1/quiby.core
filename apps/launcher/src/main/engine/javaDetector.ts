@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
-import { exec, execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import os from 'os';
 
 export interface JavaInstallation {
   path: string;
   version: number;
   versionString: string;
-  isCompatible: boolean; // >= 21
+  isCompatible: boolean; // Minecraft 1.21.1 / NeoForge requires Java 21
   isBundled?: boolean;
 }
 
@@ -49,13 +49,11 @@ export async function detectInstalledJava(): Promise<JavaInstallation[]> {
     const progFiles = [process.env['ProgramFiles'], process.env['ProgramFiles(x86)'], process.env['LOCALAPPDATA']];
     for (const pf of progFiles) {
       if (!pf) continue;
-      const roots = [path.join(pf, 'Java'), path.join(pf, 'Eclipse Adoptium'), path.join(pf, 'BellSoft'), path.join(pf, 'Zulu')];
+      const roots = [path.join(pf, 'Java'), path.join(pf, 'Eclipse Adoptium'), path.join(pf, 'BellSoft'), path.join(pf, 'Zulu'), path.join(process.env.APPDATA || '', 'ModrinthApp', 'meta', 'java_versions')];
       for (const root of roots) {
         if (fs.existsSync(root)) {
           const subdirs = fs.readdirSync(root);
           for (const s of subdirs) {
-            const bin = path.join(root, s, 'bin', 'javaw.exe');
-            if (fs.existsSync(bin)) candidatePaths.push(bin);
             const bin2 = path.join(root, s, 'bin', 'java.exe');
             if (fs.existsSync(bin2)) candidatePaths.push(bin2);
           }
@@ -87,7 +85,7 @@ export async function detectInstalledJava(): Promise<JavaInstallation[]> {
           path: javaBin,
           version: versionInfo.major,
           versionString: versionInfo.full,
-          isCompatible: versionInfo.major >= 21,
+          isCompatible: versionInfo.major === 21,
         });
       }
     } catch (_) {}
@@ -98,7 +96,8 @@ export async function detectInstalledJava(): Promise<JavaInstallation[]> {
 
 export function getJavaVersion(javaBin: string): { major: number; full: string } | null {
   try {
-    const output = execSync(`"${javaBin}" -version 2>&1`, { encoding: 'utf8' });
+    const result = spawnSync(javaBin.replace(/javaw\.exe$/i, 'java.exe'), ['-version'], { encoding: 'utf8', windowsHide: true, timeout: 10000 });
+    const output = `${result.stdout || ''}\n${result.stderr || ''}`;
     const match = output.match(/(?:java|openjdk) version "([^"]+)"/) || output.match(/version "([^"]+)"/);
     if (match) {
       const full = match[1];
@@ -115,7 +114,15 @@ export function getJavaVersion(javaBin: string): { major: number; full: string }
 }
 
 export function getRecommendedJava(installations: JavaInstallation[]): JavaInstallation | null {
-  // Find highest compatible (>= 21)
+  // Stay on the runtime supported by this Minecraft version.
   const compatible = installations.filter(i => i.isCompatible).sort((a, b) => b.version - a.version);
   return compatible[0] || null;
+}
+
+export async function resolveJava21(selectedPath: string): Promise<string> {
+  const consolePath = (selectedPath || 'java').replace(/javaw\.exe$/i, 'java.exe');
+  if (getJavaVersion(consolePath)?.major === 21) return consolePath;
+  const installed = getRecommendedJava(await detectInstalledJava());
+  if (installed) return installed.path;
+  throw new Error('Для этой сборки нужна Java 21 (64-bit). Установите Java 21 и выберите её в настройках лаунчера.');
 }

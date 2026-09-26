@@ -14,6 +14,29 @@ let mainWindow: BrowserWindow | null = null;
 let splashWindow: BrowserWindow | null = null;
 let mainReady = false;
 let splashReady = false;
+const appIcon = app.isPackaged
+  ? path.join(process.resourcesPath, 'icon.png')
+  : path.join(__dirname, '../../src/renderer/src/assets/quiby_q_logo.png');
+app.setName('quiby.core');
+if (process.platform === 'win32') app.setAppUserModelId('fun.quiby.launcher');
+
+function configureWindow(win: BrowserWindow) {
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  win.webContents.on('will-navigate', (event, url) => {
+    if (url !== win.webContents.getURL()) {
+      event.preventDefault();
+      if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
+    }
+  });
+  win.webContents.on('did-fail-load', (_event, code, description) => {
+    if (code === -3) return;
+    dialog.showErrorBox('Не удалось открыть quiby.core', description);
+    app.quit();
+  });
+}
 function revealMainWindow() {
   if (!mainReady || !splashReady || !mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.show();
@@ -78,7 +101,11 @@ function saveSettings(settings: LauncherSettings): void {
 }
 
 function createSplashWindow(): void {
+  splashReady = false;
   splashWindow = new BrowserWindow({
+    icon: appIcon,
+    title: 'quiby.core',
+    show: false,
     width: 500,
     height: 300,
     frame: false,
@@ -92,6 +119,8 @@ function createSplashWindow(): void {
       contextIsolation: true,
     },
   });
+  configureWindow(splashWindow);
+  splashWindow.once('ready-to-show', () => splashWindow?.show());
 
   if (process.env.VITE_DEV_SERVER_URL) {
     splashWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}?view=splash`);
@@ -109,6 +138,8 @@ function createSplashWindow(): void {
 function createMainWindow(): void {
   mainReady = false;
   mainWindow = new BrowserWindow({
+    icon: appIcon,
+    title: 'quiby.core',
     width: 1100,
     height: 720,
     minWidth: 980,
@@ -123,6 +154,7 @@ function createMainWindow(): void {
       contextIsolation: true,
     },
   });
+  configureWindow(mainWindow);
 
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
@@ -138,14 +170,14 @@ function createMainWindow(): void {
 }
 
 app.whenReady().then(async () => {
-  createSplashWindow();
-  createMainWindow();
-  initDiscordRpc();
 
   // 1. Splash Window Transition
-  ipcMain.handle('splash:ready', () => {
-    splashReady = true;
-    revealMainWindow();
+  ipcMain.handle('splash:ready', (event) => {
+    if (event.sender !== splashWindow?.webContents) return false;
+    setTimeout(() => {
+      splashReady = true;
+      revealMainWindow();
+    }, 1200);
     return true;
   });
 
@@ -269,6 +301,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('game:kill', () => {
     killGameProcess();
   });
+  createSplashWindow();
+  createMainWindow();
+  initDiscordRpc();
 });
 
 app.on('window-all-closed', () => {

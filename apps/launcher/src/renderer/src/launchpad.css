@@ -455,6 +455,10 @@ html[data-motion='reduced'] .auth-column {
   padding: 12px 18px;
 }
 /* Lightweight startup: no simulated percentage and no second App instance. */
+.message-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.message-actions .message-copy { display: inline-flex; align-items: center; gap: 7px; width: auto; padding: 7px 10px; font-size: 12px; border: 1px solid var(--surface-border, #333); border-radius: 8px; color: #b9b4c3; }
+.message-actions .message-copy:hover { color: white; background: #28242e; }
+
 .splash-screen {
   height: 100vh;
   display: flex;

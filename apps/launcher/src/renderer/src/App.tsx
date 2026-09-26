@@ -11,7 +11,7 @@ import { SettingsView } from './views/SettingsView';
 import { FloatingActionDeck } from './components/FloatingActionDeck';
 import { DiscordAuthModal } from './components/DiscordAuthModal';
 import { FloatingNotificationToast, ToastData } from './components/FloatingNotificationToast';
-import { NotificationItem } from './components/NotificationsModal';
+import type { NotificationItem } from './utils/notifications';
 import { NotificationDetailView } from './views/NotificationDetailView';
 import { FirstLaunchOnboardingModal } from './components/FirstLaunchOnboardingModal';
 import { CAPE_PRESETS, CapePreset } from './utils/chibiRenderer';
@@ -395,6 +395,7 @@ export const App: React.FC = () => {
         >
           {isNotificationsOpen ? (
             <NotificationDetailView
+              onToast={(title, type) => setActiveToast({ id: `copy-${Date.now()}`, title, type })}
               news={news}
               newsAvailable={newsAvailable}
               notification={

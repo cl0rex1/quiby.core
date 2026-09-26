@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { BrowserWindow } from 'electron';
 import { downloadFile, computeFileSha256 } from './downloader';
 
@@ -20,6 +21,7 @@ export interface MojangVersionInfo {
     };
   };
   libraries: Array<{
+    rules?: Array<{ action: 'allow' | 'disallow'; os?: { name?: string; arch?: string; version?: string } }>;
     downloads?: {
       artifact?: {
         path: string;
@@ -31,6 +33,23 @@ export interface MojangVersionInfo {
     name: string;
   }>;
   mainClass: string;
+}
+
+export function isLibraryAllowed(lib: MojangVersionInfo['libraries'][number], platform = process.platform, arch = process.arch): boolean {
+  const osName = platform === 'win32' ? 'windows' : platform === 'darwin' ? 'osx' : 'linux';
+  let allowed = !lib.rules?.length;
+  for (const rule of lib.rules || []) {
+    if (rule.os?.name && rule.os.name !== osName) continue;
+    if (rule.os?.arch && !new RegExp(rule.os.arch).test(arch === 'x64' ? 'amd64' : arch === 'arm64' ? 'aarch64' : 'x86')) continue;
+    if (rule.os?.version && !new RegExp(rule.os.version).test(os.release())) continue;
+    allowed = rule.action === 'allow';
+  }
+  const classifier = lib.name.split(':')[3];
+  if (classifier?.startsWith('natives-')) {
+    const nativeArch = classifier.endsWith('-arm64') ? 'arm64' : classifier.endsWith('-x86') ? 'ia32' : 'x64';
+    if (nativeArch !== arch) return false;
+  }
+  return allowed;
 }
 
 export async function ensureMinecraftVanilla(
@@ -87,6 +106,7 @@ export async function ensureMinecraftVanilla(
   const librariesDir = path.join(gameDir, 'libraries');
 
   for (const lib of versionJson.libraries) {
+    if (!isLibraryAllowed(lib)) continue;
     if (lib.downloads?.artifact) {
       const art = lib.downloads.artifact;
       const libPath = path.join(librariesDir, art.path);
@@ -160,9 +180,7 @@ async function ensureMinecraftAssets(
       const batch = missing.slice(i, i + concurrency);
       await Promise.all(
         batch.map(async (item) => {
-          try {
-            await downloadFile(item.url, item.destPath);
-          } catch (_) {}
+          await downloadFile(item.url, item.destPath);
           completed++;
         })
       );
@@ -176,6 +194,6 @@ async function ensureMinecraftAssets(
       }
     }
   } catch (err) {
-    console.warn('Non-fatal error syncing assets:', err);
+    throw new Error(`Не удалось загрузить ресурсы Minecraft: ${err instanceof Error ? err.message : String(err)}`);
   }
 }

@@ -27,7 +27,6 @@ test('local libraries read disk, import files, and never overwrite an existing f
       original,
     );
     await fs.writeFile(path.join(dir, 'shaderpacks', 'ignored.txt'), 'ignore');
-    await fs.symlink(path.join(dir, 'shaderpacks', 'My_pack.ZIP'), path.join(dir, 'shaderpacks', 'link.zip'));
     await fs.mkdir(path.join(dir, 'shaderpacks', 'unpacked'));
     const files = await listLocalContent(dir, 'shaderpacks');
     assert.deepEqual(files.map((f) => f.filename).sort(), ['My_pack.ZIP', 'unpacked']);
@@ -41,6 +40,25 @@ test('local libraries read disk, import files, and never overwrite an existing f
     await assert.rejects(
       installLocalContent(dir, 'shaderpacks', 'huge.zip', new Uint8Array(100 * 1024 * 1024 + 1)),
     );
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('local libraries ignore symbolic links', async (t) => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'quiby-symlink-'));
+  try {
+    await installLocalContent(dir, 'shaderpacks', 'pack.zip', new Uint8Array([1]));
+    try {
+      await fs.symlink(path.join(dir, 'shaderpacks', 'pack.zip'), path.join(dir, 'shaderpacks', 'link.zip'));
+    } catch (error: any) {
+      if (process.platform === 'win32' && error.code === 'EPERM') {
+        t.skip('Windows requires Developer Mode or elevated privileges to create symlinks');
+        return;
+      }
+      throw error;
+    }
+    assert.deepEqual((await listLocalContent(dir, 'shaderpacks')).map((file) => file.filename), ['pack.zip']);
   } finally {
     await fs.rm(dir, { recursive: true, force: true });
   }

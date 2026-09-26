@@ -13,7 +13,7 @@ import {
   PanelLeftOpen
 } from 'lucide-react';
 import { AuthSession } from '@quiby/shared';
-import { NotificationItem } from './NotificationsModal';
+import type { NotificationItem } from '../utils/notifications';
 import quibyLogo from '../assets/quiby_logo.png';
 import quibyQLogo from '../assets/quiby_q_logo.png';
 

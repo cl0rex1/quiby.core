@@ -6,6 +6,7 @@ export interface ModMetadata {
   category: 'mechanisms' | 'optimization' | 'interface' | 'graphics' | 'utility' | 'gameplay';
   categoryLabel: string;
   iconUrl?: string;
+  projectUrl?: string;
 }
 
 const KNOWN_MODS: Record<string, ModMetadata> = {
@@ -215,19 +216,20 @@ export function resolveModMetadata(
   externalDescription?: string,
   externalIconUrl?: string
 ): ModMetadata {
-  const cleanKey = (name + ' ' + filename)
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
+  const normalize = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const cleanName = normalize(name);
+  const cleanFile = normalize(filename.replace(/^mods\//, '').replace(/\.jar$/i, '').replace(/[-_](?:neoforge|fabric|forge|mc)?[-_]?v?\d.*$/i, ''));
 
   for (const [key, meta] of Object.entries(KNOWN_MODS)) {
     const rawKey = key.replace(/[^a-z0-9]/g, '');
-    if (cleanKey.includes(rawKey)) {
+    if (cleanName === rawKey || cleanFile === rawKey) {
       return {
         displayName: meta.displayName,
         description: externalDescription || meta.description,
         category: meta.category,
         categoryLabel: meta.categoryLabel,
         iconUrl: externalIconUrl || meta.iconUrl,
+        projectUrl: meta.iconUrl?.match(/\/data\/([^/]+)\//)?.[1] ? `https://modrinth.com/mod/${meta.iconUrl.match(/\/data\/([^/]+)\//)![1]}` : undefined,
       };
     }
   }
