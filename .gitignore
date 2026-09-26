@@ -16,3 +16,4 @@ runtime/
 logs/
 temp/
 .agents/
+apps/server/storage/files/imported/

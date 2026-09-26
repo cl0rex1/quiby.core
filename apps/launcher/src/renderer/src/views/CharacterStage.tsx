@@ -54,10 +54,6 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
           <p className="home-kicker">QUIBY / СЕЗОН 06</p>
           <h1>Твой мир. Твой ход.</h1>
         </div>
-        <span className="home-address">
-          <span className={serverStatus?.online ? 'status-dot is-online' : 'status-dot'} />
-          <span>{statusText}</span>
-        </span>
       </div>
 
       <div className="home-content">

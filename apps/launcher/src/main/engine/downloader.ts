@@ -17,7 +17,7 @@ export async function computeFileSha256(filePath: string): Promise<string> {
   });
 }
 
-export async function downloadFile(url: string, destPath: string, onBytes?: (bytes: number) => void): Promise<void> {
+export async function downloadFile(url: string, destPath: string, onBytes?: (bytes: number) => void, expectedSha256?: string): Promise<void> {
   const dir = path.dirname(destPath);
   const tempPath = `${destPath}.part`;
   if (!fs.existsSync(dir)) {
@@ -43,6 +43,9 @@ export async function downloadFile(url: string, destPath: string, onBytes?: (byt
         } }),
         fs.createWriteStream(tempPath)
       );
+    }
+    if (expectedSha256 && (await computeFileSha256(tempPath)).toLowerCase() !== expectedSha256.toLowerCase()) {
+      throw new Error(`SHA-256 не совпадает: ${path.basename(destPath)}`);
     }
     fs.renameSync(tempPath, destPath);
   } catch (error) {
@@ -91,18 +94,22 @@ export async function syncModpackFiles(
   const filesToDownload: ModpackFile[] = [];
   const validRelativePaths = new Set<string>();
 
-  for (const file of manifest.files) {
+  // Bound disk reads instead of hashing every mod serially or opening hundreds of files.
+  const checkFile = async (file: ModpackFile) => {
     validRelativePaths.add(file.path.replace(/\\/g, '/'));
     const localPath = safeFilePath(file.path);
 
     if (!fs.existsSync(localPath)) {
       filesToDownload.push(file);
-    } else {
+    } else if (file.action !== 'keep_local') {
       const localHash = await computeFileSha256(localPath);
       if (localHash.toLowerCase() !== file.sha256.toLowerCase()) {
         filesToDownload.push(file);
       }
     }
+  };
+  for (let index = 0; index < manifest.files.length; index += 4) {
+    await Promise.all(manifest.files.slice(index, index + 4).map(checkFile));
   }
 
   // Ensure protectedModFilenames includes filename without .disabled
@@ -209,10 +216,9 @@ export async function syncModpackFiles(
             speedBps: currentSpeed,
           });
         }
-      });
+      }, file.sha256);
     } catch (err: any) {
-      console.error(`Error downloading ${file.path}:`, err);
-      // fallback create empty dummy or throw
+      throw new Error(`Не удалось загрузить ${file.path}: ${err.message}`);
     }
 
     processedFiles++;

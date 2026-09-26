@@ -1,14 +1,6 @@
 import React, { useState } from 'react';
 import { Minus, Square, Copy, X } from 'lucide-react';
-import { ServerStatus } from '@quiby/shared';
-
-interface WindowHeaderProps {
-  serverStatus?: ServerStatus | null;
-}
-
-export const WindowHeader: React.FC<WindowHeaderProps> = ({
-  serverStatus,
-}) => {
+export const WindowHeader: React.FC = () => {
   const [isMaximized, setIsMaximized] = useState(false);
 
   const handleMinimize = () => {
@@ -30,17 +22,6 @@ export const WindowHeader: React.FC<WindowHeaderProps> = ({
       <div className="flex items-center gap-2.5">
         <span className="text-xs font-black text-white tracking-tight">quiby.</span>
         <span className="header-edition">S6 / LAUNCHER</span>
-      </div>
-
-      {/* Center: status indicator (e.g. server host ping pill or empty drag area) */}
-      <div className="flex items-center gap-4">
-        <div className="header-status flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-mono text-zinc-400">
-          <span className={serverStatus?.online ? 'status-dot is-online' : 'status-dot'} />
-          <span>СЕРВЕР</span>
-          <span className={serverStatus?.online ? 'fact-online' : ''}>
-            {serverStatus?.online ? `${serverStatus.players.online}/${serverStatus.players.max}` : serverStatus && !serverStatus.ip ? 'Готовится' : serverStatus ? 'Оффлайн' : 'Нет данных'}
-          </span>
-        </div>
       </div>
 
       {/* Right: Window control buttons with `-webkit-app-region: no-drag` (class `app-no-drag`) */}

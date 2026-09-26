@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { selectModpackProfile } from '../../shared/modpackProfiles';
 import { applyBuildToMods } from './utils/buildProfiles';
 import { WindowHeader } from './components/WindowHeader';
 import { MinimalSidebar, ActiveTab } from './components/MinimalSidebar';
@@ -46,7 +47,7 @@ export const App: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('quiby_sidebar_collapsed') === 'true');
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [session, setSession] = useState<AuthSession | null>(null);
-  const [manifest, setManifest] = useState<ModpackManifest | null>(null);
+  const [remoteManifest, setManifest] = useState<ModpackManifest | null>(null);
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [newsAvailable, setNewsAvailable] = useState(false);
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
@@ -88,6 +89,7 @@ export const App: React.FC = () => {
 
   // 1. Settings State (Auto-saving)
   const [settings, setSettings] = useState<LauncherSettings>(defaultSettings);
+  const manifest = useMemo(() => remoteManifest ? selectModpackProfile(remoteManifest, settings.modpackProfile) : null, [remoteManifest, settings.modpackProfile]);
 
   const handleUpdateSettings = async (newSettings: LauncherSettings) => {
     setSettings(newSettings);
@@ -270,26 +272,33 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Fetch Remote Manifest & Server Ping
-  const fetchRemoteData = async () => {
-    const getJson = (path: string) => fetch(`${SERVER_URL}${path}`)
-      .then((response) => response.ok ? response.json() : null)
-      .catch(() => null);
-    const [nextManifest, nextStatus, nextNews] = await Promise.all([
-      getJson('/api/modpack/latest'),
-      getJson('/api/status'),
-      getJson('/api/news'),
-    ]);
-    setManifest(nextManifest);
-    setServerStatus(nextStatus);
-    setNews(Array.isArray(nextNews) ? nextNews : []);
-    setNewsAvailable(Array.isArray(nextNews));
-  };
-
   useEffect(() => {
-    fetchRemoteData();
-    const interval = setInterval(fetchRemoteData, 30000);
-    return () => clearInterval(interval);
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    let nextContentRefresh = 0;
+    const controller = new AbortController();
+    const getJson = (route: string) => fetch(`${SERVER_URL}${route}`, { signal: controller.signal })
+      .then(response => response.ok ? response.json() : null).catch(() => null);
+    const refresh = async () => {
+      if (!document.hidden) {
+        const refreshContent = Date.now() >= nextContentRefresh;
+        const [status, content] = await Promise.all([
+          getJson('/api/status'),
+          refreshContent ? Promise.all([getJson('/api/modpack/latest'), getJson('/api/news')]) : null,
+        ]);
+        if (stopped) return;
+        setServerStatus(status);
+        if (content) {
+          setManifest(content[0]);
+          setNews(Array.isArray(content[1]) ? content[1] : []);
+          setNewsAvailable(Array.isArray(content[1]));
+          nextContentRefresh = Date.now() + 300000;
+        }
+      }
+      if (!stopped) timer = setTimeout(refresh, 30000);
+    };
+    void refresh();
+    return () => { stopped = true; clearTimeout(timer); controller.abort(); };
   }, []);
 
   // Instant, clean tab navigation without blocking guards
@@ -335,7 +344,7 @@ export const App: React.FC = () => {
   return (
     <div style={{ '--sidebar-width': isNotificationsOpen ? '310px' : sidebarCollapsed ? '72px' : '192px' } as React.CSSProperties} className="launcher-app flex flex-col h-screen w-screen bg-[#0c0c0d] text-zinc-100 overflow-hidden select-none font-sans relative">
       {/* 1. Window Controls & Dragging Header (Height: 32px / h-8) */}
-      <WindowHeader serverStatus={serverStatus} />
+      <WindowHeader />
 
       {!isAuthModalOpen && <>
       {/* 2. Main Content Body (Remaining Height h-[calc(100vh-32px)]) */}

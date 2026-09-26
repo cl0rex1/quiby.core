@@ -8,6 +8,7 @@ import { ensureMinecraftVanilla } from './mojang';
 import { ensureNeoForge } from './neoforge';
 import { hashCustomModFile, requireApprovedCustomMod } from './customModVerification';
 import { updateDiscordRpcStatus } from '../rpc/discordRpc';
+import { selectModpackProfile } from '../../shared/modpackProfiles';
 
 let runningGameProcess: ChildProcess | null = null;
 let gameStartTime: number | null = null;
@@ -72,7 +73,7 @@ export async function launchMinecraft(
     if (!manifestRes.ok) {
       throw new Error(`Не удалось получить манифест сборки с сервера: ${manifestRes.statusText}`);
     }
-    const manifest: ModpackManifest = await manifestRes.json();
+    const manifest = selectModpackProfile(await manifestRes.json() as ModpackManifest, settings.modpackProfile);
     sendLog('info', `📦 Загружен манифест версии: ${manifest.name} (v${manifest.version})`);
 
     const gameDir = path.resolve(settings.gameDir);

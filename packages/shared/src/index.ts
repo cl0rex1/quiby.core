@@ -1,4 +1,5 @@
 export interface ModpackFile {
+  profiles?: Array<'full' | 'optimal' | 'clean'>;
   path: string; // relative to game directory (e.g. "mods/create-1.21.1.jar", "config/create.json")
   sha256: string;
   size: number;

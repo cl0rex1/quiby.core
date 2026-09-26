@@ -8,6 +8,7 @@
     "packages/*"
   ],
   "scripts": {
+    "pack:import": "tsx scripts/import-modrinth.ts",
     "dev:server": "npm run dev --workspace=apps/server",
     "dev:launcher": "npm run dev --workspace=apps/launcher",
     "build:shared": "npm run build --workspace=packages/shared",
