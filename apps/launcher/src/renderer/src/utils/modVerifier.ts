@@ -39,7 +39,6 @@ export const CHEAT_KEYWORDS = [
   'cheats',
   'aimbot',
   'inertia',
-  'impact',
   'x-ray',
   'x_ray',
   'cheat',
@@ -50,8 +49,6 @@ export const CHEAT_KEYWORDS = [
   'xray',
   'hack',
   'dupe',
-  'bot',
-  'esp',
 ];
 
 // Malware, Trojan, and Infostealer signatures

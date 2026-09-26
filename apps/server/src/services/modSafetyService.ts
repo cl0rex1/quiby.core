@@ -24,13 +24,9 @@ const FORBIDDEN_KEYWORDS = [
   'hack',
   'grief',
   'griefing',
-  'automation',
-  'bot',
   'dupe',
   'duplication',
-  'fly',
   'flyhack',
-  'speed',
   'speedhack',
   'killaura',
   'kill-aura',
@@ -42,7 +38,6 @@ const FORBIDDEN_KEYWORDS = [
   'aristois',
   'liquidbounce',
   'inertia',
-  'impact',
   'seedcracker',
   'autoclicker',
   'auto-clicker',
@@ -52,7 +47,6 @@ const FORBIDDEN_KEYWORDS = [
   'cavefinder',
   'aimbot',
   'nuker',
-  'esp',
   'cheststealer',
 ];
 
@@ -65,6 +59,21 @@ const BLOCKED_FILE_NAMES = [
 ];
 
 const MODRINTH_USER_AGENT = 'quiby-launcher/6.0.0 (security@quiby.fun)';
+const VERIFIED_REASON = 'Проверена версия Modrinth для Minecraft 1.21.1 / NeoForge';
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+export interface ModrinthVersion {
+  project_id: string;
+  game_versions: string[];
+  loaders: string[];
+  files: Array<{ hashes: { sha1?: string } }>;
+}
+
+export function isMatchingModrinthVersion(version: ModrinthVersion, hash: string): boolean {
+  return Array.isArray(version.game_versions) && version.game_versions.includes('1.21.1') &&
+    Array.isArray(version.loaders) && version.loaders.includes('neoforge') &&
+    Array.isArray(version.files) && version.files.some(file => file.hashes?.sha1?.toLowerCase() === hash);
+}
 
 /**
  * Verifies a single mod via internal SQLite cache first, then via Modrinth API.
@@ -113,7 +122,9 @@ export async function verifyMod(
     [normalizedHash]
   );
 
-  if (cached) {
+  if (cached && (cached.source !== 'modrinth' || (
+    cached.reason === VERIFIED_REASON && Date.now() - new Date(`${cached.checked_at}Z`).getTime() < CACHE_TTL_MS
+  ))) {
     let parsedCats: string[] = [];
     try {
       parsedCats = JSON.parse(cached.categories_json || '[]');
@@ -142,7 +153,11 @@ export async function verifyMod(
     );
 
     if (versionRes.ok) {
-      const versionData = await versionRes.json();
+      const versionData = await versionRes.json() as ModrinthVersion;
+      if (!isMatchingModrinthVersion(versionData, normalizedHash)) {
+        return { hashSha1: normalizedHash, name, filename, isAllowed: false, status: 'unverified', source: 'none',
+          reason: 'Этот файл Modrinth не подходит для Minecraft 1.21.1 / NeoForge или его хеш не совпадает.', categories: ['incompatible'] };
+      }
       const projectId = versionData.project_id;
 
       // Query project metadata for categories, icon, and description
@@ -156,6 +171,10 @@ export async function verifyMod(
 
       if (projectRes.ok) {
         const projectData = await projectRes.json();
+        if (projectData.project_type !== 'mod') {
+          return { hashSha1: normalizedHash, name, filename, isAllowed: false, status: 'unverified', source: 'none',
+            reason: 'Файл Modrinth не относится к проекту типа mod.', categories: ['incompatible'] };
+        }
         const categories: string[] = projectData.categories || [];
         const iconUrl: string | undefined = projectData.icon_url || undefined;
         const description: string | undefined = projectData.description || undefined;
@@ -191,7 +210,7 @@ export async function verifyMod(
         }
 
         // Safe approved mod
-        const reason = 'Проверен в каталоге Modrinth';
+        const reason = VERIFIED_REASON;
         await dbRun(
           `INSERT OR REPLACE INTO verified_mods (hash_sha1, mod_id, name, summary, source, is_allowed, status, reason, categories_json)
            VALUES (?, ?, ?, ?, 'modrinth', 1, 'approved', ?, ?)`,
@@ -212,9 +231,17 @@ export async function verifyMod(
           description,
         };
       }
+      return { hashSha1: normalizedHash, name, filename, isAllowed: false, status: 'unverified', source: 'none',
+        reason: 'Не удалось получить сведения о проекте Modrinth. Повторите проверку позже.', categories: ['unverified'] };
+    } else if (versionRes.status !== 404) {
+      console.warn(`Modrinth returned ${versionRes.status} for ${normalizedHash}`);
+      return { hashSha1: normalizedHash, name, filename, isAllowed: false, status: 'unverified', source: 'none',
+        reason: 'Каталог Modrinth временно недоступен. Повторите проверку позже.', categories: ['unverified'] };
     }
   } catch (err) {
     console.warn(`Modrinth lookup failed for ${name} (${normalizedHash}):`, err);
+    return { hashSha1: normalizedHash, name, filename, isAllowed: false, status: 'unverified', source: 'none',
+      reason: 'Не удалось связаться с Modrinth. Повторите проверку позже.', categories: ['unverified'] };
   }
 
   // 4. Mod not indexed on Modrinth / Curseforge

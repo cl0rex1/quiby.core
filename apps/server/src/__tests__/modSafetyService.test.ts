@@ -33,7 +33,7 @@ async function runTests() {
     const safeHash = 'e61b17b1897e0e7a2bfa11d6db0d12e6d302d911';
     await dbRun(
       `INSERT OR REPLACE INTO verified_mods (hash_sha1, mod_id, name, summary, source, is_allowed, status, reason, categories_json)
-       VALUES (?, 'sodium', 'Sodium', 'Modern rendering engine', 'modrinth', 1, 'approved', 'Проверен в каталоге Modrinth', '["optimization"]')`,
+       VALUES (?, 'sodium', 'Sodium', 'Modern rendering engine', 'modrinth', 1, 'approved', 'Проверена версия Modrinth для Minecraft 1.21.1 / NeoForge', '["optimization"]')`,
       [safeHash]
     );
 

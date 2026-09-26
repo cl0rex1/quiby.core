@@ -26,13 +26,15 @@ export const whitelistRequestSchema = z.object({
  */
 router.post('/verify', async (req: Request, res: Response) => {
   try {
-    const { mods } = req.body;
-
-    if (!mods || !Array.isArray(mods)) {
+    const mods = z.array(z.object({
+      name: z.string().min(1).max(100),
+      filename: z.string().min(1).max(255).regex(/^[^/\\]+\.jar$/i),
+      hash_sha1: z.string().regex(/^[a-fA-F0-9]{40}$/),
+    })).min(1).max(20).safeParse(req.body?.mods);
+    if (!mods.success) {
       return res.status(400).json({ error: 'Поле mods должно быть массивом объектов с name, filename, hash_sha1' });
     }
-
-    const results = await verifyModBatch(mods);
+    const results = await verifyModBatch(mods.data);
     return res.json({ results });
   } catch (error: any) {
     console.error('Mod verification route error:', error);
