@@ -10,6 +10,7 @@ import { hashCustomModFile, requireApprovedCustomMod } from './customModVerifica
 import { updateDiscordRpcStatus } from '../rpc/discordRpc';
 import { selectModpackProfile } from '../../shared/modpackProfiles';
 import { resolveJava21 } from './javaDetector';
+import { getLatestModpackManifest } from './manifestSource';
 
 let runningGameProcess: ChildProcess | null = null;
 let gameStartTime: number | null = null;
@@ -69,12 +70,8 @@ export async function launchMinecraft(
     sendLog('info', `👤 Игрок: ${session.user.mcUsername} (Discord: ${session.user.username})`);
 
     // 1. Fetch Modpack Manifest from server
-    sendLog('info', `🌐 Запрос актуального манифеста с сервера ${serverBaseUrl}...`);
-    const manifestRes = await fetch(`${serverBaseUrl.replace(/\/$/, '')}/api/modpack/latest`);
-    if (!manifestRes.ok) {
-      throw new Error(`Не удалось получить манифест сборки с сервера: ${manifestRes.statusText}`);
-    }
-    const manifest = selectModpackProfile(await manifestRes.json() as ModpackManifest, settings.modpackProfile);
+    sendLog('info', '🌐 Запрос актуального манифеста сборки...');
+    const manifest = selectModpackProfile(await getLatestModpackManifest(serverBaseUrl), settings.modpackProfile);
     const javaBin = await resolveJava21(settings.javaPath);
     sendLog('info', `📦 Загружен манифест версии: ${manifest.name} (v${manifest.version})`);
 

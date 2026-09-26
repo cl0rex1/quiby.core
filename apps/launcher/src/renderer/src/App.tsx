@@ -284,7 +284,10 @@ export const App: React.FC = () => {
         const refreshContent = Date.now() >= nextContentRefresh;
         const [status, content] = await Promise.all([
           getJson('/api/status'),
-          refreshContent ? Promise.all([getJson('/api/modpack/latest'), getJson('/api/news')]) : null,
+          refreshContent ? Promise.all([
+            window.quibyApi?.getLatestModpackManifest().catch(() => null) ?? getJson('/api/modpack/latest'),
+            getJson('/api/news'),
+          ]) : null,
         ]);
         if (stopped) return;
         setServerStatus(status);

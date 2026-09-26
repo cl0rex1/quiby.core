@@ -15,7 +15,7 @@ export default defineConfig({
           build: {
             outDir: 'dist/main',
             rollupOptions: {
-              external: ['electron', 'discord-rpc'],
+              external: ['electron', 'discord-rpc', 'electron-updater'],
             },
           },
         },

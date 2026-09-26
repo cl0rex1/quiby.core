@@ -9,6 +9,8 @@ import { launchMinecraft, killGameProcess } from './engine/minecraftLauncher';
 import { hashCustomModBytes, requireApprovedCustomMod } from './engine/customModVerification';
 import { contentDirectory, contentFilePath, installLocalContent, listLocalContent, ContentKind } from './engine/localContent';
 import { initDiscordRpc } from './rpc/discordRpc';
+import { registerUpdates } from './updates';
+import { getLatestModpackManifest } from './engine/manifestSource';
 
 let mainWindow: BrowserWindow | null = null;
 let splashWindow: BrowserWindow | null = null;
@@ -301,6 +303,8 @@ app.whenReady().then(async () => {
   ipcMain.handle('game:kill', () => {
     killGameProcess();
   });
+  ipcMain.handle('modpack:get-manifest', () => getLatestModpackManifest(DEFAULT_SERVER_URL));
+  registerUpdates(() => mainWindow);
   createSplashWindow();
   createMainWindow();
   initDiscordRpc();

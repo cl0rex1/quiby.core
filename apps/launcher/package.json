@@ -1,12 +1,13 @@
 {
   "name": "@quiby/launcher",
-  "version": "1.0.0",
+  "version": "1.0.1-beta.2",
   "description": "quiby. Season 6 Minecraft 1.21.1 NeoForge Desktop Launcher",
   "main": "dist/main/index.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "dist:win": "npm run build && electron-builder --win nsis --x64",
+    "release:github": "npm run dist:win && node ../../scripts/publish-github-release.mjs launcher",
     "preview": "vite preview",
     "start": "electron .",
     "typecheck": "tsc --noEmit"
@@ -14,6 +15,8 @@
   "build": {
     "appId": "fun.quiby.launcher",
     "productName": "quiby.core",
+    "generateUpdatesFilesForAllChannels": true,
+    "publish": { "provider": "github", "owner": "cl0rex1", "repo": "quiby-launcher-releases", "channel": "beta" },
     "directories": {
       "output": "release"
     },
@@ -41,6 +44,7 @@
     "@quiby/shared": "*",
     "clsx": "^2.1.1",
     "discord-rpc": "^4.0.1",
+    "electron-updater": "^6.8.3",
     "lucide-react": "^0.378.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

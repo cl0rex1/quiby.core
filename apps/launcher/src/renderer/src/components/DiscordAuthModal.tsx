@@ -21,7 +21,8 @@ interface DiscordAuthModalProps {
 }
 
 export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onClose, onSuccess, serverUrl }) => {
-  const [mode, setMode] = useState<'discord' | 'dev'>('discord');
+  const localServer = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(serverUrl);
+  const [mode, setMode] = useState<'discord' | 'dev'>(localServer ? 'dev' : 'discord');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,9 +40,9 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
       setPendingDiscordUser(null);
       setTempBindingToken(null);
       setError(null);
-      setMode('discord');
+      setMode(localServer ? 'dev' : 'discord');
     }
-  }, [isOpen]);
+  }, [isOpen, localServer]);
 
   if (!isOpen) return null;
 
@@ -209,7 +210,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
               <button className="auth-submit" disabled={loading}>{loading ? 'Входим…' : 'Войти локально'}<ArrowRight size={16} /></button>
             </form>
           )}
-          {import.meta.env.DEV && !pendingDiscordUser && <button type="button" className="auth-dev-toggle" disabled={loading} onClick={() => { setMode(mode === 'discord' ? 'dev' : 'discord'); setError(null); }}>
+          {localServer && !pendingDiscordUser && <button type="button" className="auth-dev-toggle" disabled={loading} onClick={() => { setMode(mode === 'discord' ? 'dev' : 'discord'); setError(null); }}>
             {mode === 'discord' ? 'Локальный вход для разработки' : 'Вернуться к Discord'}
           </button>}
         </section>

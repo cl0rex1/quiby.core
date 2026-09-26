@@ -14,6 +14,7 @@ import { buildBanner } from '../utils/buildScreenshots';
 import { selectedBuild } from '../utils/buildProfiles';
 import { RamSlider } from '../components/RamSlider';
 import { MotionToggle, useMotion } from '../components/MotionProvider';
+import type { UpdateState } from '../../../main/updates';
 
 interface SettingsViewProps {
   onChooseBuild: () => void;
@@ -31,6 +32,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
   );
   const [detectingJava, setDetectingJava] = useState(false);
   const [error, setError] = useState('');
+  const [updateState, setUpdateState] = useState<UpdateState | null>(null);
   const { reduced, systemReduced } = useMotion();
   const update = (patch: Partial<LauncherSettings>) => onUpdateSettings({ ...settings, ...patch });
   const detectJava = async () => {
@@ -49,7 +51,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
   };
   useEffect(() => {
     void detectJava();
+    const unsubscribe = window.quibyApi?.onUpdateState(setUpdateState);
+    void window.quibyApi?.getUpdateState().then(setUpdateState);
+    return () => unsubscribe?.();
   }, []);
+  const updateAction = async () => {
+    try {
+      if (updateState?.status === 'available') await window.quibyApi.downloadUpdate();
+      else if (updateState?.status === 'ready') await window.quibyApi.installUpdate();
+      else await window.quibyApi.checkForUpdates();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Не удалось проверить обновления.');
+    }
+  };
   const browse = async (kind: 'java' | 'game') => {
     try {
       const selected =
@@ -257,6 +271,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
           )}
           {section === 'files' && (
             <>
+              <section className="settings-group">
+                <div className="settings-group-heading"><h2>Обновление лаунчера</h2></div>
+                <p className="settings-update-status" role="status">
+                  {updateState?.status === 'checking' ? 'Проверяем GitHub Releases…'
+                    : updateState?.status === 'available' ? `Доступна версия ${updateState.latestVersion}`
+                    : updateState?.status === 'downloading' ? `Загрузка: ${updateState.percent ?? 0}%`
+                    : updateState?.status === 'ready' ? `Версия ${updateState.latestVersion} готова к установке`
+                    : updateState?.status === 'current' ? `Установлена актуальная версия ${updateState.currentVersion}`
+                    : updateState?.status === 'development' ? 'Проверка работает в установленной Windows-версии.'
+                    : updateState?.status === 'error' ? `Ошибка: ${updateState.message}`
+                    : `Установлена версия ${updateState?.currentVersion || '…'}`}
+                </p>
+                <button type="button" className="ui-button" onClick={() => void updateAction()}
+                  disabled={!updateState || ['checking', 'downloading', 'development'].includes(updateState.status)}>
+                  <RefreshCw size={14} />
+                  {updateState?.status === 'available' ? 'Скачать обновление'
+                    : updateState?.status === 'ready' ? 'Перезапустить и установить' : 'Проверить обновления'}
+                </button>
+              </section>
               <section className="settings-group">
                 <div className="settings-group-heading">
                   <Cpu size={17} />

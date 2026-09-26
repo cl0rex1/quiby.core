@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "pack:import": "tsx scripts/import-modrinth.ts",
+    "pack:release": "node scripts/publish-github-release.mjs pack",
     "dev:server": "npm run dev --workspace=apps/server",
     "dev:launcher": "npm run dev --workspace=apps/launcher",
     "build:shared": "npm run build --workspace=packages/shared",

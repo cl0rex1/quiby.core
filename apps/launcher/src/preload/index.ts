@@ -1,5 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { AuthSession, DownloadProgress, LauncherSettings, LaunchState, LogEntry } from '@quiby/shared';
+import type { ModpackManifest } from '@quiby/shared';
+import type { UpdateState } from '../main/updates';
 
 export const quibyApi = {
   // Window controls
@@ -22,6 +24,16 @@ export const quibyApi = {
 
   // Auth
   startDiscordLogin: (serverUrl?: string) => ipcRenderer.invoke('auth:discord-login', serverUrl),
+  getLatestModpackManifest: (): Promise<ModpackManifest> => ipcRenderer.invoke('modpack:get-manifest'),
+  getUpdateState: (): Promise<UpdateState> => ipcRenderer.invoke('updates:state'),
+  checkForUpdates: (): Promise<UpdateState> => ipcRenderer.invoke('updates:check'),
+  downloadUpdate: (): Promise<UpdateState> => ipcRenderer.invoke('updates:download'),
+  installUpdate: (): Promise<boolean> => ipcRenderer.invoke('updates:install'),
+  onUpdateState: (callback: (state: UpdateState) => void) => {
+    const handler = (_: any, state: UpdateState) => callback(state);
+    ipcRenderer.on('updates:state', handler);
+    return () => { ipcRenderer.removeListener('updates:state', handler); };
+  },
 
   // Schematics & Shaders
   getSchematics: (gameDir: string) => ipcRenderer.invoke('schematics:list', gameDir),
