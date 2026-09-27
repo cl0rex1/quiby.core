@@ -375,7 +375,8 @@ export const App: React.FC = () => {
     setActiveTab('home');
     if (!window.quibyApi) return;
     try {
-      await syncSelectedSkin(session, localStorage.getItem('quiby_custom_skin_data'));
+      const selectedSkin = localStorage.getItem('quiby_custom_skin_data');
+      if (selectedSkin) await syncSelectedSkin(session, selectedSkin);
     } catch (err) {
       handleNotify('Не удалось синхронизировать скин', err instanceof Error ? err.message : 'Проверьте соединение и попробуйте снова.', 'error');
       return;
