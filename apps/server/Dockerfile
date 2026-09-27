@@ -21,6 +21,8 @@ RUN npm run build:shared && npm run build:server && npm prune --omit=dev \
 FROM base AS runtime
 ENV NODE_ENV=production PORT=3001 HOST=0.0.0.0 STORAGE_PATH=/app/data DB_PATH=/app/data/quiby.sqlite
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends libstdc++6 \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/apps/server/package.json ./apps/server/package.json
 COPY --from=build --chown=node:node /app/apps/server/dist ./apps/server/dist
