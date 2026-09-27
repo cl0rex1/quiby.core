@@ -95,7 +95,7 @@ if (kind === 'pack') {
     console.log(`Validated ${source.files.length} manifest files and ${payloads.size} unique release assets`);
     process.exit(0);
   }
-  const value = await release(tag, `quiby. Season 6 ${source.version}`, 'Visual, Standard, Draft — Minecraft 1.21.1 / NeoForge 21.1.250. Files are selected by SHA-256 manifest.', false);
+  const value = await release(tag, `quiby. Season 6 ${source.version} (Тестовая)`, 'Тестовая сборка для тестеров. Visual, Standard, Draft — Minecraft 1.21.1 / NeoForge 21.1.250. Файлы выбираются по SHA-256 манифесту.', false);
   const existing = new Map((await listedAssets(value)).map(asset => [asset.name, asset]));
   let uploaded = 0;
   for (const [filename, sourcePath] of payloads) {
@@ -134,3 +134,4 @@ if (kind === 'pack') {
   }
   await publish(value);
 }
+
