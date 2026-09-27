@@ -37,7 +37,7 @@ export const config = {
     serverPort: parseInt(process.env.MC_SERVER_PORT || '25565', 10),
     targetGameVersion: '1.21.1',
     targetLoader: 'neoforge',
-    targetLoaderVersion: '21.1.65',
+    targetLoaderVersion: '21.1.250',
   },
 
   // Storage
