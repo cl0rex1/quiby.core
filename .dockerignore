@@ -4,5 +4,14 @@ node_modules
 **/storage
 .git
 **/.env
+**/.env.*
 **/*.sqlite*
+deploy/casaos/data
 temp
+apps/launcher
+packages/pack-builder
+modpacks
+docs
+scripts
+deploy
+sample-modpack

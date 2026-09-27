@@ -26,7 +26,7 @@ import {
   ServerStatus 
 } from '@quiby/shared';
 
-const SERVER_URL = (import.meta.env.VITE_QUIBY_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+const SERVER_URL = (import.meta.env.VITE_QUIBY_API_URL || 'https://api.quiby.me').replace(/\/$/, '');
 
 const defaultSettings: LauncherSettings = {
   ramMinMb: 4096,
@@ -149,25 +149,44 @@ export const App: React.FC = () => {
   const [totalPlaytimeSeconds, setTotalPlaytimeSeconds] = useState<number>(0);
   const [autoConnect, setAutoConnect] = useState<boolean>(true);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(() => {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(true);
+
+  useEffect(() => {
+    const savedSession = localStorage.getItem('quiby_session');
+    if (!savedSession) return;
+    let restored: AuthSession;
     try {
-      const saved = JSON.parse(localStorage.getItem('quiby_session') || 'null');
-      return !saved || !(saved.expiresAt > Date.now());
-    } catch { return true; }
-  });
+      restored = JSON.parse(savedSession) as AuthSession;
+      if (!restored.token || restored.expiresAt <= Date.now()) throw new Error('Expired session');
+    } catch {
+      localStorage.removeItem('quiby_session');
+      return;
+    }
+    const controller = new AbortController();
+    void fetch(`${SERVER_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${restored.token}` },
+      signal: controller.signal,
+    }).then(async response => {
+      if (!response.ok) throw new Error('Invalid session');
+      return response.json() as Promise<{ user: AuthSession['user'] }>;
+    }).then(({ user }) => {
+      if (localStorage.getItem('quiby_session') !== savedSession) return;
+      if (!user?.isWhitelisted) throw new Error('No server access');
+      const verifiedSession = { ...restored, user };
+      localStorage.setItem('quiby_session', JSON.stringify(verifiedSession));
+      setSession(verifiedSession);
+      setIsAuthModalOpen(false);
+    }).catch(() => {
+      if (controller.signal.aborted || localStorage.getItem('quiby_session') !== savedSession) return;
+      localStorage.removeItem('quiby_session');
+      setSession(null);
+      setIsAuthModalOpen(true);
+    });
+    return () => controller.abort();
+  }, []);
 
   // Initial Load (Saved Storage & IPC)
   useEffect(() => {
-    // Restore Session
-    const savedSession = localStorage.getItem('quiby_session');
-    if (savedSession) {
-      try {
-        const restored = JSON.parse(savedSession) as AuthSession;
-        if (restored.expiresAt > Date.now()) setSession(restored);
-        else localStorage.removeItem('quiby_session');
-      } catch (_) {}
-    }
-
     // Check Onboarding
     const onboarded = localStorage.getItem('quiby_onboarded');
     if (!onboarded) {

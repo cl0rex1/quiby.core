@@ -46,7 +46,7 @@ function revealMainWindow() {
   splashWindow?.close();
 }
 
-const DEFAULT_SERVER_URL = (process.env.QUIBY_API_URL || import.meta.env.VITE_QUIBY_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+const DEFAULT_SERVER_URL = (process.env.QUIBY_API_URL || import.meta.env.VITE_QUIBY_API_URL || 'https://api.quiby.me').replace(/\/$/, '');
 
 function getDefaultGameDir(): string {
   if (process.platform === 'win32') {
@@ -289,8 +289,24 @@ app.whenReady().then(async () => {
       customModFilenames: string[] = [],
       disabledCustomModFilenames: string[] = []
     ) => {
+      let authResponse: Response;
+      try {
+        authResponse = await fetch(`${DEFAULT_SERVER_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${session?.token || ''}` },
+          signal: AbortSignal.timeout(10000),
+        });
+      } catch {
+        throw new Error('Не удалось проверить вход через Discord. Проверьте соединение с сервером.');
+      }
+      if (!authResponse.ok) {
+        throw new Error('Сессия Discord недействительна. Войдите заново.');
+      }
+      const { user } = await authResponse.json() as { user: AuthSession['user'] };
+      if (!user?.isWhitelisted) {
+        throw new Error('У аккаунта нет доступа к серверу quiby.');
+      }
       await launchMinecraft(
-        session,
+        { ...session, user },
         { ...settings, gameDir: settings.gameDir?.trim() || getDefaultGameDir() },
         DEFAULT_SERVER_URL,
         mainWindow,

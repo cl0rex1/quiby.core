@@ -16,10 +16,10 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
 
   const token = authHeader.split(' ')[1];
   try {
-    const payload = jwt.verify(token, config.jwtSecret) as { discordId: string; mcUsername: string; purpose?: string };
-    if (payload.purpose || !payload.discordId || !payload.mcUsername) return res.status(401).json({ error: 'Invalid session token' });
+    const payload = jwt.verify(token, config.jwtSecret) as { discordId: string; mcUsername: string; purpose?: string; authMethod?: string };
+    if (payload.purpose || payload.authMethod !== 'discord' || !payload.discordId || !payload.mcUsername) return res.status(401).json({ error: 'Invalid session token' });
     const row = await dbGet<any>('SELECT * FROM users WHERE discord_id = ?', [payload.discordId]);
-    if (!row) {
+    if (!row || row.discord_id.startsWith('dev_')) {
       return res.status(401).json({ error: 'User session expired or user not found' });
     }
 

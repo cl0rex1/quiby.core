@@ -23,9 +23,9 @@ const mcUsernameSchema = z
 
 // 1. Get Discord OAuth2 Login URL
 router.get('/discord/url', (req: Request, res: Response) => {
-  if (!config.discord.clientId) {
+  if (!config.discord.clientId || !config.discord.clientSecret || !config.discord.botToken || !config.discord.guildId) {
     return res.status(503).json({
-      error: 'Discord OAuth2 is not configured on this server yet. Use /api/auth/dev-login for local testing.',
+      error: 'Discord OAuth2 is not configured on this server yet.',
       isConfigured: false,
     });
   }
@@ -34,7 +34,7 @@ router.get('/discord/url', (req: Request, res: Response) => {
     client_id: config.discord.clientId,
     redirect_uri: config.discord.redirectUri,
     response_type: 'code',
-    scope: 'identify guilds guilds.members.read',
+    scope: 'identify',
   });
 
   const url = `https://discord.com/api/oauth2/authorize?${params.toString()}`;
@@ -118,7 +118,7 @@ router.post('/discord/callback', async (req: Request, res: Response) => {
     };
 
     const token = jwt.sign(
-      { discordId: userProfile.discordId, mcUsername: userProfile.mcUsername, uuid: userProfile.uuid },
+      { discordId: userProfile.discordId, mcUsername: userProfile.mcUsername, uuid: userProfile.uuid, authMethod: 'discord' },
       config.jwtSecret,
       { expiresIn: (config.jwtExpiresIn || '30d') as any }
     );
@@ -152,40 +152,26 @@ router.post('/bind-mc', async (req: Request, res: Response) => {
 
   const cleanUsername = parseResult.data;
 
+  if (!tempBindingToken) {
+    return res.status(401).json({ error: 'Missing verified Discord authorization token' });
+  }
   let discordId: string;
   let discordUsername: string;
-  let discordGlobalName: string | null = null;
-  let discordAvatar: string | null = null;
-  let roles: string[] = [];
-
-  if (tempBindingToken) {
-    try {
-      const decoded = jwt.verify(tempBindingToken, config.jwtSecret) as any;
-      if (decoded.purpose !== 'mc_binding' || !decoded.discordId) {
-        return res.status(400).json({ error: 'Invalid Discord binding token' });
-      }
-      discordId = decoded.discordId;
-      discordUsername = decoded.discordUsername;
-      discordGlobalName = decoded.discordGlobalName || null;
-      discordAvatar = decoded.discordAvatar || null;
-      roles = decoded.roles || [];
-    } catch (_) {
-      return res.status(401).json({ error: 'Expired or invalid Discord authorization. Please log in again.' });
+  let discordGlobalName: string | null;
+  let discordAvatar: string | null;
+  let roles: string[];
+  try {
+    const decoded = jwt.verify(tempBindingToken, config.jwtSecret) as any;
+    if (decoded.purpose !== 'mc_binding' || !decoded.discordId || !decoded.discordUsername) {
+      return res.status(400).json({ error: 'Invalid Discord binding token' });
     }
-  } else {
-    // In production, tempBindingToken is mandatory to prevent account hijacking
-    if (process.env.NODE_ENV === 'production') {
-      return res.status(401).json({ error: 'Missing verified Discord authorization token' });
-    }
-    discordId = req.body.discordId;
-    discordUsername = req.body.discordUsername;
-    discordGlobalName = req.body.discordGlobalName || null;
-    discordAvatar = req.body.discordAvatar || null;
-    roles = req.body.roles || [];
-
-    if (!discordId || !discordUsername) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
+    discordId = decoded.discordId;
+    discordUsername = decoded.discordUsername;
+    discordGlobalName = decoded.discordGlobalName || null;
+    discordAvatar = decoded.discordAvatar || null;
+    roles = decoded.roles || [];
+  } catch (_) {
+    return res.status(401).json({ error: 'Expired or invalid Discord authorization. Please log in again.' });
   }
 
   // Check if Discord ID is already bound
@@ -232,7 +218,7 @@ router.post('/bind-mc', async (req: Request, res: Response) => {
   };
 
   const token = jwt.sign(
-    { discordId: userProfile.discordId, mcUsername: userProfile.mcUsername, uuid: userProfile.uuid },
+    { discordId: userProfile.discordId, mcUsername: userProfile.mcUsername, uuid: userProfile.uuid, authMethod: 'discord' },
     config.jwtSecret,
     { expiresIn: (config.jwtExpiresIn || '30d') as any }
   );
@@ -246,73 +232,12 @@ router.post('/bind-mc', async (req: Request, res: Response) => {
   return res.json({ session });
 });
 
-// 4. Dev / Local Test Login
-router.post('/dev-login', async (req: Request, res: Response) => {
-  if (process.env.NODE_ENV === 'production' || (process.env.npm_lifecycle_event !== 'dev' && process.env.ALLOW_DEV_LOGIN !== 'true')) {
-    return res.status(403).json({ error: 'Dev login is disabled in production environment' });
-  }
-  const { username, discordTag } = req.body;
-  const cleanUsername = (username || 'QuibyPlayer').trim();
-  const cleanTag = (discordTag || 'quiby_tester#0001').trim();
-
-  const parseResult = mcUsernameSchema.safeParse(cleanUsername);
-  if (!parseResult.success) {
-    return res.status(400).json({ error: parseResult.error.errors[0].message });
-  }
-
-  const devDiscordId = `dev_${cleanTag.replace(/[^a-zA-Z0-9]/g, '_')}`;
-  const uuid = generateMinecraftUUID(cleanUsername);
-
-  let user = await dbGet<any>('SELECT * FROM users WHERE discord_id = ? OR LOWER(mc_username) = LOWER(?)', [
-    devDiscordId,
-    cleanUsername,
-  ]);
-
-  if (!user) {
-    await dbRun(
-      `INSERT INTO users (discord_id, discord_username, discord_global_name, mc_username, uuid, is_whitelisted, roles_json)
-       VALUES (?, ?, ?, ?, ?, 1, ?)`,
-      [devDiscordId, cleanTag, cleanTag, cleanUsername, uuid, JSON.stringify(['tester', 'player'])]
-    );
-    user = await dbGet<any>('SELECT * FROM users WHERE discord_id = ?', [devDiscordId]);
-  } else {
-    await dbRun('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
-  }
-
-  const userProfile: UserProfile = {
-    discordId: user.discord_id,
-    username: user.discord_username,
-    globalName: user.discord_global_name || undefined,
-    avatar: user.discord_avatar || undefined,
-    avatarUrl: `https://api.dicebear.com/8.x/bottts/svg?seed=${user.mc_username}`,
-    mcUsername: user.mc_username,
-    uuid: user.uuid,
-    isWhitelisted: Boolean(user.is_whitelisted),
-    roles: JSON.parse(user.roles_json || '[]'),
-    joinedAt: user.created_at,
-  };
-
-  const token = jwt.sign(
-    { discordId: userProfile.discordId, mcUsername: userProfile.mcUsername, uuid: userProfile.uuid },
-    config.jwtSecret,
-    { expiresIn: (config.jwtExpiresIn || '30d') as any }
-  );
-
-  const session: AuthSession = {
-    token,
-    user: userProfile,
-    expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
-  };
-
-  return res.json({ session });
-});
-
-// 5. Get current profile (requires JWT)
+// 4. Get current profile (requires JWT)
 router.get('/me', requireAuth, (req: AuthenticatedRequest, res: Response) => {
   return res.json({ user: req.user });
 });
 
-// 6. Verify Session for Minecraft Server (Anti-Alt & Whitelist Gateway)
+// 5. Verify Session for Minecraft Server (Anti-Alt & Whitelist Gateway)
 router.post('/verify-session', async (req: Request, res: Response) => {
   const { username, token, uuid } = req.body;
   if (!username || !token) {
@@ -321,12 +246,15 @@ router.post('/verify-session', async (req: Request, res: Response) => {
 
   try {
     const payload = jwt.verify(token, config.jwtSecret) as any;
+    if (payload.authMethod !== 'discord' || payload.purpose) {
+      return res.status(401).json({ valid: false, error: 'Discord login required' });
+    }
     if (payload.mcUsername.toLowerCase() !== username.toLowerCase()) {
       return res.status(403).json({ valid: false, error: 'Token does not match Minecraft username' });
     }
 
     const user = await dbGet<any>('SELECT * FROM users WHERE discord_id = ?', [payload.discordId]);
-    if (!user || !user.is_whitelisted || user.mc_username.toLowerCase() !== username.toLowerCase() || (uuid && user.uuid.toLowerCase() !== uuid.toLowerCase())) {
+    if (!user || user.discord_id.startsWith('dev_') || !user.is_whitelisted || user.mc_username.toLowerCase() !== username.toLowerCase() || (uuid && user.uuid.toLowerCase() !== uuid.toLowerCase())) {
       return res.status(403).json({ valid: false, error: 'Player is not whitelisted on quiby.' });
     }
 

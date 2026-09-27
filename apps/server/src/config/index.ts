@@ -25,7 +25,7 @@ export const config = {
   discord: {
     clientId: process.env.DISCORD_CLIENT_ID || '',
     clientSecret: process.env.DISCORD_CLIENT_SECRET || '',
-    redirectUri: process.env.DISCORD_REDIRECT_URI || 'http://localhost:3001/api/auth/discord/callback',
+    redirectUri: process.env.DISCORD_REDIRECT_URI || 'http://localhost:45678/callback',
     botToken: process.env.DISCORD_BOT_TOKEN || '',
     guildId: process.env.DISCORD_GUILD_ID || '', // quiby Discord Server ID
     requiredRoleId: process.env.DISCORD_REQUIRED_ROLE_ID || '', // Optional role required to play

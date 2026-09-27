@@ -17,16 +17,23 @@ test('bot API authenticates, attributes requests and atomically applies idempote
   const { verifyMod } = await import('../services/modSafetyService');
   const bot = (await import('../routes/bot')).default;
   const mods = (await import('../routes/mods')).default;
+  const auth = (await import('../routes/auth')).default;
   await initDatabase();
   await initDatabase(); // Migration is repeatable.
   await dbRun(
     "INSERT INTO users(discord_id, discord_username, mc_username, uuid) VALUES ('123456789012345678', 'Tester', 'Tester', 'test-uuid')",
   );
-  const token = jwt.sign({ discordId: '123456789012345678', mcUsername: 'Tester' }, config.jwtSecret);
+  await dbRun(
+    "INSERT INTO users(discord_id, discord_username, mc_username, uuid) VALUES ('dev_old', 'OldTest', 'OldTest', 'dev-uuid')",
+  );
+  const token = jwt.sign({ discordId: '123456789012345678', mcUsername: 'Tester', authMethod: 'discord' }, config.jwtSecret);
+  const oldDevToken = jwt.sign({ discordId: 'dev_old', mcUsername: 'OldTest', authMethod: 'discord' }, config.jwtSecret);
+  const legacyToken = jwt.sign({ discordId: '123456789012345678', mcUsername: 'Tester' }, config.jwtSecret);
   const app = express();
   app.use(express.json());
   app.use('/api/bot', bot);
   app.use('/api/mods', mods);
+  app.use('/api/auth', auth);
   const server = app.listen(0, '127.0.0.1');
   await new Promise<void>((resolve) => server.once('listening', resolve));
   const address = server.address() as { port: number };
@@ -44,6 +51,19 @@ test('bot API authenticates, attributes requests and atomically applies idempote
     mc_username: 'Spoofed',
   };
   try {
+    assert.equal((await request('/api/auth/dev-login', { method: 'POST' })).status, 404);
+    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${oldDevToken}` } })).status, 401);
+    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${legacyToken}` } })).status, 401);
+    assert.equal((await request('/api/auth/bind-mc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mcUsername: 'NoDiscord' }),
+    })).status, 401);
+    assert.equal((await request('/api/auth/verify-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'OldTest', token: oldDevToken, uuid: 'dev-uuid' }),
+    })).status, 403);
     assert.equal((await request('/api/bot/mod-whitelist-requests')).status, 403);
     assert.equal((await request('/api/mods/whitelist-requests')).status, 403);
     assert.equal(

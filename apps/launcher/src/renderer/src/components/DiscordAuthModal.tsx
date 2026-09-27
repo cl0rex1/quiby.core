@@ -21,8 +21,6 @@ interface DiscordAuthModalProps {
 }
 
 export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onClose, onSuccess, serverUrl }) => {
-  const localServer = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(serverUrl);
-  const [mode, setMode] = useState<'discord' | 'dev'>(localServer ? 'dev' : 'discord');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,18 +29,13 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
   const [tempBindingToken, setTempBindingToken] = useState<string | null>(null);
   const [mcUsername, setMcUsername] = useState('');
 
-  // Dev login state
-  const [devUsername, setDevUsername] = useState('Cl0rex');
-  const [devTag, setDevTag] = useState('cl0rex#0001');
-
   useEffect(() => {
     if (!isOpen) {
       setPendingDiscordUser(null);
       setTempBindingToken(null);
       setError(null);
-      setMode(localServer ? 'dev' : 'discord');
     }
-  }, [isOpen, localServer]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -84,11 +77,6 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tempBindingToken,
-          discordId: pendingDiscordUser.id,
-          discordUsername: pendingDiscordUser.username,
-          discordGlobalName: pendingDiscordUser.globalName,
-          discordAvatar: pendingDiscordUser.avatar,
-          roles: pendingDiscordUser.roles || [],
           mcUsername: mcUsername.trim(),
         }),
       });
@@ -96,35 +84,6 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Не удалось привязать ник');
-      }
-
-      onSuccess(data.session);
-      onClose();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDevLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch(`${serverUrl}/api/auth/dev-login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: devUsername.trim(),
-          discordTag: devTag.trim(),
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Ошибка входа в тестовом режиме');
       }
 
       onSuccess(data.session);
@@ -170,10 +129,9 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
 
         <section className="auth-form-panel" aria-labelledby="auth-form-title" aria-busy={loading}>
           <span className="auth-form-eyebrow">ТВОЯ ИСТОРИЯ НА QUIBY</span>
-          <h2 id="auth-form-title">{pendingDiscordUser ? 'Как тебя зовут в игре?' : mode === 'dev' ? 'Локальный вход' : 'Увидимся в игре.'}</h2>
+          <h2 id="auth-form-title">{pendingDiscordUser ? 'Как тебя зовут в игре?' : 'Увидимся в игре.'}</h2>
           <p className="auth-form-copy">{pendingDiscordUser
             ? `Discord ${pendingDiscordUser.globalName || pendingDiscordUser.username} подключён. Осталось привязать Minecraft-ник.`
-            : mode === 'dev' ? 'Вход для проверки локальной сборки.'
             : 'Войди через Discord, чтобы связать профиль с ником Minecraft и получить доступ к серверу.'}</p>
 
           {error && <div className="auth-error" role="alert"><AlertCircle size={16} /><span>{error}</span></div>}
@@ -190,7 +148,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
                 {loading ? 'Привязываем ник…' : 'Начать играть'}
               </button>
             </form>
-          ) : mode === 'discord' ? (
+          ) : (
             <>
               <button type="button" className="auth-submit" onClick={handleStartDiscordAuth} disabled={loading}>
                 {loading ? <Loader2 className="auth-spinner" size={19} /> : (
@@ -201,18 +159,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
               </button>
               <p className="auth-help">{loading ? 'Заверши вход в открывшемся браузере. Лаунчер продолжит автоматически.' : 'Откроем безопасную страницу входа в браузере.'}</p>
             </>
-          ) : (
-            <form onSubmit={handleDevLogin} className="auth-form">
-              <label htmlFor="auth-dev-name">Ник Minecraft</label>
-              <input id="auth-dev-name" value={devUsername} onChange={(e) => setDevUsername(e.target.value)} required disabled={loading} />
-              <label htmlFor="auth-dev-tag">Тестовый Discord Tag</label>
-              <input id="auth-dev-tag" value={devTag} onChange={(e) => setDevTag(e.target.value)} required disabled={loading} />
-              <button className="auth-submit" disabled={loading}>{loading ? 'Входим…' : 'Войти локально'}<ArrowRight size={16} /></button>
-            </form>
           )}
-          {localServer && !pendingDiscordUser && <button type="button" className="auth-dev-toggle" disabled={loading} onClick={() => { setMode(mode === 'discord' ? 'dev' : 'discord'); setError(null); }}>
-            {mode === 'discord' ? 'Локальный вход для разработки' : 'Вернуться к Discord'}
-          </button>}
         </section>
       </div>
       <footer className="auth-footer"><span>QUIBY. MADE TO PLAY TOGETHER.</span><span>ТВОЙ НОВЫЙ СЕЗОН НАЧИНАЕТСЯ ЗДЕСЬ</span></footer>
