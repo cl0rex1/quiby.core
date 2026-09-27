@@ -50,7 +50,7 @@ router.delete('/me', requireAuth, async (req: AuthenticatedRequest, res: Respons
   return res.json({ ok: true });
 });
 
-// CustomSkinLoader requests this public URL for every player on the server.
+// The Quiby client mod requests this public URL for every player on the server.
 router.get('/:username.png', async (req, res) => {
   const username = req.params.username;
   if (!/^[A-Za-z0-9_]{3,16}$/.test(username)) return res.status(404).end();

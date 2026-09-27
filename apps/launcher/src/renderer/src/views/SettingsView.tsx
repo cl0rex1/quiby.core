@@ -8,6 +8,7 @@ import {
   Check,
   SlidersHorizontal,
   Waves,
+  Download,
 } from 'lucide-react';
 import { LauncherSettings } from '@quiby/shared';
 import { buildVideo } from '../utils/buildScreenshots';
@@ -277,8 +278,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
           )}
           {section === 'files' && (
             <>
-              <section className="settings-group">
-                <div className="settings-group-heading"><h2>Обновление лаунчера</h2></div>
+              <section className={`settings-group settings-update-card ${updateState && ['available', 'downloading', 'ready'].includes(updateState.status) ? 'has-update' : ''}`}>
+                <div className="settings-group-heading settings-update-heading">
+                  <span className="settings-update-icon"><Download size={19} /></span>
+                  <div><small>QUIBY CORE / ОБНОВЛЕНИЕ</small><h2>Обновление лаунчера</h2></div>
+                  {updateState && ['available', 'downloading', 'ready'].includes(updateState.status) && <span className="settings-update-badge">НОВАЯ ВЕРСИЯ</span>}
+                </div>
                 <p className="settings-update-status" role="status">
                   {updateState?.status === 'checking' ? 'Проверяем GitHub Releases…'
                     : updateState?.status === 'available' ? `Доступна версия ${updateState.latestVersion}`
@@ -289,9 +294,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
                     : updateState?.status === 'error' ? `Ошибка: ${updateState.message}`
                     : `Установлена версия ${updateState?.currentVersion || '…'}`}
                 </p>
-                <button type="button" className="ui-button" onClick={() => void updateAction()}
+                {updateState?.status === 'downloading' && <div className="settings-update-progress" role="progressbar" aria-valuenow={updateState.percent ?? 0} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${Math.max(0, Math.min(100, updateState.percent ?? 0))}%` }} /></div>}
+                <button type="button" className={`ui-button ${updateState && ['available', 'ready'].includes(updateState.status) ? 'settings-update-action' : ''}`} onClick={() => void updateAction()}
                   disabled={!updateState || ['checking', 'downloading', 'development'].includes(updateState.status)}>
-                  <RefreshCw size={14} />
+                  {updateState && ['available', 'ready'].includes(updateState.status) ? <Download size={15} /> : <RefreshCw size={14} />}
                   {updateState?.status === 'available' ? 'Скачать обновление'
                     : updateState?.status === 'ready' ? 'Перезапустить и установить' : 'Проверить обновления'}
                 </button>

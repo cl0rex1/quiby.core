@@ -11,13 +11,14 @@ import { updateDiscordRpcStatus } from '../rpc/discordRpc';
 import { selectModpackProfile } from '../../shared/modpackProfiles';
 import { resolveJava21 } from './javaDetector';
 import { getLatestModpackManifest } from './manifestSource';
-import { prepareSkinLoader } from './skinLoader';
+import { readCrashDetails } from './crashDetails';
 
 let runningGameProcess: ChildProcess | null = null;
 let gameStartTime: number | null = null;
 let playtimeInterval: NodeJS.Timeout | null = null;
 let launchInProgress = false;
 let trackedPlaytimeSeconds = 0;
+let stopRequested = false;
 
 export async function launchMinecraft(
   session: AuthSession,
@@ -31,7 +32,13 @@ export async function launchMinecraft(
     throw new Error('Minecraft уже запускается или запущен');
   }
   launchInProgress = true;
+  stopRequested = false;
+  const recentGameOutput: string[] = [];
   const sendLog = (level: LogEntry['level'], message: string, source: LogEntry['source'] = 'launcher') => {
+    if (source !== 'launcher') {
+      recentGameOutput.push(message);
+      if (recentGameOutput.length > 300) recentGameOutput.shift();
+    }
     const entry: LogEntry = {
       id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       timestamp: new Date().toLocaleTimeString(),
@@ -118,7 +125,6 @@ export async function launchMinecraft(
       sendLog('info', `🛡️ Защита ${protectedFilenames.size} активных клиентских модов от очистки`);
     }
     await syncModpackFiles(manifest, gameDir, serverBaseUrl, win, protectedFilenames);
-    prepareSkinLoader(gameDir, serverBaseUrl);
 
     // 3. Ensure Vanilla Minecraft 1.21.1
     sendLog('info', `📦 Подготовка файлов Minecraft ${manifest.gameVersion}...`);
@@ -148,6 +154,7 @@ export async function launchMinecraft(
       `-Djava.library.path=${path.join(gameDir, 'natives')}`,
       `-Dminecraft.launcher.brand=quiby.core`,
       `-Dminecraft.launcher.version=1.0.0`,
+      `-Dquiby.skinApi=${serverBaseUrl.replace(/\/$/, '')}`,
     ];
 
     // Append NeoForge specific JVM arguments (modulepath, exports, args.txt)
@@ -268,7 +275,10 @@ export async function launchMinecraft(
       }
     });
 
+    let finished = false;
     gameProcess.on('error', (err) => {
+      if (finished) return;
+      finished = true;
       stopPlaytimeTracking();
       sendLog('error', `Ошибка процесса Java: ${err.message}`);
       setLaunchState({ status: 'crashed', error: err.message });
@@ -276,9 +286,17 @@ export async function launchMinecraft(
     });
 
     gameProcess.on('exit', (code) => {
+      if (finished) return;
+      finished = true;
+      const startedAt = gameStartTime || Date.now();
       stopPlaytimeTracking();
       sendLog('info', `Процесс Minecraft завершился с кодом: ${code}`);
-      setLaunchState({ status: code === 0 ? 'stopped' : 'crashed', exitCode: code || 0 });
+      const crashed = code !== 0 && !stopRequested;
+      setLaunchState({
+        status: crashed ? 'crashed' : 'stopped',
+        exitCode: code ?? undefined,
+        error: crashed ? readCrashDetails(gameDir, startedAt, code, recentGameOutput) : undefined,
+      });
       runningGameProcess = null;
 
       updateDiscordRpcStatus({
@@ -297,6 +315,7 @@ export async function launchMinecraft(
 }
 
 export function killGameProcess(): void {
+  stopRequested = true;
   if (playtimeInterval) {
     clearInterval(playtimeInterval);
     playtimeInterval = null;

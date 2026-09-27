@@ -68,7 +68,7 @@ export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({ 
               {notification.modInfo.hashSha1 && <div><dt>SHA-1</dt><dd>{notification.modInfo.hashSha1}</dd></div>}
             </dl>
           )}
-          <button type="button" onClick={onNavigateToMods} className="message-open-mods">Открыть контент <ArrowUpRight size={15} /></button>
+          {notification.modInfo && <button type="button" onClick={onNavigateToMods} className="message-open-mods">Открыть контент <ArrowUpRight size={15} /></button>}
         </article>
       ) : <div className="message-empty">Выберите уведомление в списке слева.</div>}
     </div>

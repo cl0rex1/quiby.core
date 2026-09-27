@@ -291,6 +291,9 @@ export const App: React.FC = () => {
 
       const unsubscribeState = window.quibyApi.onLaunchStateChange((state) => {
         setLaunchState(state);
+        if (state.status === 'crashed') {
+          handleNotify('Сбой Minecraft', state.error || `Игра завершилась с кодом ${state.exitCode ?? 'неизвестно'}.`, 'error');
+        }
       });
 
       const unsubscribePlaytime = window.quibyApi.onPlaytimeTick?.((sec) => {
@@ -370,20 +373,24 @@ export const App: React.FC = () => {
       return;
     }
     setActiveTab('home');
+    if (!window.quibyApi) return;
     try {
-      if (window.quibyApi) {
-        await syncSelectedSkin(session, localStorage.getItem('quiby_custom_skin_data'));
-        const activeModFiles = customMods
-          .filter((m) => m.enabled && m.safetyStatus === 'approved')
-          .map((m) => m.filename);
-        const disabledModFiles = customMods
-          .filter((m) => !m.enabled || m.safetyStatus !== 'approved')
-          .map((m) => m.filename);
-        await window.quibyApi.launchGame(session, settings, activeModFiles, disabledModFiles);
-      }
+      await syncSelectedSkin(session, localStorage.getItem('quiby_custom_skin_data'));
     } catch (err) {
+      handleNotify('Не удалось синхронизировать скин', err instanceof Error ? err.message : 'Проверьте соединение и попробуйте снова.', 'error');
+      return;
+    }
+    const activeModFiles = customMods
+      .filter((m) => m.enabled && m.safetyStatus === 'approved')
+      .map((m) => m.filename);
+    const disabledModFiles = customMods
+      .filter((m) => !m.enabled || m.safetyStatus !== 'approved')
+      .map((m) => m.filename);
+    try {
+      await window.quibyApi.launchGame(session, settings, activeModFiles, disabledModFiles);
+    } catch (err) {
+      // The main process sends a crash state with the full diagnostic report.
       console.error('Launch Error:', err);
-      handleNotify('Не удалось запустить игру', err instanceof Error ? err.message : 'Проверьте соединение и попробуйте снова.', 'error');
     }
   };
 
