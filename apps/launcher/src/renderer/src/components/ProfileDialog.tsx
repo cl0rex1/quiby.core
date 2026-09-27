@@ -1,3 +1,4 @@
+import { DiscordAvatar } from './DiscordAvatar';
 import { useEffect } from 'react';
 import { LogOut, X } from 'lucide-react';
 import type { AuthSession } from '@quiby/shared';
@@ -39,11 +40,7 @@ export function ProfileDialog({ session, onClose, onSignOut }: Props) {
           </button>
         </div>
         <div className="mt-6 flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 p-4">
-          <img
-            className="h-14 w-14 rounded-xl object-cover"
-            src={session.user.avatarUrl || `https://mc-heads.net/avatar/${session.user.mcUsername}/64`}
-            alt=""
-          />
+          <DiscordAvatar user={session.user} className="h-14 w-14 rounded-xl object-cover" />
           <div className="min-w-0">
             <p className="truncate text-base font-semibold text-white">{session.user.mcUsername}</p>
             <p className="truncate text-xs text-zinc-400">Discord: {session.user.globalName || session.user.username}</p>

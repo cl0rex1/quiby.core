@@ -1,4 +1,5 @@
 import React from 'react';
+import { DiscordAvatar } from './DiscordAvatar';
 import { 
   Play, 
   Shirt, 
@@ -232,14 +233,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
             >
               <div className="w-12 h-11 flex items-center justify-center shrink-0">
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-surface-border shrink-0 relative shadow-sm">
-                  <img
-                    src={
-                      session.user.avatarUrl ||
-                      `https://mc-heads.net/avatar/${session.user.mcUsername}/48`
-                    }
-                    alt="Avatar"
-                    className="w-full h-full object-cover"
-                  />
+                  <DiscordAvatar user={session.user} className="w-full h-full object-cover" />
                 </div>
               </div>
               <div
@@ -384,7 +378,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                         }`}
                       />
                       <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 truncate">
-                        {isSuccess ? 'Одобрено' : isError ? 'Отклонено' : isWarning ? 'На рассмотрении' : 'Инфо'}
+                        {n.modInfo ? (isSuccess ? 'Одобрено' : isError ? 'Отклонено' : isWarning ? 'На рассмотрении' : 'Инфо') : (isError ? 'Ошибка' : isWarning ? 'Внимание' : isSuccess ? 'Готово' : 'Инфо')}
                       </span>
                     </div>
                     <span className="text-[10px] font-mono text-zinc-500 shrink-0">

@@ -74,13 +74,23 @@ export async function launchMinecraft(
 
   try {
     setLaunchState({ status: 'updating' });
+    const profileName = settings.modpackProfile === 'full' ? 'Visual' : settings.modpackProfile === 'clean' ? 'Draft' : 'Standard';
+    updateDiscordRpcStatus({ details: 'Готовится к игре', state: `Сборка ${profileName} · quiby. S6` });
     sendLog('info', `🚀 Инициализация запуска quiby. Season 6 (Minecraft 1.21.1 NeoForge)...`);
     sendLog('info', `👤 Игрок: ${session.user.mcUsername} (Discord: ${session.user.username})`);
 
     // 1. Fetch Modpack Manifest from server
     sendLog('info', '🌐 Запрос актуального манифеста сборки...');
     const manifest = selectModpackProfile(await getLatestModpackManifest(serverBaseUrl), settings.modpackProfile);
-    const javaBin = await resolveJava21(settings.javaPath);
+    const javaBin = await resolveJava21(settings.javaPath, path.join(settings.gameDir, 'runtime'), (label, downloaded, total) => {
+      if (!win || win.isDestroyed()) return;
+      win.webContents.send('download-progress', {
+        stage: 'java', stageLabel: label, currentFile: 'Java 21',
+        filesProcessed: downloaded === total && total > 0 ? 1 : 0, totalFiles: 1,
+        bytesDownloaded: downloaded, totalBytes: total, speedBps: 0,
+        progressPercent: total ? Math.min(100, downloaded / total * 100) : 0,
+      });
+    });
     sendLog('info', `📦 Загружен манифест версии: ${manifest.name} (v${manifest.version})`);
 
     const gameDir = path.resolve(settings.gameDir);
@@ -256,7 +266,7 @@ export async function launchMinecraft(
     // Discord Rich Presence update
     updateDiscordRpcStatus({
       details: 'В игре на quiby. S6',
-      state: `Игрок: ${session.user.mcUsername}`,
+      state: `${profileName} · Игрок: ${session.user.mcUsername}`,
       startTimestamp: Date.now(),
     });
 
@@ -282,6 +292,7 @@ export async function launchMinecraft(
       stopPlaytimeTracking();
       sendLog('error', `Ошибка процесса Java: ${err.message}`);
       setLaunchState({ status: 'crashed', error: err.message });
+      updateDiscordRpcStatus({ details: 'В главном меню лаунчера', state: 'quiby. Season 6 · Minecraft 1.21.1' });
       runningGameProcess = null;
     });
 
@@ -308,6 +319,7 @@ export async function launchMinecraft(
   } catch (error: any) {
     launchInProgress = false;
     stopPlaytimeTracking();
+    updateDiscordRpcStatus({ details: 'В главном меню лаунчера', state: 'quiby. Season 6 · Minecraft 1.21.1' });
     sendLog('error', `Критическая ошибка запуска: ${error.message}`);
     setLaunchState({ status: 'crashed', error: error.message });
     throw error;

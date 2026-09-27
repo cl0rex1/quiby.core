@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { execSync, spawnSync } from 'child_process';
 import os from 'os';
+import { installJava21, managedJavaPath, type JavaProgress } from './managedJava';
 
 export interface JavaInstallation {
   path: string;
@@ -11,9 +12,9 @@ export interface JavaInstallation {
   isBundled?: boolean;
 }
 
-export async function detectInstalledJava(): Promise<JavaInstallation[]> {
+export async function detectInstalledJava(runtimeRoot?: string): Promise<JavaInstallation[]> {
   const installations: JavaInstallation[] = [];
-  const candidatePaths: string[] = [];
+  const candidatePaths: string[] = runtimeRoot ? [managedJavaPath(runtimeRoot)] : [];
 
   const platform = os.platform();
 
@@ -85,7 +86,8 @@ export async function detectInstalledJava(): Promise<JavaInstallation[]> {
           path: javaBin,
           version: versionInfo.major,
           versionString: versionInfo.full,
-          isCompatible: versionInfo.major === 21,
+          isCompatible: versionInfo.major === 21 && versionInfo.is64Bit,
+          isBundled: runtimeRoot ? javaBin === managedJavaPath(runtimeRoot) : false,
         });
       }
     } catch (_) {}
@@ -94,9 +96,10 @@ export async function detectInstalledJava(): Promise<JavaInstallation[]> {
   return installations;
 }
 
-export function getJavaVersion(javaBin: string): { major: number; full: string } | null {
+export function getJavaVersion(javaBin: string): { major: number; full: string; is64Bit: boolean } | null {
   try {
-    const result = spawnSync(javaBin.replace(/javaw\.exe$/i, 'java.exe'), ['-version'], { encoding: 'utf8', windowsHide: true, timeout: 10000 });
+    const result = spawnSync(javaBin.replace(/javaw\.exe$/i, 'java.exe'), ['-XshowSettings:properties', '-version'], { encoding: 'utf8', windowsHide: true, timeout: 10000 });
+    if (result.error || result.status !== 0) return null;
     const output = `${result.stdout || ''}\n${result.stderr || ''}`;
     const match = output.match(/(?:java|openjdk) version "([^"]+)"/) || output.match(/version "([^"]+)"/);
     if (match) {
@@ -107,7 +110,7 @@ export function getJavaVersion(javaBin: string): { major: number; full: string }
       } else {
         major = parseInt(full.split('.')[0], 10);
       }
-      return { major, full };
+      return { major, full, is64Bit: /sun\.arch\.data\.model\s*=\s*64|64-Bit/i.test(output) };
     }
   } catch (_) {}
   return null;
@@ -119,10 +122,14 @@ export function getRecommendedJava(installations: JavaInstallation[]): JavaInsta
   return compatible[0] || null;
 }
 
-export async function resolveJava21(selectedPath: string): Promise<string> {
+export async function resolveJava21(selectedPath: string, runtimeRoot: string, progress?: JavaProgress): Promise<string> {
   const consolePath = (selectedPath || 'java').replace(/javaw\.exe$/i, 'java.exe');
-  if (getJavaVersion(consolePath)?.major === 21) return consolePath;
+  const selected = getJavaVersion(consolePath);
+  if (selected?.major === 21 && selected.is64Bit) return consolePath;
+  const managed = managedJavaPath(runtimeRoot);
+  const bundled = getJavaVersion(managed);
+  if (bundled?.major === 21 && bundled.is64Bit) return managed;
   const installed = getRecommendedJava(await detectInstalledJava());
   if (installed) return installed.path;
-  throw new Error('Для этой сборки нужна Java 21 (64-bit). Установите Java 21 и выберите её в настройках лаунчера.');
+  return installJava21(runtimeRoot, progress);
 }

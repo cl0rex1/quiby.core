@@ -16,6 +16,16 @@ const skipped: string[] = [];
 
 async function add(relative: string, sourcePath: string, profiles?: ModpackFile['profiles']) {
   let data = await fs.readFile(sourcePath);
+  // Apply reviewed pack settings over the personal profile during the next import.
+  const overridePath = path.resolve('modpacks/quiby-s6/overrides', relative);
+  try {
+    const override = await fs.readFile(overridePath);
+    data = relative === 'config/explosionoverhaul/ExplosionSourceBlacklist.json'
+      ? Buffer.from(JSON.stringify({ ...JSON.parse(data.toString()), ...JSON.parse(override.toString()) }, null, 2) + '\n')
+      : override;
+  } catch (error: any) {
+    if (error.code !== 'ENOENT') throw error;
+  }
   if (relative === 'options.txt') {
     data = Buffer.from(data.toString().split(/\r?\n/).filter(line =>
       !/^(lastServer|fullscreen|overrideWidth|overrideHeight|soundDevice):/.test(line)

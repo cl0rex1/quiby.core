@@ -51,7 +51,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
       setJavaList(res.installations || []);
       if (res.totalRamMb) setTotalRamGb(Math.round(res.totalRamMb / 1024));
     } catch {
-      setError('Не удалось найти Java. Укажите путь вручную.');
+      setError('Не удалось найти установленную Java. При запуске игры Java 21 скачается автоматически.');
     } finally {
       setDetectingJava(false);
     }
@@ -213,6 +213,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
                     onChange={(e) => update({ fullscreen: e.target.checked })}
                   />
                 </label>
+                <label className="setting-row">
+                  <div><strong>Discord Rich Presence</strong><p>Показывать в Discord выбранную сборку, запуск и время в игре.</p></div>
+                  <input className="setting-switch" type="checkbox" checked={settings.enableDiscordRpc !== false} onChange={(e) => update({ enableDiscordRpc: e.target.checked })} />
+                </label>
               {hasServerAddress && <label className="setting-row">
                 <div>
                   <strong>Сразу на сервер</strong>
@@ -317,7 +321,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
                   </button>
                 </div>
                 <p className="section-copy">
-                  Для сборки нужна Java 21. Выберите установленную версию или укажите путь.
+                  Нужна Java 21 (64-битная). Если подходящей версии нет, лаунчер скачает её при запуске игры. Путь можно выбрать вручную.
                 </p>
                 {javaList.length > 0 && (
                   <select

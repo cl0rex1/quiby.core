@@ -138,7 +138,7 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
                   <Icon size={18} />
                   {item.id === buildId ? <Check size={14} /> : <ArrowRight size={14} />}
                 </span>
-                <strong>{item.name}</strong>
+                <strong>{item.name}{item.id === 'standard' && <span className="ml-2 rounded bg-violet-400/20 px-2 py-0.5 text-[10px] text-violet-200">Рекомендуем</span>}</strong>
                 <small>{item.tagline}</small>
               </button>
             );

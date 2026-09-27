@@ -104,7 +104,7 @@ export interface LauncherSettings {
 }
 
 export interface DownloadProgress {
-  stage: 'idle' | 'checking' | 'manifest' | 'vanilla_assets' | 'libraries' | 'neoforge' | 'mods' | 'configs' | 'launching' | 'error';
+  stage: 'idle' | 'java' | 'checking' | 'manifest' | 'vanilla_assets' | 'libraries' | 'neoforge' | 'mods' | 'configs' | 'launching' | 'error';
   stageLabel: string;
   currentFile: string;
   filesProcessed: number;

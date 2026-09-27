@@ -150,60 +150,15 @@ export const ModsView: React.FC<ModsViewProps> = ({
   const matchesCategory = (
     cat: string | undefined,
     label: string | undefined,
-    name: string,
-    filename: string
+    categories: string[] = []
   ) => {
     if (filterCategory === 'all') return true;
     const c = (cat || '').toLowerCase();
     const l = (label || '').toLowerCase();
-    const full = (name + ' ' + filename).toLowerCase();
-
-    if (filterCategory === 'optimization') {
-      return (
-        c === 'optimization' ||
-        l.includes('оптимиз') ||
-        full.includes('sodium') ||
-        full.includes('ferrite') ||
-        full.includes('embeddium') ||
-        full.includes('memory') ||
-        full.includes('culling') ||
-        full.includes('fast')
-      );
-    }
-    if (filterCategory === 'interface') {
-      return (
-        c === 'interface' ||
-        l.includes('интерфейс') ||
-        full.includes('jei') ||
-        full.includes('rei') ||
-        full.includes('emi') ||
-        full.includes('jade') ||
-        full.includes('appleskin') ||
-        full.includes('mouse')
-      );
-    }
-    if (filterCategory === 'audio') {
-      return (
-        l.includes('звук') ||
-        l.includes('голос') ||
-        full.includes('sound') ||
-        full.includes('physics') ||
-        full.includes('voice') ||
-        full.includes('footstep') ||
-        full.includes('audio')
-      );
-    }
-    if (filterCategory === 'mechanics') {
-      return (
-        c === 'mechanisms' ||
-        l.includes('механик') ||
-        l.includes('дирижабл') ||
-        full.includes('create') ||
-        full.includes('aeronautics') ||
-        full.includes('steam') ||
-        full.includes('train')
-      );
-    }
+    if (filterCategory === 'optimization') return c === 'optimization' || categories.some(value => value === 'optimization' || value === 'performance');
+    if (filterCategory === 'interface') return c === 'interface' || categories.includes('interface');
+    if (filterCategory === 'audio') return l === 'звук' || l === 'голос' || categories.includes('audio');
+    if (filterCategory === 'mechanics') return c === 'mechanisms' || categories.includes('technology');
     return true;
   };
 
@@ -213,7 +168,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
     const matchesSearch =
       meta.displayName.toLowerCase().includes(search.toLowerCase()) ||
       f.path.toLowerCase().includes(search.toLowerCase());
-    return matchesSearch && matchesCategory(meta.category, meta.categoryLabel, meta.displayName, f.path);
+    return matchesSearch && matchesCategory(meta.category, meta.categoryLabel);
   });
 
   const filteredCustom = customMods.filter((m) => {
@@ -221,7 +176,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
     const matchesSearch =
       m.name.toLowerCase().includes(search.toLowerCase()) ||
       m.filename.toLowerCase().includes(search.toLowerCase());
-    return matchesSearch && matchesCategory(meta.category, meta.categoryLabel, m.name, m.filename);
+    return matchesSearch && matchesCategory(meta.category, meta.categoryLabel, m.categories);
   });
 
   const toggleSelectMod = (id: string) => {
@@ -338,7 +293,9 @@ export const ModsView: React.FC<ModsViewProps> = ({
   };
 
   const handleOpenModsFolder = () => {
-    window.quibyApi?.openPath(`${gameDir}/mods`);
+    void window.quibyApi?.openContentFolder(gameDir, 'mods').catch((error: unknown) => {
+      onNotify?.('Не удалось открыть папку модов', error instanceof Error ? error.message : 'Проверьте доступ к папке игры.', 'error');
+    });
   };
 
   const formatSize = (bytes: number) => {

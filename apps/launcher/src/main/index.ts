@@ -8,7 +8,7 @@ import { detectInstalledJava, getRecommendedJava } from './engine/javaDetector';
 import { launchMinecraft, killGameProcess } from './engine/minecraftLauncher';
 import { hashCustomModBytes, requireApprovedCustomMod } from './engine/customModVerification';
 import { contentDirectory, contentFilePath, installLocalContent, listLocalContent, ContentKind } from './engine/localContent';
-import { initDiscordRpc } from './rpc/discordRpc';
+import { configureDiscordRpc } from './rpc/discordRpc';
 import { registerUpdates } from './updates';
 import { getLatestModpackManifest } from './engine/manifestSource';
 
@@ -198,13 +198,14 @@ app.whenReady().then(async () => {
   ipcMain.handle('settings:get', () => loadSettings());
   ipcMain.handle('settings:save', (_, settings: LauncherSettings) => {
     saveSettings(settings);
+    configureDiscordRpc(settings.enableDiscordRpc !== false);
     return true;
   });
 
   // 4. Java & System Inspection
   ipcMain.handle('system:memory', () => Math.floor(os.totalmem() / (1024 * 1024)));
   ipcMain.handle('system:detect-java', async () => {
-    const installations = await detectInstalledJava();
+    const installations = await detectInstalledJava(path.join(loadSettings().gameDir?.trim() || getDefaultGameDir(), 'runtime'));
     const recommended = getRecommendedJava(installations);
     const totalRamMb = Math.round(os.totalmem() / (1024 * 1024));
     return { installations, recommended, totalRamMb };
@@ -251,8 +252,8 @@ app.whenReady().then(async () => {
   ipcMain.handle('content:trash', async (_, gameDir: string, kind: ContentKind, filename: string) => {
     await shell.trashItem(contentFilePath(gameDir?.trim() || getDefaultGameDir(), kind, filename));
   });
-  ipcMain.handle('content:open-folder', async (_, gameDir: string, kind: ContentKind) => {
-    const dir = contentDirectory(gameDir?.trim() || getDefaultGameDir(), kind);
+  ipcMain.handle('content:open-folder', async (_, gameDir: string, kind: ContentKind | 'mods') => {
+    const dir = kind === 'mods' ? path.join(gameDir?.trim() || getDefaultGameDir(), 'mods') : contentDirectory(gameDir?.trim() || getDefaultGameDir(), kind);
     await fs.promises.mkdir(dir, { recursive: true });
     const error = await shell.openPath(dir);
     if (error) throw new Error(error);
@@ -323,7 +324,7 @@ app.whenReady().then(async () => {
   registerUpdates(() => mainWindow);
   createSplashWindow();
   createMainWindow();
-  initDiscordRpc();
+  configureDiscordRpc(loadSettings().enableDiscordRpc !== false);
 });
 
 app.on('window-all-closed', () => {
@@ -331,3 +332,5 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+app.on('before-quit', () => configureDiscordRpc(false));

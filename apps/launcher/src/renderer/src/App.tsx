@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { createSkinSynchronizer } from './utils/skinSync';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { selectModpackProfile } from '../../shared/modpackProfiles';
 import { applyBuildToMods, selectedBuild } from './utils/buildProfiles';
 import { WindowHeader } from './components/WindowHeader';
@@ -40,14 +41,7 @@ function storedSession(): AuthSession | null {
   }
 }
 
-async function syncSelectedSkin(session: AuthSession, dataUri: string | null): Promise<void> {
-  const response = await fetch(`${SERVER_URL}/api/skins/me`, {
-    method: dataUri ? 'PUT' : 'DELETE',
-    headers: { Authorization: `Bearer ${session.token}`, 'Content-Type': 'application/json' },
-    ...(dataUri ? { body: JSON.stringify({ dataUri }) } : {}),
-  });
-  if (!response.ok) throw new Error('Скин не удалось сохранить на сервере');
-}
+const syncSelectedSkin = createSkinSynchronizer(SERVER_URL);
 
 const defaultSettings: LauncherSettings = {
   ramMinMb: 4096,
@@ -90,7 +84,7 @@ export const App: React.FC = () => {
     modInfo?: NotificationItem['modInfo']
   ) => {
     const newNotif: NotificationItem = {
-      id: 'notif-' + Date.now(),
+      id: 'notif-' + crypto.randomUUID(),
       title,
       message,
       type,
@@ -138,6 +132,8 @@ export const App: React.FC = () => {
     localStorage.setItem('quiby_cape', cape.id);
   };
 
+  const skinSyncWarningShown = useRef(false);
+
   const handleSetCustomSkin = (img: HTMLImageElement | null, name: string | null) => {
     setCustomSkinImg(img);
     setCustomSkinName(name);
@@ -148,8 +144,13 @@ export const App: React.FC = () => {
       localStorage.removeItem('quiby_custom_skin_data');
       localStorage.removeItem('quiby_custom_skin_name');
     }
-    if (session) void syncSelectedSkin(session, img?.src || null).catch(() =>
-      handleNotify('Скин пока не обновлён в игре', 'Проверьте соединение с сервером и повторите выбор.', 'warning'));
+    if (session) void syncSelectedSkin(session, img?.src || null).then(() => {
+      skinSyncWarningShown.current = false;
+    }).catch((error: unknown) => {
+      if (skinSyncWarningShown.current) return;
+      skinSyncWarningShown.current = true;
+      handleNotify('Скин пока не обновлён в игре', error instanceof Error ? error.message : 'Проверьте соединение с сервером и повторите выбор.', 'warning');
+    });
   };
 
   const handleSetDefaultSkinIdx = (idx: number) => {

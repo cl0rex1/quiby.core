@@ -58,7 +58,7 @@ export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({ 
         </div>
       ) : notification ? (
         <article className="message-article message-detail">
-          <div className="message-meta"><span>{notification.type}</span><time dateTime={new Date(notification.timestamp).toISOString()}>{dateLabel(notification.timestamp)}</time></div>
+          <div className="message-meta"><span>{{ success: 'Готово', info: 'Информация', warning: 'Внимание', error: 'Ошибка' }[notification.type || 'info']}</span><time dateTime={new Date(notification.timestamp).toISOString()}>{dateLabel(notification.timestamp)}</time></div>
           <div className="message-detail-title"><h2>{notification.title}</h2><div className="message-actions"><button className="message-copy" type="button" onClick={copyNotification} title="Скопировать уведомление"><Copy size={15} /><span>Копировать</span></button><button type="button" onClick={() => onDeleteNotification(notification.id)} title="Удалить уведомление" aria-label="Удалить уведомление"><Trash2 size={16} /></button></div></div>
           {notification.message && <p>{notification.message}</p>}
           {notification.modInfo && (

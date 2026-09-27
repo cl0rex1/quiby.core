@@ -10,6 +10,55 @@ export interface ModMetadata {
 }
 
 const KNOWN_MODS: Record<string, ModMetadata> = {
+  "aeroworks": { displayName: "Create: Aeroworks", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
+  "cbc_compact_mount": { displayName: "CBC: Compact Mount", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
+  "contraption-lights": { displayName: "Contraption Lights", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
+  "copycats": { displayName: "Create: Copycats+", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
+  "create_aeronautics_transmission_linkage": { displayName: "Create Aeronautics: Transmission & Linkage", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
+  "create_connected": { displayName: "Create: Connected", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
+  "create_pattern_schematics": { displayName: "Create: Pattern Schematics", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
+  "create_radar": { displayName: "Create: Radars", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
+  "createbigcannons": { displayName: "Create Big Cannons", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
+  "createdeco": { displayName: "Create Deco", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
+  "createdieselgenerators": { displayName: "Create Diesel Generators", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
+  "fxntstorage": { displayName: "Create: Storage", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
+  "powergrid": { displayName: "Create: Power Grid", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
+  "BetterPingDisplay": { displayName: "Better Ping Display", description: "Удобство управления и интерфейса", category: 'interface', categoryLabel: 'Интерфейс' },
+  "chat_heads": { displayName: "Chat Heads", description: "Удобство управления и интерфейса", category: 'interface', categoryLabel: 'Интерфейс' },
+  "Controlling": { displayName: "Controlling", description: "Удобство управления и интерфейса", category: 'interface', categoryLabel: 'Интерфейс' },
+  "cwb": { displayName: "Cubes Without Borders", description: "Удобство управления и интерфейса", category: 'interface', categoryLabel: 'Интерфейс' },
+  "InvMove": { displayName: "InvMove", description: "Удобство управления и интерфейса", category: 'interface', categoryLabel: 'Интерфейс' },
+  "rejei": { displayName: "ReJei", description: "Удобство управления и интерфейса", category: 'interface', categoryLabel: 'Интерфейс' },
+  "coolrain": { displayName: "Cool Rain", description: "Визуальные эффекты и отображение мира", category: 'graphics', categoryLabel: 'Графика' },
+  "DistantHorizons": { displayName: "Distant Horizons", description: "Визуальные эффекты и отображение мира", category: 'graphics', categoryLabel: 'Графика' },
+  "entity_model_features": { displayName: "Entity Model Features", description: "Визуальные эффекты и отображение мира", category: 'graphics', categoryLabel: 'Графика' },
+  "entity_texture_features": { displayName: "Entity Texture Features", description: "Визуальные эффекты и отображение мира", category: 'graphics', categoryLabel: 'Графика' },
+  "explosionoverhaul": { displayName: "Explosion Overhaul: A new level of destruction", description: "Визуальные эффекты и отображение мира", category: 'graphics', categoryLabel: 'Графика' },
+  "ragdoll_corpse": { displayName: "Sable: Ragdoll Corpse", description: "Визуальные эффекты и отображение мира", category: 'graphics', categoryLabel: 'Графика' },
+  "ragdoll_reactions": { displayName: "Ragdoll Reactions", description: "Визуальные эффекты и отображение мира", category: 'graphics', categoryLabel: 'Графика' },
+  "sable_player_ragdoll_patch": { displayName: "Sable Ragdolls Patch", description: "Визуальные эффекты и отображение мира", category: 'graphics', categoryLabel: 'Графика' },
+  "sable_player_ragdoll": { displayName: "Sable Ragdolls", description: "Визуальные эффекты и отображение мира", category: 'graphics', categoryLabel: 'Графика' },
+  "sable_ragdoll_dummies": { displayName: "Sable: Ragdoll Dummies", description: "Визуальные эффекты и отображение мира", category: 'graphics', categoryLabel: 'Графика' },
+  "sable-cool-rain": { displayName: "Sable: Cool Rain", description: "Визуальные эффекты и отображение мира", category: 'graphics', categoryLabel: 'Графика' },
+  "sabledramaticimpact": { displayName: "Sable: Dramatic Impact", description: "Визуальные эффекты и отображение мира", category: 'graphics', categoryLabel: 'Графика' },
+  "visuality": { displayName: "Visuality: Reforged", description: "Визуальные эффекты и отображение мира", category: 'graphics', categoryLabel: 'Графика' },
+  "balm": { displayName: "Balm", description: "Поддержка функций и совместимости сборки", category: 'utility', categoryLabel: 'Библиотека' },
+  "curios": { displayName: "Curios API", description: "Поддержка функций и совместимости сборки", category: 'utility', categoryLabel: 'Библиотека' },
+  "geckolib": { displayName: "GeckoLib 4", description: "Поддержка функций и совместимости сборки", category: 'utility', categoryLabel: 'Библиотека' },
+  "quiby": { displayName: "Quiby Season 6", description: "Поддержка функций и совместимости сборки", category: 'utility', categoryLabel: 'Лаунчер' },
+  "ritchiesprojectilelib": { displayName: "Ritchie's Projectile Library", description: "Поддержка функций и совместимости сборки", category: 'utility', categoryLabel: 'Библиотека' },
+  "sable": { displayName: "Sable: Cool Rain", description: "Поддержка функций и совместимости сборки", category: 'utility', categoryLabel: 'Библиотека' },
+  "Searchables": { displayName: "Searchables", description: "Поддержка функций и совместимости сборки", category: 'utility', categoryLabel: 'Библиотека' },
+  "sable_ragdoll_revival": { displayName: "Sable: Ragdoll Revival", description: "Игровые возможности", category: 'gameplay', categoryLabel: 'Геймплей' },
+  lithium: { displayName: 'Lithium', description: 'Оптимизация игровой логики и работы мира', category: 'optimization', categoryLabel: 'Оптимизация' },
+  modernfix: { displayName: 'ModernFix', description: 'Ускорение загрузки и снижение расхода памяти', category: 'optimization', categoryLabel: 'Оптимизация' },
+  badoptimizations: { displayName: 'BadOptimizations', description: 'Оптимизация фоновых вычислений клиента', category: 'optimization', categoryLabel: 'Оптимизация' },
+  c2me: { displayName: 'C2ME', description: 'Параллельная обработка и генерация чанков', category: 'optimization', categoryLabel: 'Оптимизация' },
+  krypton_fnp: { displayName: 'Krypton FNP', description: 'Оптимизация сетевого обмена', category: 'optimization', categoryLabel: 'Оптимизация' },
+  clumps: { displayName: 'Clumps', description: 'Объединение сфер опыта для снижения нагрузки', category: 'optimization', categoryLabel: 'Оптимизация' },
+  createbetterfps: { displayName: 'Create Better FPS', description: 'Оптимизация отображения механизмов Create', category: 'optimization', categoryLabel: 'Оптимизация' },
+  packetfixer: { displayName: 'Packet Fixer', description: 'Исправление ограничений и ошибок сетевых пакетов', category: 'optimization', categoryLabel: 'Оптимизация' },
+
   create: {
     displayName: 'Create',
     description: 'Кинетические механизмы, шестеренки, конвейеры и автоматизация',
@@ -218,11 +267,12 @@ export function resolveModMetadata(
 ): ModMetadata {
   const normalize = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
   const cleanName = normalize(name);
-  const cleanFile = normalize(filename.replace(/^mods\//, '').replace(/\.jar$/i, '').replace(/[-_](?:neoforge|fabric|forge|mc)?[-_]?v?\d.*$/i, ''));
+  const cleanFile = normalize(filename.replace(/^mods\//, '').replace(/\.jar$/i, '').replace(/[-_](?:neoforge|fabric|forge)(?:[-_].*)?$/i, '').replace(/[-_](?:mc)?v?\d.*$/i, ''));
 
+  const aliases: Record<string, string> = { roughlyenoughitems: 'rei', createaeronauticsbundled: 'aeronautics' };
   for (const [key, meta] of Object.entries(KNOWN_MODS)) {
-    const rawKey = key.replace(/[^a-z0-9]/g, '');
-    if (cleanName === rawKey || cleanFile === rawKey) {
+    const rawKey = normalize(key);
+    if (cleanName === rawKey || cleanFile === rawKey || aliases[cleanFile] === rawKey) {
       return {
         displayName: meta.displayName,
         description: externalDescription || meta.description,
