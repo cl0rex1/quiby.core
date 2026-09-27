@@ -1,0 +1,35 @@
+name: quiby-core
+
+services:
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/server/Dockerfile
+    image: quiby-core-api:latest
+    container_name: quiby-core-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOST: 0.0.0.0
+      STORAGE_PATH: /app/data
+      DB_PATH: /app/data/quiby.sqlite
+    volumes:
+      - ./data:/app/data
+    expose:
+      - "3001"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: quiby-core-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    env_file:
+      - .env
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - api
+
