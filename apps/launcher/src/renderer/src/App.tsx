@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { selectModpackProfile } from '../../shared/modpackProfiles';
-import { applyBuildToMods } from './utils/buildProfiles';
+import { applyBuildToMods, selectedBuild } from './utils/buildProfiles';
 import { WindowHeader } from './components/WindowHeader';
 import { MinimalSidebar, ActiveTab } from './components/MinimalSidebar';
 import { CharacterStage } from './views/CharacterStage';
@@ -27,6 +27,15 @@ import {
 } from '@quiby/shared';
 
 const SERVER_URL = (import.meta.env.VITE_QUIBY_API_URL || 'https://api.quiby.me').replace(/\/$/, '');
+
+async function syncSelectedSkin(session: AuthSession, dataUri: string | null): Promise<void> {
+  const response = await fetch(`${SERVER_URL}/api/skins/me`, {
+    method: dataUri ? 'PUT' : 'DELETE',
+    headers: { Authorization: `Bearer ${session.token}`, 'Content-Type': 'application/json' },
+    ...(dataUri ? { body: JSON.stringify({ dataUri }) } : {}),
+  });
+  if (!response.ok) throw new Error('Скин не удалось сохранить на сервере');
+}
 
 const defaultSettings: LauncherSettings = {
   ramMinMb: 4096,
@@ -127,6 +136,8 @@ export const App: React.FC = () => {
       localStorage.removeItem('quiby_custom_skin_data');
       localStorage.removeItem('quiby_custom_skin_name');
     }
+    if (session) void syncSelectedSkin(session, img?.src || null).catch(() =>
+      handleNotify('Скин пока не обновлён в игре', 'Проверьте соединение с сервером и повторите выбор.', 'warning'));
   };
 
   const handleSetDefaultSkinIdx = (idx: number) => {
@@ -344,6 +355,7 @@ export const App: React.FC = () => {
     setActiveTab('home');
     try {
       if (window.quibyApi) {
+        await syncSelectedSkin(session, localStorage.getItem('quiby_custom_skin_data'));
         const activeModFiles = customMods
           .filter((m) => m.enabled && m.safetyStatus === 'approved')
           .map((m) => m.filename);
@@ -463,6 +475,7 @@ export const App: React.FC = () => {
                     activeDefaultSkinIdx={activeDefaultSkinIdx}
                     selectedCape={selectedCape}
                     isInGame={false}
+                    buildId={selectedBuild(settings).id}
                     onOpenWardrobe={() => handleSelectTab('wardrobe')}
                     onOpenLogin={() => setIsAuthModalOpen(true)}
                     onOpenNews={() => setIsNotificationsOpen(true)}

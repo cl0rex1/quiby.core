@@ -59,8 +59,21 @@ if (kind === 'pack') {
   const source = JSON.parse(await fs.readFile(path.join(root, 'modpacks/quiby-s6/manifest.json'), 'utf8'));
   const tag = `v${source.version}`;
   const assetBase = `https://github.com/${owner}/${repo}/releases/download/${tag}/`;
+  const reuseTag = process.argv.find(arg => arg.startsWith('--reuse-assets-from='))?.split('=')[1];
+  const reusedAssets = reuseTag
+    ? new Set((await listedAssets(await request(`${api}/releases/tags/${encodeURIComponent(reuseTag)}`))).map(asset => asset.name))
+    : new Set();
+  const reusedBase = reuseTag ? `https://github.com/${owner}/${repo}/releases/download/${reuseTag}/` : '';
   const payloads = new Map();
   const addAsset = async (url, expectedHash) => {
+    if (url.startsWith('https://cdn.modrinth.com/')) {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Modrinth download failed: ${response.status}`);
+      const bytes = Buffer.from(await response.arrayBuffer());
+      const hash = crypto.createHash('sha256').update(bytes).digest('hex');
+      if (hash !== expectedHash) throw new Error(`Modrinth hash mismatch: ${url}`);
+      return url;
+    }
     if (!url.startsWith('/api/modpack/files/')) throw new Error(`Unexpected source URL: ${url}`);
     const relative = decodeURIComponent(url.slice('/api/modpack/files/'.length));
     const sourcePath = path.resolve(root, 'apps/server/storage/files', relative);
@@ -70,6 +83,7 @@ if (kind === 'pack') {
     if (expectedHash && expectedHash !== hash) throw new Error(`Hash mismatch: ${relative}`);
     const extension = path.extname(sourcePath).toLowerCase();
     const filename = `${hash}${extension}`;
+    if (reusedAssets.has(filename)) return reusedBase + filename;
     payloads.set(filename, sourcePath);
     return assetBase + filename;
   };

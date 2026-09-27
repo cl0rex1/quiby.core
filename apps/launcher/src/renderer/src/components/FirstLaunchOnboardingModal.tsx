@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   Check,
-  ImagePlus,
   X,
   Sparkles,
   Layers,
@@ -12,8 +11,8 @@ import {
 } from 'lucide-react';
 import { LauncherSettings } from '@quiby/shared';
 import { BUILD_PROFILES, BuildId, selectedBuild } from '../utils/buildProfiles';
-import { buildScreenshots } from '../utils/buildScreenshots';
-import { MotionToggle } from './MotionProvider';
+import { buildScreenshots, buildVideo } from '../utils/buildScreenshots';
+import { MotionToggle, useMotion } from './MotionProvider';
 
 interface Props {
   isOpen: boolean;
@@ -35,6 +34,7 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
   const [error, setError] = useState('');
   const dialog = useRef<HTMLDialogElement>(null);
   const build = BUILD_PROFILES.find((item) => item.id === buildId)!;
+  const { active: motionActive } = useMotion();
   const screenshots = buildScreenshots(buildId);
   const firstRun = !localStorage.getItem('quiby_onboarded');
   useEffect(() => {
@@ -153,30 +153,21 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
           aria-labelledby={'build-tab-' + buildId}
         >
           <div className="build-gallery">
-            {screenshots.length ? (
+            {imageIndex === 0 && motionActive ? (
+              <video key={buildId} src={buildVideo(buildId)} poster={screenshots[0]}
+                className="build-screenshot view-enter" autoPlay muted loop playsInline preload="metadata"
+                aria-label={build.name + ' — видео сборки'} />
+            ) : (
               <img
-                key={screenshots[imageIndex]}
-                src={screenshots[imageIndex]}
-                alt={build.name + ' — скриншот ' + (imageIndex + 1)}
+                key={screenshots[Math.max(0, imageIndex - 1)]}
+                src={screenshots[Math.max(0, imageIndex - 1)]}
+                alt={build.name + ' — скриншот ' + Math.max(1, imageIndex)}
                 className="build-screenshot view-enter"
               />
-            ) : (
-              <div className={'build-placeholder is-' + buildId} key={buildId}>
-                <div className="build-outline" aria-hidden="true">
-                  <i />
-                  <i />
-                  <i />
-                </div>
-                <div className="build-placeholder-caption">
-                  <ImagePlus size={17} />
-                  <strong>Место для твоего мира.</strong>
-                  <p>Скриншоты {build.name} появятся здесь позже.</p>
-                </div>
-              </div>
             )}
             <div className="build-gallery-footer">
               <span>
-                {screenshots.length ? imageIndex + 1 + ' / ' + screenshots.length : 'ПРЕВЬЮ / СКОРО'}
+                {imageIndex + 1 + ' / ' + (screenshots.length + 1)}
               </span>
               <div>
                 <button
@@ -189,7 +180,7 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
                 </button>
                 <button
                   className="icon-button"
-                  disabled={imageIndex >= screenshots.length - 1}
+                  disabled={imageIndex >= screenshots.length}
                   aria-label="Следующий скриншот"
                   onClick={() => setImageIndex((index) => index + 1)}
                 >

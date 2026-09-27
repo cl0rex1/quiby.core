@@ -11,6 +11,7 @@ import { updateDiscordRpcStatus } from '../rpc/discordRpc';
 import { selectModpackProfile } from '../../shared/modpackProfiles';
 import { resolveJava21 } from './javaDetector';
 import { getLatestModpackManifest } from './manifestSource';
+import { prepareSkinLoader } from './skinLoader';
 
 let runningGameProcess: ChildProcess | null = null;
 let gameStartTime: number | null = null;
@@ -117,6 +118,7 @@ export async function launchMinecraft(
       sendLog('info', `🛡️ Защита ${protectedFilenames.size} активных клиентских модов от очистки`);
     }
     await syncModpackFiles(manifest, gameDir, serverBaseUrl, win, protectedFilenames);
+    prepareSkinLoader(gameDir, serverBaseUrl);
 
     // 3. Ensure Vanilla Minecraft 1.21.1
     sendLog('info', `📦 Подготовка файлов Minecraft ${manifest.gameVersion}...`);

@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.0",
+  "version": "6.1.1",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 270569492,
+  "totalSize": 270787707,
   "files": [
     {
       "path": "config/aeronautics_utility_objects-server.toml",
@@ -1173,6 +1173,23 @@
       "modProjectUrl": "https://github.com/TheIllusiveC4/Curios"
     },
     {
+      "path": "mods/CustomSkinLoader_Universal-15.0.1.jar",
+      "sha256": "026d8b38ea93edccd647f60568193e79801a377b7bd4e916dcfc0d5482b767fc",
+      "size": 218215,
+      "profiles": [
+        "full",
+        "optimal",
+        "clean"
+      ],
+      "downloadUrl": "https://cdn.modrinth.com/data/idMHQ4n2/versions/OLaesh5y/CustomSkinLoader_Universal-15.0.1.jar",
+      "action": "sync",
+      "modId": "customskinloader",
+      "modName": "CustomSkinLoader",
+      "modVersion": "15.0.1",
+      "modDescription": "Скины игроков quiby в игре.",
+      "modProjectUrl": "https://modrinth.com/mod/customskinloader"
+    },
+    {
       "path": "mods/cwb-neoforge-3.0.0+mc1.21.jar",
       "sha256": "be7144647bc160858e659f6793fcce993914443b9256c2df0369b1c616a2a5d4",
       "size": 81843,
@@ -1834,7 +1851,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Visual, Standard и Draft из профиля quiby. s6; исходные настройки и Complementary Unbound.",
+  "changelog": "Скины игроков quiby в игре через CustomSkinLoader; Visual, Standard и Draft.",
   "serverAddress": "",
-  "updatedAt": "2026-09-26T12:47:50.796Z"
+  "updatedAt": "2026-09-27T17:27:49.649Z"
 }

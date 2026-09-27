@@ -10,6 +10,36 @@ import statusRoutes from './routes/status';
 import adminRoutes from './routes/admin';
 import modsRoutes from './routes/mods';
 import botRoutes from './routes/bot';
+import skinsRoutes from './routes/skins';
+import { getLatestManifest, publishModpackVersion } from './services/modpackService';
+import { ModpackManifest } from '@quiby/shared';
+
+async function refreshReleasedModpack(): Promise<void> {
+  try {
+    const response = await fetch('https://github.com/cl0rex1/quiby-modpacks/releases/latest/download/manifest.json', {
+      headers: { 'User-Agent': 'quiby-core-api' },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) throw new Error(`GitHub returned ${response.status}`);
+    const manifest = await response.json() as ModpackManifest;
+    if (!/^\d+\.\d+\.\d+$/.test(manifest.version) || manifest.gameVersion !== '1.21.1'
+      || manifest.loader?.type !== 'neoforge' || !Array.isArray(manifest.files) || manifest.files.length === 0
+      || !manifest.files.every(file => typeof file.path === 'string' && !file.path.includes('..')
+        && /^[a-f0-9]{64}$/i.test(file.sha256) && Number.isSafeInteger(file.size) && file.size > 0
+        && typeof file.downloadUrl === 'string'
+        && (file.downloadUrl.startsWith('https://github.com/cl0rex1/quiby-modpacks/releases/download/')
+          || file.downloadUrl.startsWith('https://cdn.modrinth.com/')))) {
+      throw new Error('Invalid release manifest');
+    }
+    const current = await getLatestManifest();
+    if (!current || manifest.version.localeCompare(current.version, undefined, { numeric: true }) > 0) {
+      await publishModpackVersion(manifest);
+      console.log(`📦 Activated modpack release ${manifest.version}`);
+    }
+  } catch (error) {
+    console.warn('Modpack release sync skipped:', error);
+  }
+}
 
 async function bootstrap() {
   const app = express();
@@ -23,6 +53,8 @@ async function bootstrap() {
   // Initialize Database
   await initDatabase();
   console.log('✅ SQLite database initialized successfully.');
+  void refreshReleasedModpack();
+  setInterval(() => void refreshReleasedModpack(), 10 * 60 * 1000).unref();
 
   // Health Check
   app.get('/api/health', (req, res) => {
@@ -42,6 +74,7 @@ async function bootstrap() {
   app.use('/api/admin', adminRoutes);
   app.use('/api/mods', modsRoutes);
   app.use('/api/bot', botRoutes);
+  app.use('/api/skins', skinsRoutes);
 
   // Global Error Handler
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

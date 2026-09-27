@@ -3,15 +3,10 @@ import { AlertCircle, ArrowRight, Loader2, Check } from 'lucide-react';
 import { AuthSession } from '@quiby/shared';
 import quibyLogo from '../assets/quiby_logo.png';
 import seasonLogo from '../assets/quiby_season6_logo.png';
-import homeScreen from '../assets/auth/launcher-home.png';
-import wardrobeScreen from '../assets/auth/launcher-wardrobe.png';
-import modsScreen from '../assets/auth/launcher-mods.png';
-import settingsScreen from '../assets/auth/launcher-settings.png';
-import shadersScreen from '../assets/auth/launcher-shaders.png';
-import schematicsScreen from '../assets/auth/launcher-schematics.png';
+import { authScenes } from '../utils/buildScreenshots';
 import './auth.css';
 
-const screenWall = [homeScreen, wardrobeScreen, shadersScreen, modsScreen, settingsScreen, homeScreen, schematicsScreen, modsScreen, homeScreen, settingsScreen, shadersScreen, wardrobeScreen];
+const screenWall = authScenes;
 
 interface DiscordAuthModalProps {
   isOpen: boolean;

@@ -617,7 +617,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                             : 'bg-surface-900/50 border-surface-border opacity-60'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5 truncate">
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
                           {/* Checkbox selector */}
                           <button
                             type="button"
@@ -636,7 +636,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           <ModIcon src={meta.iconUrl} name={meta.displayName} />
 
                           {/* Title, Clean Filename & Status Badge */}
-                          <div className="truncate space-y-0.5">
+                          <div className="min-w-0 space-y-0.5">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-xs font-bold text-white truncate">
                                 {meta.displayName}
@@ -676,26 +676,22 @@ export const ModsView: React.FC<ModsViewProps> = ({
                               {meta.description}
                             </p>
 
-                            <div className="flex items-center gap-2 font-mono text-[10px] text-zinc-500 truncate">
-                              <span>{mod.filename}</span>
-                              <span>•</span>
-                              <span>{formatSize(mod.size)}</span>
-
-                              {isUnverified && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleOpenWhitelistModal(e, mod)}
-                                  className="px-2 py-0.5 rounded bg-surface-800 hover:bg-surface-750 text-[#d7b6ff] border border-surface-border text-[10px] font-sans font-medium transition-colors cursor-pointer press-feedback"
-                                >
-                                  Вайтлист
-                                </button>
-                              )}
+                            <div className="flex items-center gap-2 min-w-0 font-mono text-[10px] text-zinc-500">
+                              <span className="truncate min-w-0" title={mod.filename}>{mod.filename}</span>
+                              <span className="shrink-0">• {formatSize(mod.size)}</span>
                             </div>
                           </div>
                         </div>
 
                         {/* Controls: Modrinth Link, Toggle Switch & Delete */}
                         <div className="flex items-center gap-1.5 shrink-0">
+                          {isUnverified && (
+                            <button type="button" onClick={(e) => handleOpenWhitelistModal(e, mod)}
+                              className="shrink-0 px-3 py-2 rounded-lg bg-[#a65ee8] hover:bg-[#bc7ff0] text-white border border-[#d1a5f5] text-[11px] font-semibold shadow-md transition-colors cursor-pointer press-feedback"
+                              title="Отправить мод на проверку для вайтлиста">
+                              Подать заявку
+                            </button>
+                          )}
                           {/* Modrinth Link */}
                           <a
                             href={

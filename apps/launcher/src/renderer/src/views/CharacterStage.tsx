@@ -5,6 +5,9 @@ import { DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
 import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
 import { usePointerDepth } from '../hooks/usePointerDepth';
 import quibySeasonLogo from '../assets/quiby_season6_logo.png';
+import { BuildId } from '../utils/buildProfiles';
+import { buildBanner, buildVideo } from '../utils/buildScreenshots';
+import { useMotion } from '../components/MotionProvider';
 
 interface CharacterStageProps {
   session: AuthSession | null;
@@ -16,7 +19,7 @@ interface CharacterStageProps {
   activeDefaultSkinIdx: number;
   selectedCape: CapePreset;
   isInGame?: boolean;
-  backgroundVideoUrl?: string;
+  buildId: BuildId;
   onOpenWardrobe: () => void;
   onOpenLogin: () => void;
   onOpenNews?: () => void;
@@ -32,11 +35,13 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
   activeDefaultSkinIdx,
   selectedCape,
   isInGame = false,
+  buildId,
   onOpenWardrobe,
   onOpenLogin,
   onOpenNews,
 }) => {
   const depth = usePointerDepth<HTMLDivElement>();
+  const { active: motionActive } = useMotion();
   const skinName = customSkinName || DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve';
   const hours = Math.floor(totalPlaytimeSeconds / 3600);
   const minutes = Math.floor((totalPlaytimeSeconds % 3600) / 60);
@@ -84,6 +89,8 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
         </section>
 
         <section className="season-panel" aria-label="Сборка и сервер">
+          {motionActive ? <video key={buildId} className="season-panel-video" src={buildVideo(buildId)} poster={buildBanner(buildId)} autoPlay muted loop playsInline preload="metadata" aria-hidden="true" />
+            : <span className="season-panel-video season-panel-poster" style={{ backgroundImage: `url("${buildBanner(buildId)}")` }} aria-hidden="true" />}
           <div className="season-panel-intro">
             <div className="season-label"><span>МИР 06</span><span>CREATE / AERONAUTICS</span></div>
             <img src={quibySeasonLogo} alt="quiby Season 6" className="season-mark" />

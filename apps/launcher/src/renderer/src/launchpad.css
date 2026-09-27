@@ -621,6 +621,7 @@ html[data-motion='reduced'] .build-tabs > button:active {
 /* Build cover: one sharp image, one static blur masked toward the text. */
 .current-build { position: relative; min-height: 190px; isolation: isolate; overflow: hidden; }
 .current-build .current-build-image { position: absolute; inset: 0; z-index: -2; background: var(--build-image) 82% 45% / cover; }
+.current-build .current-build-video { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
 .current-build-image::before { content: ''; position: absolute; inset: -14px; background: inherit; filter: blur(10px); mask-image: linear-gradient(90deg, #000 0%, #000 32%, transparent 78%); }
 .current-build::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgb(10 10 11 / 96%) 0%, rgb(10 10 11 / 82%) 35%, rgb(10 10 11 / 8%) 85%); }
 .current-build > .current-build-copy { display: flex; flex-direction: column; gap: 10px; }
