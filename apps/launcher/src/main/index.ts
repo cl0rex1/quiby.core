@@ -19,7 +19,7 @@ let splashReady = false;
 const appIcon = app.isPackaged
   ? path.join(process.resourcesPath, 'icon.png')
   : path.join(__dirname, '../../src/renderer/src/assets/quiby_q_logo.png');
-app.setName('quiby.core');
+app.setName('quiby.core Тестовый');
 if (process.platform === 'win32') app.setAppUserModelId('fun.quiby.launcher');
 
 function configureWindow(win: BrowserWindow) {
@@ -106,7 +106,7 @@ function createSplashWindow(): void {
   splashReady = false;
   splashWindow = new BrowserWindow({
     icon: appIcon,
-    title: 'quiby.core',
+    title: 'quiby.core Тестовый',
     show: false,
     width: 500,
     height: 300,
@@ -141,7 +141,7 @@ function createMainWindow(): void {
   mainReady = false;
   mainWindow = new BrowserWindow({
     icon: appIcon,
-    title: 'quiby.core',
+    title: 'quiby.core Тестовый',
     width: 1100,
     height: 720,
     minWidth: 980,

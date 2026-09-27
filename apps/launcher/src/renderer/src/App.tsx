@@ -14,6 +14,7 @@ import { FloatingNotificationToast, ToastData } from './components/FloatingNotif
 import type { NotificationItem } from './utils/notifications';
 import { NotificationDetailView } from './views/NotificationDetailView';
 import { FirstLaunchOnboardingModal } from './components/FirstLaunchOnboardingModal';
+import { ProfileDialog } from './components/ProfileDialog';
 import { CAPE_PRESETS, CapePreset } from './utils/chibiRenderer';
 import { 
   AuthSession, 
@@ -27,6 +28,17 @@ import {
 } from '@quiby/shared';
 
 const SERVER_URL = (import.meta.env.VITE_QUIBY_API_URL || 'https://api.quiby.me').replace(/\/$/, '');
+
+function storedSession(): AuthSession | null {
+  try {
+    const value = localStorage.getItem('quiby_session');
+    if (!value) return null;
+    const session = JSON.parse(value) as AuthSession;
+    return session.token && session.expiresAt > Date.now() ? session : null;
+  } catch {
+    return null;
+  }
+}
 
 async function syncSelectedSkin(session: AuthSession, dataUri: string | null): Promise<void> {
   const response = await fetch(`${SERVER_URL}/api/skins/me`, {
@@ -55,7 +67,7 @@ const initialCustomMods: CustomModItem[] = [];
 export const App: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('quiby_sidebar_collapsed') === 'true');
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
-  const [session, setSession] = useState<AuthSession | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(storedSession);
   const [remoteManifest, setManifest] = useState<ModpackManifest | null>(null);
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [newsAvailable, setNewsAvailable] = useState(false);
@@ -160,16 +172,14 @@ export const App: React.FC = () => {
   const [totalPlaytimeSeconds, setTotalPlaytimeSeconds] = useState<number>(0);
   const [autoConnect, setAutoConnect] = useState<boolean>(true);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(() => !storedSession());
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
     const savedSession = localStorage.getItem('quiby_session');
     if (!savedSession) return;
-    let restored: AuthSession;
-    try {
-      restored = JSON.parse(savedSession) as AuthSession;
-      if (!restored.token || restored.expiresAt <= Date.now()) throw new Error('Expired session');
-    } catch {
+    const restored = storedSession();
+    if (!restored) {
       localStorage.removeItem('quiby_session');
       return;
     }
@@ -178,20 +188,27 @@ export const App: React.FC = () => {
       headers: { Authorization: `Bearer ${restored.token}` },
       signal: controller.signal,
     }).then(async response => {
-      if (!response.ok) throw new Error('Invalid session');
+      if (response.status === 401 || response.status === 403) {
+        if (localStorage.getItem('quiby_session') === savedSession) {
+          localStorage.removeItem('quiby_session');
+          setSession(null);
+          setIsProfileOpen(false);
+          setIsAuthModalOpen(true);
+        }
+        return null;
+      }
+      if (!response.ok) return null;
       return response.json() as Promise<{ user: AuthSession['user'] }>;
-    }).then(({ user }) => {
-      if (localStorage.getItem('quiby_session') !== savedSession) return;
-      if (!user?.isWhitelisted) throw new Error('No server access');
+    }).then(result => {
+      if (!result || localStorage.getItem('quiby_session') !== savedSession) return;
+      const { user } = result;
+      if (!user?.isWhitelisted) return;
       const verifiedSession = { ...restored, user };
       localStorage.setItem('quiby_session', JSON.stringify(verifiedSession));
       setSession(verifiedSession);
       setIsAuthModalOpen(false);
     }).catch(() => {
-      if (controller.signal.aborted || localStorage.getItem('quiby_session') !== savedSession) return;
-      localStorage.removeItem('quiby_session');
-      setSession(null);
-      setIsAuthModalOpen(true);
+      // A temporary network failure must not sign the player out.
     });
     return () => controller.abort();
   }, []);
@@ -396,7 +413,7 @@ export const App: React.FC = () => {
             handleSelectTab(tab);
           }}
           session={session}
-          onOpenProfile={() => setIsAuthModalOpen(true)}
+          onOpenProfile={() => session ? setIsProfileOpen(true) : setIsAuthModalOpen(true)}
           isNotificationsOpen={isNotificationsOpen}
           onOpenNotifications={() => {
             setIsNotificationsOpen(true);
@@ -607,6 +624,17 @@ export const App: React.FC = () => {
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={handleLoginSuccess}
         serverUrl={SERVER_URL}
+      />
+
+      <ProfileDialog
+        session={isProfileOpen ? session : null}
+        onClose={() => setIsProfileOpen(false)}
+        onSignOut={() => {
+          localStorage.removeItem('quiby_session');
+          setSession(null);
+          setIsProfileOpen(false);
+          setIsAuthModalOpen(true);
+        }}
       />
 
       {/* First Launch Onboarding Modal */}

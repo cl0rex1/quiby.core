@@ -343,27 +343,6 @@ html[data-motion='reduced'] .auth-column {
   min-height: 0;
   background: var(--color-paper);
 }
-.build-gallery-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  border-top: 1px solid var(--color-rule);
-}
-.build-gallery-footer > span {
-  font: 8px var(--font-mono);
-  color: var(--color-ink-2);
-  letter-spacing: 0.08em;
-}
-.build-gallery-footer > div {
-  display: flex;
-  gap: 5px;
-}
-.build-gallery-footer .icon-button {
-  width: 25px;
-  height: 25px;
-  border-radius: 5px;
-}
 .build-description {
   padding-top: 8px;
 }

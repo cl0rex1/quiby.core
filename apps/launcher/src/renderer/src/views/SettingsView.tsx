@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Cpu,
   FolderOpen,
@@ -10,7 +10,7 @@ import {
   Waves,
 } from 'lucide-react';
 import { LauncherSettings } from '@quiby/shared';
-import { buildBanner, buildVideo } from '../utils/buildScreenshots';
+import { buildVideo } from '../utils/buildScreenshots';
 import { selectedBuild } from '../utils/buildProfiles';
 import { RamSlider } from '../components/RamSlider';
 import { MotionToggle, useMotion } from '../components/MotionProvider';
@@ -34,6 +34,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
   const [error, setError] = useState('');
   const [updateState, setUpdateState] = useState<UpdateState | null>(null);
   const { reduced, systemReduced, active: motionActive } = useMotion();
+  const buildPreview = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    if (!buildPreview.current) return;
+    if (motionActive) void buildPreview.current.play().catch(() => {});
+    else buildPreview.current.pause();
+  }, [build.id, motionActive, section]);
   const update = (patch: Partial<LauncherSettings>) => onUpdateSettings({ ...settings, ...patch });
   const detectJava = async () => {
     if (!window.quibyApi) return;
@@ -124,8 +130,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
           {section === 'game' && (
             <>
               <button type="button" className="current-build" onClick={onChooseBuild}>
-                {motionActive ? <video key={build.id} className="current-build-video" src={buildVideo(build.id)} poster={buildBanner(build.id)} autoPlay muted loop playsInline preload="metadata" aria-hidden="true" />
-                  : <span className="current-build-image" style={{ backgroundImage: `url("${buildBanner(build.id)}")` }} aria-hidden="true" />}
+                <video key={build.id} ref={buildPreview} className="current-build-video" src={buildVideo(build.id)} autoPlay={motionActive} muted loop playsInline preload="metadata" aria-hidden="true" />
                 <span className="current-build-copy"><small>ТВОЯ СБОРКА</small><strong>{build.name}</strong><span>{build.tagline}</span></span>
                 <span className="current-build-action">Выбрать сборку <ArrowUpRight size={17}/></span>
               </button>

@@ -115,11 +115,11 @@ if (kind === 'pack') {
 } else {
   const launcher = JSON.parse(await fs.readFile(path.join(root, 'apps/launcher/package.json'), 'utf8'));
   const version = launcher.version;
-  const value = await release(`v${version}`, `quiby.core ${version}`, 'Вход через Discord OAuth и подключение к https://api.quiby.me. Установщик пока не подписан.', version.includes('-'));
+  const value = await release(`v${version}`, `quiby.core Тестовый ${version}`, 'Тестовая сборка лаунчера для Windows. Вход через Discord OAuth и подключение к https://api.quiby.me. Установщик пока не подписан.', version.includes('-'));
   const releaseDir = path.join(root, 'apps/launcher/release');
   const names = [
-    [`quiby.core Setup ${version}.exe`, `quiby.core-Setup-${version}.exe`],
-    [`quiby.core Setup ${version}.exe.blockmap`, `quiby.core-Setup-${version}.exe.blockmap`],
+    [`quiby.core-Setup-${version}.exe`, `quiby.core-Setup-${version}.exe`],
+    [`quiby.core-Setup-${version}.exe.blockmap`, `quiby.core-Setup-${version}.exe.blockmap`],
     ['beta.yml', 'beta.yml'],
   ];
   const existing = new Map((await listedAssets(value)).map(asset => [asset.name, asset]));

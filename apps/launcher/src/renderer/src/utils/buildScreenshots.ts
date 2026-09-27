@@ -14,14 +14,7 @@ import draftVideo from '../assets/builds/videos/draft.mp4';
 import standardVideo from '../assets/builds/videos/standard.mp4';
 import visualVideo from '../assets/builds/videos/visual.mp4';
 
-const screenshots: Record<BuildId, string[]> = {
-  draft: [draft, cottage, mountain],
-  standard: [standard, village, coast],
-  visual: [visual, ship, mountainShip, airship, explosion],
-};
 const videos: Record<BuildId, string> = { draft: draftVideo, standard: standardVideo, visual: visualVideo };
 
-export const buildScreenshots = (id: BuildId) => screenshots[id];
-export const buildBanner = (id: BuildId) => screenshots[id][0];
 export const buildVideo = (id: BuildId) => videos[id];
 export const authScenes = [visual, ship, mountain, village, airship, standard, explosion, coast, draft, cottage, mountainShip];

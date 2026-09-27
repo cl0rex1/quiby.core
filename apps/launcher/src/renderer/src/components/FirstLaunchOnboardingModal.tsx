@@ -6,12 +6,10 @@ import {
   Sparkles,
   Layers,
   PencilRuler,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import { LauncherSettings } from '@quiby/shared';
 import { BUILD_PROFILES, BuildId, selectedBuild } from '../utils/buildProfiles';
-import { buildScreenshots, buildVideo } from '../utils/buildScreenshots';
+import { buildVideo } from '../utils/buildScreenshots';
 import { MotionToggle, useMotion } from './MotionProvider';
 
 interface Props {
@@ -29,13 +27,12 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
   const [buildId, setBuildId] = useState<BuildId>('standard');
   const [ramGb, setRamGb] = useState(8);
   const [totalRam, setTotalRam] = useState<number | null>(null);
-  const [imageIndex, setImageIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const dialog = useRef<HTMLDialogElement>(null);
+  const video = useRef<HTMLVideoElement>(null);
   const build = BUILD_PROFILES.find((item) => item.id === buildId)!;
   const { active: motionActive } = useMotion();
-  const screenshots = buildScreenshots(buildId);
   const firstRun = !localStorage.getItem('quiby_onboarded');
   useEffect(() => {
     if (!isOpen) {
@@ -44,7 +41,6 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
     }
     setBuildId(selectedBuild(settings).id);
     setRamGb(Math.max(4, Math.round(settings.ramMaxMb / 1024)));
-    setImageIndex(0);
     setError('');
     dialog.current?.showModal();
     document.getElementById('build-tab-' + selectedBuild(settings).id)?.focus();
@@ -59,6 +55,12 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
       cancelled = true;
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!video.current) return;
+    if (motionActive && isOpen) void video.current.play().catch(() => {});
+    else video.current.pause();
+  }, [buildId, motionActive, isOpen]);
 
   const apply = async () => {
     setSaving(true);
@@ -127,14 +129,10 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
                           ? 2
                           : (index + (event.key === 'ArrowRight' ? 1 : 2)) % 3;
                     setBuildId(BUILD_PROFILES[next].id);
-                    setImageIndex(0);
                     document.getElementById('build-tab-' + BUILD_PROFILES[next].id)?.focus();
                   }
                 }}
-                onClick={() => {
-                  setBuildId(item.id);
-                  setImageIndex(0);
-                }}
+                onClick={() => setBuildId(item.id)}
               >
                 <span className="build-tab-top">
                   <Icon size={18} />
@@ -153,41 +151,9 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
           aria-labelledby={'build-tab-' + buildId}
         >
           <div className="build-gallery">
-            {imageIndex === 0 && motionActive ? (
-              <video key={buildId} src={buildVideo(buildId)} poster={screenshots[0]}
-                className="build-screenshot view-enter" autoPlay muted loop playsInline preload="metadata"
-                aria-label={build.name + ' — видео сборки'} />
-            ) : (
-              <img
-                key={screenshots[Math.max(0, imageIndex - 1)]}
-                src={screenshots[Math.max(0, imageIndex - 1)]}
-                alt={build.name + ' — скриншот ' + Math.max(1, imageIndex)}
-                className="build-screenshot view-enter"
-              />
-            )}
-            <div className="build-gallery-footer">
-              <span>
-                {imageIndex + 1 + ' / ' + (screenshots.length + 1)}
-              </span>
-              <div>
-                <button
-                  className="icon-button"
-                  disabled={imageIndex === 0}
-                  aria-label="Предыдущий скриншот"
-                  onClick={() => setImageIndex((index) => index - 1)}
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <button
-                  className="icon-button"
-                  disabled={imageIndex >= screenshots.length}
-                  aria-label="Следующий скриншот"
-                  onClick={() => setImageIndex((index) => index + 1)}
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
+            <video key={buildId} ref={video} src={buildVideo(buildId)}
+              className="build-screenshot view-enter" autoPlay={motionActive} muted loop playsInline preload="metadata"
+              aria-label={build.name + ' — видео сборки'} />
           </div>
           <div className="build-description view-enter" key={buildId}>
             <p className="page-kicker">{build.name.toUpperCase()} / СЕЗОН 06</p>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ArrowUpRight, Shirt } from 'lucide-react';
 import { AuthSession, ModpackManifest, ServerStatus } from '@quiby/shared';
 import { DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
@@ -6,7 +6,7 @@ import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
 import { usePointerDepth } from '../hooks/usePointerDepth';
 import quibySeasonLogo from '../assets/quiby_season6_logo.png';
 import { BuildId } from '../utils/buildProfiles';
-import { buildBanner, buildVideo } from '../utils/buildScreenshots';
+import { buildVideo } from '../utils/buildScreenshots';
 import { useMotion } from '../components/MotionProvider';
 
 interface CharacterStageProps {
@@ -42,6 +42,12 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
 }) => {
   const depth = usePointerDepth<HTMLDivElement>();
   const { active: motionActive } = useMotion();
+  const bannerVideo = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    if (!bannerVideo.current) return;
+    if (motionActive) void bannerVideo.current.play().catch(() => {});
+    else bannerVideo.current.pause();
+  }, [buildId, motionActive]);
   const skinName = customSkinName || DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve';
   const hours = Math.floor(totalPlaytimeSeconds / 3600);
   const minutes = Math.floor((totalPlaytimeSeconds % 3600) / 60);
@@ -89,8 +95,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
         </section>
 
         <section className="season-panel" aria-label="Сборка и сервер">
-          {motionActive ? <video key={buildId} className="season-panel-video" src={buildVideo(buildId)} poster={buildBanner(buildId)} autoPlay muted loop playsInline preload="metadata" aria-hidden="true" />
-            : <span className="season-panel-video season-panel-poster" style={{ backgroundImage: `url("${buildBanner(buildId)}")` }} aria-hidden="true" />}
+          <video key={buildId} ref={bannerVideo} className="season-panel-video" src={buildVideo(buildId)} autoPlay={motionActive} muted loop playsInline preload="metadata" aria-hidden="true" />
           <div className="season-panel-intro">
             <div className="season-label"><span>МИР 06</span><span>CREATE / AERONAUTICS</span></div>
             <img src={quibySeasonLogo} alt="quiby Season 6" className="season-mark" />
