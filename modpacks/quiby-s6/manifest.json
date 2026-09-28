@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.7",
+  "version": "6.1.8",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 274066791,
+  "totalSize": 274067454,
   "files": [
     {
       "path": "config/aeronautics_utility_objects-server.toml",
@@ -1529,10 +1529,10 @@
       "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
-      "path": "mods/quiby-1.21.1-1.1.5.jar",
-      "sha256": "b255e11bc704be971c0a0b4783b0eda76d93795c265c1433eb198f19675c9e19",
-      "size": 3525467,
-      "downloadUrl": "/api/modpack/files/imported/b255e11bc704be971c0a0b4783b0eda76d93795c265c1433eb198f19675c9e19/quiby-1.21.1-1.1.5.jar",
+      "path": "mods/quiby-1.21.1-1.1.6.jar",
+      "sha256": "9231d5f95375e93b1e2407351da42a618a05ecafa3714c01f0e93d7161450425",
+      "size": 3526130,
+      "downloadUrl": "/api/modpack/files/imported/9231d5f95375e93b1e2407351da42a618a05ecafa3714c01f0e93d7161450425/quiby-1.21.1-1.1.6.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1541,15 +1541,15 @@
       ],
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.1.5",
+      "modVersion": "1.1.6",
       "modDescription": "Русская локализация, рецепты, скины, реакции на урон и фирменная загрузка Minecraft.",
       "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },
     {
-      "path": "mods/quiby-early-loading-1.21.1-1.1.5.jar",
+      "path": "mods/quiby-early-loading-1.21.1-1.1.6.jar",
       "sha256": "1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99",
       "size": 3036102,
-      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.5.jar",
+      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.6.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1558,7 +1558,7 @@
       ],
       "modId": "quiby_early_loading",
       "modName": "Quiby Early Loading",
-      "modVersion": "1.1.5",
+      "modVersion": "1.1.6",
       "modDescription": "Фирменная анимация на раннем экране NeoForge."
     },
     {
@@ -1810,7 +1810,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Исправлены анимация NeoForge и переходы загрузки Minecraft. Улучшен направленный импульс ragdoll от урона и взрывов. Для физики требуется обновить Quiby на Minecraft-сервере до 1.1.5.",
+  "changelog": "Исправлен размер игрового окна после загрузки NeoForge: framebuffer и интерфейс пересчитываются автоматически, без повторного F11. Клиентское исправление; сервер со сборкой 6.1.7 обновлять не требуется.",
   "serverAddress": "",
   "updatedAt": "2026-09-28T21:50:43.482158Z"
 }
