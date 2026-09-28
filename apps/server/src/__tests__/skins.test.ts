@@ -37,6 +37,8 @@ async function run() {
     const response = await fetch(`${url}/skintester.png`);
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('content-type'), 'image/png');
+    assert.equal((await fetch(`${url}/uuid/0123456789abcdef0123456789abcdef.png`)).status, 200);
+    assert.equal((await fetch(`${url}/uuid/not-a-uuid.png`)).status, 404);
     const saved = await readFile(path.join(directory, 'skins', '0123456789abcdef0123456789abcdef.png'));
     assert.equal(PNG.sync.read(saved).width, 64);
     assert.equal((await fetch(`${url}/me`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUri: 'data:image/png;base64,AAAA' }) })).status, 400);

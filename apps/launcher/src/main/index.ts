@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -21,6 +21,15 @@ const appIcon = app.isPackaged
   : path.join(__dirname, '../../src/renderer/src/assets/quiby_q_logo.png');
 app.setName('quiby.core Тестовый');
 if (process.platform === 'win32') app.setAppUserModelId('fun.quiby.launcher');
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) app.quit();
+else app.on('second-instance', () => {
+  const window = mainWindow && !mainWindow.isDestroyed() ? mainWindow : splashWindow;
+  if (!window || window.isDestroyed()) return;
+  if (window.isMinimized()) window.restore();
+  window.show();
+  window.focus();
+});
 
 function configureWindow(win: BrowserWindow) {
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -171,7 +180,7 @@ function createMainWindow(): void {
   });
 }
 
-app.whenReady().then(async () => {
+if (hasSingleInstanceLock) app.whenReady().then(async () => {
 
   // 1. Splash Window Transition
   ipcMain.handle('splash:ready', (event) => {
@@ -254,6 +263,42 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle('content:open-folder', async (_, gameDir: string, kind: ContentKind | 'mods') => {
     const dir = kind === 'mods' ? path.join(gameDir?.trim() || getDefaultGameDir(), 'mods') : contentDirectory(gameDir?.trim() || getDefaultGameDir(), kind);
+    await fs.promises.mkdir(dir, { recursive: true });
+    const error = await shell.openPath(dir);
+    if (error) throw new Error(error);
+  });
+
+  const screenshotDirectory = (gameDir: string) => path.join(gameDir?.trim() || getDefaultGameDir(), 'screenshots');
+  const screenshotPath = (gameDir: string, filename: string) => {
+    if (!/^[^/\\]+\.(png|jpe?g)$/i.test(filename)) throw new Error('Недопустимое имя скриншота');
+    return path.join(screenshotDirectory(gameDir), filename);
+  };
+  ipcMain.handle('screenshots:list', async (_, gameDir: string) => {
+    const dir = screenshotDirectory(gameDir);
+    if (!fs.existsSync(dir)) return [];
+    const names = await fs.promises.readdir(dir);
+    const files = await Promise.all(names.filter(name => /^[^/\\]+\.(png|jpe?g)$/i.test(name)).map(async name => {
+      const file = screenshotPath(gameDir, name);
+      const stat = await fs.promises.stat(file);
+      return stat.isFile() ? { name, modifiedAt: stat.mtimeMs, size: stat.size } : null;
+    }));
+    return files.filter((file): file is NonNullable<typeof file> => file !== null)
+      .sort((a, b) => b.modifiedAt - a.modifiedAt).slice(0, 100);
+  });
+  ipcMain.handle('screenshots:image', async (_, gameDir: string, filename: string, thumbnail: boolean) => {
+    const file = screenshotPath(gameDir, filename);
+    const stat = await fs.promises.stat(file);
+    if (!stat.isFile() || stat.size > 32 * 1024 * 1024) throw new Error('Скриншот слишком большой или недоступен');
+    if (thumbnail) {
+      const image = nativeImage.createFromPath(file);
+      if (image.isEmpty()) throw new Error('Не удалось открыть скриншот');
+      return image.resize({ width: 480, quality: 'good' }).toDataURL();
+    }
+    const mime = /\.png$/i.test(filename) ? 'image/png' : 'image/jpeg';
+    return `data:${mime};base64,${(await fs.promises.readFile(file)).toString('base64')}`;
+  });
+  ipcMain.handle('screenshots:open-folder', async (_, gameDir: string) => {
+    const dir = screenshotDirectory(gameDir);
     await fs.promises.mkdir(dir, { recursive: true });
     const error = await shell.openPath(dir);
     if (error) throw new Error(error);

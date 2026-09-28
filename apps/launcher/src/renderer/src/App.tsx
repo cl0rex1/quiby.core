@@ -175,6 +175,7 @@ export const App: React.FC = () => {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(() => !storedSession());
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const notifiedUpdateVersion = useRef<string | null>(null);
 
   useEffect(() => {
     const savedSession = localStorage.getItem('quiby_session');
@@ -313,12 +314,21 @@ export const App: React.FC = () => {
         });
       });
 
+      const showAvailableUpdate = (state: { status: string; latestVersion?: string }) => {
+        if (state.status !== 'available' || !state.latestVersion || notifiedUpdateVersion.current === state.latestVersion) return;
+        notifiedUpdateVersion.current = state.latestVersion;
+        handleNotify('Доступно обновление лаунчера', `Версия ${state.latestVersion}. Откройте Настройки → Обновление лаунчера, чтобы скачать её.`, 'info');
+      };
+      const unsubscribeUpdate = window.quibyApi.onUpdateState(showAvailableUpdate);
+      void window.quibyApi.getUpdateState().then(showAvailableUpdate).catch(() => {});
+
       return () => {
         unsubscribeProgress?.();
         unsubscribeLog?.();
         unsubscribeState?.();
         unsubscribePlaytime?.();
         unsubscribePlaytimeEnd?.();
+        unsubscribeUpdate?.();
       };
     }
   }, []);

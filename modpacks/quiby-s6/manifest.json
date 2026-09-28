@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.4",
+  "version": "6.1.5",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 270656526,
+  "totalSize": 270666008,
   "files": [
     {
       "path": "config/aeronautics_utility_objects-server.toml",
@@ -1520,19 +1520,19 @@
       "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
-      "path": "mods/quiby-1.21.1-1.1.2.jar",
-      "sha256": "85b16dd90233ac3759c4055fda262d2ba7b50f3b44c517e36170390cf927acbf",
-      "size": 476309,
+      "path": "mods/quiby-1.21.1-1.1.3.jar",
+      "sha256": "1fda31c18079ff04fa9d899b7dcfdb0b542982875d537aef6ae1d3b357fda215",
+      "size": 476619,
       "profiles": [
         "full",
         "optimal",
         "clean"
       ],
-      "downloadUrl": "/api/modpack/files/imported/85b16dd90233ac3759c4055fda262d2ba7b50f3b44c517e36170390cf927acbf/quiby-1.21.1-1.1.2.jar",
+      "downloadUrl": "/api/modpack/files/imported/1fda31c18079ff04fa9d899b7dcfdb0b542982875d537aef6ae1d3b357fda215/quiby-1.21.1-1.1.3.jar",
       "action": "sync",
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.1.2",
+      "modVersion": "1.1.3",
       "modDescription": "Официальный клиентский и серверный мод Quiby: русская локализация, ресурсы и скины игроков без стороннего загрузчика.",
       "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },

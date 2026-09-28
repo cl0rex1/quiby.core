@@ -41,6 +41,9 @@ export const quibyApi = {
   installContentFile: (gameDir: string, kind: 'shaderpacks' | 'schematics', filename: string, bytes: Uint8Array): Promise<void> => ipcRenderer.invoke('content:install', gameDir, kind, filename, bytes),
   trashContentFile: (gameDir: string, kind: 'shaderpacks' | 'schematics', filename: string): Promise<void> => ipcRenderer.invoke('content:trash', gameDir, kind, filename),
   openContentFolder: (gameDir: string, kind: 'shaderpacks' | 'schematics' | 'mods'): Promise<void> => ipcRenderer.invoke('content:open-folder', gameDir, kind),
+  getScreenshots: (gameDir: string): Promise<{ name: string; modifiedAt: number; size: number }[]> => ipcRenderer.invoke('screenshots:list', gameDir),
+  getScreenshotImage: (gameDir: string, filename: string, thumbnail: boolean): Promise<string> => ipcRenderer.invoke('screenshots:image', gameDir, filename, thumbnail),
+  openScreenshotsFolder: (gameDir: string): Promise<void> => ipcRenderer.invoke('screenshots:open-folder', gameDir),
   installCustomMod: (gameDir: string, filename: string, bytes: Uint8Array) =>
     ipcRenderer.invoke('mods:install', gameDir, filename, bytes),
   removeCustomMod: (gameDir: string, filename: string) =>

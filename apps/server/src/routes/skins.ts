@@ -51,6 +51,22 @@ router.delete('/me', requireAuth, async (req: AuthenticatedRequest, res: Respons
 });
 
 // The Quiby client mod requests this public URL for every player on the server.
+router.get('/uuid/:uuid.png', async (req, res) => {
+  const uuid = req.params.uuid.replace(/-/g, '').toLowerCase();
+  if (!/^[0-9a-f]{32}$/.test(uuid)) return res.status(404).end();
+  const user = await dbGet<{ uuid: string }>("SELECT uuid FROM users WHERE LOWER(REPLACE(uuid, '-', '')) = ?", [uuid]);
+  if (!user) return res.status(404).end();
+  const file = path.join(skinDir, `${user.uuid.replace(/-/g, '')}.png`);
+  try {
+    await fs.access(file);
+    res.setHeader('Cache-Control', 'public, max-age=60');
+    res.setHeader('Content-Type', 'image/png');
+    return res.sendFile(file);
+  } catch {
+    return res.status(404).end();
+  }
+});
+
 router.get('/:username.png', async (req, res) => {
   const username = req.params.username;
   if (!/^[A-Za-z0-9_]{3,16}$/.test(username)) return res.status(404).end();

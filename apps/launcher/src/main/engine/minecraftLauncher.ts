@@ -9,6 +9,7 @@ import { ensureNeoForge } from './neoforge';
 import { hashCustomModFile, requireApprovedCustomMod } from './customModVerification';
 import { updateDiscordRpcStatus } from '../rpc/discordRpc';
 import { selectModpackProfile } from '../../shared/modpackProfiles';
+import { applyResourcePackProfile } from './resourcePackProfile';
 import { resolveJava21 } from './javaDetector';
 import { getLatestModpackManifest } from './manifestSource';
 import { readCrashDetails } from './crashDetails';
@@ -135,6 +136,7 @@ export async function launchMinecraft(
       sendLog('info', `🛡️ Защита ${protectedFilenames.size} активных клиентских модов от очистки`);
     }
     await syncModpackFiles(manifest, gameDir, serverBaseUrl, win, protectedFilenames);
+    await applyResourcePackProfile(gameDir, settings.modpackProfile, manifest.files.map(file => file.path));
 
     // 3. Ensure Vanilla Minecraft 1.21.1
     sendLog('info', `📦 Подготовка файлов Minecraft ${manifest.gameVersion}...`);
