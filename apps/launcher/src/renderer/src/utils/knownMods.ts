@@ -10,6 +10,7 @@ export interface ModMetadata {
 }
 
 const KNOWN_MODS: Record<string, ModMetadata> = {
+  "offbalance": { displayName: "Sable Ragdolls: Off Balance", description: "Физика падений и взаимодействие мобов с упавшим игроком", category: 'gameplay', categoryLabel: 'Геймплей' },
   "aeroworks": { displayName: "Create: Aeroworks", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
   "cbc_compact_mount": { displayName: "CBC: Compact Mount", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },
   "contraption-lights": { displayName: "Contraption Lights", description: "Механизмы и дополнения к Create", category: 'mechanisms', categoryLabel: 'Механика' },

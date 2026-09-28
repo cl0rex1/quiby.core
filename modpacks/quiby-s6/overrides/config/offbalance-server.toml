@@ -1,0 +1,3 @@
+# Quiby: disable active balancing; retain Off Balance targeting and recovery.
+[balance]
+balanceEnabled = false

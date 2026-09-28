@@ -91,11 +91,17 @@ if (kind === 'pack') {
     file.downloadUrl = await addAsset(file.downloadUrl, file.sha256);
     if (file.modIconUrl?.startsWith('/api/modpack/files/')) file.modIconUrl = await addAsset(file.modIconUrl);
   }
+  const serverUpdate = process.argv.find(arg => arg.startsWith('--server-update='))?.slice('--server-update='.length);
+  if (serverUpdate) {
+    const archive = path.resolve(serverUpdate);
+    await fs.access(archive);
+    payloads.set(path.basename(archive), archive);
+  }
   if (process.argv.includes('--check')) {
     console.log(`Validated ${source.files.length} manifest files and ${payloads.size} unique release assets`);
     process.exit(0);
   }
-  const value = await release(tag, `quiby. Season 6 ${source.version} (Тестовая)`, 'Тестовая сборка для тестеров. Visual, Standard, Draft — Minecraft 1.21.1 / NeoForge 21.1.250. Файлы выбираются по SHA-256 манифесту.', false);
+  const value = await release(tag, `quiby. Season 6 ${source.version} (Тестовая)`, `Тестовая сборка для тестеров. Visual, Standard, Draft — Minecraft 1.21.1 / NeoForge 21.1.250.\n\n${source.changelog || ''}\n\n${serverUpdate ? 'Minecraft-сервер также нужно обновить: архив quiby-server-update-' + source.version + '.zip содержит моды, конфиг и инструкцию. ' : ''}Файлы клиента выбираются по SHA-256 манифесту.`, false);
   const existing = new Map((await listedAssets(value)).map(asset => [asset.name, asset]));
   let uploaded = 0;
   for (const [filename, sourcePath] of payloads) {
@@ -115,7 +121,11 @@ if (kind === 'pack') {
 } else {
   const launcher = JSON.parse(await fs.readFile(path.join(root, 'apps/launcher/package.json'), 'utf8'));
   const version = launcher.version;
-  const value = await release(`v${version}`, `quiby.core Тестовый ${version}`, 'Тестовая сборка лаунчера для Windows. Вход через Discord OAuth и подключение к https://api.quiby.me. Установщик пока не подписан.', version.includes('-'));
+  const notes = await fs.readFile(path.join(root, `docs/releases/${version}.md`), 'utf8').catch(error => {
+    if (error.code !== 'ENOENT') throw error;
+    return 'Тестовая сборка лаунчера для Windows. Вход через Discord OAuth и подключение к https://api.quiby.me. Установщик пока не подписан.';
+  });
+  const value = await release(`v${version}`, `quiby.core Тестовый ${version}`, notes, version.includes('-'));
   const releaseDir = path.join(root, 'apps/launcher/release');
   const names = [
     [`quiby.core-Setup-${version}.exe`, `quiby.core-Setup-${version}.exe`],

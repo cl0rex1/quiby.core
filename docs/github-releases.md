@@ -2,8 +2,8 @@
 
 Публичные файлы лежат отдельно от приватного исходного репозитория:
 
-- [Сборка Season 6](https://github.com/cl0rex1/quiby-modpacks/releases) — манифест и 226 объектов (174 игровых файла и 52 иконки). Текущая версия: `v6.1.0`.
-- [Windows-лаунчер](https://github.com/cl0rex1/quiby-launcher-releases/releases) — NSIS-установщик, blockmap и `beta.yml`. Текущая версия: `v1.0.1-beta.2`.
+- [Сборка Season 6](https://github.com/cl0rex1/quiby-modpacks/releases) — манифест, игровые файлы и иконки. Версия этого выпуска: `v6.1.6`.
+- [Windows-лаунчер](https://github.com/cl0rex1/quiby-launcher-releases/releases) — NSIS-установщик, blockmap и `beta.yml`. Версия этого выпуска: `v1.0.1-beta.11`.
 
 Лаунчер загружает `https://github.com/cl0rex1/quiby-modpacks/releases/latest/download/manifest.json`, проверяет SHA-256 каждого изменённого файла и сохраняет файлы с политикой `keep_local`. Если GitHub временно недоступен, использует API. Для локальной проверки неопубликованной сборки можно запустить процесс лаунчера с `QUIBY_PACK_SOURCE=local`.
 
@@ -27,3 +27,9 @@
 Публикуются имена файлов, указанные в `beta.yml`, включая blockmap. Скрипт не изменяет уже опубликованную версию: для нового кода нужен новый номер. Для работы скрипта нужен вход через Git Credential Manager или переменная `GITHUB_TOKEN` с правом Contents: write в соответствующих публичных репозиториях.
 
 Текущий выпуск предварительный: установщик не подписан. После развёртывания HTTPS API проверьте вход Discord на чистой машине и выпустите новую версию установщика.
+
+## Обновление Minecraft-сервера 6.1.6
+
+См. [инструкцию](server-update-6.1.6.md). Архив формируется командой `node scripts/build-server-update.mjs` и прикладывается при публикации: `node scripts/publish-github-release.mjs pack --server-update=temp/quiby-server-update-6.1.6.zip`.
+
+При повторном импорте старого профиля сначала обновите в нём состав модов: Off Balance вместо Revival/Reactions/Corpse и Quiby 1.1.4. Импорт старого профиля не является обновлением актуального манифеста.

@@ -4,6 +4,7 @@ import fs from 'fs';
 import { BrowserWindow } from 'electron';
 import { AuthSession, LauncherSettings, LaunchState, LogEntry, ModpackManifest } from '@quiby/shared';
 import { syncModpackFiles } from './downloader';
+import { configureEarlyLoading } from './earlyLoading';
 import { ensureMinecraftVanilla } from './mojang';
 import { ensureNeoForge } from './neoforge';
 import { hashCustomModFile, requireApprovedCustomMod } from './customModVerification';
@@ -136,6 +137,7 @@ export async function launchMinecraft(
       sendLog('info', `🛡️ Защита ${protectedFilenames.size} активных клиентских модов от очистки`);
     }
     await syncModpackFiles(manifest, gameDir, serverBaseUrl, win, protectedFilenames);
+    configureEarlyLoading(gameDir, manifest.files.map(file => file.path));
     await applyResourcePackProfile(gameDir, settings.modpackProfile, manifest.files.map(file => file.path));
 
     // 3. Ensure Vanilla Minecraft 1.21.1
