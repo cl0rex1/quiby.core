@@ -18,7 +18,7 @@ for (const id of ['quiby', 'offbalance']) {
 }
 zip.addLocalFile(path.join(root, 'modpacks/quiby-s6/overrides/defaultconfigs/offbalance-server.toml'), 'defaultconfigs');
 zip.addLocalFile(path.join(root, 'modpacks/quiby-s6/overrides/config/offbalance-server.toml'), 'config');
-zip.addFile('README.md', fs.readFileSync(path.join(root, 'docs/server-update-6.1.6.md')));
+zip.addFile('README.md', fs.readFileSync(path.join(root, `docs/server-update-${manifest.version}.md`)));
 const output = path.join(root, 'temp', `quiby-server-update-${manifest.version}.zip`);
 fs.mkdirSync(path.dirname(output), { recursive: true });
 zip.writeZip(output);
