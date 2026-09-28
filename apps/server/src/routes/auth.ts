@@ -12,6 +12,7 @@ import {
 } from '../services/discord';
 import { AuthenticatedRequest, requireAuth } from '../middleware/auth';
 import { AuthSession, UserProfile } from '@quiby/shared';
+import { submitUsernameChangeRequest } from '../services/usernameChangeService';
 
 const router = Router();
 
@@ -20,6 +21,35 @@ const mcUsernameSchema = z
   .min(3, 'Minecraft username must be at least 3 characters')
   .max(16, 'Minecraft username cannot exceed 16 characters')
   .regex(/^[a-zA-Z0-9_]+$/, 'Minecraft username can only contain letters, numbers, and underscores');
+
+const usernameChangeRequestSchema = z.object({
+  requestedUsername: mcUsernameSchema,
+  reason: z.string().trim().min(5).max(500),
+});
+
+router.post('/mc-username-change-request', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const parsed = usernameChangeRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.errors[0]?.message || 'Проверьте новый ник и причину заявки.' });
+  }
+  try {
+    const result = await submitUsernameChangeRequest({
+      discordId: req.user!.discordId,
+      currentUsername: req.user!.mcUsername,
+      requestedUsername: parsed.data.requestedUsername,
+      reason: parsed.data.reason,
+    });
+    if (result.code !== 201) return res.status(result.code).json({ error: result.error });
+    return res.status(201).json({
+      success: true,
+      request: result.request,
+      message: 'Заявка на смену ника отправлена администрации.',
+    });
+  } catch (error: any) {
+    console.error('Minecraft username change request error:', error);
+    return res.status(500).json({ error: 'Не удалось отправить заявку на смену ника.' });
+  }
+});
 
 // 1. Get Discord OAuth2 Login URL
 router.get('/discord/url', (req: Request, res: Response) => {

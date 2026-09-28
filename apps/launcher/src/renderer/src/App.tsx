@@ -637,6 +637,7 @@ export const App: React.FC = () => {
 
       <ProfileDialog
         session={isProfileOpen ? session : null}
+        serverUrl={SERVER_URL}
         onClose={() => setIsProfileOpen(false)}
         onSignOut={() => {
           localStorage.removeItem('quiby_session');

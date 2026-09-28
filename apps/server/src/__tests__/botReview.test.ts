@@ -137,6 +137,32 @@ test('bot API authenticates, attributes requests and atomically applies idempote
     const row = await dbGet<any>('SELECT * FROM mod_whitelist_requests WHERE id = ?', [rejected.id]);
     assert.ok(row.reviewed_at);
     assert.equal(row.decision_reason, 'Reviewed exact version');
+
+    assert.equal((await request('/api/auth/mc-username-change-request', {
+      method: 'POST', headers: playerHeaders,
+      body: JSON.stringify({ requestedUsername: 'bad name', reason: 'I made a typo' }),
+    })).status, 400);
+    await dbRun("INSERT INTO users(discord_id, discord_username, mc_username, uuid) VALUES ('345678901234567890', 'Taken', 'Taken', 'taken-uuid')");
+    const change = async (requestedUsername: string, changeReason = 'I made a typo when I registered') => request('/api/auth/mc-username-change-request', {
+      method: 'POST', headers: playerHeaders,
+      body: JSON.stringify({ requestedUsername, reason: changeReason }),
+    });
+    assert.equal((await change('Taken')).status, 409);
+    const nameRequestResponse = await change('BetterName');
+    assert.equal(nameRequestResponse.status, 201);
+    const nameRequest = (await nameRequestResponse.json()).request;
+    assert.equal((await change('AnotherName')).status, 409);
+    const nameQueue = await (await request('/api/bot/username-change-requests?limit=1', { headers: botHeaders })).json();
+    assert.equal(nameQueue.requests[0].requested_username, 'BetterName');
+    const approvedName = await request('/api/bot/username-change-requests/' + nameRequest.id, {
+      method: 'PATCH', headers: botHeaders,
+      body: JSON.stringify({ decision: 'approved', reviewer_discord_id: '234567890123456789', reason: 'Исправленная опечатка' }),
+    });
+    assert.equal(approvedName.status, 200);
+    assert.equal((await dbGet<any>('SELECT mc_username FROM users WHERE discord_id = ?', ['123456789012345678']))?.mc_username, 'BetterName');
+    const updatedUuid = (await dbGet<any>('SELECT uuid FROM users WHERE discord_id = ?', ['123456789012345678']))?.uuid;
+    assert.match(updatedUuid, /^[0-9a-f]{8}-[0-9a-f]{4}-3[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+
     const earlier = await submit({ ...payload, hash_sha1: 'c'.repeat(40) });
     await dbRun("UPDATE mod_whitelist_requests SET status='rejected' WHERE id=?", [earlier.id]);
     const later = await submit({ ...payload, hash_sha1: 'c'.repeat(40) });

@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.3",
+  "version": "6.1.4",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 270582809,
+  "totalSize": 270656526,
   "files": [
     {
       "path": "config/aeronautics_utility_objects-server.toml",
@@ -294,9 +294,9 @@
     },
     {
       "path": "config/explosionoverhaul/explosionoverhaul-common.toml",
-      "sha256": "ef418f8ed405d139db564115709850fe22568b2e979975ac5818a272024e960d",
-      "size": 10094,
-      "downloadUrl": "/api/modpack/files/imported/ef418f8ed405d139db564115709850fe22568b2e979975ac5818a272024e960d/explosionoverhaul-common.toml",
+      "sha256": "c698b719808e314196dde34f458264e5da659083979237f0a137725136734ade",
+      "size": 10095,
+      "downloadUrl": "/api/modpack/files/imported/c698b719808e314196dde34f458264e5da659083979237f0a137725136734ade/explosionoverhaul-common.toml",
       "action": "sync"
     },
     {
@@ -1520,19 +1520,19 @@
       "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
-      "path": "mods/quiby-1.21.1-1.1.1.jar",
-      "sha256": "1af6300cb138695303f54f7fddaab0b6d5dd9719a916ee62a8ba6ca42c4b55be",
-      "size": 402593,
+      "path": "mods/quiby-1.21.1-1.1.2.jar",
+      "sha256": "85b16dd90233ac3759c4055fda262d2ba7b50f3b44c517e36170390cf927acbf",
+      "size": 476309,
       "profiles": [
         "full",
         "optimal",
         "clean"
       ],
-      "downloadUrl": "/api/modpack/files/imported/1af6300cb138695303f54f7fddaab0b6d5dd9719a916ee62a8ba6ca42c4b55be/quiby-1.21.1-1.1.1.jar",
+      "downloadUrl": "/api/modpack/files/imported/85b16dd90233ac3759c4055fda262d2ba7b50f3b44c517e36170390cf927acbf/quiby-1.21.1-1.1.2.jar",
       "action": "sync",
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.1.1",
+      "modVersion": "1.1.2",
       "modDescription": "Официальный клиентский и серверный мод Quiby: русская локализация, ресурсы и скины игроков без стороннего загрузчика.",
       "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },

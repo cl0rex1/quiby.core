@@ -564,17 +564,18 @@ export const ModsView: React.FC<ModsViewProps> = ({
                     return (
                       <div
                         key={mod.id}
-                        className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-150 gap-3 ${
+                        className={`flex flex-col items-stretch p-3 rounded-xl border transition-all duration-150 gap-3 ${
                           isSelected
                             ? 'bg-surface-850 border-[#bb74ff]/60 shadow-md ring-1 ring-[#bb74ff]/30'
                             : isBlocked
                             ? 'bg-rose-950/20 border-rose-500/30'
                             : mod.enabled
                             ? 'bg-surface-900 border-surface-border hover:border-surface-borderLight shadow-sm'
-                            : 'bg-surface-900/50 border-surface-border opacity-60'
+                            : 'bg-surface-900/50 border-surface-border'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2 min-w-0 w-full">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
                           {/* Checkbox selector */}
                           <button
                             type="button"
@@ -638,17 +639,10 @@ export const ModsView: React.FC<ModsViewProps> = ({
                               <span className="shrink-0">• {formatSize(mod.size)}</span>
                             </div>
                           </div>
-                        </div>
+                          </div>
 
-                        {/* Controls: Modrinth Link, Toggle Switch & Delete */}
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {isUnverified && (
-                            <button type="button" onClick={(e) => handleOpenWhitelistModal(e, mod)}
-                              className="shrink-0 px-3 py-2 rounded-lg bg-[#a65ee8] hover:bg-[#bc7ff0] text-white border border-[#d1a5f5] text-[11px] font-semibold shadow-md transition-colors cursor-pointer press-feedback"
-                              title="Отправить мод на проверку для вайтлиста">
-                              Подать заявку
-                            </button>
-                          )}
+                          {/* Compact controls stay separate from the mod name and whitelist CTA. */}
+                          <div className="flex items-center gap-1.5 shrink-0">
                           {/* Modrinth Link */}
                           <a
                             href={
@@ -700,6 +694,15 @@ export const ModsView: React.FC<ModsViewProps> = ({
                             <Trash2 size={13} />
                           </button>
                         </div>
+                        </div>
+
+                        {isUnverified && (
+                          <button type="button" onClick={(e) => handleOpenWhitelistModal(e, mod)}
+                            className="w-full min-h-10 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#a65ee8] hover:bg-[#bc7ff0] text-white border border-[#d1a5f5] text-xs font-bold shadow-md transition-colors cursor-pointer press-feedback focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e4c4ff]"
+                            title="Отправить мод на проверку для вайтлиста">
+                            Подать заявку в вайтлист
+                          </button>
+                        )}
                       </div>
                     );
                   })}

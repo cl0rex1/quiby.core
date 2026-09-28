@@ -140,6 +140,23 @@ export async function initDatabase(): Promise<void> {
   }
   await dbRun('CREATE INDEX IF NOT EXISTS mod_requests_hash_review ON mod_whitelist_requests(hash_sha1, review_sequence DESC)');
   await dbRun('CREATE INDEX IF NOT EXISTS mod_requests_queue ON mod_whitelist_requests(status, id)');
+
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS mc_username_change_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      discord_id TEXT NOT NULL,
+      current_username TEXT NOT NULL,
+      requested_username TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      reviewer_discord_id TEXT,
+      decision_reason TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      reviewed_at DATETIME
+    )
+  `);
+  await dbRun('CREATE INDEX IF NOT EXISTS username_change_queue ON mc_username_change_requests(status, id)');
+
   // The review and verification cache change in the same SQLite statement/transaction.
   await dbRun(`
     CREATE TRIGGER IF NOT EXISTS mod_request_review_cache
