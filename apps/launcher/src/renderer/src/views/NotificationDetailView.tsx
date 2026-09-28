@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowUpRight, Copy, Mail, Newspaper, Trash2 } from 'lucide-react';
+import { ArrowUpRight, Copy, Download, Mail, Newspaper, Trash2 } from 'lucide-react';
 import { NewsArticle } from '@quiby/shared';
 import type { NotificationItem } from '../utils/notifications';
 
@@ -28,6 +28,12 @@ export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({ 
     } catch {
       onToast('Не удалось скопировать уведомление', 'error');
     }
+  };
+  const downloadCrashLog = async () => {
+    if (!notification?.message) return;
+    try {
+      if (await window.quibyApi.exportCrashLog(notification.message)) onToast('Лог сохранён', 'success');
+    } catch { onToast('Не удалось сохранить лог', 'error'); }
   };
 
   const dateLabel = (date: string | number) => {
@@ -59,7 +65,7 @@ export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({ 
       ) : notification ? (
         <article className="message-article message-detail">
           <div className="message-meta"><span>{{ success: 'Готово', info: 'Информация', warning: 'Внимание', error: 'Ошибка' }[notification.type || 'info']}</span><time dateTime={new Date(notification.timestamp).toISOString()}>{dateLabel(notification.timestamp)}</time></div>
-          <div className="message-detail-title"><h2>{notification.title}</h2><div className="message-actions"><button className="message-copy" type="button" onClick={copyNotification} title="Скопировать уведомление"><Copy size={15} /><span>Копировать</span></button><button type="button" onClick={() => onDeleteNotification(notification.id)} title="Удалить уведомление" aria-label="Удалить уведомление"><Trash2 size={16} /></button></div></div>
+          <div className="message-detail-title"><h2>{notification.title}</h2><div className="message-actions">{notification.title === 'Сбой Minecraft' && notification.message && <button className="message-copy" type="button" onClick={() => void downloadCrashLog()} title="Сохранить полный лог"><Download size={15} /><span>Скачать лог</span></button>}<button className="message-copy" type="button" onClick={copyNotification} title="Скопировать уведомление"><Copy size={15} /><span>Копировать</span></button><button type="button" onClick={() => onDeleteNotification(notification.id)} title="Удалить уведомление" aria-label="Удалить уведомление"><Trash2 size={16} /></button></div></div>
           {notification.message && <p>{notification.message}</p>}
           {notification.modInfo && (
             <dl className="message-mod-info">

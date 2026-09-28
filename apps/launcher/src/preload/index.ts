@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { AuthSession, DownloadProgress, LauncherSettings, LaunchState, LogEntry } from '@quiby/shared';
 import type { ModpackManifest } from '@quiby/shared';
 import type { UpdateState } from '../main/updates';
+import type { NotificationItem } from '../renderer/src/utils/notifications';
 
 export const quibyApi = {
   // Window controls
@@ -13,6 +14,9 @@ export const quibyApi = {
   // Settings
   getSettings: (): Promise<LauncherSettings> => ipcRenderer.invoke('settings:get'),
   saveSettings: (settings: LauncherSettings): Promise<boolean> => ipcRenderer.invoke('settings:save', settings),
+  loadNotifications: (): Promise<NotificationItem[]> => ipcRenderer.invoke('notifications:load'),
+  saveNotifications: (items: NotificationItem[]): Promise<void> => ipcRenderer.invoke('notifications:save', items),
+  exportCrashLog: (content: string): Promise<boolean> => ipcRenderer.invoke('notifications:export-log', content),
 
   // System & Java
   getTotalRamMb: (): Promise<number> => ipcRenderer.invoke('system:memory'),
@@ -44,6 +48,8 @@ export const quibyApi = {
   getScreenshots: (gameDir: string): Promise<{ name: string; modifiedAt: number; size: number }[]> => ipcRenderer.invoke('screenshots:list', gameDir),
   getScreenshotImage: (gameDir: string, filename: string, thumbnail: boolean): Promise<string> => ipcRenderer.invoke('screenshots:image', gameDir, filename, thumbnail),
   openScreenshotsFolder: (gameDir: string): Promise<void> => ipcRenderer.invoke('screenshots:open-folder', gameDir),
+  trashScreenshots: (gameDir: string, filenames: string[]): Promise<void> => ipcRenderer.invoke('screenshots:trash', gameDir, filenames),
+  copyScreenshot: (gameDir: string, filename: string): Promise<void> => ipcRenderer.invoke('screenshots:copy', gameDir, filename),
   installCustomMod: (gameDir: string, filename: string, bytes: Uint8Array) =>
     ipcRenderer.invoke('mods:install', gameDir, filename, bytes),
   removeCustomMod: (gameDir: string, filename: string) =>

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, ClipboardItem } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -16,6 +16,7 @@ let mainWindow: BrowserWindow | null = null;
 let splashWindow: BrowserWindow | null = null;
 let mainReady = false;
 let splashReady = false;
+let notificationWrite = Promise.resolve();
 const appIcon = app.isPackaged
   ? path.join(process.resourcesPath, 'icon.png')
   : path.join(__dirname, '../../src/renderer/src/assets/quiby_q_logo.png');
@@ -210,6 +211,36 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     configureDiscordRpc(settings.enableDiscordRpc !== false);
     return true;
   });
+  const notificationFile = () => path.join(getDefaultGameDir(), 'notifications.json');
+  ipcMain.handle('notifications:load', async () => {
+    try {
+      const data = JSON.parse(await fs.promises.readFile(notificationFile(), 'utf8'));
+      return Array.isArray(data) ? data.filter(item => item && typeof item.id === 'string' && typeof item.title === 'string' && Number.isFinite(item.timestamp)).slice(0, 100) : [];
+    } catch { return []; }
+  });
+  ipcMain.handle('notifications:save', async (_, items: unknown) => {
+    if (!Array.isArray(items)) throw new Error('Некорректный список уведомлений');
+    const data = JSON.stringify(items.slice(0, 100));
+    if (Buffer.byteLength(data) > 20 * 1024 * 1024) throw new Error('История уведомлений слишком велика');
+    const file = notificationFile();
+    notificationWrite = notificationWrite.catch(() => {}).then(async () => {
+      await fs.promises.mkdir(path.dirname(file), { recursive: true });
+      await fs.promises.writeFile(`${file}.tmp`, data, 'utf8');
+      await fs.promises.rename(`${file}.tmp`, file);
+    });
+    await notificationWrite;
+  });
+  ipcMain.handle('notifications:export-log', async (_, content: string) => {
+    if (typeof content !== 'string' || !content || Buffer.byteLength(content) > 20 * 1024 * 1024) throw new Error('Лог недоступен');
+    const result = await dialog.showSaveDialog(mainWindow!, {
+      title: 'Сохранить лог Minecraft',
+      defaultPath: `minecraft-crash-${new Date().toISOString().replace(/[:.]/g, '-')}.log`,
+      filters: [{ name: 'Лог', extensions: ['log', 'txt'] }],
+    });
+    if (result.canceled || !result.filePath) return false;
+    await fs.promises.writeFile(result.filePath, content, 'utf8');
+    return true;
+  });
 
   // 4. Java & System Inspection
   ipcMain.handle('system:memory', () => Math.floor(os.totalmem() / (1024 * 1024)));
@@ -302,6 +333,16 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     await fs.promises.mkdir(dir, { recursive: true });
     const error = await shell.openPath(dir);
     if (error) throw new Error(error);
+  });
+  ipcMain.handle('screenshots:trash', async (_, gameDir: string, filenames: string[]) => {
+    if (!Array.isArray(filenames) || filenames.length > 100) throw new Error('Некорректный список скриншотов');
+    for (const filename of filenames) await shell.trashItem(screenshotPath(gameDir, filename));
+  });
+  ipcMain.handle('screenshots:copy', async (_, gameDir: string, filename: string) => {
+    const file = screenshotPath(gameDir, filename);
+    const image = nativeImage.createFromPath(file);
+    if (image.isEmpty()) throw new Error('Не удалось скопировать скриншот');
+    await clipboard.write([new ClipboardItem({ 'image/png': new Blob([new Uint8Array(image.toPNG())], { type: 'image/png' }) })]);
   });
 
   ipcMain.handle('mods:install', async (_, gameDir: string, filename: string, bytes: Uint8Array) => {

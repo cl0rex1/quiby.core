@@ -31,6 +31,7 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [dragging, setDragging] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const input = useRef<HTMLInputElement>(null);
   const desktop = Boolean(window.quibyApi);
   const shader = kind === 'shaderpacks';
@@ -39,7 +40,11 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
   const read = () =>
     shader ? window.quibyApi.getShaderpacks(gameDir) : window.quibyApi.getSchematics(gameDir);
   const refresh = async () => {
-    if (desktop) setFiles(await read());
+    if (desktop) {
+      const items = await read();
+      setFiles(items);
+      setSelectedFiles(previous => previous.filter(name => items.some((item: LocalFile) => item.filename === name)));
+    }
   };
   useEffect(() => {
     let cancelled = false;
@@ -101,6 +106,18 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
       setBusy(false);
     }
   };
+  const removeSelected = async () => {
+    if (!selectedFiles.length || busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      for (const filename of selectedFiles) await window.quibyApi.trashContentFile(gameDir, kind, filename);
+      onNotify?.('Файлы перемещены в корзину', `Файлов: ${selectedFiles.length}`, 'info');
+      setSelectedFiles([]);
+      await refresh();
+    } catch (err) { report(err); await refresh().catch(report); }
+    finally { setBusy(false); }
+  };
   const filtered = files
     .filter((file) => `${file.name} ${file.filename}`.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => b.updatedAt - a.updatedAt);
@@ -154,6 +171,7 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
         />
         <span>{accept}</span>
       </div>
+      {files.length > 0 && <div className="selection-toolbar"><span>Выбрано: {selectedFiles.length}</span><button type="button" className="ui-button" disabled={busy} onClick={() => setSelectedFiles(selectedFiles.length === filtered.length ? [] : filtered.map(file => file.filename))}>{selectedFiles.length === filtered.length ? 'Снять выделение' : 'Выбрать все видимые'}</button><button type="button" className="ui-button" disabled={!selectedFiles.length || busy} onClick={() => void removeSelected()}><Trash2 size={14} /> В корзину</button></div>}
       <button
         className={`content-dropzone ${dragging ? 'is-dragging' : ''}`}
         disabled={!desktop || busy}
@@ -195,7 +213,8 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
         {filtered.length ? (
           <div className="library-grid">
             {filtered.map((file) => (
-              <article className="library-file" key={file.filename}>
+              <article className={`library-file ${selectedFiles.includes(file.filename) ? 'is-selected' : ''}`} key={file.filename}>
+                <input type="checkbox" checked={selectedFiles.includes(file.filename)} onChange={() => setSelectedFiles(previous => previous.includes(file.filename) ? previous.filter(name => name !== file.filename) : [...previous, file.filename])} aria-label={`Выделить ${file.filename}`} />
                 <div className="library-file-icon">
                   <Icon size={23} />
                 </div>

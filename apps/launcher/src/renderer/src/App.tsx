@@ -73,6 +73,7 @@ export const App: React.FC = () => {
 
   // Notifications State
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notificationsLoaded, setNotificationsLoaded] = useState(false);
   const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>(null);
   const [activeToast, setActiveToast] = useState<ToastData | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -92,7 +93,7 @@ export const App: React.FC = () => {
       read: false,
       modInfo,
     };
-    setNotifications((prev) => [newNotif, ...prev]);
+    setNotifications((prev) => [newNotif, ...prev].slice(0, 100));
     setSelectedNotificationId(newNotif.id);
     setActiveToast({
       id: newNotif.id,
@@ -101,6 +102,24 @@ export const App: React.FC = () => {
       type,
     });
   };
+
+  useEffect(() => {
+    let active = true;
+    void window.quibyApi.loadNotifications().then(saved => {
+      if (!active) return;
+      setNotifications(current => {
+        const ids = new Set(current.map(item => item.id));
+        return [...current, ...saved.filter(item => item && typeof item.id === 'string' && !ids.has(item.id))]
+          .sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
+      });
+    }).catch(() => {}).finally(() => { if (active) setNotificationsLoaded(true); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!notificationsLoaded) return;
+    void window.quibyApi.saveNotifications(notifications).catch(error => console.error('Notifications save failed:', error));
+  }, [notifications, notificationsLoaded]);
 
   // 1. Settings State (Auto-saving)
   const [settings, setSettings] = useState<LauncherSettings>(defaultSettings);
