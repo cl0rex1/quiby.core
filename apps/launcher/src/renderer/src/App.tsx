@@ -3,6 +3,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { selectModpackProfile } from '../../shared/modpackProfiles';
 import { applyBuildToMods, selectedBuild } from './utils/buildProfiles';
 import { WindowHeader } from './components/WindowHeader';
+import { LauncherUpdateBanner } from './components/LauncherUpdateBanner';
+import type { UpdateState } from '../../main/updates';
 import { MinimalSidebar, ActiveTab } from './components/MinimalSidebar';
 import { CharacterStage } from './views/CharacterStage';
 import { InGameLaunchStage } from './views/InGameLaunchStage';
@@ -68,6 +70,7 @@ export const App: React.FC = () => {
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [launchState, setLaunchState] = useState<LaunchState>({ status: 'idle' });
+  const [launcherUpdate, setLauncherUpdate] = useState<UpdateState | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [selectedModIds, setSelectedModIds] = useState<string[]>([]);
 
@@ -333,10 +336,11 @@ export const App: React.FC = () => {
         });
       });
 
-      const showAvailableUpdate = (state: { status: string; latestVersion?: string }) => {
+      const showAvailableUpdate = (state: UpdateState) => {
+        setLauncherUpdate(state);
         if (state.status !== 'available' || !state.latestVersion || notifiedUpdateVersion.current === state.latestVersion) return;
         notifiedUpdateVersion.current = state.latestVersion;
-        handleNotify('Доступно обновление лаунчера', `Версия ${state.latestVersion}. Откройте Настройки → Обновление лаунчера, чтобы скачать её.`, 'info');
+        handleNotify('Доступно обновление лаунчера', `Версия ${state.latestVersion}. Нажмите «Скачать обновление» на баннере сверху.`, 'info');
       };
       const unsubscribeUpdate = window.quibyApi.onUpdateState(showAvailableUpdate);
       void window.quibyApi.getUpdateState().then(showAvailableUpdate).catch(() => {});
@@ -436,8 +440,9 @@ export const App: React.FC = () => {
       <WindowHeader />
 
       {!isAuthModalOpen && <>
-      {/* 2. Main Content Body (Remaining Height h-[calc(100vh-32px)]) */}
-      <div className="flex flex-1 h-[calc(100vh-32px)] w-full overflow-hidden relative">
+      <LauncherUpdateBanner state={launcherUpdate} />
+      {/* Remaining space below the title bar and optional update banner. */}
+      <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
         {/* Sleek Minimal Sidebar */}
         <MinimalSidebar
           collapsed={sidebarCollapsed}

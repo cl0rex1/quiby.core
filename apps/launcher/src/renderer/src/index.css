@@ -184,3 +184,33 @@
   *, ::before, ::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   .press-feedback:active { transform: none !important; }
 }
+
+/* Persistent update notice stays visible across every launcher tab. */
+.launcher-update-banner {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  color: #f4e7ff;
+  background: linear-gradient(100deg, #462360, #241a35);
+  border-bottom: 1px solid #b66bec;
+}
+.launcher-update-banner strong { display: block; font-size: 15px; font-weight: 700; }
+.launcher-update-banner p { margin-top: 3px; font-size: 12px; color: #dbc7ec; overflow-wrap: anywhere; }
+.launcher-update-banner button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  flex-shrink: 0; padding: 11px 16px; border-radius: 10px;
+  background: #e5b7ff; color: #281136; font-size: 13px; font-weight: 700;
+}
+.launcher-update-banner button:hover:not(:disabled) { background: #f0d6ff; }
+.launcher-update-banner button:focus-visible { outline: 2px solid white; outline-offset: 3px; }
+.launcher-update-banner button:disabled { opacity: .75; cursor: wait; }
+.launcher-update-banner-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #37223d; }
+.launcher-update-banner-progress span { display: block; height: 100%; background: #dda0ff; transition: width .2s; }
+@media (max-width: 760px) {
+  .launcher-update-banner { gap: 10px; padding: 12px 16px; flex-wrap: wrap; }
+  .launcher-update-banner button { margin-left: auto; }
+}
