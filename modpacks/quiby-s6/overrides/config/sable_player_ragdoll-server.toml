@@ -1,0 +1,3 @@
+# Allow manual recovery after one second instead of the Sable default three.
+[trigger]
+minDismountTicks = 20

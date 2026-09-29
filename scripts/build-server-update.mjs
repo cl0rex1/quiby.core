@@ -17,7 +17,7 @@ for (const id of ['quiby', 'offbalance']) {
   zip.addFile(file.path, bytes);
 }
 for (const directory of ['config', 'defaultconfigs']) {
-  for (const filename of ['offbalance-server.toml', 'quiby-server.toml']) {
+  for (const filename of ['offbalance-server.toml', 'quiby-server.toml', 'sable_player_ragdoll-server.toml']) {
     zip.addLocalFile(path.join(root, 'modpacks/quiby-s6/overrides', directory, filename), directory);
   }
 }
