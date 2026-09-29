@@ -234,42 +234,42 @@ export const App: React.FC = () => {
   const notifiedUpdateVersion = useRef<string | null>(null);
 
   useEffect(() => {
-    const savedSession = localStorage.getItem('quiby_session');
-    if (!savedSession) return;
-    const restored = storedSession();
-    if (!restored) {
-      localStorage.removeItem('quiby_session');
-      return;
-    }
+    if (!session?.token) return;
+    const token = session.token;
     const controller = new AbortController();
-    void fetch(`${SERVER_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${restored.token}` },
-      signal: controller.signal,
-    }).then(async response => {
-      if (response.status === 401 || response.status === 403) {
-        if (localStorage.getItem('quiby_session') === savedSession) {
+    let checking = false;
+    const refreshAccess = async () => {
+      if (checking) return;
+      checking = true;
+      try {
+        const response = await fetch(`${SERVER_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]),
+        });
+        if (controller.signal.aborted || storedSession()?.token !== token) return;
+        if (response.status === 401) {
           localStorage.removeItem('quiby_session');
           setSession(null);
           setIsProfileOpen(false);
           setIsAuthModalOpen(true);
+          return;
         }
-        return null;
-      }
-      if (!response.ok) return null;
-      return response.json() as Promise<{ user: AuthSession['user'] }>;
-    }).then(result => {
-      if (!result || localStorage.getItem('quiby_session') !== savedSession) return;
-      const { user } = result;
-      if (!user?.isWhitelisted) return;
-      const verifiedSession = { ...restored, user };
-      localStorage.setItem('quiby_session', JSON.stringify(verifiedSession));
-      setSession(verifiedSession);
-      setIsAuthModalOpen(false);
-    }).catch(() => {
-      // A temporary network failure must not sign the player out.
-    });
-    return () => controller.abort();
-  }, []);
+        if (!response.ok) return;
+        const { user } = await response.json() as { user: AuthSession['user'] };
+        const current = storedSession();
+        if (!user || controller.signal.aborted || current?.token !== token) return;
+        const verified = { ...current, user };
+        localStorage.setItem('quiby_session', JSON.stringify(verified));
+        setSession(verified);
+      } catch {
+        // Network errors must not change access or sign the player out.
+      } finally { checking = false; }
+    };
+    void refreshAccess();
+    const timer = window.setInterval(refreshAccess, 30000);
+    window.addEventListener('focus', refreshAccess);
+    return () => { controller.abort(); window.clearInterval(timer); window.removeEventListener('focus', refreshAccess); };
+  }, [session?.token]);
 
   // Initial Load (Saved Storage & IPC)
   useEffect(() => {
@@ -440,6 +440,10 @@ export const App: React.FC = () => {
       setIsAuthModalOpen(true);
       return;
     }
+    if (!session.user.isWhitelisted) {
+      handleNotify('Доступ к лаунчеру закрыт', 'Обратитесь к администрации quiby в Discord.', 'error');
+      return;
+    }
     setActiveTab('home');
     if (!window.quibyApi) return;
     try {
@@ -522,6 +526,12 @@ export const App: React.FC = () => {
           className="launcher-workspace flex-1 flex flex-col overflow-hidden relative"
         >
           <LauncherUpdateBanner state={launcherUpdate} />
+          {session && !session.user.isWhitelisted && (
+            <section role="alert" className="shrink-0 border-b border-red-400/40 bg-red-950/80 px-6 py-4 text-red-100">
+              <h2 className="font-bold">Доступ к лаунчеру закрыт</h2>
+              <p className="mt-1 text-sm">Запуск игры недоступен. Обратитесь к администрации quiby в Discord. После разрешения доступа плашка исчезнет автоматически.</p>
+            </section>
+          )}
           {isNotificationsOpen ? (
             <NotificationDetailView
               onToast={(title, type) => setActiveToast({ id: `copy-${Date.now()}`, title, type })}

@@ -1,3 +1,4 @@
+import { readModJar } from './jar.mjs';
 const $ = id => document.getElementById(id);
 let tab = 'mods', page = 1, selection = null, generation = 0;
 const names = { mods: ['Моды и вайтлист','Рассматривайте заявки и управляйте допуском конкретных файлов.'], players: ['Игроки','Аккаунты Discord, игровые имена и доступ к серверу.'], names: ['Смена ников','Проверяйте заявки перед изменением игрового имени и UUID.'], audit: ['Журнал действий','История решений, принятых через веб-панель.'] };
@@ -22,7 +23,7 @@ $('add-mod').onclick=()=>{selection={create:true};$('mod-fields').hidden=false;$
 $('decision-form').onsubmit=async e=>{e.preventDefault();e.submitter.disabled=true;try{const body={decision:selection.create?$('mod-decision').value:selection.decision,reason:$('reason').value};if(selection.create)Object.assign(body,{name:$('mod-name').value,filename:$('mod-filename').value,hash:$('mod-hash').value.trim()});await api(selection.create?'/mods':'/'+tab+'/'+selection.id,{method:selection.create?'POST':'PATCH',body:JSON.stringify(body)});$('decision').close();toast('Решение сохранено');await load();}catch(error){$('decision-error').textContent=error.message;}finally{e.submitter.disabled=false;}};
 async function load() {
   const mine=++generation; $('list').replaceChildren(el('div','Загрузка…','empty'));
-  const reviewed = tab==='mods'||tab==='names'; $('status').hidden=!reviewed; $('add-mod').hidden=tab!=='mods';
+  const reviewed = tab==='mods'||tab==='names'; $('status').hidden=!reviewed; $('add-mod').hidden=tab!=='mods'; $('upload-jar').hidden=tab!=='mods';
   $('title').textContent=names[tab][0];$('subtitle').textContent=names[tab][1];
   try {
     const [stats,data]=await Promise.all([api('/overview'),api('/'+tab+'?'+new URLSearchParams({page:String(page),search:$('search').value,status:reviewed?$('status').value:'all'}))]);
@@ -42,3 +43,17 @@ for(const b of document.querySelectorAll('[data-tab]'))b.onclick=()=>{tab=b.data
 let debounce;$('search').oninput=()=>{clearTimeout(debounce);debounce=setTimeout(()=>{page=1;void load();},250);};$('status').onchange=()=>{page=1;void load();};$('prev').onclick=()=>{page--;void load();};$('next').onclick=()=>{page++;void load();};$('refresh').onclick=()=>void load();
 setInterval(()=>{if(!$('app').hidden&&!$('decision').open&&document.visibilityState==='visible')void load();},30000);
 api('/session').then(enter).catch(showLogin);
+
+$('upload-jar').onclick=()=>$('jar-file').click();
+$('jar-file').onchange=async()=>{
+  const file=$('jar-file').files[0]; if(!file)return;
+  $('upload-jar').disabled=true;
+  try {
+    const mod=await readModJar(file);
+    $('add-mod').click();
+    $('mod-name').value=mod.name; $('mod-filename').value=mod.filename; $('mod-hash').value=mod.hash;
+    $('decision-title').textContent='Добавить мод';
+    $('decision-context').textContent=mod.name+(mod.version?' · '+mod.version:'')+' — файл обработан в браузере и не отправляется на сервер.';
+  } catch(e){toast(e.message||'Не удалось прочитать JAR');}
+  finally{$('upload-jar').disabled=false;$('jar-file').value='';}
+};

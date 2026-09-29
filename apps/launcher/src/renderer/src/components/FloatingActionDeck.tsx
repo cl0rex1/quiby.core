@@ -130,10 +130,11 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
             <button
               type="button"
               onClick={onLaunch}
+              disabled={!session.user.isWhitelisted}
               className="launcher-primary-button flex items-center gap-2.5 cursor-pointer press-feedback"
             >
               <Play size={16} fill="currentColor" />
-              <span>Запустить игру</span>
+              <span>{session.user.isWhitelisted ? 'Запустить игру' : 'Доступ закрыт'}</span>
             </button>
           )}
         </div>
