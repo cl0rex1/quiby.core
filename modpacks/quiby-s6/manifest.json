@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.9",
+  "version": "6.1.10",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 274069147,
+  "totalSize": 274075239,
   "files": [
     {
       "path": "config/aeronautics_utility_objects-server.toml",
@@ -504,9 +504,9 @@
     },
     {
       "path": "config/offbalance-server.toml",
-      "sha256": "23247ec1ae24a0f895d4027cd566cd9b030abd849e8fabaa5e1cc2c926be5e7d",
-      "size": 111,
-      "downloadUrl": "/api/modpack/files/imported/23247ec1ae24a0f895d4027cd566cd9b030abd849e8fabaa5e1cc2c926be5e7d/offbalance-server.toml",
+      "sha256": "a5af95340c1cfdd7a5f740f1cae9e561b4afdc5b0da84cb1b5a87d1687f956f9",
+      "size": 225,
+      "downloadUrl": "/api/modpack/files/imported/a5af95340c1cfdd7a5f740f1cae9e561b4afdc5b0da84cb1b5a87d1687f956f9/offbalance-server.toml",
       "action": "sync"
     },
     {
@@ -749,9 +749,9 @@
     },
     {
       "path": "defaultconfigs/offbalance-server.toml",
-      "sha256": "23247ec1ae24a0f895d4027cd566cd9b030abd849e8fabaa5e1cc2c926be5e7d",
-      "size": 111,
-      "downloadUrl": "/api/modpack/files/imported/23247ec1ae24a0f895d4027cd566cd9b030abd849e8fabaa5e1cc2c926be5e7d/offbalance-server.toml",
+      "sha256": "a5af95340c1cfdd7a5f740f1cae9e561b4afdc5b0da84cb1b5a87d1687f956f9",
+      "size": 225,
+      "downloadUrl": "/api/modpack/files/imported/a5af95340c1cfdd7a5f740f1cae9e561b4afdc5b0da84cb1b5a87d1687f956f9/offbalance-server.toml",
       "action": "sync"
     },
     {
@@ -1529,10 +1529,10 @@
       "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
-      "path": "mods/quiby-1.21.1-1.1.7.jar",
-      "sha256": "3ccf4c1c40cfd66e0a56e492e338c127b1b3c1bcdef15519975b74e20308311a",
-      "size": 3527823,
-      "downloadUrl": "/api/modpack/files/imported/3ccf4c1c40cfd66e0a56e492e338c127b1b3c1bcdef15519975b74e20308311a/quiby-1.21.1-1.1.7.jar",
+      "path": "mods/quiby-1.21.1-1.1.8.jar",
+      "sha256": "f508496629a3b60d6d6fed9ceada9b3f9a18e4256322239e077a7bed22d21795",
+      "size": 3533687,
+      "downloadUrl": "/api/modpack/files/imported/f508496629a3b60d6d6fed9ceada9b3f9a18e4256322239e077a7bed22d21795/quiby-1.21.1-1.1.8.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1541,15 +1541,15 @@
       ],
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.1.7",
+      "modVersion": "1.1.8",
       "modDescription": "Русская локализация, рецепты, скины, реакции на урон и фирменная загрузка Minecraft.",
       "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },
     {
-      "path": "mods/quiby-early-loading-1.21.1-1.1.7.jar",
+      "path": "mods/quiby-early-loading-1.21.1-1.1.8.jar",
       "sha256": "1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99",
       "size": 3036102,
-      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.7.jar",
+      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.8.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1558,7 +1558,7 @@
       ],
       "modId": "quiby_early_loading",
       "modName": "Quiby Early Loading",
-      "modVersion": "1.1.7",
+      "modVersion": "1.1.8",
       "modDescription": "Фирменная анимация на раннем экране NeoForge."
     },
     {
@@ -1810,7 +1810,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Исправлен конфликт кэша viewport Sodium с ранним экраном NeoForge: меню больше не остаётся в нижнем левом углу после полноэкранного запуска. Проверено в полноэкранном режиме без F11. Quiby 1.1.7. Клиентское исправление; сервер на 6.1.7 и лаунчер обновлять не требуется.",
+  "changelog": "Quiby 1.1.8: возврат игрока к текущему положению offline-ragdoll, сохранение позиции тела раз в секунду. Off Balance: hurtProxyEnabled=false, dismountRequireGrounded=true, dismountMaxSpeed=1.0, dismountMaxSpin=1.5, dismountHoldTicks=10. Требуется обновить Minecraft-сервер и настройки Off Balance. Лаунчер обновлять не нужно. Сетевой сценарий перемещения тела и повторного входа требует проверки тестерами.",
   "serverAddress": "",
   "updatedAt": "2026-09-28T21:50:43.482158Z"
 }
