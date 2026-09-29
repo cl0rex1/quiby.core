@@ -16,8 +16,11 @@ for (const id of ['quiby', 'offbalance']) {
   if (crypto.createHash('sha256').update(bytes).digest('hex') !== file.sha256) throw new Error(`Hash mismatch: ${id}`);
   zip.addFile(file.path, bytes);
 }
-zip.addLocalFile(path.join(root, 'modpacks/quiby-s6/overrides/defaultconfigs/offbalance-server.toml'), 'defaultconfigs');
-zip.addLocalFile(path.join(root, 'modpacks/quiby-s6/overrides/config/offbalance-server.toml'), 'config');
+for (const directory of ['config', 'defaultconfigs']) {
+  for (const filename of ['offbalance-server.toml', 'quiby-server.toml']) {
+    zip.addLocalFile(path.join(root, 'modpacks/quiby-s6/overrides', directory, filename), directory);
+  }
+}
 zip.addFile('README.md', fs.readFileSync(path.join(root, `docs/server-update-${manifest.version}.md`)));
 const output = path.join(root, 'temp', `quiby-server-update-${manifest.version}.zip`);
 fs.mkdirSync(path.dirname(output), { recursive: true });

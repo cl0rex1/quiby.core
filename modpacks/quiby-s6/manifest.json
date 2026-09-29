@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.11",
+  "version": "6.1.12",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,13 +10,20 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 274075291,
+  "totalSize": 274075936,
   "files": [
     {
-      "path": "config/aeronautics_utility_objects-server.toml",
-      "sha256": "edea082f1cc16fd1ceff50c9a7166ae98e8e1239346a47b157d5055355542af7",
-      "size": 6925,
-      "downloadUrl": "/api/modpack/files/imported/edea082f1cc16fd1ceff50c9a7166ae98e8e1239346a47b157d5055355542af7/aeronautics_utility_objects-server.toml",
+      "path": "config/DistantHorizons.toml",
+      "sha256": "4b0055722c6906ddf3c839c8c0eca80a01262b7ec1368d63a94f09197d24d0b8",
+      "size": 37983,
+      "downloadUrl": "/api/modpack/files/imported/4b0055722c6906ddf3c839c8c0eca80a01262b7ec1368d63a94f09197d24d0b8/DistantHorizons.toml",
+      "action": "keep_local"
+    },
+    {
+      "path": "config/MouseTweaks.cfg",
+      "sha256": "4069ce1a439d8c37453c1b1e9f2037e0942674c7e48723a39b37eab245792ad4",
+      "size": 135,
+      "downloadUrl": "/api/modpack/files/imported/4069ce1a439d8c37453c1b1e9f2037e0942674c7e48723a39b37eab245792ad4/MouseTweaks.cfg",
       "action": "keep_local"
     },
     {
@@ -24,6 +31,13 @@
       "sha256": "a9302b0253e494e7d80f0a2785bf4514b0b67da85796437ca032482db62be514",
       "size": 3066,
       "downloadUrl": "/api/modpack/files/imported/a9302b0253e494e7d80f0a2785bf4514b0b67da85796437ca032482db62be514/aeronautics-server.toml",
+      "action": "keep_local"
+    },
+    {
+      "path": "config/aeronautics_utility_objects-server.toml",
+      "sha256": "edea082f1cc16fd1ceff50c9a7166ae98e8e1239346a47b157d5055355542af7",
+      "size": 6925,
+      "downloadUrl": "/api/modpack/files/imported/edea082f1cc16fd1ceff50c9a7166ae98e8e1239346a47b157d5055355542af7/aeronautics_utility_objects-server.toml",
       "action": "keep_local"
     },
     {
@@ -118,6 +132,27 @@
       "action": "keep_local"
     },
     {
+      "path": "config/create-client.toml",
+      "sha256": "cce3eab1a290cc1f0eada00031f0577f661f883aee3438cf1139283c65d1f319",
+      "size": 4795,
+      "downloadUrl": "/api/modpack/files/imported/cce3eab1a290cc1f0eada00031f0577f661f883aee3438cf1139283c65d1f319/create-client.toml",
+      "action": "keep_local"
+    },
+    {
+      "path": "config/create-common.toml",
+      "sha256": "2e77b1d93b40ce3f381ad7eb2a9e6d7148de917518be5c2616939a4369c4b140",
+      "size": 153,
+      "downloadUrl": "/api/modpack/files/imported/2e77b1d93b40ce3f381ad7eb2a9e6d7148de917518be5c2616939a4369c4b140/create-common.toml",
+      "action": "keep_local"
+    },
+    {
+      "path": "config/create-server.toml",
+      "sha256": "36216a05f3ed63106ba587c8c24ed6315385829e7f3dae695dcf545aba41a270",
+      "size": 16890,
+      "downloadUrl": "/api/modpack/files/imported/36216a05f3ed63106ba587c8c24ed6315385829e7f3dae695dcf545aba41a270/create-server.toml",
+      "action": "keep_local"
+    },
+    {
       "path": "config/create_connected-common.toml",
       "sha256": "0c352f9d7c4bcf09d676222a1cd1cba8689b0dd1ca0847ff90427bae620a5ec6",
       "size": 1753,
@@ -150,27 +185,6 @@
       "sha256": "216fe285567809569094f14c562486225b3dbc882badba41a572b55724283607",
       "size": 11731,
       "downloadUrl": "/api/modpack/files/imported/216fe285567809569094f14c562486225b3dbc882badba41a572b55724283607/create_radar-server.toml",
-      "action": "keep_local"
-    },
-    {
-      "path": "config/create-client.toml",
-      "sha256": "cce3eab1a290cc1f0eada00031f0577f661f883aee3438cf1139283c65d1f319",
-      "size": 4795,
-      "downloadUrl": "/api/modpack/files/imported/cce3eab1a290cc1f0eada00031f0577f661f883aee3438cf1139283c65d1f319/create-client.toml",
-      "action": "keep_local"
-    },
-    {
-      "path": "config/create-common.toml",
-      "sha256": "2e77b1d93b40ce3f381ad7eb2a9e6d7148de917518be5c2616939a4369c4b140",
-      "size": 153,
-      "downloadUrl": "/api/modpack/files/imported/2e77b1d93b40ce3f381ad7eb2a9e6d7148de917518be5c2616939a4369c4b140/create-common.toml",
-      "action": "keep_local"
-    },
-    {
-      "path": "config/create-server.toml",
-      "sha256": "36216a05f3ed63106ba587c8c24ed6315385829e7f3dae695dcf545aba41a270",
-      "size": 16890,
-      "downloadUrl": "/api/modpack/files/imported/36216a05f3ed63106ba587c8c24ed6315385829e7f3dae695dcf545aba41a270/create-server.toml",
       "action": "keep_local"
     },
     {
@@ -251,13 +265,6 @@
       "action": "keep_local"
     },
     {
-      "path": "config/DistantHorizons.toml",
-      "sha256": "4b0055722c6906ddf3c839c8c0eca80a01262b7ec1368d63a94f09197d24d0b8",
-      "size": 37983,
-      "downloadUrl": "/api/modpack/files/imported/4b0055722c6906ddf3c839c8c0eca80a01262b7ec1368d63a94f09197d24d0b8/DistantHorizons.toml",
-      "action": "keep_local"
-    },
-    {
       "path": "config/entity_model_features.json",
       "sha256": "4d13dfd4a71e0f9b0e6f673233856185f10bc2465916d7e43ace4e3621334067",
       "size": 1258,
@@ -286,20 +293,6 @@
       "action": "sync"
     },
     {
-      "path": "config/explosionoverhaul/explosionoverhaul-client.toml",
-      "sha256": "a32e9d82e53398df4085151a172ea0265f8d9504dfa402a2b639dad0df8dd0a2",
-      "size": 6461,
-      "downloadUrl": "/api/modpack/files/imported/a32e9d82e53398df4085151a172ea0265f8d9504dfa402a2b639dad0df8dd0a2/explosionoverhaul-client.toml",
-      "action": "sync"
-    },
-    {
-      "path": "config/explosionoverhaul/explosionoverhaul-common.toml",
-      "sha256": "c698b719808e314196dde34f458264e5da659083979237f0a137725136734ade",
-      "size": 10095,
-      "downloadUrl": "/api/modpack/files/imported/c698b719808e314196dde34f458264e5da659083979237f0a137725136734ade/explosionoverhaul-common.toml",
-      "action": "sync"
-    },
-    {
       "path": "config/explosionoverhaul/ExplosionSourceBlacklist.json",
       "sha256": "e3ef4e7cf31d270d503fce8b9b083097580f1a2e52741b3d09b557e103672b8e",
       "size": 86,
@@ -311,6 +304,20 @@
       "sha256": "f78e3dc6590c2838db14377251cdc814fe69a1e3eafadcbc8ef5f0061abcffe0",
       "size": 2022,
       "downloadUrl": "/api/modpack/files/imported/f78e3dc6590c2838db14377251cdc814fe69a1e3eafadcbc8ef5f0061abcffe0/GlassBlacklist.json",
+      "action": "sync"
+    },
+    {
+      "path": "config/explosionoverhaul/explosionoverhaul-client.toml",
+      "sha256": "a32e9d82e53398df4085151a172ea0265f8d9504dfa402a2b639dad0df8dd0a2",
+      "size": 6461,
+      "downloadUrl": "/api/modpack/files/imported/a32e9d82e53398df4085151a172ea0265f8d9504dfa402a2b639dad0df8dd0a2/explosionoverhaul-client.toml",
+      "action": "sync"
+    },
+    {
+      "path": "config/explosionoverhaul/explosionoverhaul-common.toml",
+      "sha256": "c698b719808e314196dde34f458264e5da659083979237f0a137725136734ade",
+      "size": 10095,
+      "downloadUrl": "/api/modpack/files/imported/c698b719808e314196dde34f458264e5da659083979237f0a137725136734ade/explosionoverhaul-common.toml",
       "action": "sync"
     },
     {
@@ -475,13 +482,6 @@
       "action": "keep_local"
     },
     {
-      "path": "config/MouseTweaks.cfg",
-      "sha256": "4069ce1a439d8c37453c1b1e9f2037e0942674c7e48723a39b37eab245792ad4",
-      "size": 135,
-      "downloadUrl": "/api/modpack/files/imported/4069ce1a439d8c37453c1b1e9f2037e0942674c7e48723a39b37eab245792ad4/MouseTweaks.cfg",
-      "action": "keep_local"
-    },
-    {
       "path": "config/neoforge-client.toml",
       "sha256": "d58d93e2c429410d0abf25507d1679f732e1023b03bb52414348efcf5cf3ddb0",
       "size": 578,
@@ -504,9 +504,9 @@
     },
     {
       "path": "config/offbalance-server.toml",
-      "sha256": "f944b7eb943ca4e710a6192df779a68d4ee1c5476b73dd3bf451c1c21edb0396",
+      "sha256": "734f47b4e5feea5e1c7db17d09a1c7d48871f3f9e209d10ae46a5adae7d2d5f2",
       "size": 251,
-      "downloadUrl": "/api/modpack/files/imported/f944b7eb943ca4e710a6192df779a68d4ee1c5476b73dd3bf451c1c21edb0396/offbalance-server.toml",
+      "downloadUrl": "/api/modpack/files/imported/734f47b4e5feea5e1c7db17d09a1c7d48871f3f9e209d10ae46a5adae7d2d5f2/offbalance-server.toml",
       "action": "sync"
     },
     {
@@ -552,6 +552,13 @@
       "action": "keep_local"
     },
     {
+      "path": "config/quiby-server.toml",
+      "sha256": "e72815506a3ba7b2370bc26b6b923a8080861caba45f169aafc2de91d3fee1bc",
+      "size": 144,
+      "downloadUrl": "/api/modpack/files/imported/e72815506a3ba7b2370bc26b6b923a8080861caba45f169aafc2de91d3fee1bc/quiby-server.toml",
+      "action": "sync"
+    },
+    {
       "path": "config/ritchiesprojectilelib-server.toml",
       "sha256": "793c05c7f9975032f536f7b9702a4f892b8beb31e641af1f12ee9c96aed4d013",
       "size": 710,
@@ -580,13 +587,6 @@
       "action": "keep_local"
     },
     {
-      "path": "config/roughlyenoughitems/pinyin_double.properties",
-      "sha256": "87cbf41d58a8c765c695c2656a632ba0818d661e47ea1239b9670ab51bb890a9",
-      "size": 74,
-      "downloadUrl": "/api/modpack/files/imported/87cbf41d58a8c765c695c2656a632ba0818d661e47ea1239b9670ab51bb890a9/pinyin_double.properties",
-      "action": "keep_local"
-    },
-    {
       "path": "config/roughlyenoughitems/pinyin.properties",
       "sha256": "d9d1fdad4c458536b7b4acae20a68882b9a214c6b28d09bdcdc9fd178ad16716",
       "size": 49,
@@ -594,31 +594,10 @@
       "action": "keep_local"
     },
     {
-      "path": "config/sable_player_ragdoll_patch-client.toml",
-      "sha256": "f66d17213ffcb2d82bda1b8620ae7e3fa573afd1b50767f0c88455962979d42c",
-      "size": 1336,
-      "downloadUrl": "/api/modpack/files/imported/f66d17213ffcb2d82bda1b8620ae7e3fa573afd1b50767f0c88455962979d42c/sable_player_ragdoll_patch-client.toml",
-      "action": "keep_local"
-    },
-    {
-      "path": "config/sable_player_ragdoll_patch-server.toml",
-      "sha256": "f276cd1dcab62096383740ee1602dc1b54b93ab3bea2458f30d93f202c4ce987",
-      "size": 644,
-      "downloadUrl": "/api/modpack/files/imported/f276cd1dcab62096383740ee1602dc1b54b93ab3bea2458f30d93f202c4ce987/sable_player_ragdoll_patch-server.toml",
-      "action": "keep_local"
-    },
-    {
-      "path": "config/sable_player_ragdoll-client.toml",
-      "sha256": "ba2fc82938fa99ce48435c574cdd542aff177dd79846828c630447fc9ecc860c",
-      "size": 604,
-      "downloadUrl": "/api/modpack/files/imported/ba2fc82938fa99ce48435c574cdd542aff177dd79846828c630447fc9ecc860c/sable_player_ragdoll-client.toml",
-      "action": "keep_local"
-    },
-    {
-      "path": "config/sable_player_ragdoll-server.toml",
-      "sha256": "1b02af673b3f0d65a5d70b8c1c531d07c3663dab7fbd87066287b78d91b36aed",
-      "size": 3576,
-      "downloadUrl": "/api/modpack/files/imported/1b02af673b3f0d65a5d70b8c1c531d07c3663dab7fbd87066287b78d91b36aed/sable_player_ragdoll-server.toml",
+      "path": "config/roughlyenoughitems/pinyin_double.properties",
+      "sha256": "87cbf41d58a8c765c695c2656a632ba0818d661e47ea1239b9670ab51bb890a9",
+      "size": 74,
+      "downloadUrl": "/api/modpack/files/imported/87cbf41d58a8c765c695c2656a632ba0818d661e47ea1239b9670ab51bb890a9/pinyin_double.properties",
       "action": "keep_local"
     },
     {
@@ -640,6 +619,34 @@
       "sha256": "9c3e9012ea23ca1449fdfc7df7a8134d4f0f2eacc46f8f8c1ab9ccb2b4510783",
       "size": 328,
       "downloadUrl": "/api/modpack/files/imported/9c3e9012ea23ca1449fdfc7df7a8134d4f0f2eacc46f8f8c1ab9ccb2b4510783/sable-server.toml",
+      "action": "keep_local"
+    },
+    {
+      "path": "config/sable_player_ragdoll-client.toml",
+      "sha256": "ba2fc82938fa99ce48435c574cdd542aff177dd79846828c630447fc9ecc860c",
+      "size": 604,
+      "downloadUrl": "/api/modpack/files/imported/ba2fc82938fa99ce48435c574cdd542aff177dd79846828c630447fc9ecc860c/sable_player_ragdoll-client.toml",
+      "action": "keep_local"
+    },
+    {
+      "path": "config/sable_player_ragdoll-server.toml",
+      "sha256": "1b02af673b3f0d65a5d70b8c1c531d07c3663dab7fbd87066287b78d91b36aed",
+      "size": 3576,
+      "downloadUrl": "/api/modpack/files/imported/1b02af673b3f0d65a5d70b8c1c531d07c3663dab7fbd87066287b78d91b36aed/sable_player_ragdoll-server.toml",
+      "action": "keep_local"
+    },
+    {
+      "path": "config/sable_player_ragdoll_patch-client.toml",
+      "sha256": "f66d17213ffcb2d82bda1b8620ae7e3fa573afd1b50767f0c88455962979d42c",
+      "size": 1336,
+      "downloadUrl": "/api/modpack/files/imported/f66d17213ffcb2d82bda1b8620ae7e3fa573afd1b50767f0c88455962979d42c/sable_player_ragdoll_patch-client.toml",
+      "action": "keep_local"
+    },
+    {
+      "path": "config/sable_player_ragdoll_patch-server.toml",
+      "sha256": "f276cd1dcab62096383740ee1602dc1b54b93ab3bea2458f30d93f202c4ce987",
+      "size": 644,
+      "downloadUrl": "/api/modpack/files/imported/f276cd1dcab62096383740ee1602dc1b54b93ab3bea2458f30d93f202c4ce987/sable_player_ragdoll_patch-server.toml",
       "action": "keep_local"
     },
     {
@@ -749,10 +756,215 @@
     },
     {
       "path": "defaultconfigs/offbalance-server.toml",
-      "sha256": "f944b7eb943ca4e710a6192df779a68d4ee1c5476b73dd3bf451c1c21edb0396",
+      "sha256": "734f47b4e5feea5e1c7db17d09a1c7d48871f3f9e209d10ae46a5adae7d2d5f2",
       "size": 251,
-      "downloadUrl": "/api/modpack/files/imported/f944b7eb943ca4e710a6192df779a68d4ee1c5476b73dd3bf451c1c21edb0396/offbalance-server.toml",
+      "downloadUrl": "/api/modpack/files/imported/734f47b4e5feea5e1c7db17d09a1c7d48871f3f9e209d10ae46a5adae7d2d5f2/offbalance-server.toml",
       "action": "sync"
+    },
+    {
+      "path": "defaultconfigs/quiby-server.toml",
+      "sha256": "e72815506a3ba7b2370bc26b6b923a8080861caba45f169aafc2de91d3fee1bc",
+      "size": 144,
+      "downloadUrl": "/api/modpack/files/imported/e72815506a3ba7b2370bc26b6b923a8080861caba45f169aafc2de91d3fee1bc/quiby-server.toml",
+      "action": "sync"
+    },
+    {
+      "path": "mods/BadOptimizations-2.4.1-1.21.1.jar",
+      "sha256": "22e2467892d3706f43d1cf2aa637785bb8601c20b0098a82ab956e6a8fc4d2ba",
+      "size": 283566,
+      "profiles": [
+        "full",
+        "optimal"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/22e2467892d3706f43d1cf2aa637785bb8601c20b0098a82ab956e6a8fc4d2ba/BadOptimizations-2.4.1-1.21.1.jar",
+      "action": "sync",
+      "modId": "badoptimizations",
+      "modName": "BadOptimizations",
+      "modVersion": "2.4.1",
+      "modDescription": "Optimization mod that focuses on things other than rendering"
+    },
+    {
+      "path": "mods/BetterPingDisplay-1.21.1-1.1.jar",
+      "sha256": "f8388de4831ca70f3e94d98d4655278b514f8589234fa92df0d6b2ff1dff321b",
+      "size": 13871,
+      "profiles": [
+        "full",
+        "optimal"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/f8388de4831ca70f3e94d98d4655278b514f8589234fa92df0d6b2ff1dff321b/BetterPingDisplay-1.21.1-1.1.jar",
+      "action": "sync",
+      "modId": "betterpingdisplay",
+      "modName": "Better Ping Display",
+      "modVersion": "1.1",
+      "modDescription": "Shows the actual ping number instead of just bars in the player list.",
+      "modIconUrl": "/api/modpack/files/imported/icons/4e037c01e80607e25fe7c1829f69a288cc474b93e17b8e8832ce7e8437cc0621.png"
+    },
+    {
+      "path": "mods/Clumps-neoforge-1.21.1-19.0.0.1.jar",
+      "sha256": "b524ccdace2ef8fd19f5b2074f7de1103ac5065c52553f064c00e098346c293e",
+      "size": 18382,
+      "profiles": [
+        "full",
+        "optimal"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/b524ccdace2ef8fd19f5b2074f7de1103ac5065c52553f064c00e098346c293e/Clumps-neoforge-1.21.1-19.0.0.1.jar",
+      "action": "sync",
+      "modId": "clumps",
+      "modName": "Clumps",
+      "modVersion": "19.0.0.1",
+      "modDescription": "Clumps xp orbs together.",
+      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/clumps",
+      "modIconUrl": "/api/modpack/files/imported/icons/0f837ec718ec79dfa87f5311b772f667e2d6b42f0fb38750f16f34adce883183.png"
+    },
+    {
+      "path": "mods/Controlling-neoforge-1.21.1-19.0.5.jar",
+      "sha256": "cc525fb6b030d9e4d33176983f278919e17b33935e2ca568929bdfa98f2b44a0",
+      "size": 77555,
+      "profiles": [
+        "full",
+        "optimal"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/cc525fb6b030d9e4d33176983f278919e17b33935e2ca568929bdfa98f2b44a0/Controlling-neoforge-1.21.1-19.0.5.jar",
+      "action": "sync",
+      "modId": "controlling",
+      "modName": "Controlling",
+      "modVersion": "19.0.5",
+      "modDescription": "Adds the ability to search for keybinds using their name in the KeyBinding menu, this allows players to easily find a key binding in the menu.",
+      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/controlling",
+      "modIconUrl": "/api/modpack/files/imported/icons/4cd83f1cd4921750b0c985197221170e2bd41d87fe1828c699ee87ba262f80e7.png"
+    },
+    {
+      "path": "mods/DistantHorizons-3.3.2-1.21.1-fabric-neoforge.jar",
+      "sha256": "cf63717e037bc2576933d63d11246b5f2f317f4cd5b6d4ea1ea077ad027e4a36",
+      "size": 28224156,
+      "profiles": [
+        "full"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/cf63717e037bc2576933d63d11246b5f2f317f4cd5b6d4ea1ea077ad027e4a36/DistantHorizons-3.3.2-1.21.1-fabric-neoforge.jar",
+      "action": "sync",
+      "modId": "distanthorizons",
+      "modName": "Distant Horizons",
+      "modVersion": "3.3.2",
+      "modDescription": "This mod generates and renders simplified terrain beyond the normal view distance at a low performance cost. Allowing you to see much farther without turning your game into a slideshow.",
+      "modProjectUrl": "https://modrinth.com/mod/distanthorizons",
+      "modIconUrl": "/api/modpack/files/imported/icons/c09f183303af8256ddf1650d5160eb3dfabdab1f874e7c62170636d9818791ec.png"
+    },
+    {
+      "path": "mods/FarmersDelight-1.21.1-1.3.4.jar",
+      "sha256": "139ad7696462c89c03eea463f805abffa552526c5dadaadae221dd9624cb197c",
+      "size": 3160490,
+      "profiles": [
+        "full",
+        "optimal",
+        "clean"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/139ad7696462c89c03eea463f805abffa552526c5dadaadae221dd9624cb197c/FarmersDelight-1.21.1-1.3.4.jar",
+      "action": "sync",
+      "modId": "farmersdelight",
+      "modName": "Farmer's Delight",
+      "modVersion": "1.3.4",
+      "modDescription": "A cozy farming and cooking expansion for Minecraft!",
+      "modProjectUrl": "https://github.com/vectorwing/FarmersDelight",
+      "modIconUrl": "/api/modpack/files/imported/icons/6c1fd924c54c5048e882845374ece6a8ab27080b2931508b52a6bf8f84403e97.png"
+    },
+    {
+      "path": "mods/ImmediatelyFast-NeoForge-1.6.14+1.21.1.jar",
+      "sha256": "15bf9bd6d8e3ae8ad35c5a4d90680424b534d9762d698c0a466965afcab5dd78",
+      "size": 365195,
+      "profiles": [
+        "full",
+        "optimal"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/15bf9bd6d8e3ae8ad35c5a4d90680424b534d9762d698c0a466965afcab5dd78/ImmediatelyFast-NeoForge-1.6.14%2B1.21.1.jar",
+      "action": "sync",
+      "modId": "immediatelyfast",
+      "modName": "ImmediatelyFast",
+      "modVersion": "1.6.14+1.21.1",
+      "modDescription": "Speed up and optimize immediate mode rendering in Minecraft",
+      "modProjectUrl": "https://github.com/RaphiMC/ImmediatelyFast",
+      "modIconUrl": "/api/modpack/files/imported/icons/985ac7bc84f72a564d0c3fda47f64c0c465397c836dc0fb6d4ba6ef865bd1294.png"
+    },
+    {
+      "path": "mods/InvMove-0.9.3+1.21.1-NeoForge.jar",
+      "sha256": "e84329e06d40346a88b3eda5985500ded34efad2ad30c43f1dd3a486eff58d1b",
+      "size": 87005,
+      "profiles": [
+        "full",
+        "optimal"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/e84329e06d40346a88b3eda5985500ded34efad2ad30c43f1dd3a486eff58d1b/InvMove-0.9.3%2B1.21.1-NeoForge.jar",
+      "action": "sync",
+      "modId": "invmove",
+      "modName": "InvMove",
+      "modVersion": "0.9.3",
+      "modDescription": "Lets you move while in inventories.",
+      "modIconUrl": "/api/modpack/files/imported/icons/6436256b12c8c3776c3e9273b6e4b25a11eb35385f7aa34dc5d9d9c19153c188.png"
+    },
+    {
+      "path": "mods/Jade-1.21.1-NeoForge-15.10.6.jar",
+      "sha256": "276f1f65a20d04f536989c4f311949d770b52c440c23c2b904a08860f3c93810",
+      "size": 726853,
+      "profiles": [
+        "full",
+        "optimal"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/276f1f65a20d04f536989c4f311949d770b52c440c23c2b904a08860f3c93810/Jade-1.21.1-NeoForge-15.10.6.jar",
+      "action": "sync",
+      "modId": "jade",
+      "modName": "Jade",
+      "modVersion": "15.10.6+neoforge",
+      "modDescription": "Minecraft mod shows what you are looking at. (Hwyla fork)",
+      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/jade",
+      "modIconUrl": "/api/modpack/files/imported/icons/db278b858ddc24d767f2c33454433595ab949aff6e410b75dcf0e0395936714d.png"
+    },
+    {
+      "path": "mods/MouseTweaks-neoforge-mc1.21-2.26.1.jar",
+      "sha256": "68e6f4201c5de97b77929a7215c9552495696ca6a3bf3ae4eacc34e135f6cc8b",
+      "size": 73938,
+      "profiles": [
+        "full",
+        "optimal"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/68e6f4201c5de97b77929a7215c9552495696ca6a3bf3ae4eacc34e135f6cc8b/MouseTweaks-neoforge-mc1.21-2.26.1.jar",
+      "action": "sync",
+      "modId": "mousetweaks",
+      "modName": "Mouse Tweaks",
+      "modVersion": "2.26.1",
+      "modDescription": "A mod that enhances the inventory management by adding various additional functions to the usual mouse buttons.",
+      "modProjectUrl": "https://minecraft.curseforge.com/projects/mouse-tweaks",
+      "modIconUrl": "/api/modpack/files/imported/icons/43e8e2d2ea11cc999a282da455eae3374884717be6cb6741a2911dbacfef490c.png"
+    },
+    {
+      "path": "mods/RoughlyEnoughItems-16.0.799-neoforge.jar",
+      "sha256": "dae9610fd6da7bbd55c7836fcce4bb25e86e7bd000d383c9caa54b506141e2ee",
+      "size": 2384445,
+      "profiles": [
+        "full",
+        "optimal"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/dae9610fd6da7bbd55c7836fcce4bb25e86e7bd000d383c9caa54b506141e2ee/RoughlyEnoughItems-16.0.799-neoforge.jar",
+      "action": "sync",
+      "modId": "roughlyenoughitems",
+      "modName": "Roughly Enough Items (REI)",
+      "modVersion": "16.0.799",
+      "modDescription": "To allow players to view items and recipes."
+    },
+    {
+      "path": "mods/Searchables-neoforge-1.21.1-1.0.2.jar",
+      "sha256": "ca193f0c69033d8f709f9e073a7c1ef4ea46714e5c2f94eb23ace12781c6aa68",
+      "size": 77326,
+      "profiles": [
+        "full",
+        "optimal"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/ca193f0c69033d8f709f9e073a7c1ef4ea46714e5c2f94eb23ace12781c6aa68/Searchables-neoforge-1.21.1-1.0.2.jar",
+      "action": "sync",
+      "modId": "searchables",
+      "modName": "Searchables",
+      "modVersion": "1.0.2",
+      "modDescription": "A library mod to facilitate adding search bars with auto complete and search types.",
+      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/searchables",
+      "modIconUrl": "/api/modpack/files/imported/icons/0e041a45ef527e2509132df4cc76c4bd653a5c42232049eb12be341e16b91ed4.png"
     },
     {
       "path": "mods/aeroworks-1.5.0.jar",
@@ -789,21 +1001,6 @@
       "modIconUrl": "/api/modpack/files/imported/icons/4557520b0d65c4cbc6457d69195484f6b18b427b88e9e18904b961c9ece8ffd3.png"
     },
     {
-      "path": "mods/BadOptimizations-2.4.1-1.21.1.jar",
-      "sha256": "22e2467892d3706f43d1cf2aa637785bb8601c20b0098a82ab956e6a8fc4d2ba",
-      "size": 283566,
-      "profiles": [
-        "full",
-        "optimal"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/22e2467892d3706f43d1cf2aa637785bb8601c20b0098a82ab956e6a8fc4d2ba/BadOptimizations-2.4.1-1.21.1.jar",
-      "action": "sync",
-      "modId": "badoptimizations",
-      "modName": "BadOptimizations",
-      "modVersion": "2.4.1",
-      "modDescription": "Optimization mod that focuses on things other than rendering"
-    },
-    {
       "path": "mods/balm-neoforge-1.21.1-21.0.66.jar",
       "sha256": "6be660e1f6d169553bf44f66d4f78bb9e96a1d66ce108d9608819e3ce6bfba34",
       "size": 783793,
@@ -819,22 +1016,6 @@
       "modDescription": "Abstraction Layer (but not really) for Blay's multiplatform mods",
       "modProjectUrl": "https://mods.twelveiterations.com/",
       "modIconUrl": "/api/modpack/files/imported/icons/b0fca145610251c81e12b28b2aeab7d905f1c52a036756af5554252e4a3534d2.png"
-    },
-    {
-      "path": "mods/BetterPingDisplay-1.21.1-1.1.jar",
-      "sha256": "f8388de4831ca70f3e94d98d4655278b514f8589234fa92df0d6b2ff1dff321b",
-      "size": 13871,
-      "profiles": [
-        "full",
-        "optimal"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/f8388de4831ca70f3e94d98d4655278b514f8589234fa92df0d6b2ff1dff321b/BetterPingDisplay-1.21.1-1.1.jar",
-      "action": "sync",
-      "modId": "betterpingdisplay",
-      "modName": "Better Ping Display",
-      "modVersion": "1.1",
-      "modDescription": "Shows the actual ping number instead of just bars in the player list.",
-      "modIconUrl": "/api/modpack/files/imported/icons/4e037c01e80607e25fe7c1829f69a288cc474b93e17b8e8832ce7e8437cc0621.png"
     },
     {
       "path": "mods/c2me-neoforge-mc1.21.1-0.4.0-alpha.0.122.jar",
@@ -902,23 +1083,6 @@
       "modDescription": "An API for config screens."
     },
     {
-      "path": "mods/Clumps-neoforge-1.21.1-19.0.0.1.jar",
-      "sha256": "b524ccdace2ef8fd19f5b2074f7de1103ac5065c52553f064c00e098346c293e",
-      "size": 18382,
-      "profiles": [
-        "full",
-        "optimal"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/b524ccdace2ef8fd19f5b2074f7de1103ac5065c52553f064c00e098346c293e/Clumps-neoforge-1.21.1-19.0.0.1.jar",
-      "action": "sync",
-      "modId": "clumps",
-      "modName": "Clumps",
-      "modVersion": "19.0.0.1",
-      "modDescription": "Clumps xp orbs together.",
-      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/clumps",
-      "modIconUrl": "/api/modpack/files/imported/icons/0f837ec718ec79dfa87f5311b772f667e2d6b42f0fb38750f16f34adce883183.png"
-    },
-    {
       "path": "mods/contraption-lights-neoforge-1.21.1-1.5.1.jar",
       "sha256": "e5682596edeab008828c8c7bbd71df55568a0a9fc628c3564f37f3e7c7f4ef0c",
       "size": 851178,
@@ -931,23 +1095,6 @@
       "modName": "Contraption Lights",
       "modVersion": "1.5.1",
       "modDescription": "Adds coloured dynamic lights that move with your Create contraptions and Sable sub-levels, flowing both ways between your builds and the world."
-    },
-    {
-      "path": "mods/Controlling-neoforge-1.21.1-19.0.5.jar",
-      "sha256": "cc525fb6b030d9e4d33176983f278919e17b33935e2ca568929bdfa98f2b44a0",
-      "size": 77555,
-      "profiles": [
-        "full",
-        "optimal"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/cc525fb6b030d9e4d33176983f278919e17b33935e2ca568929bdfa98f2b44a0/Controlling-neoforge-1.21.1-19.0.5.jar",
-      "action": "sync",
-      "modId": "controlling",
-      "modName": "Controlling",
-      "modVersion": "19.0.5",
-      "modDescription": "Adds the ability to search for keybinds using their name in the KeyBinding menu, this allows players to easily find a key binding in the menu.",
-      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/controlling",
-      "modIconUrl": "/api/modpack/files/imported/icons/4cd83f1cd4921750b0c985197221170e2bd41d87fe1828c699ee87ba262f80e7.png"
     },
     {
       "path": "mods/coolrain-1.21.1-NeoForge-1.0.2.jar",
@@ -980,6 +1127,41 @@
       "modDescription": "All the copycats you've ever wanted, combined into a single mod!",
       "modProjectUrl": "https://github.com/copycats-plus/copycats",
       "modIconUrl": "/api/modpack/files/imported/icons/c9ba39f94232bc598e077bc01f8ba137125e25c9b95a36a884b46ed7ae73fe0c.png"
+    },
+    {
+      "path": "mods/create-1.21.1-6.0.10.jar",
+      "sha256": "ef87fe5709f1ba1f5b8bb20a2925b5afb4669e178fd6d8bf10c167759eefe37a",
+      "size": 19123767,
+      "profiles": [
+        "full",
+        "optimal",
+        "clean"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/ef87fe5709f1ba1f5b8bb20a2925b5afb4669e178fd6d8bf10c167759eefe37a/create-1.21.1-6.0.10.jar",
+      "action": "sync",
+      "modId": "create",
+      "modName": "Create",
+      "modVersion": "6.0.10",
+      "modDescription": "Technology that empowers the player.",
+      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/create",
+      "modIconUrl": "/api/modpack/files/imported/icons/075cd96b98d182688c1119c6026761be644d6d9c8e2cce43c2761cb1ec946374.png"
+    },
+    {
+      "path": "mods/create-aeronautics-bundled-1.21.1-1.3.2.jar",
+      "sha256": "a3f330d4757640f8715d991a43eedb826e4d0e51558d859c843ae6693bd35f1e",
+      "size": 33123131,
+      "profiles": [
+        "full",
+        "optimal",
+        "clean"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/a3f330d4757640f8715d991a43eedb826e4d0e51558d859c843ae6693bd35f1e/create-aeronautics-bundled-1.21.1-1.3.2.jar",
+      "action": "sync",
+      "modId": "aeronautics_bundled",
+      "modName": "Create Aeronautics",
+      "modVersion": "1.3.2",
+      "modDescription": "Expands the Create mod with physics-based contraptions, to build anything from cars to planes. This is a bundled JAR that contains Simulated, Aeronautics, and Offroad.",
+      "modIconUrl": "/api/modpack/files/imported/icons/0c96b8e50536f5af1005d29b985fe3d460ea4666c03e36cb7d0ee70f2b28d92d.png"
     },
     {
       "path": "mods/create_aeronautics_transmission_linkage-0.2.8.jar",
@@ -1048,41 +1230,6 @@
       "modName": "Create: Radars",
       "modVersion": "5.0-EA-2.0.2-1.21.1",
       "modDescription": "Welcome to Create Radars, a mod offering a variety of tools and blocks for Surveillance, Detection, and Controlling Weapons."
-    },
-    {
-      "path": "mods/create-1.21.1-6.0.10.jar",
-      "sha256": "ef87fe5709f1ba1f5b8bb20a2925b5afb4669e178fd6d8bf10c167759eefe37a",
-      "size": 19123767,
-      "profiles": [
-        "full",
-        "optimal",
-        "clean"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/ef87fe5709f1ba1f5b8bb20a2925b5afb4669e178fd6d8bf10c167759eefe37a/create-1.21.1-6.0.10.jar",
-      "action": "sync",
-      "modId": "create",
-      "modName": "Create",
-      "modVersion": "6.0.10",
-      "modDescription": "Technology that empowers the player.",
-      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/create",
-      "modIconUrl": "/api/modpack/files/imported/icons/075cd96b98d182688c1119c6026761be644d6d9c8e2cce43c2761cb1ec946374.png"
-    },
-    {
-      "path": "mods/create-aeronautics-bundled-1.21.1-1.3.2.jar",
-      "sha256": "a3f330d4757640f8715d991a43eedb826e4d0e51558d859c843ae6693bd35f1e",
-      "size": 33123131,
-      "profiles": [
-        "full",
-        "optimal",
-        "clean"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/a3f330d4757640f8715d991a43eedb826e4d0e51558d859c843ae6693bd35f1e/create-aeronautics-bundled-1.21.1-1.3.2.jar",
-      "action": "sync",
-      "modId": "aeronautics_bundled",
-      "modName": "Create Aeronautics",
-      "modVersion": "1.3.2",
-      "modDescription": "Expands the Create mod with physics-based contraptions, to build anything from cars to planes. This is a bundled JAR that contains Simulated, Aeronautics, and Offroad.",
-      "modIconUrl": "/api/modpack/files/imported/icons/0c96b8e50536f5af1005d29b985fe3d460ea4666c03e36cb7d0ee70f2b28d92d.png"
     },
     {
       "path": "mods/createbetterfps-1.21.1-1.1.5.jar",
@@ -1183,22 +1330,6 @@
       "modIconUrl": "/api/modpack/files/imported/icons/eeaae737aba76ab1f7b5647db2b658e071da495bcfcb026231dc08fc5acb4ebb.png"
     },
     {
-      "path": "mods/DistantHorizons-3.3.2-1.21.1-fabric-neoforge.jar",
-      "sha256": "cf63717e037bc2576933d63d11246b5f2f317f4cd5b6d4ea1ea077ad027e4a36",
-      "size": 28224156,
-      "profiles": [
-        "full"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/cf63717e037bc2576933d63d11246b5f2f317f4cd5b6d4ea1ea077ad027e4a36/DistantHorizons-3.3.2-1.21.1-fabric-neoforge.jar",
-      "action": "sync",
-      "modId": "distanthorizons",
-      "modName": "Distant Horizons",
-      "modVersion": "3.3.2",
-      "modDescription": "This mod generates and renders simplified terrain beyond the normal view distance at a low performance cost. Allowing you to see much farther without turning your game into a slideshow.",
-      "modProjectUrl": "https://modrinth.com/mod/distanthorizons",
-      "modIconUrl": "/api/modpack/files/imported/icons/c09f183303af8256ddf1650d5160eb3dfabdab1f874e7c62170636d9818791ec.png"
-    },
-    {
       "path": "mods/entity_model_features-3.3.9-1.21-neoforge.jar",
       "sha256": "21881f096eb73d44f90120c07bf4cc5187d52115841a720785ac02f6c478e562",
       "size": 641785,
@@ -1262,24 +1393,6 @@
       "modDescription": "This mod completely rethinks explosions in Minecraft, making them incredibly realistic and dynamic. Enjoy unique explosion sounds that change depending on the distance and environment, tangible shockwaves and concussions, as well as realistic visual effects, including plasma sparks and fire clouds. Experience the true destructive power of explosions like never before"
     },
     {
-      "path": "mods/FarmersDelight-1.21.1-1.3.4.jar",
-      "sha256": "139ad7696462c89c03eea463f805abffa552526c5dadaadae221dd9624cb197c",
-      "size": 3160490,
-      "profiles": [
-        "full",
-        "optimal",
-        "clean"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/139ad7696462c89c03eea463f805abffa552526c5dadaadae221dd9624cb197c/FarmersDelight-1.21.1-1.3.4.jar",
-      "action": "sync",
-      "modId": "farmersdelight",
-      "modName": "Farmer's Delight",
-      "modVersion": "1.3.4",
-      "modDescription": "A cozy farming and cooking expansion for Minecraft!",
-      "modProjectUrl": "https://github.com/vectorwing/FarmersDelight",
-      "modIconUrl": "/api/modpack/files/imported/icons/6c1fd924c54c5048e882845374ece6a8ab27080b2931508b52a6bf8f84403e97.png"
-    },
-    {
       "path": "mods/ferritecore-7.0.3-neoforge.jar",
       "sha256": "d87ea28262715ebff45b8a82d493e6b468e7a4521bc021df5d88302196d030a8",
       "size": 121559,
@@ -1332,39 +1445,6 @@
       "modIconUrl": "/api/modpack/files/imported/icons/d8067ada45a6e862c7524d3908e535dc2445c478d38346fde5108ad697835795.png"
     },
     {
-      "path": "mods/ImmediatelyFast-NeoForge-1.6.14+1.21.1.jar",
-      "sha256": "15bf9bd6d8e3ae8ad35c5a4d90680424b534d9762d698c0a466965afcab5dd78",
-      "size": 365195,
-      "profiles": [
-        "full",
-        "optimal"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/15bf9bd6d8e3ae8ad35c5a4d90680424b534d9762d698c0a466965afcab5dd78/ImmediatelyFast-NeoForge-1.6.14%2B1.21.1.jar",
-      "action": "sync",
-      "modId": "immediatelyfast",
-      "modName": "ImmediatelyFast",
-      "modVersion": "1.6.14+1.21.1",
-      "modDescription": "Speed up and optimize immediate mode rendering in Minecraft",
-      "modProjectUrl": "https://github.com/RaphiMC/ImmediatelyFast",
-      "modIconUrl": "/api/modpack/files/imported/icons/985ac7bc84f72a564d0c3fda47f64c0c465397c836dc0fb6d4ba6ef865bd1294.png"
-    },
-    {
-      "path": "mods/InvMove-0.9.3+1.21.1-NeoForge.jar",
-      "sha256": "e84329e06d40346a88b3eda5985500ded34efad2ad30c43f1dd3a486eff58d1b",
-      "size": 87005,
-      "profiles": [
-        "full",
-        "optimal"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/e84329e06d40346a88b3eda5985500ded34efad2ad30c43f1dd3a486eff58d1b/InvMove-0.9.3%2B1.21.1-NeoForge.jar",
-      "action": "sync",
-      "modId": "invmove",
-      "modName": "InvMove",
-      "modVersion": "0.9.3",
-      "modDescription": "Lets you move while in inventories.",
-      "modIconUrl": "/api/modpack/files/imported/icons/6436256b12c8c3776c3e9273b6e4b25a11eb35385f7aa34dc5d9d9c19153c188.png"
-    },
-    {
       "path": "mods/iris-neoforge-1.8.14-beta.1+mc1.21.1.jar",
       "sha256": "60d5f8bf52f25e9986440f4a4270a6bd986d9cff994510e1108ac1547063b314",
       "size": 2540723,
@@ -1378,23 +1458,6 @@
       "modVersion": "1.8.14-beta.1+mc1.21.1",
       "modDescription": "Iris is a modern shaders mod for Minecraft intended to be compatible with existing OptiFine shader packs.",
       "modIconUrl": "/api/modpack/files/imported/icons/b1c7a2025910dfe43bd54ed4be19760a9c2332aa7734e250c2841fa3b124098c.png"
-    },
-    {
-      "path": "mods/Jade-1.21.1-NeoForge-15.10.6.jar",
-      "sha256": "276f1f65a20d04f536989c4f311949d770b52c440c23c2b904a08860f3c93810",
-      "size": 726853,
-      "profiles": [
-        "full",
-        "optimal"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/276f1f65a20d04f536989c4f311949d770b52c440c23c2b904a08860f3c93810/Jade-1.21.1-NeoForge-15.10.6.jar",
-      "action": "sync",
-      "modId": "jade",
-      "modName": "Jade",
-      "modVersion": "15.10.6+neoforge",
-      "modDescription": "Minecraft mod shows what you are looking at. (Hwyla fork)",
-      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/jade",
-      "modIconUrl": "/api/modpack/files/imported/icons/db278b858ddc24d767f2c33454433595ab949aff6e410b75dcf0e0395936714d.png"
     },
     {
       "path": "mods/krypton_fnp-neoforge-1.21.1-0.2.28.1-1.21.1.jar",
@@ -1463,23 +1526,6 @@
       "modIconUrl": "/api/modpack/files/imported/icons/e30d761b508179789c8abb27f84f877b550cb1b8e0a38c231b88c0706e795483.png"
     },
     {
-      "path": "mods/MouseTweaks-neoforge-mc1.21-2.26.1.jar",
-      "sha256": "68e6f4201c5de97b77929a7215c9552495696ca6a3bf3ae4eacc34e135f6cc8b",
-      "size": 73938,
-      "profiles": [
-        "full",
-        "optimal"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/68e6f4201c5de97b77929a7215c9552495696ca6a3bf3ae4eacc34e135f6cc8b/MouseTweaks-neoforge-mc1.21-2.26.1.jar",
-      "action": "sync",
-      "modId": "mousetweaks",
-      "modName": "Mouse Tweaks",
-      "modVersion": "2.26.1",
-      "modDescription": "A mod that enhances the inventory management by adding various additional functions to the usual mouse buttons.",
-      "modProjectUrl": "https://minecraft.curseforge.com/projects/mouse-tweaks",
-      "modIconUrl": "/api/modpack/files/imported/icons/43e8e2d2ea11cc999a282da455eae3374884717be6cb6741a2911dbacfef490c.png"
-    },
-    {
       "path": "mods/offbalance-2.0.jar",
       "sha256": "d435f3274ad3c314108926e7ee13e11dd6181f2b54e5e714eb5fc820c041081b",
       "size": 190932,
@@ -1529,10 +1575,10 @@
       "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
-      "path": "mods/quiby-1.21.1-1.1.8.jar",
-      "sha256": "f508496629a3b60d6d6fed9ceada9b3f9a18e4256322239e077a7bed22d21795",
-      "size": 3533687,
-      "downloadUrl": "/api/modpack/files/imported/f508496629a3b60d6d6fed9ceada9b3f9a18e4256322239e077a7bed22d21795/quiby-1.21.1-1.1.8.jar",
+      "path": "mods/quiby-1.21.1-1.1.9.jar",
+      "sha256": "31c69ee2df0626c9d2eb644046216af9ee212c03270fd3df355e341ea49c1439",
+      "size": 3534044,
+      "downloadUrl": "/api/modpack/files/imported/31c69ee2df0626c9d2eb644046216af9ee212c03270fd3df355e341ea49c1439/quiby-1.21.1-1.1.9.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1541,15 +1587,15 @@
       ],
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.1.8",
+      "modVersion": "1.1.9",
       "modDescription": "Русская локализация, рецепты, скины, реакции на урон и фирменная загрузка Minecraft.",
       "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },
     {
-      "path": "mods/quiby-early-loading-1.21.1-1.1.8.jar",
+      "path": "mods/quiby-early-loading-1.21.1-1.1.9.jar",
       "sha256": "1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99",
       "size": 3036102,
-      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.8.jar",
+      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.9.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1558,7 +1604,7 @@
       ],
       "modId": "quiby_early_loading",
       "modName": "Quiby Early Loading",
-      "modVersion": "1.1.8",
+      "modVersion": "1.1.9",
       "modDescription": "Фирменная анимация на раннем экране NeoForge."
     },
     {
@@ -1596,73 +1642,6 @@
       "modIconUrl": "/api/modpack/files/imported/icons/c5f924f42f45741ad8fe64b62e7eecc4ec0a65410700239c6cdb07fe312a2094.png"
     },
     {
-      "path": "mods/RoughlyEnoughItems-16.0.799-neoforge.jar",
-      "sha256": "dae9610fd6da7bbd55c7836fcce4bb25e86e7bd000d383c9caa54b506141e2ee",
-      "size": 2384445,
-      "profiles": [
-        "full",
-        "optimal"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/dae9610fd6da7bbd55c7836fcce4bb25e86e7bd000d383c9caa54b506141e2ee/RoughlyEnoughItems-16.0.799-neoforge.jar",
-      "action": "sync",
-      "modId": "roughlyenoughitems",
-      "modName": "Roughly Enough Items (REI)",
-      "modVersion": "16.0.799",
-      "modDescription": "To allow players to view items and recipes."
-    },
-    {
-      "path": "mods/sable_player_ragdoll_patch-1.21.1-1.9.jar",
-      "sha256": "b0c0ef96855484004345eb085a9a6c06ff02c1f5fe3b58506f4be51a3f911c62",
-      "size": 144022,
-      "profiles": [
-        "full",
-        "optimal",
-        "clean"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/b0c0ef96855484004345eb085a9a6c06ff02c1f5fe3b58506f4be51a3f911c62/sable_player_ragdoll_patch-1.21.1-1.9.jar",
-      "action": "sync",
-      "modId": "sable_player_ragdoll_patch",
-      "modName": "Sable Ragdolls Patch",
-      "modVersion": "1.9",
-      "modDescription": "This mod adds patches and features to Sable-Player-Ragdoll and Sable-Ragdoll-Corpse.",
-      "modIconUrl": "/api/modpack/files/imported/icons/5e31eeadcc73dfda2018a1e6fa95d6addc8fa5e8510db81d15a0b967b5ecd862.png"
-    },
-    {
-      "path": "mods/sable_player_ragdoll-1.21.1-0.7.5.jar",
-      "sha256": "69611deff1c2b18ae0ae7dbaea24cc14f4b69f0368297653933ae9b33adf2d2b",
-      "size": 1466748,
-      "profiles": [
-        "full",
-        "optimal",
-        "clean"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/69611deff1c2b18ae0ae7dbaea24cc14f4b69f0368297653933ae9b33adf2d2b/sable_player_ragdoll-1.21.1-0.7.5.jar",
-      "action": "sync",
-      "modId": "sable_player_ragdoll",
-      "modName": "Sable Ragdolls",
-      "modVersion": "0.7.5",
-      "modDescription": "Ragdoll physics API for Sable. Provides the core ragdoll system and API for addon mods.",
-      "modIconUrl": "/api/modpack/files/imported/icons/6a6975d9b450b16d162fddd2e84b49f0f8a45dd4036b70f8bbf37b1fc375887c.png"
-    },
-    {
-      "path": "mods/sable_ragdoll_dummies-1.0.0-neoforge-1.21.1.jar",
-      "sha256": "fdd779a55b56ed0645a32d9eb2fb182df5a7cbfc5a029702cc1c44315b486eb4",
-      "size": 43054,
-      "profiles": [
-        "full",
-        "optimal",
-        "clean"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/fdd779a55b56ed0645a32d9eb2fb182df5a7cbfc5a029702cc1c44315b486eb4/sable_ragdoll_dummies-1.0.0-neoforge-1.21.1.jar",
-      "action": "sync",
-      "modId": "sable_ragdoll_dummies",
-      "modName": "Sable: Ragdoll Dummies",
-      "modVersion": "1.0.0",
-      "modDescription": "Spawn ragdoll dummies without the use of commands",
-      "modProjectUrl": "https://modrinth.com/project/sable-ragdoll-dummies",
-      "modIconUrl": "/api/modpack/files/imported/icons/f717379896024acd900d78c5f1220ada5af72bc27b33311b156f4e3cc8956394.png"
-    },
-    {
       "path": "mods/sable-cool-rain-1.0.1+1.21.1+neoforge.jar",
       "sha256": "f177526f730bd0b6400e0217ca718857bbedfd5099ce4f08210a11da588d456b",
       "size": 238579,
@@ -1696,6 +1675,58 @@
       "modIconUrl": "/api/modpack/files/imported/icons/63c80250ee219ecc628bba0820c210c34990859a26284f42b3c622c2d21e1286.png"
     },
     {
+      "path": "mods/sable_player_ragdoll-1.21.1-0.7.5.jar",
+      "sha256": "69611deff1c2b18ae0ae7dbaea24cc14f4b69f0368297653933ae9b33adf2d2b",
+      "size": 1466748,
+      "profiles": [
+        "full",
+        "optimal",
+        "clean"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/69611deff1c2b18ae0ae7dbaea24cc14f4b69f0368297653933ae9b33adf2d2b/sable_player_ragdoll-1.21.1-0.7.5.jar",
+      "action": "sync",
+      "modId": "sable_player_ragdoll",
+      "modName": "Sable Ragdolls",
+      "modVersion": "0.7.5",
+      "modDescription": "Ragdoll physics API for Sable. Provides the core ragdoll system and API for addon mods.",
+      "modIconUrl": "/api/modpack/files/imported/icons/6a6975d9b450b16d162fddd2e84b49f0f8a45dd4036b70f8bbf37b1fc375887c.png"
+    },
+    {
+      "path": "mods/sable_player_ragdoll_patch-1.21.1-1.9.jar",
+      "sha256": "b0c0ef96855484004345eb085a9a6c06ff02c1f5fe3b58506f4be51a3f911c62",
+      "size": 144022,
+      "profiles": [
+        "full",
+        "optimal",
+        "clean"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/b0c0ef96855484004345eb085a9a6c06ff02c1f5fe3b58506f4be51a3f911c62/sable_player_ragdoll_patch-1.21.1-1.9.jar",
+      "action": "sync",
+      "modId": "sable_player_ragdoll_patch",
+      "modName": "Sable Ragdolls Patch",
+      "modVersion": "1.9",
+      "modDescription": "This mod adds patches and features to Sable-Player-Ragdoll and Sable-Ragdoll-Corpse.",
+      "modIconUrl": "/api/modpack/files/imported/icons/5e31eeadcc73dfda2018a1e6fa95d6addc8fa5e8510db81d15a0b967b5ecd862.png"
+    },
+    {
+      "path": "mods/sable_ragdoll_dummies-1.0.0-neoforge-1.21.1.jar",
+      "sha256": "fdd779a55b56ed0645a32d9eb2fb182df5a7cbfc5a029702cc1c44315b486eb4",
+      "size": 43054,
+      "profiles": [
+        "full",
+        "optimal",
+        "clean"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/fdd779a55b56ed0645a32d9eb2fb182df5a7cbfc5a029702cc1c44315b486eb4/sable_ragdoll_dummies-1.0.0-neoforge-1.21.1.jar",
+      "action": "sync",
+      "modId": "sable_ragdoll_dummies",
+      "modName": "Sable: Ragdoll Dummies",
+      "modVersion": "1.0.0",
+      "modDescription": "Spawn ragdoll dummies without the use of commands",
+      "modProjectUrl": "https://modrinth.com/project/sable-ragdoll-dummies",
+      "modIconUrl": "/api/modpack/files/imported/icons/f717379896024acd900d78c5f1220ada5af72bc27b33311b156f4e3cc8956394.png"
+    },
+    {
       "path": "mods/sabledramaticimpact-1.0.0.jar",
       "sha256": "bc12e107dc05cefc4795781836194a3c5cef3c9cc2bcb278cc3a35331f0ca1b2",
       "size": 45017,
@@ -1710,23 +1741,6 @@
       "modDescription": "Add explosion effects to sable physics collisions!",
       "modProjectUrl": "https://github.com/SHsuperCM/sable-dramatic-impact",
       "modIconUrl": "/api/modpack/files/imported/icons/3891938d810d12d3f5eda619a450a560f9387e5d3533992cf064946988668a24.png"
-    },
-    {
-      "path": "mods/Searchables-neoforge-1.21.1-1.0.2.jar",
-      "sha256": "ca193f0c69033d8f709f9e073a7c1ef4ea46714e5c2f94eb23ace12781c6aa68",
-      "size": 77326,
-      "profiles": [
-        "full",
-        "optimal"
-      ],
-      "downloadUrl": "/api/modpack/files/imported/ca193f0c69033d8f709f9e073a7c1ef4ea46714e5c2f94eb23ace12781c6aa68/Searchables-neoforge-1.21.1-1.0.2.jar",
-      "action": "sync",
-      "modId": "searchables",
-      "modName": "Searchables",
-      "modVersion": "1.0.2",
-      "modDescription": "A library mod to facilitate adding search bars with auto complete and search types.",
-      "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/searchables",
-      "modIconUrl": "/api/modpack/files/imported/icons/0e041a45ef527e2509132df4cc76c4bd653a5c42232049eb12be341e16b91ed4.png"
     },
     {
       "path": "mods/sodium-neoforge-0.8.13+mc1.21.1.jar",
@@ -1810,7 +1824,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Off Balance: облегчено вставание при небольшом движении — dismountMaxSpeed=1.5, dismountMaxSpin=2.0, dismountHoldTicks=6. Контакт с землёй остаётся обязательным. Включены hurtProxyEnabled и hurtProxyMobsTarget для выбора тела целью мобами. На существующем Minecraft-сервере обновите настройки Off Balance по инструкции в серверном архиве. Quiby остаётся 1.1.8; лаунчер обновлять не нужно. Поведение в совместной игре требует проверки тестерами.",
+  "changelog": "Quiby 1.1.9: автоматический ragdoll от урона теперь требует минимум 4 единицы (2 сердца) за один удар после защиты; мелкие повреждения не накапливаются. Реакции на область взрыва сохранены. Ещё легче вставать: dismountMaxSpeed=2.5, dismountMaxSpin=3.5, dismountHoldTicks=3, контакт с землёй обязателен. Hurt proxy и выбор тела целью мобами включены. Требуется обновить серверный Quiby JAR и конфиги Off Balance/Quiby. Лаунчер обновлять не нужно.",
   "serverAddress": "",
   "updatedAt": "2026-09-28T21:50:43.482158Z"
 }

@@ -8,6 +8,6 @@ hurtProxyMobsTarget = true
 
 [manualDismount]
 dismountRequireGrounded = true
-dismountMaxSpeed = 1.5
-dismountMaxSpin = 2.0
-dismountHoldTicks = 6
+dismountMaxSpeed = 2.5
+dismountMaxSpin = 3.5
+dismountHoldTicks = 3
