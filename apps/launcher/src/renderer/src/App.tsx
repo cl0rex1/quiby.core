@@ -462,6 +462,16 @@ export const App: React.FC = () => {
     try {
       await window.quibyApi.launchGame(session, settings, activeModFiles, disabledModFiles);
     } catch (err) {
+      if (err instanceof Error && err.message.includes('У аккаунта нет доступа')) {
+        const current = storedSession();
+        if (current?.token === session.token) {
+          const blocked = { ...current, user: { ...current.user, isWhitelisted: false } };
+          localStorage.setItem('quiby_session', JSON.stringify(blocked));
+          setSession(blocked);
+          handleNotify('Доступ к лаунчеру закрыт', 'Обратитесь к администрации quiby в Discord.', 'error');
+        }
+        return;
+      }
       // The main process sends a crash state with the full diagnostic report.
       console.error('Launch Error:', err);
     }
