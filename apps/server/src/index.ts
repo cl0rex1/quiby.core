@@ -1,3 +1,5 @@
+import path from 'path';
+import controlRoutes from './routes/control';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -72,6 +74,8 @@ async function bootstrap() {
   app.use('/api/news', newsRoutes);
   app.use('/api/status', statusRoutes);
   app.use('/api/admin', adminRoutes);
+  app.use('/api/control', controlRoutes);
+  app.use('/admin', express.static(path.join(__dirname, '../public/admin'), { index: 'index.html', maxAge: 0 }));
   app.use('/api/mods', modsRoutes);
   app.use('/api/bot', botRoutes);
   app.use('/api/skins', skinsRoutes);

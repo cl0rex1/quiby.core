@@ -15,5 +15,6 @@ game/
 runtime/
 logs/
 temp/
+deploy/casaos/data/
 .agents/
 apps/server/storage/files/imported/

@@ -40,6 +40,7 @@ export const dbAll = <T = any>(sql: string, params: any[] = []): Promise<T[]> =>
 };
 
 export async function initDatabase(): Promise<void> {
+  await dbRun(`CREATE TABLE IF NOT EXISTS admin_audit (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL, target TEXT NOT NULL, details TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   // Users / Discord-Minecraft Whitelist Table
   await dbRun(`
     CREATE TABLE IF NOT EXISTS users (

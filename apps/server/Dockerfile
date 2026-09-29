@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends libstdc++6 \
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/apps/server/package.json ./apps/server/package.json
 COPY --from=build --chown=node:node /app/apps/server/dist ./apps/server/dist
+COPY --from=build --chown=node:node /app/apps/server/public ./apps/server/public
 COPY --from=build --chown=node:node /app/packages/shared/package.json ./packages/shared/package.json
 COPY --from=build --chown=node:node /app/packages/shared/dist ./packages/shared/dist
 RUN mkdir -p /app/data && chown node:node /app/data

@@ -1,0 +1,49 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import express from 'express';
+import jwt from 'jsonwebtoken';
+
+test('admin panel protects sessions, validates mutations and applies audited decisions', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(),'quiby-control-'));
+  process.env.DB_PATH=path.join(dir,'test.sqlite');process.env.STORAGE_PATH=dir;
+  const {config}=await import('../config');config.adminApiKey='control-test-key-not-a-real-secret';
+  const {initDatabase,dbRun,dbGet,closeDatabase}=await import('../models/db');
+  await initDatabase();await initDatabase();
+  const control=(await import('../routes/control')).default;
+  const {verifyMod}=await import('../services/modSafetyService');
+  const app=express();app.use(express.json());app.use('/api/control',control);
+  const server=app.listen(0,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));
+  const base='http://127.0.0.1:'+(server.address() as {port:number}).port;
+  const request=(url:string,options:RequestInit={})=>fetch(base+'/api/control'+url,options);
+  const headers={'Content-Type':'application/json','X-Quiby-Control':'1'};
+  try {
+    assert.equal((await request('/players')).status,401);
+    assert.equal((await request('/login',{method:'POST',headers,body:JSON.stringify({key:'wrong'})})).status,401);
+    assert.equal((await request('/login',{method:'POST',headers:{...headers,Origin:'https://evil.example'},body:JSON.stringify({key:config.adminApiKey})})).status,403);
+    const login=await request('/login',{method:'POST',headers,body:JSON.stringify({key:config.adminApiKey})});
+    assert.equal(login.status,200);
+    const raw=login.headers.get('set-cookie')!;assert.match(raw,/HttpOnly/);assert.match(raw,/SameSite=Strict/);assert.match(raw,/Path=\/api\/control/);
+    const auth={...headers,Cookie:raw.split(';')[0]};
+    const userToken=jwt.sign({authMethod:'discord',discordId:'123456789012345678',mcUsername:'Test'},config.jwtSecret);
+    assert.equal((await request('/players',{headers:{Cookie:'quiby_control='+userToken}})).status,401);
+    await dbRun("INSERT INTO users(discord_id,discord_username,mc_username,uuid) VALUES('123456789012345678','Tester','Tester','uuid')");
+    assert.equal((await request('/players/123456789012345678',{method:'PATCH',headers:{Cookie:auth.Cookie,'Content-Type':'application/json'},body:'{"allowed":false}'})).status,403);
+    assert.equal((await request('/players/123456789012345678',{method:'PATCH',headers:auth,body:JSON.stringify({allowed:false})})).status,200);
+    assert.equal((await dbGet<any>('SELECT is_whitelisted FROM users'))?.is_whitelisted,0);
+    const mod={name:'Utility',filename:'utility.jar',hash:'a'.repeat(40),decision:'approved',reason:'Reviewed by admin'};
+    const added=await request('/mods',{method:'POST',headers:auth,body:JSON.stringify(mod)});assert.equal(added.status,200);
+    const id=(await added.json()).request.id;
+    assert.equal((await verifyMod('Utility','utility.jar',mod.hash)).isAllowed,true);
+    assert.equal((await request('/mods/'+id,{method:'PATCH',headers:auth,body:JSON.stringify({decision:'rejected',reason:'Revoked permission'})})).status,200);
+    assert.equal((await verifyMod('Utility','utility.jar',mod.hash)).isAllowed,false);
+    const entries=await (await request('/audit',{headers:auth})).json();assert.equal(entries.total,3);
+    assert.equal((await request('/players?page=-1',{headers:auth})).status,400);
+    assert.equal((await (await request('/players?search=missing',{headers:auth})).json()).total,0);
+    config.adminApiKey='rotated-test-key';assert.equal((await request('/session',{headers:auth})).status,401);
+  } finally {
+    await new Promise<void>(resolve=>server.close(()=>resolve()));await closeDatabase();await fs.rm(dir,{recursive:true,force:true});
+  }
+});
