@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.10",
+  "version": "6.1.11",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 274075239,
+  "totalSize": 274075291,
   "files": [
     {
       "path": "config/aeronautics_utility_objects-server.toml",
@@ -504,9 +504,9 @@
     },
     {
       "path": "config/offbalance-server.toml",
-      "sha256": "a5af95340c1cfdd7a5f740f1cae9e561b4afdc5b0da84cb1b5a87d1687f956f9",
-      "size": 225,
-      "downloadUrl": "/api/modpack/files/imported/a5af95340c1cfdd7a5f740f1cae9e561b4afdc5b0da84cb1b5a87d1687f956f9/offbalance-server.toml",
+      "sha256": "f944b7eb943ca4e710a6192df779a68d4ee1c5476b73dd3bf451c1c21edb0396",
+      "size": 251,
+      "downloadUrl": "/api/modpack/files/imported/f944b7eb943ca4e710a6192df779a68d4ee1c5476b73dd3bf451c1c21edb0396/offbalance-server.toml",
       "action": "sync"
     },
     {
@@ -749,9 +749,9 @@
     },
     {
       "path": "defaultconfigs/offbalance-server.toml",
-      "sha256": "a5af95340c1cfdd7a5f740f1cae9e561b4afdc5b0da84cb1b5a87d1687f956f9",
-      "size": 225,
-      "downloadUrl": "/api/modpack/files/imported/a5af95340c1cfdd7a5f740f1cae9e561b4afdc5b0da84cb1b5a87d1687f956f9/offbalance-server.toml",
+      "sha256": "f944b7eb943ca4e710a6192df779a68d4ee1c5476b73dd3bf451c1c21edb0396",
+      "size": 251,
+      "downloadUrl": "/api/modpack/files/imported/f944b7eb943ca4e710a6192df779a68d4ee1c5476b73dd3bf451c1c21edb0396/offbalance-server.toml",
       "action": "sync"
     },
     {
@@ -1810,7 +1810,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Quiby 1.1.8: возврат игрока к текущему положению offline-ragdoll, сохранение позиции тела раз в секунду. Off Balance: hurtProxyEnabled=false, dismountRequireGrounded=true, dismountMaxSpeed=1.0, dismountMaxSpin=1.5, dismountHoldTicks=10. Требуется обновить Minecraft-сервер и настройки Off Balance. Лаунчер обновлять не нужно. Сетевой сценарий перемещения тела и повторного входа требует проверки тестерами.",
+  "changelog": "Off Balance: облегчено вставание при небольшом движении — dismountMaxSpeed=1.5, dismountMaxSpin=2.0, dismountHoldTicks=6. Контакт с землёй остаётся обязательным. Включены hurtProxyEnabled и hurtProxyMobsTarget для выбора тела целью мобами. На существующем Minecraft-сервере обновите настройки Off Balance по инструкции в серверном архиве. Quiby остаётся 1.1.8; лаунчер обновлять не нужно. Поведение в совместной игре требует проверки тестерами.",
   "serverAddress": "",
   "updatedAt": "2026-09-28T21:50:43.482158Z"
 }
