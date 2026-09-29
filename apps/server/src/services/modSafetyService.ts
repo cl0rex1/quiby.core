@@ -1,3 +1,4 @@
+import { lightingOverrideSignature } from '@quiby/shared';
 import { dbGet, dbRun, dbAll } from '../models/db';
 
 export interface ModVerificationResult {
@@ -52,7 +53,6 @@ const FORBIDDEN_KEYWORDS = [
 ];
 
 const BLOCKED_FILE_NAMES = [
-  'gamma', 'fullbright', 'full-bright', 'full_bright', 'full bright', 'boosted-brightness',
   'xray', 'x-ray', 'meteor', 'wurst', 'baritone', 'liquidbounce',
   'killaura', 'kill-aura', 'autoclicker', 'auto-clicker', 'freecam',
   'cheststealer', 'seedcracker', 'bleachhack', 'aimbot',
@@ -117,6 +117,10 @@ export async function verifyMod(
       categories: ['whitelist'],
     };
   }
+
+  const lighting = lightingOverrideSignature(`${name} ${filename}`) || (/(^|[^a-z])gamma([^a-z]|$)/i.test(`${name} ${filename}`) ? 'gamma' : undefined);
+  if (lighting) return { hashSha1: normalizedHash, name, filename, isAllowed: false, status: 'blocked', source: 'none',
+    reason: `Обнаружено изменение гаммы/fullbright (${lighting}). Требуется ручное одобрение этого JAR.`, categories: ['lighting-override'] };
 
   // 1. Check local SQLite cache
   const cached = await dbGet<any>(

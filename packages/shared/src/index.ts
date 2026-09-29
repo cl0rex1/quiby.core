@@ -130,3 +130,5 @@ export interface LogEntry {
   message: string;
   source: 'launcher' | 'game' | 'neoforge';
 }
+
+export { lightingOverrideSignature, hasGammaMixinEvidence } from './lightingDetection';

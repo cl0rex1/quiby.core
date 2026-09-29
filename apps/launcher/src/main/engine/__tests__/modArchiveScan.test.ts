@@ -34,13 +34,28 @@ test('automatic admission retains manual denial, explicit approval and hash bind
     status = 'blocked'; source = 'whitelist';
     assert.equal((await evaluateCustomMod('renamed.jar', fixture('clean'), 'http://test')).isAllowed, false);
     status = 'approved';
+    source = 'none'; status = 'unverified';
+    assert.equal((await evaluateCustomMod('renamed.jar', fixture('gamma'), 'http://test')).isAllowed, false);
+    source = 'whitelist'; status = 'approved';
     const gamma = await evaluateCustomMod('renamed.jar', fixture('gamma'), 'http://test');
-    assert.equal(gamma.isAllowed, false);
-    assert.equal(gamma.status, 'blocked');
+    assert.equal(gamma.isAllowed, true);
+    assert.equal(gamma.status, 'approved');
+    source = 'modrinth';
+    assert.equal((await evaluateCustomMod('renamed.jar', fixture('gamma'), 'http://test')).isAllowed, false);
+    source = 'whitelist';
     assert.equal((await evaluateCustomMod('renamed.jar', fixture('class'), 'http://test')).isAllowed, true);
     assert.equal((await evaluateCustomMod('broken.jar', fixture('invalid'), 'http://test')).isAllowed, false);
     spoof = true;
     await assert.rejects(evaluateCustomMod('renamed.jar', fixture('clean'), 'http://test'));
     assert.notEqual(hashCustomModBytes(fixture('clean')), hashCustomModBytes(fixture('class')));
   } finally { globalThis.fetch = original; }
+});
+
+
+test('detects lighting overrides in escaped metadata, separated paths and renamed gamma mixins', async () => {
+  for (const name of ['lighting-unicode','lighting-mixin','lighting-path','lighting-id']) {
+    const scan = await scanModArchive(fixture(name));
+    assert.equal(scan.complete, true, name);
+    assert.equal(scan.blocked, true, name);
+  }
 });

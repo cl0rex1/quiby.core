@@ -33,12 +33,13 @@ test('admin panel protects sessions, validates mutations and applies audited dec
     assert.equal((await request('/players/123456789012345678',{method:'PATCH',headers:{Cookie:auth.Cookie,'Content-Type':'application/json'},body:'{"allowed":false}'})).status,403);
     assert.equal((await request('/players/123456789012345678',{method:'PATCH',headers:auth,body:JSON.stringify({allowed:false})})).status,200);
     assert.equal((await dbGet<any>('SELECT is_whitelisted FROM users'))?.is_whitelisted,0);
-    const mod={name:'Utility',filename:'utility.jar',hash:'a'.repeat(40),decision:'approved',reason:'Reviewed by admin'};
+    assert.equal((await verifyMod('Full__Bright','Full__Bright.jar','c'.repeat(40))).isAllowed,false);
+    const mod={name:'Gamma Utils',filename:'gamma-utils.jar',hash:'a'.repeat(40),decision:'approved',reason:'Reviewed by admin'};
     const added=await request('/mods',{method:'POST',headers:auth,body:JSON.stringify(mod)});assert.equal(added.status,200);
     const id=(await added.json()).request.id;
-    assert.equal((await verifyMod('Utility','utility.jar',mod.hash)).isAllowed,true);
+    assert.equal((await verifyMod('Gamma Utils','gamma-utils.jar',mod.hash)).isAllowed,true);
     assert.equal((await request('/mods/'+id,{method:'PATCH',headers:auth,body:JSON.stringify({decision:'rejected',reason:'Revoked permission'})})).status,200);
-    assert.equal((await verifyMod('Utility','utility.jar',mod.hash)).isAllowed,false);
+    assert.equal((await verifyMod('Gamma Utils','gamma-utils.jar',mod.hash)).isAllowed,false);
     const entries=await (await request('/audit',{headers:auth})).json();assert.equal(entries.total,3);
     assert.equal((await request('/players?page=-1',{headers:auth})).status,400);
     assert.equal((await (await request('/players?search=missing',{headers:auth})).json()).total,0);

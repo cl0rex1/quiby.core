@@ -68,8 +68,6 @@ export async function evaluateCustomMod(filename: string, bytes: Buffer, serverU
   }
   const scan = await scanCache.get(cacheKey)!;
   if (!scan.complete) scanCache.delete(cacheKey);
-  if (scan.blocked) return { hashSha1, isAllowed: false, status: 'blocked', source: 'none',
-    reason: scan.findings.join('; '), scanFindings: scan.findings };
   const response = await fetch(`${serverUrl.replace(/\/$/, '')}/api/mods/verify`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ mods: [{ name: filename.slice(0, -4).slice(0,100), filename, hash_sha1: hashSha1 }] }),
@@ -80,6 +78,8 @@ export async function evaluateCustomMod(filename: string, bytes: Buffer, serverU
   if (!result || result.hashSha1?.toLowerCase() !== hashSha1) throw new Error('Некорректный ответ проверки мода');
   if (result.status === 'blocked') return { ...result, hashSha1, isAllowed: false };
   const manual = result.source === 'whitelist' && result.status === 'approved' && result.isAllowed === true;
+  if (scan.blocked && !manual) return { ...result, hashSha1, isAllowed: false, status: 'blocked',
+    reason: scan.findings.join('; '), scanFindings: scan.findings };
   const allowed = scan.complete && (manual || scan.findings.length === 0);
   return { ...result, hashSha1, isAllowed: allowed, status: allowed ? 'approved' : 'unverified',
     reason: allowed ? (manual ? result.reason : 'Автопроверка JAR пройдена: метаданные, пути, классы и вложенные архивы; известных признаков не найдено.')
