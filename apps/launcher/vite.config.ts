@@ -14,6 +14,7 @@ export default defineConfig({
         vite: {
           build: {
             outDir: 'dist/main',
+            commonjsOptions: { include: [/node_modules/, /packages[\\/]shared[\\/]dist/] },
             rollupOptions: {
               external: ['electron', 'discord-rpc', 'electron-updater'],
             },
