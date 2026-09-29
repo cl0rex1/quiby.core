@@ -1,3 +1,12 @@
-# Quiby: disable active balancing; retain Off Balance targeting and recovery.
+# Quiby server defaults.
 [balance]
 balanceEnabled = false
+
+[hurtProxy]
+hurtProxyEnabled = false
+
+[manualDismount]
+dismountRequireGrounded = true
+dismountMaxSpeed = 1.0
+dismountMaxSpin = 1.5
+dismountHoldTicks = 10
