@@ -11,6 +11,7 @@ test('custom mod approval is bound to the bytes, and denied mods fail closed', a
   let requestedHash = '';
   let allow = true;
   let spoofHash = false;
+  let source = 'whitelist';
   const server = createServer(async (req, res) => {
     const chunks: Buffer[] = [];
     for await (const chunk of req) chunks.push(Buffer.from(chunk));
@@ -20,6 +21,7 @@ test('custom mod approval is bound to the bytes, and denied mods fail closed', a
       hashSha1: spoofHash ? '0'.repeat(40) : requestedHash,
       status: allow && requestedHash === approvedHash ? 'approved' : 'unverified',
       isAllowed: allow && requestedHash === approvedHash,
+      source,
     }] }));
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -39,6 +41,9 @@ test('custom mod approval is bound to the bytes, and denied mods fail closed', a
 
     await requireApprovedCustomMod('client-mod.jar', approvedHash, 12, serverUrl);
     assert.equal(requestedHash, approvedHash);
+    source = 'modrinth';
+    await assert.rejects(requireApprovedCustomMod('client-mod.jar', approvedHash, 12, serverUrl), /одобрения администрации/);
+    source = 'whitelist';
 
     const changedHash = hashCustomModBytes(Buffer.from('changed mod'));
     await assert.rejects(

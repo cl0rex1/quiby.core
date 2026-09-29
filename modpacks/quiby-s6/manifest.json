@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.14",
+  "version": "6.1.16",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 274075941,
+  "totalSize": 274079313,
   "files": [
     {
       "path": "config/DistantHorizons.toml",
@@ -626,13 +626,6 @@
       "sha256": "ba2fc82938fa99ce48435c574cdd542aff177dd79846828c630447fc9ecc860c",
       "size": 604,
       "downloadUrl": "/api/modpack/files/imported/ba2fc82938fa99ce48435c574cdd542aff177dd79846828c630447fc9ecc860c/sable_player_ragdoll-client.toml",
-      "action": "keep_local"
-    },
-    {
-      "path": "config/sable_player_ragdoll-server.toml",
-      "sha256": "1b02af673b3f0d65a5d70b8c1c531d07c3663dab7fbd87066287b78d91b36aed",
-      "size": 3576,
-      "downloadUrl": "/api/modpack/files/imported/1b02af673b3f0d65a5d70b8c1c531d07c3663dab7fbd87066287b78d91b36aed/sable_player_ragdoll-server.toml",
       "action": "keep_local"
     },
     {
@@ -1822,9 +1815,23 @@
       ],
       "downloadUrl": "/api/modpack/files/imported/98ac741dee294d2a3c82d153349148c3bb7fb688c30eb3b49c3b9ac37e968c5a/ComplementaryUnbound_r5.9.3.zip",
       "action": "sync"
+    },
+    {
+      "path": "config/sable_player_ragdoll-server.toml",
+      "sha256": "3058e34532b34a7c5ed3e1370715624a1aed25517fd5490cd46b0651d11ddcad",
+      "size": 3474,
+      "downloadUrl": "/api/modpack/files/imported/3058e34532b34a7c5ed3e1370715624a1aed25517fd5490cd46b0651d11ddcad/sable_player_ragdoll-server.toml",
+      "action": "sync"
+    },
+    {
+      "path": "defaultconfigs/sable_player_ragdoll-server.toml",
+      "sha256": "3058e34532b34a7c5ed3e1370715624a1aed25517fd5490cd46b0651d11ddcad",
+      "size": 3474,
+      "downloadUrl": "/api/modpack/files/imported/3058e34532b34a7c5ed3e1370715624a1aed25517fd5490cd46b0651d11ddcad/sable_player_ragdoll-server.toml",
+      "action": "sync"
     }
   ],
-  "changelog": "Quiby 1.1.11: импульс взрыва усилен на 15% с сохранением ограничения итоговой скорости. Порог ragdoll — 9 единиц урона (4.5 сердца) за один удар после защиты. Отключён recoveryGateEnabled в Off Balance: восстановление возвращено к штатным правилам Sable без ожидания стабилизации всех частей тела. Hurt proxy включён. Нужны новый серверный Quiby JAR и конфиги; приложение лаунчера обновлять не нужно.",
+  "changelog": "Исправлен дубликат записи конфига Sable из 6.1.15. Ручной выход из ragdoll теперь доступен через 20 тиков (1 секунда при 20 TPS) вместо 60. Off Balance recovery gate остаётся выключен. Quiby остаётся 1.1.11; порог урона 4.5 сердца и усиление взрыва +15% сохранены. Лаунчер beta.13 добавляет строгую проверку модов и ресурспаков перед запуском. Для Minecraft-сервера обновите trigger.minDismountTicks в конфиге Sable по инструкции.",
   "serverAddress": "",
   "updatedAt": "2026-09-28T21:50:43.482158Z"
 }

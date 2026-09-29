@@ -31,7 +31,7 @@ export async function requireApprovedCustomMod(
 
   if (!response.ok) throw new Error(`Не удалось проверить мод ${filename}: ответ сервера ${response.status}`);
 
-  let result: { hashSha1?: string; status?: string; isAllowed?: boolean; reason?: string } | undefined;
+  let result: { hashSha1?: string; status?: string; isAllowed?: boolean; reason?: string; source?: string } | undefined;
   try {
     const data = await response.json();
     result = data.results?.[0];
@@ -44,5 +44,8 @@ export async function requireApprovedCustomMod(
   }
   if (result?.status !== 'approved' || result.isAllowed !== true) {
     throw new Error(`Мод ${filename} не разрешён: ${result?.reason || 'нет одобрения сервера'}`);
+  }
+  if (result.source !== 'whitelist') {
+    throw new Error(`Мод ${filename} требует одобрения администрации. Наличие в Modrinth не является проверкой на читы; подайте заявку в вайтлист.`);
   }
 }

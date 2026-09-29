@@ -58,6 +58,12 @@ async function publish(value) {
 if (kind === 'pack') {
   const source = JSON.parse(await fs.readFile(path.join(root, 'modpacks/quiby-s6/manifest.json'), 'utf8'));
   const tag = `v${source.version}`;
+  const seenPaths = new Set();
+  for (const file of source.files) {
+    const key = file.path.replace(/\\/g, '/').toLowerCase();
+    if (seenPaths.has(key)) throw new Error(`Duplicate manifest path: ${file.path}`);
+    seenPaths.add(key);
+  }
   const assetBase = `https://github.com/${owner}/${repo}/releases/download/${tag}/`;
   const reuseTag = process.argv.find(arg => arg.startsWith('--reuse-assets-from='))?.split('=')[1];
   const reusedAssets = reuseTag

@@ -205,7 +205,12 @@ export async function verifyCustomMod(
     if (res.ok) {
       const data = await res.json();
       if (data.results && data.results[0]) {
-        return data.results[0];
+        const result = data.results[0];
+        if (result.isAllowed && result.source !== 'whitelist') {
+          return { ...result, isAllowed: false, status: 'unverified',
+            reason: 'Найден в каталоге, но требуется одобрение администрации. Подайте заявку в вайтлист.' };
+        }
+        return result;
       }
     }
   } catch (e) {

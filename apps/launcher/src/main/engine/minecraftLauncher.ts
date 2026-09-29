@@ -8,6 +8,7 @@ import { configureEarlyLoading } from './earlyLoading';
 import { ensureMinecraftVanilla } from './mojang';
 import { ensureNeoForge } from './neoforge';
 import { hashCustomModFile, requireApprovedCustomMod } from './customModVerification';
+import { checkContentLinks, verifyLaunchContent } from './contentIntegrity';
 import { updateDiscordRpcStatus } from '../rpc/discordRpc';
 import { selectModpackProfile } from '../../shared/modpackProfiles';
 import { applyResourcePackProfile } from './resourcePackProfile';
@@ -101,6 +102,7 @@ export async function launchMinecraft(
     }
 
     const modsDir = path.join(gameDir, 'mods');
+    await checkContentLinks(gameDir);
     fs.mkdirSync(modsDir, { recursive: true });
     const officialMods = new Set(manifest.files.map((file) => file.path.replace(/\\/g, '/')));
     for (const filename of disabledCustomModFilenames) {
@@ -231,6 +233,7 @@ export async function launchMinecraft(
     sendLog('info', `🚀 Запуск Java 21: ${javaBin}`);
     setLaunchState({ status: 'starting' });
 
+    await verifyLaunchContent(gameDir, manifest.files, approvedCustomMods);
     const gameProcess = spawn(javaBin, fullArgs, {
       cwd: gameDir,
       env: { ...process.env },
