@@ -3,10 +3,11 @@
 balanceEnabled = false
 
 [hurtProxy]
-hurtProxyEnabled = false
+hurtProxyEnabled = true
+hurtProxyMobsTarget = true
 
 [manualDismount]
 dismountRequireGrounded = true
-dismountMaxSpeed = 1.0
-dismountMaxSpin = 1.5
-dismountHoldTicks = 10
+dismountMaxSpeed = 1.5
+dismountMaxSpin = 2.0
+dismountHoldTicks = 6

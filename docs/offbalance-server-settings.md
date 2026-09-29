@@ -1,25 +1,29 @@
 # Off Balance: настройки и возврат к offline-ragdoll
 
-Изменения опубликованы 2026-09-29 в тестовой сборке 6.1.10 / Quiby 1.1.8.
+Возврат к offline-телу опубликован в сборке 6.1.10 / Quiby 1.1.8.
+Настройки ниже дополнительно смягчены по обратной связи; это ещё не опубликованные
+шаблоны следующего обновления. Архив 6.1.10 содержит прежние значения.
 
 ```toml
 [balance]
 balanceEnabled = false
 
 [hurtProxy]
-hurtProxyEnabled = false
+hurtProxyEnabled = true
+hurtProxyMobsTarget = true
 
 [manualDismount]
 dismountRequireGrounded = true
-dismountMaxSpeed = 1.0
-dismountMaxSpin = 1.5
-dismountHoldTicks = 10
+dismountMaxSpeed = 1.5
+dismountMaxSpin = 2.0
+dismountHoldTicks = 6
 ```
 
 Шаблоны находятся в `modpacks/quiby-s6/overrides/config/offbalance-server.toml`
 и `modpacks/quiby-s6/overrides/defaultconfigs/offbalance-server.toml`.
-Для существующего мира нужно остановить Minecraft-сервер и изменить соответствующие
-ключи в `<мир>/serverconfig/offbalance-server.toml`, сохранив остальные настройки.
+Для существующего сервера нужно остановить Minecraft-сервер и изменить соответствующие
+ключи в `config/offbalance-server.toml`, а также в `<мир>/serverconfig/offbalance-server.toml`,
+если такой файл существует, сохранив остальные настройки.
 Одна лишь замена `defaultconfigs` уже созданный мир не обновляет.
 
 В quiby.mod добавлена серверная интеграция Off Balance 2.0: положение offline-тела
@@ -36,3 +40,8 @@ API, Docker и Cloudflare менять не требуется. Серверны
 игроком → вход; повторить с перезапуском сервера и с выгрузкой чанка. Проверить,
 что инвентарь возвращается ровно один раз, а тело удаляется. Эти сетевые сценарии
 не считаются подтверждёнными одной успешной компиляцией и проверкой координат.
+
+Допуск скорости увеличен с 1.0 до 1.5, вращения — с 1.5 до 2.0.
+Условия должны удерживаться 6 тиков вместо 10 (0.3 с вместо 0.5 с при 20 TPS).
+Контакт с землёй по-прежнему обязателен. Оба параметра hurt proxy включены,
+включая возможность мобам выбирать тело целью. Поведение требуется проверить в игре.
