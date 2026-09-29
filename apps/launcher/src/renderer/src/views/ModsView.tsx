@@ -223,8 +223,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
   };
 
   const handleAddCustomModFile = async (file: File) => {
-    if (!file.name.toLowerCase().endsWith('.jar') || file.size > 100 * 1024 * 1024) {
-      onNotify?.('Неверный файл', 'Нужен .jar размером до 100 МБ.', 'error');
+    if (!file.name.toLowerCase().endsWith('.jar') || file.size > 512 * 1024 * 1024) {
+      onNotify?.('Неверный файл', 'Нужен .jar размером до 512 МБ.', 'error');
       return;
     }
 
@@ -247,13 +247,13 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
     setIsVerifying(true);
     try {
-      const result = await window.quibyApi.stageCustomMod(file.name, new Uint8Array(await file.arrayBuffer()));
+      const result = await window.quibyApi.stageCustomMod(file.name, new Uint8Array(await file.arrayBuffer()), session?.token);
       if (result.isAllowed) {
         if (manifest?.files.some((entry) => entry.path.replace(/\\/g, '/') === `mods/${file.name}`)) {
           throw new Error('Этот мод уже входит в сборку сервера');
         }
         if (!window.quibyApi) throw new Error('Установка модов доступна только в приложении лаунчера');
-        await window.quibyApi.installCustomMod(gameDir, file.name, new Uint8Array(await file.arrayBuffer()));
+        await window.quibyApi.installCustomMod(gameDir, file.name, new Uint8Array(await file.arrayBuffer()), session?.token);
       }
       const verifiedMeta = resolveModMetadata(
         result.name || initialMod.name,

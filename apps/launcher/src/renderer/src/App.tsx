@@ -203,7 +203,7 @@ export const App: React.FC = () => {
           if (cancelled) break;
           if (!mod.hashSha1) continue;
           try {
-            const result = await window.quibyApi.refreshCustomMod(settings.gameDir, mod.filename, mod.hashSha1);
+            const result = await window.quibyApi.refreshCustomMod(settings.gameDir, mod.filename, mod.hashSha1, session?.token);
             if (cancelled) break;
             const latest = modsForRefresh.current.find(item => item.id === mod.id && item.hashSha1 === mod.hashSha1);
             if (!latest) continue;
@@ -223,7 +223,7 @@ export const App: React.FC = () => {
     const interval = setInterval(() => void refresh(), 20000);
     const focus = () => void refresh(); window.addEventListener('focus', focus);
     return () => { cancelled = true; clearInterval(interval); window.removeEventListener('focus', focus); };
-  }, [settings.gameDir]);
+  }, [settings.gameDir, session?.token]);
 
   // 4. Playtime & Fast-Connect States
   const [totalPlaytimeSeconds, setTotalPlaytimeSeconds] = useState<number>(0);

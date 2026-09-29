@@ -145,6 +145,9 @@ export async function initDatabase(): Promise<void> {
   if (!requestColumns.some(column => column.name === 'review_sequence')) {
     await dbRun('ALTER TABLE mod_whitelist_requests ADD COLUMN review_sequence INTEGER');
   }
+  for (const [name, type] of [['auto_detected', 'INTEGER NOT NULL DEFAULT 0'], ['size_bytes', 'INTEGER']]) {
+    if (!requestColumns.some(column => column.name === name)) await dbRun('ALTER TABLE mod_whitelist_requests ADD COLUMN ' + name + ' ' + type);
+  }
   await dbRun('CREATE INDEX IF NOT EXISTS mod_requests_hash_review ON mod_whitelist_requests(hash_sha1, review_sequence DESC)');
   await dbRun('CREATE INDEX IF NOT EXISTS mod_requests_queue ON mod_whitelist_requests(status, id)');
 

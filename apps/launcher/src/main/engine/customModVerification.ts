@@ -17,10 +17,11 @@ export async function requireApprovedCustomMod(
   hashSha1: string,
   size: number,
   serverUrl: string,
-  bytes?: Buffer
+  bytes?: Buffer,
+  token?: string
 ): Promise<void> {
   if (bytes) {
-    const result = await evaluateCustomMod(filename, bytes, serverUrl);
+    const result = await evaluateCustomMod(filename, bytes, serverUrl, token);
     if (result.hashSha1 !== hashSha1 || !result.isAllowed) throw new Error(result.reason);
     return;
   }
@@ -59,12 +60,27 @@ export async function requireApprovedCustomMod(
 
 const scanCache = new Map<string, Promise<ArchiveScan>>();
 
-export async function evaluateCustomMod(filename: string, bytes: Buffer, serverUrl: string) {
+export async function evaluateCustomMod(filename: string, bytes: Buffer, serverUrl: string, token?: string) {
   const hashSha1 = hashCustomModBytes(bytes);
+  if (bytes.length > 512 * 1024 * 1024) throw new Error('Максимальный размер мода — 512 МБ');
+  const oversized = bytes.length > 100 * 1024 * 1024;
+  const finish = async (result: any) => {
+    if (!result.isAllowed && token) {
+      try {
+        const response = await fetch(`${serverUrl.replace(/\/$/, '')}/api/mods/detected`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ filename, hash_sha1: hashSha1, size: bytes.length, reason: String(result.reason || 'Нужна проверка').slice(0,1000) }),
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) throw new Error();
+      } catch { result.reason += ' Запись для администрации пока не отправлена; лаунчер повторит попытку.'; }
+    }
+    return result;
+  };
   const cacheKey = createHash('sha256').update(bytes).digest('hex');
   if (!scanCache.has(cacheKey)) {
     if (scanCache.size >= 64) scanCache.delete(scanCache.keys().next().value!);
-    scanCache.set(cacheKey, scanModArchive(bytes));
+    scanCache.set(cacheKey, oversized ? Promise.resolve({ complete: false, blocked: false, metadata: '', findings: ['JAR больше 100 МБ: требуется исключение администрации по SHA-1'] }) : scanModArchive(bytes));
   }
   const scan = await scanCache.get(cacheKey)!;
   if (!scan.complete) scanCache.delete(cacheKey);
@@ -76,13 +92,13 @@ export async function evaluateCustomMod(filename: string, bytes: Buffer, serverU
   if (!response.ok) throw new Error('Сервер проверки недоступен: ' + response.status);
   const result = (await response.json()).results?.[0];
   if (!result || result.hashSha1?.toLowerCase() !== hashSha1) throw new Error('Некорректный ответ проверки мода');
-  if (result.status === 'blocked') return { ...result, hashSha1, isAllowed: false };
+  if (result.status === 'blocked') return finish({ ...result, hashSha1, isAllowed: false });
   const manual = result.source === 'whitelist' && result.status === 'approved' && result.isAllowed === true;
-  if (scan.blocked && !manual) return { ...result, hashSha1, isAllowed: false, status: 'blocked',
-    reason: scan.findings.join('; '), scanFindings: scan.findings };
-  const allowed = scan.complete && (manual || scan.findings.length === 0);
-  return { ...result, hashSha1, isAllowed: allowed, status: allowed ? 'approved' : 'unverified',
+  if (scan.blocked && !manual) return finish({ ...result, hashSha1, isAllowed: false, status: 'blocked',
+    reason: scan.findings.join('; '), scanFindings: scan.findings });
+  const allowed = oversized ? manual : scan.complete && (manual || scan.findings.length === 0);
+  return finish({ ...result, hashSha1, isAllowed: allowed, status: allowed ? 'approved' : 'unverified',
     reason: allowed ? (manual ? result.reason : 'Автопроверка JAR пройдена: метаданные, пути, классы и вложенные архивы; известных признаков не найдено.')
       : 'Нужна ручная проверка: ' + scan.findings.join('; '),
-    scanFindings: scan.findings };
+    scanFindings: scan.findings });
 }

@@ -59,3 +59,26 @@ test('detects lighting overrides in escaped metadata, separated paths and rename
     assert.equal(scan.blocked, true, name);
   }
 });
+
+
+test('large JAR requires exact manual approval and reports rejected files without hiding the result', async () => {
+  const original=globalThis.fetch;
+  const bytes=Buffer.alloc(100*1024*1024+1);
+  let manual=false, reports=0, failedReport=false;
+  globalThis.fetch=async(url,init)=>{
+    if(String(url).endsWith('/detected')) {
+      reports++;const body=JSON.parse(String(init?.body));assert.equal(body.size,bytes.length);
+      assert.equal((init?.headers as Record<string,string>).Authorization,'Bearer test-token');
+      return new Response('{}',{status:failedReport?500:200});
+    }
+    const hash=JSON.parse(String(init?.body)).mods[0].hash_sha1;
+    return new Response(JSON.stringify({results:[{hashSha1:hash,status:'approved',isAllowed:true,source:manual?'whitelist':'modrinth',reason:'Checked'}]}));
+  };
+  try {
+    assert.equal((await evaluateCustomMod('large.jar',bytes,'http://test','test-token')).isAllowed,false);
+    assert.equal(reports,1);
+    manual=true;assert.equal((await evaluateCustomMod('large.jar',bytes,'http://test','test-token')).isAllowed,true);assert.equal(reports,1);
+    manual=false;failedReport=true;const result=await evaluateCustomMod('large.jar',bytes,'http://test','test-token');
+    assert.equal(result.isAllowed,false);assert.match(result.reason,/пока не отправлена/);
+  } finally {globalThis.fetch=original;}
+});

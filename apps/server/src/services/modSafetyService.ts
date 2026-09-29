@@ -87,6 +87,21 @@ export async function verifyMod(
 ): Promise<ModVerificationResult> {
   const normalizedHash = hashSha1.toLowerCase().trim();
 
+  // Manual decisions are authoritative even after cache eviction or an in-flight catalog lookup.
+  const review = await dbGet<any>(
+    "SELECT * FROM mod_whitelist_requests WHERE hash_sha1 = ? AND status IN ('approved', 'rejected') ORDER BY COALESCE(review_sequence, 0) DESC, id DESC LIMIT 1",
+    [normalizedHash]
+  );
+  if (review) {
+    const approved = review.status === 'approved';
+    return {
+      hashSha1: normalizedHash, name, filename, isAllowed: approved,
+      status: approved ? 'approved' : 'blocked', source: 'whitelist',
+      reason: review.decision_reason || (approved ? 'Одобрен администрацией сервера' : 'Отклонён администрацией сервера'),
+      categories: ['whitelist'],
+    };
+  }
+
   const blockedName = (/(^|[^a-z0-9])esp([^a-z0-9]|$)/i.test(`${name} ${filename}`) ? 'esp' : undefined) || BLOCKED_FILE_NAMES.find((keyword) =>
     `${name} ${filename}`.toLowerCase().includes(keyword)
   );
@@ -100,21 +115,6 @@ export async function verifyMod(
       source: 'none',
       reason: `Запрещен: в названии обнаружена сигнатура читов или вредоносного ПО (${blockedName})`,
       categories: ['blocked-name'],
-    };
-  }
-
-  // Manual decisions are authoritative even after cache eviction or an in-flight catalog lookup.
-  const review = await dbGet<any>(
-    "SELECT * FROM mod_whitelist_requests WHERE hash_sha1 = ? AND status IN ('approved', 'rejected') ORDER BY COALESCE(review_sequence, 0) DESC, id DESC LIMIT 1",
-    [normalizedHash]
-  );
-  if (review) {
-    const approved = review.status === 'approved';
-    return {
-      hashSha1: normalizedHash, name, filename, isAllowed: approved,
-      status: approved ? 'approved' : 'blocked', source: 'whitelist',
-      reason: review.decision_reason || (approved ? 'Одобрен администрацией сервера' : 'Отклонён администрацией сервера'),
-      categories: ['whitelist'],
     };
   }
 
@@ -285,13 +285,13 @@ export async function submitWhitelistRequest(req: {
   await dbRun(
     `INSERT INTO mod_whitelist_requests (user_discord_id, mc_username, mod_name, filename, hash_sha1, reason, project_url, file_required, status)
      SELECT ?, ?, ?, ?, ?, ?, ?, ?, 'pending'
-     WHERE NOT EXISTS (SELECT 1 FROM mod_whitelist_requests WHERE user_discord_id IS ? AND hash_sha1 = ? AND status = 'pending')`,
+     WHERE NOT EXISTS (SELECT 1 FROM mod_whitelist_requests WHERE user_discord_id IS ? AND hash_sha1 = ? AND status = 'pending' AND auto_detected=0)`,
     [req.user_discord_id || null, req.mc_username || 'Player', req.mod_name, req.filename, hash,
       req.reason || 'Запрос от игрока', req.project_url || null, req.file_required ? 1 : 0, req.user_discord_id || null, hash]
   );
-  if (req.file_required) await dbRun("UPDATE mod_whitelist_requests SET file_required=1 WHERE user_discord_id IS ? AND hash_sha1=? AND status='pending'", [req.user_discord_id || null, hash]);
+  if (req.file_required) await dbRun("UPDATE mod_whitelist_requests SET file_required=1 WHERE user_discord_id IS ? AND hash_sha1=? AND status='pending' AND auto_detected=0", [req.user_discord_id || null, hash]);
   return (await dbGet<{ id: number; status: string }>(
-    "SELECT id, status FROM mod_whitelist_requests WHERE user_discord_id IS ? AND hash_sha1 = ? AND status = 'pending' ORDER BY id DESC LIMIT 1",
+    "SELECT id, status FROM mod_whitelist_requests WHERE user_discord_id IS ? AND hash_sha1 = ? AND status = 'pending' AND auto_detected=0 ORDER BY id DESC LIMIT 1",
     [req.user_discord_id || null, hash]
   ))!;
 }

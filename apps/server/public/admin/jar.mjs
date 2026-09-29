@@ -1,6 +1,6 @@
 // Inspect locally: neither the archive nor its contents are uploaded or executed.
 export async function readModJar(file) {
-  if (!/\.jar$/i.test(file.name) || !file.size || file.size > 64 * 1024 * 1024) throw Error('Выберите JAR размером до 64 МБ');
+  if (!/\.jar$/i.test(file.name) || !file.size || file.size > 512 * 1024 * 1024) throw Error('Выберите JAR размером до 512 МБ');
   const bytes = new Uint8Array(await file.arrayBuffer()), view = new DataView(bytes.buffer);
   const text = new TextDecoder();
   let end = bytes.length - 22;

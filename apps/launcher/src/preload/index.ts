@@ -50,11 +50,11 @@ export const quibyApi = {
   openScreenshotsFolder: (gameDir: string): Promise<void> => ipcRenderer.invoke('screenshots:open-folder', gameDir),
   trashScreenshots: (gameDir: string, filenames: string[]): Promise<void> => ipcRenderer.invoke('screenshots:trash', gameDir, filenames),
   copyScreenshot: (gameDir: string, filename: string): Promise<void> => ipcRenderer.invoke('screenshots:copy', gameDir, filename),
-  stageCustomMod: (filename: string, bytes: Uint8Array) => ipcRenderer.invoke('mods:stage', filename, bytes),
-  refreshCustomMod: (gameDir: string, filename: string, hash: string) => ipcRenderer.invoke('mods:refresh', gameDir, filename, hash),
+  stageCustomMod: (filename: string, bytes: Uint8Array, token?: string) => ipcRenderer.invoke('mods:stage', filename, bytes, token),
+  refreshCustomMod: (gameDir: string, filename: string, hash: string, token?: string) => ipcRenderer.invoke('mods:refresh', gameDir, filename, hash, token),
   uploadModReview: (hash: string, token: string, metadata: { mod_name: string; filename: string; reason: string; project_url?: string }) => ipcRenderer.invoke('mods:upload-review', hash, token, metadata),
-  installCustomMod: (gameDir: string, filename: string, bytes: Uint8Array) =>
-    ipcRenderer.invoke('mods:install', gameDir, filename, bytes),
+  installCustomMod: (gameDir: string, filename: string, bytes: Uint8Array, token?: string) =>
+    ipcRenderer.invoke('mods:install', gameDir, filename, bytes, token),
   removeCustomMod: (gameDir: string, filename: string) =>
     ipcRenderer.invoke('mods:remove', gameDir, filename),
 

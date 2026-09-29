@@ -36,7 +36,7 @@ router.get('/mod-whitelist-requests', async (req, res) => {
   try {
     const { after_id, limit, status } = query.data;
     const rows = await dbAll<any>(
-      'SELECT * FROM mod_whitelist_requests WHERE id > ? AND status = ? ORDER BY id ASC LIMIT ?',
+      'SELECT * FROM mod_whitelist_requests WHERE id > ? AND status = ? AND auto_detected=0 ORDER BY id ASC LIMIT ?',
       [after_id, status, limit + 1],
     );
     const requests = rows.slice(0, limit).map(row => ({ ...row, file: reviewFileInfo(row.hash_sha1) }));

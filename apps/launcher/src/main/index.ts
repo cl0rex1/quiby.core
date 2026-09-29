@@ -350,13 +350,13 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     if (!/^[a-f0-9]{40}$/.test(hash)) throw new Error('Некорректный хеш');
     return path.join(app.getPath('userData'), 'mod-staging', hash + '.jar');
   };
-  ipcMain.handle('mods:stage', async (_, filename: string, bytes: Uint8Array) => {
-    if (!/^[^/\\]+\.jar$/i.test(filename) || !bytes?.length || bytes.length > 100 * 1024 * 1024) throw new Error('Недопустимый файл');
+  ipcMain.handle('mods:stage', async (_, filename: string, bytes: Uint8Array, token?: string) => {
+    if (!/^[^/\\]+\.jar$/i.test(filename) || !bytes?.length || bytes.length > 512 * 1024 * 1024) throw new Error('Недопустимый файл');
     const data = Buffer.from(bytes), hash = hashCustomModBytes(data), target = stagedModPath(hash);
     fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target, data);
-    return evaluateCustomMod(filename, data, DEFAULT_SERVER_URL);
+    return evaluateCustomMod(filename, data, DEFAULT_SERVER_URL, token);
   });
-  ipcMain.handle('mods:refresh', async (_, gameDir: string, filename: string, hash: string) => {
+  ipcMain.handle('mods:refresh', async (_, gameDir: string, filename: string, hash: string, token?: string) => {
     if (!/^[^/\\]+\.jar$/i.test(filename)) throw new Error('Недопустимое имя');
     const root = gameDir || getDefaultGameDir();
     await checkContentLinks(root);
@@ -375,15 +375,15 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
         reason: `${result.reason || ''} Файл старой заявки отсутствует: выберите JAR повторно для установки.` };
     }
     const stat = fs.lstatSync(source);
-    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 100 * 1024 * 1024) throw new Error('Недопустимый файл');
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 512 * 1024 * 1024) throw new Error('Недопустимый файл');
     const data = fs.readFileSync(source);
-    if (data.length > 100 * 1024 * 1024 || hashCustomModBytes(data) !== hash) throw new Error('Файл изменён');
+    if (data.length > 512 * 1024 * 1024 || hashCustomModBytes(data) !== hash) throw new Error('Файл изменён');
     const staged = stagedModPath(hash);
     if (!fs.existsSync(staged)) {
       fs.mkdirSync(path.dirname(staged), { recursive: true });
       fs.writeFileSync(staged, data, { flag: 'wx' });
     }
-    const result = await evaluateCustomMod(filename, data, DEFAULT_SERVER_URL);
+    const result = await evaluateCustomMod(filename, data, DEFAULT_SERVER_URL, token);
 
     if (result.isAllowed && !fs.existsSync(target) && !fs.existsSync(target + '.disabled')) {
       fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target + '.disabled', data, { flag: 'wx' });
@@ -414,12 +414,12 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     throw new Error('Бот пока не подтвердил доставку файла в Discord. Повторите отправку; дубликат ожидающей заявки не создаётся.');
   });
 
-  ipcMain.handle('mods:install', async (_, gameDir: string, filename: string, bytes: Uint8Array) => {
-    if (!/^[^/\\]+\.jar$/i.test(filename) || !bytes?.length || bytes.length > 100 * 1024 * 1024) {
+  ipcMain.handle('mods:install', async (_, gameDir: string, filename: string, bytes: Uint8Array, token?: string) => {
+    if (!/^[^/\\]+\.jar$/i.test(filename) || !bytes?.length || bytes.length > 512 * 1024 * 1024) {
       throw new Error('Недопустимое имя или размер мода');
     }
     const modBytes = Buffer.from(bytes);
-    await requireApprovedCustomMod(filename, hashCustomModBytes(modBytes), modBytes.length, DEFAULT_SERVER_URL, modBytes);
+    await requireApprovedCustomMod(filename, hashCustomModBytes(modBytes), modBytes.length, DEFAULT_SERVER_URL, modBytes, token);
     const modsDir = path.join(gameDir?.trim() || getDefaultGameDir(), 'mods');
     await checkContentLinks(path.dirname(modsDir));
     fs.mkdirSync(modsDir, { recursive: true });

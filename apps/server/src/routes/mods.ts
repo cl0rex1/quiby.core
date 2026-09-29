@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { dbGet } from '../models/db';
+import { dbGet, dbRun } from '../models/db';
 import { getReviewFile, putReviewFile, validReviewLink } from '../services/modReviewFiles';
 import { Router, Request, Response, raw } from 'express';
 import { z } from 'zod';
@@ -66,6 +66,25 @@ router.post('/whitelist-request-file', requireAuth, raw({ type: 'application/oct
       user_discord_id: req.user!.discordId, mc_username: req.user!.mcUsername });
     return res.json({ success: true, request, message: 'Заявка с JAR передана боту. Файл временно находится в памяти до доставки в Discord.' });
   } catch (error) { return res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка отправки' }); }
+});
+
+// Authenticated observations, not proof of cheating. Never overwrite an admin decision.
+router.post('/detected', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const parsed = z.object({ filename: z.string().min(1).max(255).regex(/^[^/\\]+\.jar$/i),
+    hash_sha1: z.string().regex(/^[a-f0-9]{40}$/), size: z.number().int().positive().max(512*1024*1024),
+    reason: z.string().min(1).max(1000) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({error:'Некорректная запись мода'});
+  try {
+    const b=parsed.data;
+    const quota=await dbGet<any>("SELECT COUNT(*) total FROM mod_whitelist_requests WHERE user_discord_id=? AND auto_detected=1 AND created_at > datetime('now','-1 hour')",[req.user!.discordId]);
+    if (quota.total >= 100) return res.status(429).json({error:'Лимит записей за час'});
+    await dbRun(`INSERT INTO mod_whitelist_requests(user_discord_id,mc_username,mod_name,filename,hash_sha1,reason,status,auto_detected,size_bytes)
+      SELECT ?,?,?,?,?,?,'pending',1,? WHERE NOT EXISTS
+      (SELECT 1 FROM mod_whitelist_requests WHERE user_discord_id=? AND hash_sha1=?)`,
+      [req.user!.discordId,req.user!.mcUsername,b.filename.slice(0,-4).slice(0,100),b.filename,b.hash_sha1,
+        'Автопроверка лаунчера: '+b.reason,b.size,req.user!.discordId,b.hash_sha1]);
+    return res.json({success:true});
+  } catch { return res.status(500).json({error:'Не удалось сохранить запись'}); }
 });
 
 /**

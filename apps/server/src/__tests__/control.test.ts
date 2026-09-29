@@ -14,7 +14,7 @@ test('admin panel protects sessions, validates mutations and applies audited dec
   await initDatabase();await initDatabase();
   const control=(await import('../routes/control')).default;
   const {verifyMod}=await import('../services/modSafetyService');
-  const app=express();app.use(express.json());app.use('/api/control',control);
+  const app=express();app.use(express.json());app.use('/api/control',control);app.use('/api/mods',(await import('../routes/mods')).default);
   const server=app.listen(0,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));
   const base='http://127.0.0.1:'+(server.address() as {port:number}).port;
   const request=(url:string,options:RequestInit={})=>fetch(base+'/api/control'+url,options);
@@ -43,6 +43,18 @@ test('admin panel protects sessions, validates mutations and applies audited dec
     const entries=await (await request('/audit',{headers:auth})).json();assert.equal(entries.total,3);
     assert.equal((await request('/players?page=-1',{headers:auth})).status,400);
     assert.equal((await (await request('/players?search=missing',{headers:auth})).json()).total,0);
+    const observation={filename:'renamed.jar',hash_sha1:'d'.repeat(40),size:110*1024*1024,reason:'Файл больше лимита автоматической проверки'};
+    const report=()=>fetch(base+'/api/mods/detected',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+userToken},body:JSON.stringify(observation)});
+    assert.equal((await fetch(base+'/api/mods/detected',{method:'POST',headers,body:JSON.stringify(observation)})).status,401);
+    assert.equal((await report()).status,200);assert.equal((await report()).status,200);
+    const detected=await dbGet<any>('SELECT * FROM mod_whitelist_requests WHERE hash_sha1=?',[observation.hash_sha1]);
+    assert.equal(detected.user_discord_id,'123456789012345678');assert.equal(detected.auto_detected,1);assert.equal(detected.size_bytes,observation.size);
+    assert.equal((await dbGet<any>('SELECT COUNT(*) n FROM mod_whitelist_requests WHERE hash_sha1=?',[observation.hash_sha1])).n,1);
+    assert.equal((await request('/mods/'+detected.id,{method:'PATCH',headers:auth,body:JSON.stringify({decision:'approved',reason:'Проверено исключение размера'})})).status,200);
+    await report();assert.equal((await dbGet<any>('SELECT status FROM mod_whitelist_requests WHERE id=?',[detected.id])).status,'approved');
+    const {submitWhitelistRequest}=await import('../services/modSafetyService');
+    const explicit=await submitWhitelistRequest({user_discord_id:'123456789012345678',mc_username:'Tester',mod_name:'Large',filename:'renamed.jar',hash_sha1:observation.hash_sha1});
+    assert.notEqual(explicit.id,detected.id);
     config.adminApiKey='rotated-test-key';assert.equal((await request('/session',{headers:auth})).status,401);
   } finally {
     await new Promise<void>(resolve=>server.close(()=>resolve()));await closeDatabase();await fs.rm(dir,{recursive:true,force:true});
