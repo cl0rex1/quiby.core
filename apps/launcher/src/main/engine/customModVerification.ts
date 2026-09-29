@@ -68,6 +68,8 @@ export async function evaluateCustomMod(filename: string, bytes: Buffer, serverU
   }
   const scan = await scanCache.get(cacheKey)!;
   if (!scan.complete) scanCache.delete(cacheKey);
+  if (scan.blocked) return { hashSha1, isAllowed: false, status: 'blocked', source: 'none',
+    reason: scan.findings.join('; '), scanFindings: scan.findings };
   const response = await fetch(`${serverUrl.replace(/\/$/, '')}/api/mods/verify`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ mods: [{ name: filename.slice(0, -4).slice(0,100), filename, hash_sha1: hashSha1 }] }),

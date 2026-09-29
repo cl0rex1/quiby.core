@@ -1,8 +1,6 @@
-import fs from 'fs';
-import path from 'path';
 import { createHash } from 'crypto';
 import { dbGet } from '../models/db';
-import { reviewFilePath, validReviewLink } from '../services/modReviewFiles';
+import { getReviewFile, putReviewFile, validReviewLink } from '../services/modReviewFiles';
 import { Router, Request, Response, raw } from 'express';
 import { z } from 'zod';
 import { requireAuth, requireAdmin, AuthenticatedRequest } from '../middleware/auth';
@@ -29,9 +27,9 @@ export const whitelistRequestSchema = z.object({
 // Files are private; download links are short-lived and issued only to the review bot.
 router.get('/review-file/:hash', (req, res) => {
   if (!validReviewLink(req.params.hash, Number(req.query.expires), String(req.query.signature || ''))) return res.sendStatus(403);
-  const file = reviewFilePath(req.params.hash);
-  if (!fs.existsSync(file)) return res.sendStatus(404);
-  return res.download(file, req.params.hash + '.jar');
+  const bytes = getReviewFile(req.params.hash);
+  if (!bytes) return res.sendStatus(404);
+  return res.attachment(req.params.hash + '.jar').send(bytes);
 });
 router.put('/review-file/:hash', requireAuth, async (req: AuthenticatedRequest, res, next) => {
   if (!/^[a-f0-9]{40}$/.test(req.params.hash)) return res.sendStatus(400);
@@ -40,12 +38,34 @@ router.put('/review-file/:hash', requireAuth, async (req: AuthenticatedRequest, 
     if (!owner) return res.sendStatus(403);
     next();
   } catch { res.sendStatus(500); }
-}, raw({ type: 'application/octet-stream', limit: '100mb' }), (req, res) => {
+}, raw({ type: 'application/octet-stream', limit: '8mb' }), (req, res) => {
   if (!Buffer.isBuffer(req.body) || !req.body.length || createHash('sha1').update(req.body).digest('hex') !== req.params.hash) return res.status(400).json({ error: 'Hash mismatch' });
-  const file = reviewFilePath(req.params.hash);
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, req.body);
+  try { putReviewFile(req.params.hash, req.body); }
+  catch (error) { return res.status(413).json({ error: String(error) }); }
   return res.json({ success: true });
+});
+
+router.get('/review-delivery/:hash', requireAuth, async (req: AuthenticatedRequest, res) => {
+  if (!/^[a-f0-9]{40}$/.test(req.params.hash)) return res.sendStatus(400);
+  try {
+    const row = await dbGet<any>('SELECT discord_message_id FROM mod_whitelist_requests WHERE hash_sha1=? AND user_discord_id=? ORDER BY id DESC LIMIT 1', [req.params.hash, req.user!.discordId]);
+    if (!row) return res.sendStatus(404);
+    return res.json({ delivered: !!row.discord_message_id, queued: !!getReviewFile(req.params.hash) });
+  } catch { return res.sendStatus(500); }
+});
+
+// One request carries both metadata and bytes; no JSON-only orphan is created.
+router.post('/whitelist-request-file', requireAuth, raw({ type: 'application/octet-stream', limit: '8mb' }), async (req: AuthenticatedRequest, res) => {
+  try {
+    const payload = whitelistRequestSchema.safeParse(JSON.parse(decodeURIComponent(req.get('x-mod-request') || '')));
+    if (!payload.success || !Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ error: 'Некорректная заявка или JAR' });
+    const hash = createHash('sha1').update(req.body).digest('hex');
+    if (hash !== payload.data.hash_sha1.toLowerCase()) return res.status(400).json({ error: 'Хеш файла не совпадает' });
+    putReviewFile(hash, req.body);
+    const request = await submitWhitelistRequest({ ...payload.data, hash_sha1: hash, file_required: true,
+      user_discord_id: req.user!.discordId, mc_username: req.user!.mcUsername });
+    return res.json({ success: true, request, message: 'Заявка с JAR передана боту. Файл временно находится в памяти до доставки в Discord.' });
+  } catch (error) { return res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка отправки' }); }
 });
 
 /**

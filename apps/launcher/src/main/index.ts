@@ -390,14 +390,28 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     }
     return result;
   });
-  ipcMain.handle('mods:upload-review', async (_, hash: string, token: string) => {
+  ipcMain.handle('mods:upload-review', async (_, hash: string, token: string, metadata: { mod_name: string; filename: string; reason: string; project_url?: string }) => {
     const bytes = fs.readFileSync(stagedModPath(hash));
-    const response = await fetch(DEFAULT_SERVER_URL + '/api/mods/review-file/' + hash, {
-      method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/octet-stream' },
+    if (bytes.length > 8 * 1024 * 1024) throw new Error('JAR больше 8 МиБ: файл нельзя отправить вложением Discord.');
+    const response = await fetch(DEFAULT_SERVER_URL + '/api/mods/whitelist-request-file', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/octet-stream',
+        'X-Mod-Request': encodeURIComponent(JSON.stringify({ ...metadata, hash_sha1: hash, file_required: true })) },
       body: bytes, signal: AbortSignal.timeout(60000),
     });
-    if (!response.ok) throw new Error('Не удалось прикрепить JAR: ' + response.status);
-    return true;
+    if (response.status === 404) throw new Error('API ещё не обновлён: отправка заявки вместе с JAR недоступна.');
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Не удалось отправить JAR: ' + response.status);
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const receipt = await fetch(DEFAULT_SERVER_URL + '/api/mods/review-delivery/' + hash, {
+        headers: { Authorization: 'Bearer ' + token }, signal: AbortSignal.timeout(5000),
+      });
+      if (!receipt.ok) throw new Error('Не удалось подтвердить доставку JAR. Повторите отправку.');
+      const delivery = await receipt.json();
+      if (delivery.delivered) return result;
+      if (!delivery.queued) break;
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    throw new Error('Бот пока не подтвердил доставку файла в Discord. Повторите отправку; дубликат ожидающей заявки не создаётся.');
   });
 
   ipcMain.handle('mods:install', async (_, gameDir: string, filename: string, bytes: Uint8Array) => {

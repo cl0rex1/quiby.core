@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle, Package } from 'lucide-react';
 import { AuthSession } from '@quiby/shared';
 import { CustomModItem } from '../views/ModsView';
-import { submitModWhitelistRequest } from '../utils/modVerifier';
 import { resolveModMetadata } from '../utils/knownMods';
 
 interface ModWhitelistModalProps {
@@ -56,21 +55,11 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
     setError(null);
 
     try {
-      // 2. Submit to server & Discord
-      const payload = {
-        name: mod.name,
-        filename: mod.filename,
-        hashSha1: mod.hashSha1 || 'sha1_pending_' + mod.id,
-      };
-
-      const result = await submitModWhitelistRequest(payload, session, serverUrl, {
-        mc_username: session?.user?.mcUsername || session?.user?.username || 'Player',
-        reason: reason.trim(),
-        project_url: projectUrl.trim(),
+      if (!mod.hashSha1 || !session?.token) throw new Error('Выберите JAR и войдите в аккаунт.');
+      const result = await window.quibyApi.uploadModReview(mod.hashSha1, session.token, {
+        mod_name: mod.name, filename: mod.filename, reason: reason.trim(), project_url: projectUrl.trim(),
       });
-
       if (result.success) {
-        await window.quibyApi.uploadModReview(payload.hashSha1, session!.token);
         onSuccess(mod.id, meta.displayName);
         onClose();
       } else {
@@ -132,7 +121,7 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
         </div>
 
         {!session?.token && <p className="inline-error">Войдите в аккаунт, чтобы отправить заявку.</p>}
-        <p className="text-xs text-zinc-400">Администрация рассмотрит конкретную версию файла. JAR будет приложен к заявке. Решение появится автоматически.</p>
+        <p className="text-xs text-zinc-400">Администрация рассмотрит конкретную версию файла. JAR до 8 МиБ отправится вложением в Discord без хранения на диске API. Дождитесь подтверждения доставки. Решение появится автоматически.</p>
         {/* Minimal Form: 2 Inputs Only */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (

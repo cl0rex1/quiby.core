@@ -34,6 +34,9 @@ test('automatic admission retains manual denial, explicit approval and hash bind
     status = 'blocked'; source = 'whitelist';
     assert.equal((await evaluateCustomMod('renamed.jar', fixture('clean'), 'http://test')).isAllowed, false);
     status = 'approved';
+    const gamma = await evaluateCustomMod('renamed.jar', fixture('gamma'), 'http://test');
+    assert.equal(gamma.isAllowed, false);
+    assert.equal(gamma.status, 'blocked');
     assert.equal((await evaluateCustomMod('renamed.jar', fixture('class'), 'http://test')).isAllowed, true);
     assert.equal((await evaluateCustomMod('broken.jar', fixture('invalid'), 'http://test')).isAllowed, false);
     spoof = true;

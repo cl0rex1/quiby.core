@@ -1,11 +1,12 @@
 import { fromBuffer, Entry, ZipFile } from 'yauzl';
 
-export interface ArchiveScan { complete: boolean; findings: string[]; metadata: string }
+export interface ArchiveScan { complete: boolean; findings: string[]; metadata: string; blocked: boolean }
+const forbiddenLighting = /(?:gamma[-_ .]?utils?|full[-_ .]?bright|full[-_ .]?brightness|gammabright|boosted[-_ .]?brightness|gamma[-_ .]?(?:override|bypass|hack|toggle)|(?:change|increase|boost|unlimited)[-_ .]+gamma)/i;
 const suspicious = /(?:killaura|kill[-_ ]aura|x[-_ ]?ray|freecam|flyhack|speedhack|cheststealer|seedcracker|baritone|meteorclient|wurstclient|liquidbounce|bleachhack|aimbot|nuker|autoclicker|fractureiser|tokengrabber|token[-_ ]grabber|infostealer|keylogger|files\.skyrage\.de|powershell\s+-encodedcommand)/i;
 
 /** Bounded inspection only: never extract files to disk or execute Java/native code. */
 export async function scanModArchive(bytes: Buffer): Promise<ArchiveScan> {
-  const result: ArchiveScan = { complete: true, findings: [], metadata: '' };
+  const result: ArchiveScan = { complete: true, findings: [], metadata: '', blocked: false };
   let count = 0, expanded = 0, hasMetadata = false;
   const deadline = Date.now() + 15000;
   const note = (value: string) => { if (result.findings.length < 12 && !result.findings.includes(value)) result.findings.push(value); };
@@ -27,6 +28,7 @@ export async function scanModArchive(bytes: Buffer): Promise<ArchiveScan> {
           if (names.has(name.toLowerCase())) throw new Error('Дублирующийся путь внутри JAR');
           names.add(name.toLowerCase());
           if (entry.generalPurposeBitFlag & 1) throw new Error('Зашифрованное содержимое JAR');
+          if (forbiddenLighting.test(name)) { result.blocked = true; note('Запрещённый мод гаммы/fullbright: ' + name.slice(0, 180)); }
           if (suspicious.test(name)) note(`Подозрительный путь: ${prefix}${name}`.slice(0, 250));
           if (/\.(dll|so|dylib|exe)$/i.test(name)) note('Вложенный исполняемый или нативный файл');
           if (name.endsWith('/')) { zip.readEntry(); return; }
@@ -48,6 +50,8 @@ export async function scanModArchive(bytes: Buffer): Promise<ArchiveScan> {
           if (nested) await inspect(data, depth + 1, `${prefix}${name}!/`);
           else {
             const text = data.toString('utf8');
+            const lighting = text.match(forbiddenLighting);
+            if (lighting) { result.blocked = true; note('Запрещённое изменение гаммы/fullbright: ' + lighting[0]); }
             const match = text.match(suspicious);
             if (match) note(`Признак ${match[0]} в ${prefix}${name}`.slice(0, 250));
             if (metadata && depth === 0) result.metadata += text.slice(0, 16000 - result.metadata.length);

@@ -1,9 +1,9 @@
-import { reviewFileInfo } from '../services/modReviewFiles';
+import { reviewFileInfo, removeReviewFile } from '../services/modReviewFiles';
 import { timingSafeEqual } from 'crypto';
 import { Router } from 'express';
 import { z } from 'zod';
 import { config } from '../config';
-import { dbAll, dbGet } from '../models/db';
+import { dbAll, dbGet, dbRun } from '../models/db';
 import { reviewWhitelistRequest } from '../services/modSafetyService';
 import { reviewUsernameChangeRequest } from '../services/usernameChangeService';
 
@@ -48,6 +48,19 @@ router.get('/mod-whitelist-requests', async (req, res) => {
   } catch {
     return res.status(500).json({ error: 'Не удалось получить заявки' });
   }
+});
+router.post('/mod-whitelist-requests/:id/delivered', async (req, res) => {
+  const id = idSchema.safeParse(req.params.id);
+  const message = z.string().regex(/^\d{17,20}$/).safeParse(req.body?.message_id);
+  if (!id.success || !message.success) return res.sendStatus(400);
+  try {
+    const row = await dbGet<any>('SELECT hash_sha1 FROM mod_whitelist_requests WHERE id=?', [id.data]);
+    if (!row) return res.sendStatus(404);
+    await dbRun('UPDATE mod_whitelist_requests SET discord_message_id=? WHERE id=?', [message.data, id.data]);
+    const other = await dbGet("SELECT id FROM mod_whitelist_requests WHERE hash_sha1=? AND discord_message_id IS NULL AND file_required=1 AND status='pending'", [row.hash_sha1]);
+    if (!other) removeReviewFile(row.hash_sha1);
+    return res.json({ success: true });
+  } catch { return res.sendStatus(500); }
 });
 router.get('/mod-whitelist-requests/:id/file', async (req, res) => {
   const id = idSchema.safeParse(req.params.id);

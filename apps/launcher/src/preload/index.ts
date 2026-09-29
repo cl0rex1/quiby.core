@@ -52,7 +52,7 @@ export const quibyApi = {
   copyScreenshot: (gameDir: string, filename: string): Promise<void> => ipcRenderer.invoke('screenshots:copy', gameDir, filename),
   stageCustomMod: (filename: string, bytes: Uint8Array) => ipcRenderer.invoke('mods:stage', filename, bytes),
   refreshCustomMod: (gameDir: string, filename: string, hash: string) => ipcRenderer.invoke('mods:refresh', gameDir, filename, hash),
-  uploadModReview: (hash: string, token: string) => ipcRenderer.invoke('mods:upload-review', hash, token),
+  uploadModReview: (hash: string, token: string, metadata: { mod_name: string; filename: string; reason: string; project_url?: string }) => ipcRenderer.invoke('mods:upload-review', hash, token, metadata),
   installCustomMod: (gameDir: string, filename: string, bytes: Uint8Array) =>
     ipcRenderer.invoke('mods:install', gameDir, filename, bytes),
   removeCustomMod: (gameDir: string, filename: string) =>

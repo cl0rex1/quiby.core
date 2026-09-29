@@ -135,6 +135,9 @@ export async function initDatabase(): Promise<void> {
       await dbRun('ALTER TABLE mod_whitelist_requests ADD COLUMN ' + name + ' TEXT');
     }
   }
+  if (!requestColumns.some(column => column.name === 'discord_message_id')) {
+    await dbRun('ALTER TABLE mod_whitelist_requests ADD COLUMN discord_message_id TEXT');
+  }
   if (!requestColumns.some(column => column.name === 'file_required')) {
     await dbRun('ALTER TABLE mod_whitelist_requests ADD COLUMN file_required INTEGER NOT NULL DEFAULT 0');
   }

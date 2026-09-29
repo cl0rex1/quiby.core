@@ -15,6 +15,7 @@ export interface ModVerificationResult {
 }
 
 const FORBIDDEN_KEYWORDS = [
+  'gamma', 'fullbright', 'full-bright', 'full_bright', 'full bright', 'boosted brightness',
   'xray',
   'x-ray',
   'x_ray',
@@ -51,6 +52,7 @@ const FORBIDDEN_KEYWORDS = [
 ];
 
 const BLOCKED_FILE_NAMES = [
+  'gamma', 'fullbright', 'full-bright', 'full_bright', 'full bright', 'boosted-brightness',
   'xray', 'x-ray', 'meteor', 'wurst', 'baritone', 'liquidbounce',
   'killaura', 'kill-aura', 'autoclicker', 'auto-clicker', 'freecam',
   'cheststealer', 'seedcracker', 'bleachhack', 'aimbot',
@@ -283,6 +285,7 @@ export async function submitWhitelistRequest(req: {
     [req.user_discord_id || null, req.mc_username || 'Player', req.mod_name, req.filename, hash,
       req.reason || 'Запрос от игрока', req.project_url || null, req.file_required ? 1 : 0, req.user_discord_id || null, hash]
   );
+  if (req.file_required) await dbRun("UPDATE mod_whitelist_requests SET file_required=1 WHERE user_discord_id IS ? AND hash_sha1=? AND status='pending'", [req.user_discord_id || null, hash]);
   return (await dbGet<{ id: number; status: string }>(
     "SELECT id, status FROM mod_whitelist_requests WHERE user_discord_id IS ? AND hash_sha1 = ? AND status = 'pending' ORDER BY id DESC LIMIT 1",
     [req.user_discord_id || null, hash]

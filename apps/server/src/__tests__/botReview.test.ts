@@ -113,7 +113,20 @@ test('bot API authenticates, attributes requests and atomically applies idempote
     assert.equal((await request(uploadRoute)).status, 403);
     assert.equal((await request(fileInfo.file.path + '0')).status, 403);
     assert.deepEqual(Buffer.from(await (await request(fileInfo.file.path)).arrayBuffer()), jar);
+    assert.equal(await fs.stat(path.join(dir, 'mod-reviews', fileHash + '.jar')).then(() => true, () => false), false);
+    assert.equal((await request(`/api/bot/mod-whitelist-requests/${fileRequest.id}/delivered`, { method: 'POST', headers: botHeaders, body: JSON.stringify({ message_id: '234567890123456789' }) })).status, 200);
+    assert.equal((await request(fileInfo.file.path)).status, 404, 'Acknowledgment releases attachment memory');
+    const receipt = await (await request('/api/mods/review-delivery/' + fileHash, { headers: playerHeaders })).json();
+    assert.equal(receipt.delivered, true);
     await dbRun('DELETE FROM mod_whitelist_requests WHERE id=?', [fileRequest.id]);
+    const combinedHeaders = { ...uploadHeaders, 'x-mod-request': encodeURIComponent(JSON.stringify({ ...payload, hash_sha1: fileHash })) };
+    const combined = await request('/api/mods/whitelist-request-file', { method: 'POST', headers: combinedHeaders, body: jar });
+    assert.equal(combined.status, 200);
+    const combinedId = (await combined.json()).request.id;
+    assert.equal((await dbGet<any>('SELECT file_required FROM mod_whitelist_requests WHERE id=?', [combinedId]))?.file_required, 1);
+    assert.equal((await request('/api/mods/whitelist-request-file', { method: 'POST', headers: combinedHeaders, body: Buffer.from('wrong') })).status, 400);
+    assert.equal((await (await request('/api/mods/whitelist-request-file', { method: 'POST', headers: combinedHeaders, body: jar })).json()).request.id, combinedId);
+    await dbRun('DELETE FROM mod_whitelist_requests WHERE id=?', [combinedId]);
     const created = await submit();
     assert.equal((await submit()).id, created.id);
     const queue = await (
