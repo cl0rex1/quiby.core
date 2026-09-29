@@ -1,6 +1,6 @@
 # Quiby: ignore minor damage; retain explosion reactions.
 [ragdoll]
 onDamage = true
-minDamage = 4.0
+minDamage = 10.0
 onExplosion = true
 cooldownTicks = 20

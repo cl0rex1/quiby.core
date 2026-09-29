@@ -7,7 +7,10 @@ hurtProxyEnabled = true
 hurtProxyMobsTarget = true
 
 [manualDismount]
-dismountRequireGrounded = true
+# Off Balance checks foot contact only; lying on the back must not lock sneak recovery.
+manualDismountEnabled = true
+dismountMaxTiltDegrees = 180.0
+dismountRequireGrounded = false
 dismountMaxSpeed = 2.5
 dismountMaxSpin = 3.5
 dismountHoldTicks = 3
