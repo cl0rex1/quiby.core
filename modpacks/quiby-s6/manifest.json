@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.13",
+  "version": "6.1.14",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 274076242,
+  "totalSize": 274075941,
   "files": [
     {
       "path": "config/DistantHorizons.toml",
@@ -504,9 +504,9 @@
     },
     {
       "path": "config/offbalance-server.toml",
-      "sha256": "6d129416303ecd396a42af7db2b0bf650bd6d68f0aa05bdee19ac44c38a36f1a",
-      "size": 403,
-      "downloadUrl": "/api/modpack/files/imported/6d129416303ecd396a42af7db2b0bf650bd6d68f0aa05bdee19ac44c38a36f1a/offbalance-server.toml",
+      "sha256": "db0bfdbaed85ec03a3a6e7137c8350aad73b6531df65dddce9568991e6a1709b",
+      "size": 246,
+      "downloadUrl": "/api/modpack/files/imported/db0bfdbaed85ec03a3a6e7137c8350aad73b6531df65dddce9568991e6a1709b/offbalance-server.toml",
       "action": "sync"
     },
     {
@@ -553,9 +553,9 @@
     },
     {
       "path": "config/quiby-server.toml",
-      "sha256": "6212d4c5d7079e3a5e2d202c9e99622fa6c84692042a36bb3817298892d0455c",
-      "size": 145,
-      "downloadUrl": "/api/modpack/files/imported/6212d4c5d7079e3a5e2d202c9e99622fa6c84692042a36bb3817298892d0455c/quiby-server.toml",
+      "sha256": "0b817c5f50400a2a68afff280fbea7a4947e828d49afb266dfbe33910f1bab0b",
+      "size": 144,
+      "downloadUrl": "/api/modpack/files/imported/0b817c5f50400a2a68afff280fbea7a4947e828d49afb266dfbe33910f1bab0b/quiby-server.toml",
       "action": "sync"
     },
     {
@@ -756,16 +756,16 @@
     },
     {
       "path": "defaultconfigs/offbalance-server.toml",
-      "sha256": "6d129416303ecd396a42af7db2b0bf650bd6d68f0aa05bdee19ac44c38a36f1a",
-      "size": 403,
-      "downloadUrl": "/api/modpack/files/imported/6d129416303ecd396a42af7db2b0bf650bd6d68f0aa05bdee19ac44c38a36f1a/offbalance-server.toml",
+      "sha256": "db0bfdbaed85ec03a3a6e7137c8350aad73b6531df65dddce9568991e6a1709b",
+      "size": 246,
+      "downloadUrl": "/api/modpack/files/imported/db0bfdbaed85ec03a3a6e7137c8350aad73b6531df65dddce9568991e6a1709b/offbalance-server.toml",
       "action": "sync"
     },
     {
       "path": "defaultconfigs/quiby-server.toml",
-      "sha256": "6212d4c5d7079e3a5e2d202c9e99622fa6c84692042a36bb3817298892d0455c",
-      "size": 145,
-      "downloadUrl": "/api/modpack/files/imported/6212d4c5d7079e3a5e2d202c9e99622fa6c84692042a36bb3817298892d0455c/quiby-server.toml",
+      "sha256": "0b817c5f50400a2a68afff280fbea7a4947e828d49afb266dfbe33910f1bab0b",
+      "size": 144,
+      "downloadUrl": "/api/modpack/files/imported/0b817c5f50400a2a68afff280fbea7a4947e828d49afb266dfbe33910f1bab0b/quiby-server.toml",
       "action": "sync"
     },
     {
@@ -1575,10 +1575,10 @@
       "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
-      "path": "mods/quiby-1.21.1-1.1.10.jar",
-      "sha256": "5ae0fcbcd795779d09511dc4fb04deed5bca86f63b05a05de3310cba5ee84892",
-      "size": 3534044,
-      "downloadUrl": "/api/modpack/files/imported/5ae0fcbcd795779d09511dc4fb04deed5bca86f63b05a05de3310cba5ee84892/quiby-1.21.1-1.1.10.jar",
+      "path": "mods/quiby-1.21.1-1.1.11.jar",
+      "sha256": "46a8bea3a91c2951a601e97ead6d443f5ca486f6cdc158e2d12dd9e585d3b610",
+      "size": 3534059,
+      "downloadUrl": "/api/modpack/files/imported/46a8bea3a91c2951a601e97ead6d443f5ca486f6cdc158e2d12dd9e585d3b610/quiby-1.21.1-1.1.11.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1587,15 +1587,15 @@
       ],
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.1.10",
+      "modVersion": "1.1.11",
       "modDescription": "Русская локализация, рецепты, скины, реакции на урон и фирменная загрузка Minecraft.",
       "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },
     {
-      "path": "mods/quiby-early-loading-1.21.1-1.1.10.jar",
+      "path": "mods/quiby-early-loading-1.21.1-1.1.11.jar",
       "sha256": "1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99",
       "size": 3036102,
-      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.10.jar",
+      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.11.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1604,7 +1604,7 @@
       ],
       "modId": "quiby_early_loading",
       "modName": "Quiby Early Loading",
-      "modVersion": "1.1.10",
+      "modVersion": "1.1.11",
       "modDescription": "Фирменная анимация на раннем экране NeoForge."
     },
     {
@@ -1824,7 +1824,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Quiby 1.1.10: порог автоматического ragdoll повышен до 10 единиц урона (5 сердец) за один удар после защиты. Для ручного вставания по Shift отключена проверка контакта ног с землёй: лежание на боку или спине больше не блокируется этим условием. Допуски скорости 2.5, вращения 3.5 и ожидание 3 тика сохранены; медленное тело может выйти из ragdoll и в воздухе. Реакция на область взрыва остаётся независимой. Обновите Quiby JAR и конфиги на Minecraft-сервере. Лаунчер обновлять не нужно.",
+  "changelog": "Quiby 1.1.11: импульс взрыва усилен на 15% с сохранением ограничения итоговой скорости. Порог ragdoll — 9 единиц урона (4.5 сердца) за один удар после защиты. Отключён recoveryGateEnabled в Off Balance: восстановление возвращено к штатным правилам Sable без ожидания стабилизации всех частей тела. Hurt proxy включён. Нужны новый серверный Quiby JAR и конфиги; приложение лаунчера обновлять не нужно.",
   "serverAddress": "",
   "updatedAt": "2026-09-28T21:50:43.482158Z"
 }
