@@ -9,3 +9,6 @@ hurtProxyMobsTarget = true
 # Restore Sable recovery instead of waiting for every limb to stabilize.
 [recovery]
 recoveryGateEnabled = false
+
+[recovery.manualDismount]
+dismountRequireGrounded = true

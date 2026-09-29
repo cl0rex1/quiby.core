@@ -504,9 +504,9 @@
     },
     {
       "path": "config/offbalance-server.toml",
-      "sha256": "db0bfdbaed85ec03a3a6e7137c8350aad73b6531df65dddce9568991e6a1709b",
-      "size": 246,
-      "downloadUrl": "/api/modpack/files/imported/db0bfdbaed85ec03a3a6e7137c8350aad73b6531df65dddce9568991e6a1709b/offbalance-server.toml",
+      "sha256": "9611fd84c232b06124625203306cdd6b585818df56ac044c81e6ef5d1bca9d78",
+      "size": 307,
+      "downloadUrl": "/api/modpack/files/imported/9611fd84c232b06124625203306cdd6b585818df56ac044c81e6ef5d1bca9d78/offbalance-server.toml",
       "action": "sync"
     },
     {
@@ -749,9 +749,9 @@
     },
     {
       "path": "defaultconfigs/offbalance-server.toml",
-      "sha256": "db0bfdbaed85ec03a3a6e7137c8350aad73b6531df65dddce9568991e6a1709b",
-      "size": 246,
-      "downloadUrl": "/api/modpack/files/imported/db0bfdbaed85ec03a3a6e7137c8350aad73b6531df65dddce9568991e6a1709b/offbalance-server.toml",
+      "sha256": "9611fd84c232b06124625203306cdd6b585818df56ac044c81e6ef5d1bca9d78",
+      "size": 307,
+      "downloadUrl": "/api/modpack/files/imported/9611fd84c232b06124625203306cdd6b585818df56ac044c81e6ef5d1bca9d78/offbalance-server.toml",
       "action": "sync"
     },
     {
