@@ -1,3 +1,4 @@
+import { reviewFileInfo } from '../services/modReviewFiles';
 import { timingSafeEqual } from 'crypto';
 import { Router } from 'express';
 import { z } from 'zod';
@@ -38,7 +39,7 @@ router.get('/mod-whitelist-requests', async (req, res) => {
       'SELECT * FROM mod_whitelist_requests WHERE id > ? AND status = ? ORDER BY id ASC LIMIT ?',
       [after_id, status, limit + 1],
     );
-    const requests = rows.slice(0, limit);
+    const requests = rows.slice(0, limit).map(row => ({ ...row, file: reviewFileInfo(row.hash_sha1) }));
     return res.json({
       requests,
       has_more: rows.length > limit,
@@ -47,6 +48,15 @@ router.get('/mod-whitelist-requests', async (req, res) => {
   } catch {
     return res.status(500).json({ error: 'Не удалось получить заявки' });
   }
+});
+router.get('/mod-whitelist-requests/:id/file', async (req, res) => {
+  const id = idSchema.safeParse(req.params.id);
+  if (!id.success) return res.sendStatus(400);
+  try {
+    const row = await dbGet<any>('SELECT hash_sha1 FROM mod_whitelist_requests WHERE id=?', [id.data]);
+    const file = row && reviewFileInfo(row.hash_sha1);
+    return file ? res.json({ file }) : res.sendStatus(404);
+  } catch { return res.sendStatus(500); }
 });
 router.get('/mod-whitelist-requests/:id', async (req, res) => {
   const id = idSchema.safeParse(req.params.id);

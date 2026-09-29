@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import { createHash } from 'crypto';
 
 // Dedicated database: these checks never mutate the developer's player/mod tables.
 test('bot API authenticates, attributes requests and atomically applies idempotent decisions', async () => {
@@ -99,6 +100,20 @@ test('bot API authenticates, attributes requests and atomically applies idempote
       assert.equal(response.status, 200);
       return (await response.json()).request;
     };
+    const jar = Buffer.from('test review bytes');
+    const fileHash = createHash('sha1').update(jar).digest('hex');
+    await submit({ ...payload, hash_sha1: fileHash });
+    const uploadRoute = '/api/mods/review-file/' + fileHash;
+    assert.equal((await request(uploadRoute, { method: 'PUT', body: jar })).status, 401);
+    const uploadHeaders = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/octet-stream' };
+    assert.equal((await request(uploadRoute, { method: 'PUT', headers: uploadHeaders, body: Buffer.from('wrong') })).status, 400);
+    assert.equal((await request(uploadRoute, { method: 'PUT', headers: uploadHeaders, body: jar })).status, 200);
+    const fileRequest = await submit({ ...payload, hash_sha1: fileHash });
+    const fileInfo = await (await request(`/api/bot/mod-whitelist-requests/${fileRequest.id}/file`, { headers: botHeaders })).json();
+    assert.equal((await request(uploadRoute)).status, 403);
+    assert.equal((await request(fileInfo.file.path + '0')).status, 403);
+    assert.deepEqual(Buffer.from(await (await request(fileInfo.file.path)).arrayBuffer()), jar);
+    await dbRun('DELETE FROM mod_whitelist_requests WHERE id=?', [fileRequest.id]);
     const created = await submit();
     assert.equal((await submit()).id, created.id);
     const queue = await (
@@ -128,7 +143,10 @@ test('bot API authenticates, attributes requests and atomically applies idempote
     assert.equal((await dbGet<any>('SELECT is_allowed FROM verified_mods WHERE hash_sha1=?', [payload.hash_sha1]))?.is_allowed, 1);
     const retry = await (await review(created.id, 'approved', '345678901234567890')).json();
     assert.equal(retry.request.reviewer_discord_id, '234567890123456789');
-    assert.equal((await review(created.id, 'rejected')).status, 409);
+    assert.equal((await review(created.id, 'rejected')).status, 200);
+    assert.equal((await verifyMod('Utility', 'utility.jar', payload.hash_sha1)).status, 'blocked');
+    assert.equal((await review(created.id, 'approved')).status, 200);
+    assert.equal((await verifyMod('Utility', 'utility.jar', payload.hash_sha1)).isAllowed, true);
     assert.equal((await review(999999)).status, 404);
     const rejected = await submit({ ...payload, hash_sha1: 'b'.repeat(40) });
     assert.equal((await review(rejected.id, 'rejected')).status, 200);

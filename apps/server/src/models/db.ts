@@ -135,6 +135,9 @@ export async function initDatabase(): Promise<void> {
       await dbRun('ALTER TABLE mod_whitelist_requests ADD COLUMN ' + name + ' TEXT');
     }
   }
+  if (!requestColumns.some(column => column.name === 'file_required')) {
+    await dbRun('ALTER TABLE mod_whitelist_requests ADD COLUMN file_required INTEGER NOT NULL DEFAULT 0');
+  }
   if (!requestColumns.some(column => column.name === 'review_sequence')) {
     await dbRun('ALTER TABLE mod_whitelist_requests ADD COLUMN review_sequence INTEGER');
   }

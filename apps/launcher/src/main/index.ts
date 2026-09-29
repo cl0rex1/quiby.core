@@ -1,3 +1,4 @@
+import { checkContentLinks } from './engine/contentIntegrity';
 import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, ClipboardItem } from 'electron';
 import path from 'path';
 import fs from 'fs';
@@ -6,7 +7,7 @@ import { AuthSession, LauncherSettings } from '@quiby/shared';
 import { startDiscordOAuthFlow } from './auth/discordAuth';
 import { detectInstalledJava, getRecommendedJava } from './engine/javaDetector';
 import { launchMinecraft, killGameProcess } from './engine/minecraftLauncher';
-import { hashCustomModBytes, requireApprovedCustomMod } from './engine/customModVerification';
+import { hashCustomModBytes, requireApprovedCustomMod, evaluateCustomMod } from './engine/customModVerification';
 import { contentDirectory, contentFilePath, installLocalContent, listLocalContent, ContentKind } from './engine/localContent';
 import { configureDiscordRpc } from './rpc/discordRpc';
 import { registerUpdates } from './updates';
@@ -345,13 +346,68 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     await clipboard.write([new ClipboardItem({ 'image/png': new Blob([new Uint8Array(image.toPNG())], { type: 'image/png' }) })]);
   });
 
+  const stagedModPath = (hash: string) => {
+    if (!/^[a-f0-9]{40}$/.test(hash)) throw new Error('Некорректный хеш');
+    return path.join(app.getPath('userData'), 'mod-staging', hash + '.jar');
+  };
+  ipcMain.handle('mods:stage', async (_, filename: string, bytes: Uint8Array) => {
+    if (!/^[^/\\]+\.jar$/i.test(filename) || !bytes?.length || bytes.length > 100 * 1024 * 1024) throw new Error('Недопустимый файл');
+    const data = Buffer.from(bytes), hash = hashCustomModBytes(data), target = stagedModPath(hash);
+    fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target, data);
+    return evaluateCustomMod(filename, data, DEFAULT_SERVER_URL);
+  });
+  ipcMain.handle('mods:refresh', async (_, gameDir: string, filename: string, hash: string) => {
+    if (!/^[^/\\]+\.jar$/i.test(filename)) throw new Error('Недопустимое имя');
+    const root = gameDir || getDefaultGameDir();
+    await checkContentLinks(root);
+    const target = path.join(root, 'mods', filename);
+    const source = [stagedModPath(hash), target, target + '.disabled'].find(file => fs.existsSync(file));
+    if (!source) {
+      const response = await fetch(DEFAULT_SERVER_URL + '/api/mods/verify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mods: [{ name: filename.slice(0, 100), filename, hash_sha1: hash }] }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!response.ok) throw new Error('Сервер проверки недоступен');
+      const result = (await response.json()).results?.[0];
+      if (result?.hashSha1 !== hash) throw new Error('Некорректный ответ');
+      return { ...result, isAllowed: false, status: result.source === 'whitelist' ? result.status : 'unverified',
+        reason: `${result.reason || ''} Файл старой заявки отсутствует: выберите JAR повторно для установки.` };
+    }
+    const stat = fs.lstatSync(source);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 100 * 1024 * 1024) throw new Error('Недопустимый файл');
+    const data = fs.readFileSync(source);
+    if (data.length > 100 * 1024 * 1024 || hashCustomModBytes(data) !== hash) throw new Error('Файл изменён');
+    const staged = stagedModPath(hash);
+    if (!fs.existsSync(staged)) {
+      fs.mkdirSync(path.dirname(staged), { recursive: true });
+      fs.writeFileSync(staged, data, { flag: 'wx' });
+    }
+    const result = await evaluateCustomMod(filename, data, DEFAULT_SERVER_URL);
+
+    if (result.isAllowed && !fs.existsSync(target) && !fs.existsSync(target + '.disabled')) {
+      fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target + '.disabled', data, { flag: 'wx' });
+    }
+    return result;
+  });
+  ipcMain.handle('mods:upload-review', async (_, hash: string, token: string) => {
+    const bytes = fs.readFileSync(stagedModPath(hash));
+    const response = await fetch(DEFAULT_SERVER_URL + '/api/mods/review-file/' + hash, {
+      method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/octet-stream' },
+      body: bytes, signal: AbortSignal.timeout(60000),
+    });
+    if (!response.ok) throw new Error('Не удалось прикрепить JAR: ' + response.status);
+    return true;
+  });
+
   ipcMain.handle('mods:install', async (_, gameDir: string, filename: string, bytes: Uint8Array) => {
     if (!/^[^/\\]+\.jar$/i.test(filename) || !bytes?.length || bytes.length > 100 * 1024 * 1024) {
       throw new Error('Недопустимое имя или размер мода');
     }
     const modBytes = Buffer.from(bytes);
-    await requireApprovedCustomMod(filename, hashCustomModBytes(modBytes), modBytes.length, DEFAULT_SERVER_URL);
+    await requireApprovedCustomMod(filename, hashCustomModBytes(modBytes), modBytes.length, DEFAULT_SERVER_URL, modBytes);
     const modsDir = path.join(gameDir?.trim() || getDefaultGameDir(), 'mods');
+    await checkContentLinks(path.dirname(modsDir));
     fs.mkdirSync(modsDir, { recursive: true });
     fs.writeFileSync(path.join(modsDir, filename), modBytes);
     return true;

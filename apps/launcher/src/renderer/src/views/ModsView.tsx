@@ -23,7 +23,6 @@ import {
   Filter
 } from 'lucide-react';
 import { ModpackManifest, AuthSession } from '@quiby/shared';
-import { verifyCustomMod } from '../utils/modVerifier';
 import { resolveModMetadata } from '../utils/knownMods';
 import { ModWhitelistModal } from '../components/ModWhitelistModal';
 import { SchematicsExplorer } from '../components/SchematicsExplorer';
@@ -243,12 +242,12 @@ export const ModsView: React.FC<ModsViewProps> = ({
       description: meta.description,
     };
 
-    onUpdateCustomMods((previous) => [initialMod, ...previous]);
+    onUpdateCustomMods((previous) => [initialMod, ...previous.filter(mod => mod.filename !== file.name)]);
     setSwitcherMode('custom');
 
     setIsVerifying(true);
     try {
-      const result = await verifyCustomMod(file, serverUrl);
+      const result = await window.quibyApi.stageCustomMod(file.name, new Uint8Array(await file.arrayBuffer()));
       if (result.isAllowed) {
         if (manifest?.files.some((entry) => entry.path.replace(/\\/g, '/') === `mods/${file.name}`)) {
           throw new Error('Этот мод уже входит в сборку сервера');
@@ -278,7 +277,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
       onUpdateCustomMods((previous) => previous.map((m) => (m.id === tempId ? verifiedMod : m)));
       if (result.isAllowed) onNotify?.('Мод добавлен', `${file.name} установлен в папку mods.`, 'success');
-      else if (result.status === 'unverified') onNotify?.('Мод ожидает одобрения', 'Файл пока не установлен. После одобрения добавьте его повторно.', 'warning');
+      else if (result.status === 'unverified') onNotify?.('Мод ожидает одобрения', 'Файл сохранён отдельно. Решение обновится автоматически, повторно добавлять мод не нужно.', 'warning');
       else onNotify?.('Мод заблокирован', result.reason, 'error');
     } catch (e) {
       console.error('Failed to verify mod file:', e);

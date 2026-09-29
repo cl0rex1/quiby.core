@@ -245,6 +245,7 @@ export async function submitModWhitelistRequest(
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.token },
       body: JSON.stringify({
+        file_required: true,
         user_discord_id: session?.user?.discordId,
         mc_username: extra?.mc_username || session?.user?.mcUsername || 'Player',
         mod_name: mod.name,

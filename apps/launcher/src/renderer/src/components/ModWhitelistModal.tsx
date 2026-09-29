@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle, Package } from 'lucide-react';
 import { AuthSession } from '@quiby/shared';
 import { CustomModItem } from '../views/ModsView';
-import { submitModWhitelistRequest, scanFileForMalware } from '../utils/modVerifier';
+import { submitModWhitelistRequest } from '../utils/modVerifier';
 import { resolveModMetadata } from '../utils/knownMods';
 
 interface ModWhitelistModalProps {
@@ -56,14 +56,6 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
     setError(null);
 
     try {
-      // 1. Background antivirus check
-      const scanResult = await scanFileForMalware(null, mod.filename, mod.name);
-      if (!scanResult.isSafe) {
-        setError(scanResult.details || 'Файл заблокирован системой безопасности.');
-        setIsSubmitting(false);
-        return;
-      }
-
       // 2. Submit to server & Discord
       const payload = {
         name: mod.name,
@@ -78,6 +70,7 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
       });
 
       if (result.success) {
+        await window.quibyApi.uploadModReview(payload.hashSha1, session!.token);
         onSuccess(mod.id, meta.displayName);
         onClose();
       } else {
@@ -139,7 +132,7 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
         </div>
 
         {!session?.token && <p className="inline-error">Войдите в аккаунт, чтобы отправить заявку.</p>}
-        <p className="text-xs text-zinc-400">Администрация рассмотрит конкретную версию файла. После одобрения повторите проверку мода.</p>
+        <p className="text-xs text-zinc-400">Администрация рассмотрит конкретную версию файла. JAR будет приложен к заявке. Решение появится автоматически.</p>
         {/* Minimal Form: 2 Inputs Only */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (

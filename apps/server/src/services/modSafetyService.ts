@@ -273,15 +273,15 @@ export async function verifyModBatch(
 
 export async function submitWhitelistRequest(req: {
   user_discord_id?: string; mc_username?: string; mod_name: string; filename: string;
-  hash_sha1: string; reason?: string; project_url?: string;
+  hash_sha1: string; reason?: string; project_url?: string; file_required?: boolean;
 }): Promise<{ id: number; status: string }> {
   const hash = req.hash_sha1.toLowerCase().trim();
   await dbRun(
-    `INSERT INTO mod_whitelist_requests (user_discord_id, mc_username, mod_name, filename, hash_sha1, reason, project_url, status)
-     SELECT ?, ?, ?, ?, ?, ?, ?, 'pending'
+    `INSERT INTO mod_whitelist_requests (user_discord_id, mc_username, mod_name, filename, hash_sha1, reason, project_url, file_required, status)
+     SELECT ?, ?, ?, ?, ?, ?, ?, ?, 'pending'
      WHERE NOT EXISTS (SELECT 1 FROM mod_whitelist_requests WHERE user_discord_id IS ? AND hash_sha1 = ? AND status = 'pending')`,
     [req.user_discord_id || null, req.mc_username || 'Player', req.mod_name, req.filename, hash,
-      req.reason || 'Запрос от игрока', req.project_url || null, req.user_discord_id || null, hash]
+      req.reason || 'Запрос от игрока', req.project_url || null, req.file_required ? 1 : 0, req.user_discord_id || null, hash]
   );
   return (await dbGet<{ id: number; status: string }>(
     "SELECT id, status FROM mod_whitelist_requests WHERE user_discord_id IS ? AND hash_sha1 = ? AND status = 'pending' ORDER BY id DESC LIMIT 1",
@@ -295,8 +295,8 @@ export async function getWhitelistRequests(): Promise<any[]> {
 
 export async function reviewWhitelistRequest(id: number, status: 'approved' | 'rejected', reviewer: string, reason: string) {
   const update = await dbRun(
-    "UPDATE mod_whitelist_requests SET status = ?, reviewer_discord_id = ?, decision_reason = ?, reviewed_at = CURRENT_TIMESTAMP, review_sequence = (SELECT COALESCE(MAX(review_sequence), 0) + 1 FROM mod_whitelist_requests) WHERE id = ? AND status = 'pending'",
-    [status, reviewer, reason, id]
+    "UPDATE mod_whitelist_requests SET status = ?, reviewer_discord_id = ?, decision_reason = ?, reviewed_at = CURRENT_TIMESTAMP, review_sequence = (SELECT COALESCE(MAX(review_sequence), 0) + 1 FROM mod_whitelist_requests) WHERE id = ? AND status <> ?",
+    [status, reviewer, reason, id, status]
   );
   const request = await dbGet<any>('SELECT * FROM mod_whitelist_requests WHERE id = ?', [id]);
   if (!request) return { code: 404, error: 'Заявка не найдена' };

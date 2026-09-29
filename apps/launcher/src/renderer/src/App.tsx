@@ -191,6 +191,40 @@ export const App: React.FC = () => {
     });
   };
 
+  const modsForRefresh = useRef(customMods);
+  modsForRefresh.current = customMods;
+  useEffect(() => {
+    let cancelled = false, busy = false;
+    const refresh = async () => {
+      if (busy || !window.quibyApi) return;
+      busy = true;
+      try {
+        for (const mod of modsForRefresh.current) {
+          if (cancelled) break;
+          if (!mod.hashSha1) continue;
+          try {
+            const result = await window.quibyApi.refreshCustomMod(settings.gameDir, mod.filename, mod.hashSha1);
+            if (cancelled) break;
+            const latest = modsForRefresh.current.find(item => item.id === mod.id && item.hashSha1 === mod.hashSha1);
+            if (!latest) continue;
+            const nextStatus = result.status === 'unverified' && latest.safetyStatus === 'pending' ? 'pending' : result.status;
+            if (nextStatus !== latest.safetyStatus) {
+              handleNotify(result.isAllowed ? 'Мод разрешён' : 'Статус мода изменён', `${mod.name}: ${result.reason}`, result.isAllowed ? 'success' : 'warning');
+              handleUpdateCustomMods(previous => previous.map(item => item.id !== mod.id ? item : {
+                ...item, safetyStatus: nextStatus, safetyReason: result.reason,
+                enabled: result.isAllowed ? item.enabled : false,
+              }));
+            }
+          } catch { /* Retain decisions on network errors; launch verifies again. */ }
+        }
+      } finally { busy = false; }
+    };
+    void refresh();
+    const interval = setInterval(() => void refresh(), 20000);
+    const focus = () => void refresh(); window.addEventListener('focus', focus);
+    return () => { cancelled = true; clearInterval(interval); window.removeEventListener('focus', focus); };
+  }, [settings.gameDir]);
+
   // 4. Playtime & Fast-Connect States
   const [totalPlaytimeSeconds, setTotalPlaytimeSeconds] = useState<number>(0);
   const [autoConnect, setAutoConnect] = useState<boolean>(true);
@@ -440,8 +474,8 @@ export const App: React.FC = () => {
       <WindowHeader />
 
       {!isAuthModalOpen && <>
-      <LauncherUpdateBanner state={launcherUpdate} />
-      {/* Remaining space below the title bar and optional update banner. */}
+
+      {/* Workspace owns the update banner so sidebar padding applies to it. */}
       <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
         {/* Sleek Minimal Sidebar */}
         <MinimalSidebar
@@ -487,6 +521,7 @@ export const App: React.FC = () => {
         <main
           className="launcher-workspace flex-1 flex flex-col overflow-hidden relative"
         >
+          <LauncherUpdateBanner state={launcherUpdate} />
           {isNotificationsOpen ? (
             <NotificationDetailView
               onToast={(title, type) => setActiveToast({ id: `copy-${Date.now()}`, title, type })}

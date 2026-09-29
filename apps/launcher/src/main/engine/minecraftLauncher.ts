@@ -128,7 +128,7 @@ export async function launchMinecraft(
         throw new Error(`Недопустимый пользовательский мод: ${filename}`);
       }
       const hash = await hashCustomModFile(modPath);
-      await requireApprovedCustomMod(filename, hash, stat.size, serverBaseUrl);
+      await requireApprovedCustomMod(filename, hash, stat.size, serverBaseUrl, fs.readFileSync(modPath));
       approvedCustomMods.set(filename, hash);
     }
 
