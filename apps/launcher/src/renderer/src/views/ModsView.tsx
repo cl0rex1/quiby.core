@@ -24,7 +24,7 @@ import {
   Filter
 } from 'lucide-react';
 import { ModpackManifest, AuthSession } from '@quiby/shared';
-import { resolveModMetadata } from '../utils/knownMods';
+import { resolveModMetadata, MOD_CATEGORIES, ModCategory, matchesModCategory } from '../utils/knownMods';
 import { ModWhitelistModal } from '../components/ModWhitelistModal';
 import { SchematicsExplorer } from '../components/SchematicsExplorer';
 import { ShadersExplorer } from '../components/ShadersExplorer';
@@ -66,7 +66,7 @@ interface ModsViewProps {
 
 export type SwitcherMode = 'official' | 'custom';
 export type ContentCategory = 'mods' | 'schematics' | 'shaders' | 'screenshots';
-export type ModFilterCategory = 'all' | 'optimization' | 'interface' | 'audio' | 'mechanics';
+export type ModFilterCategory = 'all' | ModCategory;
 
 export const ModsView: React.FC<ModsViewProps> = ({
   manifest,
@@ -98,36 +98,21 @@ export const ModsView: React.FC<ModsViewProps> = ({
     });
   };
 
-  const matchesCategory = (
-    cat: string | undefined,
-    label: string | undefined,
-    categories: string[] = []
-  ) => {
-    if (filterCategory === 'all') return true;
-    const c = (cat || '').toLowerCase();
-    const l = (label || '').toLowerCase();
-    if (filterCategory === 'optimization') return c === 'optimization' || categories.some(value => value === 'optimization' || value === 'performance');
-    if (filterCategory === 'interface') return c === 'interface' || categories.includes('interface');
-    if (filterCategory === 'audio') return l === 'звук' || l === 'голос' || categories.includes('audio');
-    if (filterCategory === 'mechanics') return c === 'mechanisms' || categories.includes('technology');
-    return true;
-  };
-
   const filteredOfficial = officialFiles.filter((f) => {
     const rawName = f.modName || f.path.replace('mods/', '').replace('.jar', '');
-    const meta = resolveModMetadata(rawName, f.path);
+    const meta = resolveModMetadata(rawName, f.path, f.modDescription, f.modIconUrl, f.modProjectUrl, f.modId);
     const matchesSearch =
       meta.displayName.toLowerCase().includes(search.toLowerCase()) ||
       f.path.toLowerCase().includes(search.toLowerCase());
-    return matchesSearch && matchesCategory(meta.category, meta.categoryLabel);
+    return matchesSearch && matchesModCategory(meta, filterCategory);
   });
 
   const filteredCustom = customMods.filter((m) => {
-    const meta = resolveModMetadata(m.name, m.filename, m.description, m.iconUrl);
+    const meta = resolveModMetadata(m.name, m.filename, m.description, m.iconUrl, m.projectUrl);
     const matchesSearch =
       m.name.toLowerCase().includes(search.toLowerCase()) ||
       m.filename.toLowerCase().includes(search.toLowerCase());
-    return matchesSearch && matchesCategory(meta.category, meta.categoryLabel, m.categories);
+    return matchesSearch && matchesModCategory(meta, filterCategory, m.categories);
   });
 
   const toggleSelectMod = (id: string) => {
@@ -259,13 +244,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
   const isAllSelected = filteredCustom.length > 0 && selectedModIds.length === filteredCustom.length;
 
-  const CATEGORY_CHIPS: { id: ModFilterCategory; label: string }[] = [
-    { id: 'all', label: 'Все' },
-    { id: 'optimization', label: 'Оптимизация' },
-    { id: 'interface', label: 'Интерфейс' },
-    { id: 'audio', label: 'Аудио' },
-    { id: 'mechanics', label: 'Механика' },
-  ];
+  const CATEGORY_CHIPS: { id: ModFilterCategory; label: string }[] = [{ id: 'all', label: 'Все' }, ...MOD_CATEGORIES];
 
   return (
     <div className="content-page view-enter">
@@ -429,7 +408,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                   {filteredOfficial.map((file, idx) => {
                     const rawName = file.modName || file.path.replace('mods/', '').replace('.jar', '');
                     const iconUrl = file.modIconUrl?.startsWith('/') ? `${serverUrl}${file.modIconUrl}` : file.modIconUrl;
-                    const meta = resolveModMetadata(rawName, file.path, file.modDescription, iconUrl);
+                    const meta = resolveModMetadata(rawName, file.path, file.modDescription, iconUrl, file.modProjectUrl, file.modId);
 
                     return (
                       <div
@@ -466,15 +445,15 @@ export const ModsView: React.FC<ModsViewProps> = ({
                             <span>• Проверен</span>
                           </span>
 
-                          <a
-                            href={file.modProjectUrl || meta.projectUrl || `https://modrinth.com/mods?q=${encodeURIComponent(rawName)}`}
+                          {meta.projectUrl && (<a
+                            href={meta.projectUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-surface-800 transition-colors press-feedback"
-                            title={file.modProjectUrl || meta.projectUrl ? 'Открыть страницу мода' : 'Найти на Modrinth'}
+                            title="Открыть страницу мода"
                           >
                             <ExternalLink size={13} />
-                          </a>
+                          </a>)}
                         </div>
                       </div>
                     );
@@ -508,7 +487,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
                       mod.name,
                       mod.filename,
                       mod.description,
-                      mod.iconUrl
+                      mod.iconUrl,
+                      mod.projectUrl
                     );
 
                     return (
@@ -594,18 +574,15 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           {/* Compact controls stay separate from the mod name and whitelist CTA. */}
                           <div className="flex items-center gap-1.5 shrink-0">
                           {/* Modrinth Link */}
-                          <a
-                            href={
-                              mod.projectUrl || meta.projectUrl ||
-                              `https://modrinth.com/mods?q=${encodeURIComponent(meta.displayName)}`
-                            }
+                          {meta.projectUrl && (<a
+                            href={meta.projectUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-surface-800 transition-colors press-feedback"
-                            title="Открыть на Modrinth"
+                            title="Открыть страницу мода"
                           >
                             <ExternalLink size={13} />
-                          </a>
+                          </a>)}
 
                           {/* Toggle Switch */}
                           <button
