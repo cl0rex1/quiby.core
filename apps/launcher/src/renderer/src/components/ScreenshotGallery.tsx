@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CheckSquare, Copy, FolderOpen, Image as ImageIcon, RefreshCw, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
+import { ContentSelectionDock, SelectionCheck } from './ContentSelectionDock';
+
 type Screenshot = { name: string; modifiedAt: number; size: number; thumbnail?: string };
 
 export function ScreenshotGallery({ gameDir, onNotify }: {
@@ -36,7 +38,7 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
     }
   }, [gameDir, onNotify]);
 
-  useEffect(() => { void refresh(); }, [gameDir]);
+  useEffect(() => { setSelected(null); setSelectedNames([]); setSelectionMode(false); void refresh(); }, [gameDir]);
 
   const open = async (name: string) => {
     try {
@@ -74,12 +76,16 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
         <button type="button" className="ui-button" onClick={() => void window.quibyApi.openScreenshotsFolder(gameDir)}><FolderOpen size={15} /> Открыть папку</button>
       </div>
     </div>
-    {selectionMode && <div className="selection-toolbar"><span>Выбрано: {selectedNames.length}</span><button type="button" className="ui-button" onClick={() => setSelectedNames(selectedNames.length === screenshots.length ? [] : screenshots.map(file => file.name))}>{selectedNames.length === screenshots.length ? 'Снять выделение' : 'Выбрать все'}</button>{selectedNames.length === 1 && <button type="button" className="ui-button" onClick={() => void copy(selectedNames[0])}><Copy size={14} /> Копировать</button>}<button type="button" className="ui-button" disabled={!selectedNames.length || busy} onClick={() => void trash(selectedNames)}><Trash2 size={14} /> В корзину</button></div>}
+    <ContentSelectionDock count={selectedNames.length} total={screenshots.length} allSelected={screenshots.length > 0 && selectedNames.length === screenshots.length} busy={busy}
+      onSelectAll={() => setSelectedNames(selectedNames.length === screenshots.length ? [] : screenshots.map(file => file.name))}
+      onClear={() => { setSelectedNames([]); setSelectionMode(false); }} onDelete={() => void trash(selectedNames)}
+      onCopy={selectedNames.length === 1 ? () => void copy(selectedNames[0]) : undefined} />
+    {selectionMode && !selectedNames.length && screenshots.length > 0 && <button type="button" className="ui-button" onClick={() => setSelectedNames(screenshots.map(file => file.name))}><CheckSquare size={14} /> Выбрать все</button>}
     {screenshots.length === 0 ? <div className="screenshot-gallery-empty"><ImageIcon size={32} /><strong>{loading ? 'Загружаем скриншоты…' : 'Скриншотов пока нет'}</strong><span>Сделайте снимок в Minecraft клавишей F2. Он появится здесь.</span></div>
-      : <div className="screenshot-gallery-grid">{screenshots.map(file => <div key={file.name} className={`screenshot-gallery-item ${selectedNames.includes(file.name) ? 'is-selected' : ''}`}><button type="button" className="screenshot-gallery-open" onClick={() => selectionMode ? toggle(file.name) : void open(file.name)}>
+      : <div className="screenshot-gallery-grid">{screenshots.map(file => <div key={file.name} className={`screenshot-gallery-item ${selectedNames.includes(file.name) ? 'is-selected' : ''}`}><button type="button" className="screenshot-gallery-open" onClick={event => { if (selectionMode || event.ctrlKey || event.metaKey || event.shiftKey) { setSelectionMode(true); if (event.shiftKey && selectedNames.length) { const anchor = screenshots.findIndex(item => item.name === selectedNames[selectedNames.length - 1]); const target = screenshots.findIndex(item => item.name === file.name); setSelectedNames(previous => [...new Set([...previous, ...screenshots.slice(Math.min(anchor, target), Math.max(anchor, target) + 1).map(item => item.name)])]); } else toggle(file.name); } else void open(file.name); }}>
         {file.thumbnail ? <img src={file.thumbnail} alt={file.name} /> : <span className="screenshot-gallery-placeholder"><ImageIcon size={26} /></span>}
         <span className="screenshot-gallery-caption"><strong title={file.name}>{file.name}</strong><small>{new Date(file.modifiedAt).toLocaleString('ru-RU')}</small></span>
-      </button>{selectionMode && <input className="screenshot-gallery-check" type="checkbox" checked={selectedNames.includes(file.name)} onChange={() => toggle(file.name)} aria-label={`Выделить ${file.name}`} />}</div>)}</div>}
+      </button><div className="screenshot-gallery-check"><SelectionCheck checked={selectedNames.includes(file.name)} onToggle={() => { setSelectionMode(true); toggle(file.name); }} label={`Выделить ${file.name}`} /></div></div>)}</div>}
     {selected && <div className="screenshot-viewer" role="dialog" aria-modal="true" aria-label={selected.name} onClick={() => setSelected(null)}>
       <div className="screenshot-viewer-toolbar" onClick={event => event.stopPropagation()}><strong>{selected.name}</strong><button type="button" className="ui-button" onClick={() => void copy(selected.name)}><Copy size={15} /> Копировать</button><button type="button" className="ui-button" disabled={busy} onClick={() => void trash([selected.name])}><Trash2 size={15} /> В корзину</button><button type="button" className="ui-button" onClick={() => setSelected(null)} aria-label="Закрыть"><X size={17} /></button></div>
       <div className="screenshot-viewer-body" onClick={event => event.stopPropagation()}><button type="button" className="screenshot-viewer-nav" disabled={selectedIndex <= 0} onClick={() => void open(screenshots[selectedIndex - 1].name)} aria-label="Предыдущий"><ChevronLeft /></button><img src={selected.image} alt={selected.name} /><button type="button" className="screenshot-viewer-nav" disabled={selectedIndex >= screenshots.length - 1} onClick={() => void open(screenshots[selectedIndex + 1].name)} aria-label="Следующий"><ChevronRight /></button></div>

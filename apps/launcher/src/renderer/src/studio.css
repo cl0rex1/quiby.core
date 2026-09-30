@@ -1140,3 +1140,20 @@ html[data-motion-paused='true'] *::after {
 .launcher-app .transition-all {
   transition-property: transform, opacity, color, background-color, border-color;
 }
+/* Shared file selection uses the same compact controls as the mod library. */
+.content-selection-check { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 6px; background: var(--color-paper-3); border: 1px solid var(--color-rule); color: transparent; cursor: pointer; }
+.content-selection-check:hover { border-color: #bb74ff80; }
+.content-selection-check.is-selected { background: #bb74ff; border-color: #bb74ff; color: #0c0c0d; }
+.content-selection-dock { position: fixed; bottom: 32px; left: calc(50% + 88px); transform: translateX(-50%); z-index: 40; max-width: calc(100vw - 200px); }
+.content-batch-button { height: 36px; padding: 0 14px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 999px; background: var(--color-paper-3); border: 1px solid var(--color-rule); color: var(--color-ink); font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.content-batch-button:hover { border-color: #bb74ff80; }
+.content-batch-button:disabled { opacity: .5; cursor: default; }
+.screenshot-gallery-check { width: auto; height: auto; }
+.screenshot-gallery-item.is-selected, .library-file.is-selected { border-color: #bb74ff99; box-shadow: 0 0 0 1px #bb74ff4d; background: var(--color-paper-selected); }
+.screenshot-gallery, .content-library { padding-bottom: 88px; }
+.content-import-overlay { position: fixed; inset: 32px 0 0 176px; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: rgb(9 9 12 / 90%); border: 3px dashed #bb74ff; color: var(--color-ink); pointer-events: none; }
+.content-import-overlay svg { color: #bb74ff; }
+.content-import-overlay strong { font-size: 20px; }
+.content-import-overlay span { color: var(--color-ink-2); font-size: 12px; }
+.skin-collection-caption { position: absolute; top: 7px; left: 8px; right: 8px; z-index: 10; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px 6px; border-radius: 6px; background: rgb(9 9 12 / 85%); color: var(--color-ink); font-size: 10px; font-weight: 600; text-align: left; }
+img, video, canvas { -webkit-user-drag: none; }

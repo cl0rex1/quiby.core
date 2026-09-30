@@ -671,3 +671,10 @@ html[data-motion='reduced'] .build-tabs > button:active {
 @keyframes launch-breathe { from { opacity: .3; } to { opacity: 1; } }
 @media (max-width: 1000px) { .launch-experience { padding: 20px; } .launch-composition { gap: 12px; grid-template-columns: minmax(190px, .8fr) minmax(260px, 1fr); } .launch-scene-word { font-size: 64px; } }
 @media (max-width: 700px) { .launch-composition { grid-template-columns: 1fr; } .launch-scene { height: 280px; } .launch-story { max-width: none; } .launch-topline > span:last-child { display: none; } }
+/* Keep actions visible while only the build descriptions scroll. */
+.build-dialog { overflow: hidden; max-height: calc(100dvh - 48px); }
+.build-dialog-inner { padding: 0; gap: 0; height: min(760px, calc(100dvh - 50px)); min-height: 0; }
+.build-dialog-body { flex: 1; min-height: 0; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+.build-footer { flex: none; margin: 0; padding: 14px 24px; background: var(--color-paper); border-top: 1px solid var(--color-rule); }
+.build-dialog-inner > .inline-error { flex: none; margin: 0; padding: 8px 24px; }
+@media (max-width: 800px) { .build-footer { gap: 10px; } }

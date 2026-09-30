@@ -1,3 +1,4 @@
+import { useFileDrop } from '../utils/useFileDrop';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   FolderGit2, 
@@ -83,62 +84,11 @@ export const ModsView: React.FC<ModsViewProps> = ({
   const [filterCategory, setFilterCategory] = useState<ModFilterCategory>('all');
   const [search, setSearch] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const isDragging = useFileDrop(files => handleFiles(files), contentCategory === 'mods');
   const [activeWhitelistMod, setActiveWhitelistMod] = useState<CustomModItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const officialFiles = (manifest?.files || []).filter(file => /^mods\/.*\.jar$/i.test(file.path.replace(/\\/g, '/')));
-
-  // Window-wide drag & drop listener for .jar files
-  useEffect(() => {
-    if (contentCategory !== 'mods') return;
-    let dragCounter = 0;
-
-    const handleDragEnter = (e: DragEvent) => {
-      e.preventDefault();
-      if (e.dataTransfer?.types.includes('Files')) {
-        dragCounter++;
-        setIsDragging(true);
-      }
-    };
-
-    const handleDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = 'copy';
-      }
-    };
-
-    const handleDragLeave = (e: DragEvent) => {
-      e.preventDefault();
-      dragCounter--;
-      if (dragCounter <= 0) {
-        dragCounter = 0;
-        setIsDragging(false);
-      }
-    };
-
-    const handleDrop = (e: DragEvent) => {
-      e.preventDefault();
-      dragCounter = 0;
-      setIsDragging(false);
-      if (e.dataTransfer?.files) {
-        handleFiles(e.dataTransfer.files);
-      }
-    };
-
-    window.addEventListener('dragenter', handleDragEnter);
-    window.addEventListener('dragover', handleDragOver);
-    window.addEventListener('dragleave', handleDragLeave);
-    window.addEventListener('drop', handleDrop);
-
-    return () => {
-      window.removeEventListener('dragenter', handleDragEnter);
-      window.removeEventListener('dragover', handleDragOver);
-      window.removeEventListener('dragleave', handleDragLeave);
-      window.removeEventListener('drop', handleDrop);
-    };
-  }, [customMods, contentCategory]);
 
   const handleFiles = (files: FileList | File[]) => {
     Array.from(files).forEach((file) => {
@@ -319,6 +269,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
   return (
     <div className="content-page view-enter">
+      {isDragging && <div className="content-import-overlay"><Upload size={36} /><strong>Отпустите моды для проверки</strong><span>.JAR · до 512 МБ</span></div>}
       {/* Hidden File Input */}
       <input
         ref={fileInputRef}
@@ -346,10 +297,6 @@ export const ModsView: React.FC<ModsViewProps> = ({
         <ScreenshotGallery gameDir={gameDir} onNotify={onNotify} />
       ) : (
         <>
-          <button type="button" onClick={() => fileInputRef.current?.click()} className={`content-dropzone ${isDragging ? 'is-dragging' : ''}`}>
-            <Upload size={17}/><span>{isDragging ? 'Отпустите файлы для проверки' : 'Перетащите моды сюда'}</span><small>.JAR / ДО 100 МБ</small>
-          </button>
-
           {/* Sub-Header Toolbar: Switcher, Fast Actions & Folders */}
           <div className="content-toolbar">
             {/* Segmented Switcher: Сборка vs Мои моды */}

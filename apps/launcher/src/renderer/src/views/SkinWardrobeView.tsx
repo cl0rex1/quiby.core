@@ -1,10 +1,12 @@
+import { useFileDrop } from '../utils/useFileDrop';
 import React, { useState, useEffect } from 'react';
-import { Upload, Trash2, Check, AlertCircle, Download, User, ArrowRight, X, Sparkles, Lock } from 'lucide-react';
+import { Upload, Trash2, Check, AlertCircle, Download, User, ArrowRight, X, Sparkles, Lock, Pencil } from 'lucide-react';
 import { DEFAULT_SKINS, CAPE_PRESETS, CapePreset } from '../utils/chibiRenderer';
 import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
 import { validateSkinFile } from '../utils/skinValidator';
 import {
   SavedSkinItem,
+  renameSavedSkin,
   getSavedSkinLibrary,
   addSkinToLibrary,
   removeSkinFromLibrary,
@@ -38,64 +40,18 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   onSelectCape,
 }) => {
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const isDragging = useFileDrop(files => { if (files[0]) void processSkinFile(files[0]); });
   const [library, setLibrary] = useState<SavedSkinItem[]>([]);
   const [pendingSkin, setPendingSkin] = useState<PendingSkinData | null>(null);
+
+  const [editingSkin, setEditingSkin] = useState<SavedSkinItem | null>(null);
+  const [caption, setCaption] = useState('');
+  const [captionError, setCaptionError] = useState('');
 
   // Load saved skin library on mount
   useEffect(() => {
     setLibrary(getSavedSkinLibrary());
   }, []);
-
-  // Window-wide drag and drop listener
-  useEffect(() => {
-    let dragCounter = 0;
-
-    const handleDragEnter = (e: DragEvent) => {
-      e.preventDefault();
-      if (e.dataTransfer?.types.includes('Files')) {
-        dragCounter++;
-        setIsDragging(true);
-      }
-    };
-
-    const handleDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = 'copy';
-      }
-    };
-
-    const handleDragLeave = (e: DragEvent) => {
-      e.preventDefault();
-      dragCounter--;
-      if (dragCounter <= 0) {
-        dragCounter = 0;
-        setIsDragging(false);
-      }
-    };
-
-    const handleDrop = (e: DragEvent) => {
-      e.preventDefault();
-      dragCounter = 0;
-      setIsDragging(false);
-      if (e.dataTransfer?.files?.[0]) {
-        processSkinFile(e.dataTransfer.files[0]);
-      }
-    };
-
-    window.addEventListener('dragenter', handleDragEnter);
-    window.addEventListener('dragover', handleDragOver);
-    window.addEventListener('dragleave', handleDragLeave);
-    window.addEventListener('drop', handleDrop);
-
-    return () => {
-      window.removeEventListener('dragenter', handleDragEnter);
-      window.removeEventListener('dragover', handleDragOver);
-      window.removeEventListener('dragleave', handleDragLeave);
-      window.removeEventListener('drop', handleDrop);
-    };
-  }, [library]);
 
   const processSkinFile = async (file: File) => {
     setValidationError(null);
@@ -184,7 +140,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   };
 
   const currentDisplayName = customSkinImg
-    ? customSkinName || 'Пользовательский скин'
+    ? library.find(item => item.name === customSkinName)?.caption || customSkinName || 'Пользовательский скин'
     : DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Скин';
 
   const oldestSkinToReplace = library.length >= 6 ? library[library.length - 1] : null;
@@ -192,6 +148,14 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   return (
     <div className="wardrobe-page view-enter">
       <header className="page-heading"><div><p className="page-kicker">ТВОЙ ПЕРСОНАЖ</p><h1>Будь собой.</h1><p>Скины, детали и узнаваемый силуэт.</p></div><span className="content-edition">ГАРДЕРОБ / S6</span></header>
+      {editingSkin && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Название скина">
+        <form className="surface-panel rounded-3xl p-6 w-full max-w-sm space-y-4" onSubmit={event => { event.preventDefault(); try { setLibrary(renameSavedSkin(editingSkin.id, caption)); setEditingSkin(null); } catch (error) { setCaptionError(error instanceof Error ? error.message : 'Не удалось сохранить подпись'); } }}>
+          <label className="block text-sm font-semibold">Название скина<input autoFocus className="ui-input mt-3 w-full" value={caption} maxLength={24} onChange={event => setCaption(event.target.value)} onKeyDown={event => { if (event.key === 'Escape') setEditingSkin(null); }} /></label>
+          <p className="text-xs text-zinc-400">До 24 символов</p>
+          {captionError && <p role="alert" className="text-rose-400 text-xs">{captionError}</p>}
+          <div className="flex justify-end gap-2"><button type="button" className="ui-button" onClick={() => setEditingSkin(null)}>Отмена</button><button type="submit" className="ui-button is-primary" disabled={!caption.trim()}>Сохранить</button></div>
+        </form>
+      </div>}
       <div className="wardrobe-layout">
       {/* Full-Window Drag & Drop Overlay */}
       {isDragging && (
@@ -297,18 +261,6 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
           <div className="mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full surface-panel text-xs font-medium text-zinc-200 shadow-sm">
             <User size={12} className="text-zinc-400" />
             <span className="truncate max-w-[200px] apple-subheading">{currentDisplayName}</span>
-            {customSkinImg && (
-              <button
-                onClick={() => {
-                  onSetCustomSkin(null, null);
-                  setValidationError(null);
-                }}
-                title="Сбросить скин"
-                className="ml-1 text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer press-feedback"
-              >
-                <Trash2 size={11} />
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -339,7 +291,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                 Загрузить скин
               </span>
               <span className="text-[11px] text-zinc-400 apple-body">
-                PNG 64x64 • Перетащите файл в любое место окна
+                PNG 64×64
               </span>
             </div>
           </div>
@@ -379,7 +331,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                   <div
                     key={item.id}
                     onClick={() => handleSelectLibraryItem(item)}
-                    title={item.name}
+                    title={item.caption || item.name}
                     className={`group relative flex flex-col items-center justify-center p-2 rounded-2xl border transition-all cursor-pointer aspect-square overflow-hidden press-feedback ${
                       isSelected
                         ? 'bg-zinc-800/90 border-white/30 shadow-md ring-1 ring-white/15 border-t-white/40'
@@ -395,15 +347,17 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                       />
                     </div>
 
-                    {/* Active Checkmark in Top-Left */}
+                    <span className="skin-collection-caption" title={item.caption || item.name}>{item.caption || item.name}</span>
+                    {/* Active Checkmark */}
                     {isSelected && (
-                      <div className="absolute top-2 left-2 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center shadow-sm z-10">
+                      <div className="absolute bottom-2 left-2 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center shadow-sm z-10">
                         <Check size={9} className="text-zinc-950 stroke-[3]" />
                       </div>
                     )}
 
                     {/* Action buttons in Top-Right Corner */}
-                    <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                    <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-20">
+                      <button type="button" onClick={event => { event.stopPropagation(); setEditingSkin(item); setCaption(item.caption || item.name); setCaptionError(''); }} title="Подписать скин" className="p-1.5 rounded-lg bg-zinc-900/95 text-zinc-300 hover:text-white press-feedback"><Pencil size={12} /></button>
                       <button
                         onClick={(e) => handleDownloadChibi(e, item)}
                         title="Скачать чиби-аватар"

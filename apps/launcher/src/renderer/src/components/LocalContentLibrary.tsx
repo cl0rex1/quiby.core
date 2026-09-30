@@ -12,6 +12,9 @@ import {
   Upload,
 } from 'lucide-react';
 
+import { ContentSelectionDock, SelectionCheck } from './ContentSelectionDock';
+import { useFileDrop } from '../utils/useFileDrop';
+
 type Kind = 'shaderpacks' | 'schematics';
 interface LocalFile {
   name: string;
@@ -30,7 +33,7 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [dragging, setDragging] = useState(false);
+  const dragging = useFileDrop(files => void addFiles(files));
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const input = useRef<HTMLInputElement>(null);
   const desktop = Boolean(window.quibyApi);
@@ -60,6 +63,7 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
       cancelled = true;
     };
   }, [kind, gameDir]);
+  useEffect(() => { setFiles([]); setSelectedFiles([]); }, [kind, gameDir]);
   const report = (err: unknown) =>
     setError(err instanceof Error ? err.message : 'Не удалось выполнить действие');
   const addFiles = async (incoming: FileList | null) => {
@@ -145,6 +149,7 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
           На компьютере <span>{files.length}</span>
         </div>
         <div className="toolbar-actions">
+          <button type="button" className="ui-button" disabled={busy || !filtered.length} onClick={() => setSelectedFiles(previous => filtered.every(file => previous.includes(file.filename)) ? previous.filter(name => !filtered.some(file => file.filename === name)) : [...new Set([...previous, ...filtered.map(file => file.filename)])])}>Выбрать все видимые</button>
           <button
             className="ui-button"
             disabled={!desktop || busy}
@@ -171,28 +176,10 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
         />
         <span>{accept}</span>
       </div>
-      {files.length > 0 && <div className="selection-toolbar"><span>Выбрано: {selectedFiles.length}</span><button type="button" className="ui-button" disabled={busy} onClick={() => setSelectedFiles(selectedFiles.length === filtered.length ? [] : filtered.map(file => file.filename))}>{selectedFiles.length === filtered.length ? 'Снять выделение' : 'Выбрать все видимые'}</button><button type="button" className="ui-button" disabled={!selectedFiles.length || busy} onClick={() => void removeSelected()}><Trash2 size={14} /> В корзину</button></div>}
-      <button
-        className={`content-dropzone ${dragging ? 'is-dragging' : ''}`}
-        disabled={!desktop || busy}
-        onClick={() => input.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragging(false);
-          void addFiles(e.dataTransfer.files);
-        }}
-      >
-        <Upload size={17} />
-        <span>
-          {dragging ? 'Отпустите файлы для импорта' : `Перетащите ${shader ? 'шейдерпак' : 'чертёж'} сюда`}
-        </span>
-        <small>ДО 100 МБ</small>
-      </button>
+      {dragging && <div className="content-import-overlay"><Upload size={36} /><strong>Отпустите файлы для импорта</strong><span>{accept} · до 100 МБ</span></div>}
+      <ContentSelectionDock count={selectedFiles.length} total={files.length} allSelected={filtered.length > 0 && filtered.every(file => selectedFiles.includes(file.filename))} busy={busy}
+        onSelectAll={() => setSelectedFiles(previous => filtered.every(file => previous.includes(file.filename)) ? previous.filter(name => !filtered.some(file => file.filename === name)) : [...new Set([...previous, ...filtered.map(file => file.filename)])])}
+        onClear={() => setSelectedFiles([])} onDelete={() => void removeSelected()} />
       {error && (
         <div className="inline-error" role="alert">
           {error}
@@ -214,7 +201,7 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
           <div className="library-grid">
             {filtered.map((file) => (
               <article className={`library-file ${selectedFiles.includes(file.filename) ? 'is-selected' : ''}`} key={file.filename}>
-                <input type="checkbox" checked={selectedFiles.includes(file.filename)} onChange={() => setSelectedFiles(previous => previous.includes(file.filename) ? previous.filter(name => name !== file.filename) : [...previous, file.filename])} aria-label={`Выделить ${file.filename}`} />
+                <SelectionCheck checked={selectedFiles.includes(file.filename)} onToggle={() => setSelectedFiles(previous => previous.includes(file.filename) ? previous.filter(name => name !== file.filename) : [...previous, file.filename])} label={`Выделить ${file.filename}`} />
                 <div className="library-file-icon">
                   <Icon size={23} />
                 </div>

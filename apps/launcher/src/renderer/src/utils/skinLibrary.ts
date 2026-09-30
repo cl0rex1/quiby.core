@@ -5,6 +5,7 @@ import { bakeChibiLiveAnimation, createDefaultChibiConfig, detectSkinBodyType } 
 export interface SavedSkinItem {
   id: string;
   name: string;
+  caption?: string;
   dataUri: string;
   chibiPreviewUri: string;
   bodyType: 'alex' | 'steve';
@@ -71,6 +72,7 @@ export function addSkinToLibrary(
   const item: SavedSkinItem = {
     id: existingIdx >= 0 ? library[existingIdx].id : `skin_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     name,
+    caption: existingIdx >= 0 ? library[existingIdx].caption : undefined,
     dataUri,
     chibiPreviewUri,
     bodyType,
@@ -109,5 +111,13 @@ export function removeSkinFromLibrary(id: string): SavedSkinItem[] {
   } catch (e) {
     console.error('Failed to update skin library in localStorage', e);
   }
+  return updated;
+}
+
+export function renameSavedSkin(id: string, caption: string): SavedSkinItem[] {
+  const clean = Array.from(caption.trim().replace(/\s+/g, ' ')).slice(0, 24).join('');
+  if (!clean) throw new Error('Введите название скина');
+  const updated = getSavedSkinLibrary().map(item => item.id === id ? { ...item, caption: clean } : item);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   return updated;
 }

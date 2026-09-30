@@ -89,6 +89,7 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
       }}
     >
       <div className="build-dialog-inner">
+        <div className="build-dialog-body">
         <header className="build-header">
           <div>
             <p className="page-kicker">{firstRun ? 'ПЕРВЫЙ ЗАПУСК / QUIBY' : 'ТВОЯ СБОРКА / QUIBY'}</p>
@@ -170,6 +171,7 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
             <small>Профиль управляет уже добавленными одобренными модами. Шейдеры выбираются в игре.</small>
           </div>
         </section>
+        </div>
         <footer className="build-footer">
           <div className="build-memory">
             <div>
