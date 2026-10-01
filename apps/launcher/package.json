@@ -1,6 +1,6 @@
 {
   "name": "@quiby/launcher",
-  "version": "1.0.1-beta.19",
+  "version": "1.0.1-beta.20",
   "description": "quiby. Season 6 Minecraft 1.21.1 NeoForge Desktop Launcher",
   "main": "dist/main/index.js",
   "scripts": {
@@ -14,6 +14,7 @@
   },
   "build": {
     "appId": "fun.quiby.launcher",
+    "npmRebuild": false,
     "productName": "quiby.core Тестовый",
     "artifactName": "quiby.core-Setup-${version}.${ext}",
     "generateUpdatesFilesForAllChannels": true,
@@ -28,7 +29,8 @@
     },
     "files": [
       "dist/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules/register-scheme/**/*"
     ],
     "extraResources": [
       {
