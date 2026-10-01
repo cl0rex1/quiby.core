@@ -5,6 +5,11 @@ import type { UpdateState } from '../main/updates';
 import type { NotificationItem } from '../renderer/src/utils/notifications';
 
 export const quibyApi = {
+  openResourcePacksFolder: (gameDir: string) => ipcRenderer.invoke('resourcepacks:open-folder', gameDir),
+  trashResourcePack: (gameDir: string, filename: string) => ipcRenderer.invoke('resourcepacks:trash', gameDir, filename),
+  getResourcePacks: (gameDir: string, official: { path: string; sha256: string }[], token: string) => ipcRenderer.invoke('resourcepacks:list', gameDir, official, token),
+  addResourcePack: (gameDir: string, filename: string, bytes: Uint8Array) => ipcRenderer.invoke('resourcepacks:add', gameDir, filename, bytes),
+  stageResourcePackReview: (gameDir: string, filename: string) => ipcRenderer.invoke('resourcepacks:stage-review', gameDir, filename),
   // Window controls
   splashReady: () => ipcRenderer.invoke('splash:ready'),
   minimize: () => ipcRenderer.invoke('window:minimize'),

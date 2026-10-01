@@ -15,6 +15,7 @@ import { applyResourcePackProfile } from './resourcePackProfile';
 import { resolveJava21 } from './javaDetector';
 import { getLatestModpackManifest } from './manifestSource';
 import { readCrashDetails } from './crashDetails';
+import { prepareResourcePackAdmission } from './resourcePackAdmission';
 
 let runningGameProcess: ChildProcess | null = null;
 let gameStartTime: number | null = null;
@@ -141,6 +142,7 @@ export async function launchMinecraft(
     await syncModpackFiles(manifest, gameDir, serverBaseUrl, win, protectedFilenames);
     configureEarlyLoading(gameDir, manifest.files.map(file => file.path));
     await applyResourcePackProfile(gameDir, settings.modpackProfile, manifest.files.map(file => file.path));
+    const packAdmission = await prepareResourcePackAdmission(gameDir, manifest.files, session.token, serverBaseUrl);
 
     // 3. Ensure Vanilla Minecraft 1.21.1
     sendLog('info', `📦 Подготовка файлов Minecraft ${manifest.gameVersion}...`);
@@ -181,6 +183,8 @@ export async function launchMinecraft(
     if (settings.customJvmArgs) {
       settings.customJvmArgs.split(' ').filter(Boolean).forEach(arg => jvmArgs.push(arg));
     }
+
+    jvmArgs.push(`-Dquiby.resourcePackHashes=${packAdmission.hashes.join(',')}`);
 
     // Classpath: Merge Vanilla + NeoForge libraries
     const cpSeparator = process.platform === 'win32' ? ';' : ':';
@@ -233,7 +237,7 @@ export async function launchMinecraft(
     sendLog('info', `🚀 Запуск Java 21: ${javaBin}`);
     setLaunchState({ status: 'starting' });
 
-    await verifyLaunchContent(gameDir, manifest.files, approvedCustomMods);
+    await verifyLaunchContent(gameDir, manifest.files, approvedCustomMods, packAdmission.approved);
     const gameProcess = spawn(javaBin, fullArgs, {
       cwd: gameDir,
       env: { ...process.env },

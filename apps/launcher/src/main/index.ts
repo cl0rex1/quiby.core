@@ -1,3 +1,4 @@
+import { packHash, packDecision } from './engine/resourcePackAdmission';
 import { checkContentLinks } from './engine/contentIntegrity';
 import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, ClipboardItem } from 'electron';
 import path from 'path';
@@ -350,6 +351,54 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     if (!/^[a-f0-9]{40}$/.test(hash)) throw new Error('Некорректный хеш');
     return path.join(app.getPath('userData'), 'mod-staging', hash + '.jar');
   };
+  ipcMain.handle('resourcepacks:open-folder', async (_, gameDir: string) => {
+    const root = gameDir || getDefaultGameDir();
+    await checkContentLinks(root);
+    const dir = path.join(root, 'resourcepacks'); fs.mkdirSync(dir, { recursive: true });
+    const error = await shell.openPath(dir); if (error) throw new Error(error);
+  });
+  ipcMain.handle('resourcepacks:trash', async (_, gameDir: string, filename: string) => {
+    if (!/^[^/\\:\x00]+\.zip$/i.test(filename)) throw new Error('Недопустимое имя');
+    const root = gameDir || getDefaultGameDir(); await checkContentLinks(root);
+    await shell.trashItem(path.join(root, 'resourcepacks', filename));
+  });
+  ipcMain.handle('resourcepacks:list', async (_, gameDir: string, official: { path: string; sha256: string }[], token: string) => {
+    const root = gameDir || getDefaultGameDir();
+    await checkContentLinks(root);
+    const dir = path.join(root, 'resourcepacks');
+    fs.mkdirSync(dir, { recursive: true });
+    const items = [];
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isFile() || !/\.zip$/i.test(entry.name)) continue;
+      const file = path.join(dir, entry.name), size = fs.statSync(file).size;
+      if (size > 512 * 1024 * 1024) continue;
+      const hash = await packHash(file);
+      const expected = official.find(item => item.path === 'resourcepacks/' + entry.name);
+      const trusted = expected && await packHash(file, 'sha256') === expected.sha256.toLowerCase();
+      const decision = trusted ? { status: 'approved', isAllowed: true, reason: 'Ресурспак сборки' }
+        : await packDecision(hash, token, DEFAULT_SERVER_URL);
+      items.push({ filename: entry.name, hashSha1: hash, size, official: !!trusted, ...decision });
+    }
+    return items;
+  });
+  ipcMain.handle('resourcepacks:add', async (_, gameDir: string, filename: string, bytes: Uint8Array) => {
+    if (!/^[^/\\:\x00]+\.zip$/i.test(filename) || !bytes?.length || bytes.length > 100 * 1024 * 1024) throw new Error('Нужен ZIP до 100 МиБ');
+    const root = gameDir || getDefaultGameDir();
+    await checkContentLinks(root);
+    const dir = path.join(root, 'resourcepacks');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, filename), Buffer.from(bytes), { flag: 'wx' });
+  });
+  ipcMain.handle('resourcepacks:stage-review', async (_, gameDir: string, filename: string) => {
+    if (!/^[^/\\:\x00]+\.zip$/i.test(filename)) throw new Error('Недопустимое имя');
+    const root = gameDir || getDefaultGameDir();
+    await checkContentLinks(root);
+    const file = path.join(root, 'resourcepacks', filename);
+    if (!fs.statSync(file).isFile() || fs.statSync(file).size > 8 * 1024 * 1024) throw new Error('Для вложения Discord нужен ZIP до 8 МиБ');
+    const bytes = fs.readFileSync(file), hash = hashCustomModBytes(bytes), target = stagedModPath(hash);
+    fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target, bytes);
+    return hash;
+  });
   ipcMain.handle('mods:stage', async (_, filename: string, bytes: Uint8Array, token?: string) => {
     if (!/^[^/\\]+\.jar$/i.test(filename) || !bytes?.length || bytes.length > 512 * 1024 * 1024) throw new Error('Недопустимый файл');
     const data = Buffer.from(bytes), hash = hashCustomModBytes(data), target = stagedModPath(hash);
@@ -392,20 +441,20 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
   });
   ipcMain.handle('mods:upload-review', async (_, hash: string, token: string, metadata: { mod_name: string; filename: string; reason: string; project_url?: string }) => {
     const bytes = fs.readFileSync(stagedModPath(hash));
-    if (bytes.length > 8 * 1024 * 1024) throw new Error('JAR больше 8 МиБ: файл нельзя отправить вложением Discord.');
+    if (bytes.length > 8 * 1024 * 1024) throw new Error('Файл больше 8 МиБ: файл нельзя отправить вложением Discord.');
     const response = await fetch(DEFAULT_SERVER_URL + '/api/mods/whitelist-request-file', {
       method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/octet-stream',
         'X-Mod-Request': encodeURIComponent(JSON.stringify({ ...metadata, hash_sha1: hash, file_required: true })) },
       body: bytes, signal: AbortSignal.timeout(60000),
     });
-    if (response.status === 404) throw new Error('API ещё не обновлён: отправка заявки вместе с JAR недоступна.');
+    if (response.status === 404) throw new Error('API ещё не обновлён: отправка заявки вместе с файлом недоступна.');
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || 'Не удалось отправить JAR: ' + response.status);
+    if (!response.ok) throw new Error(result.error || 'Не удалось отправить файл: ' + response.status);
     for (let attempt = 0; attempt < 30; attempt++) {
       const receipt = await fetch(DEFAULT_SERVER_URL + '/api/mods/review-delivery/' + hash, {
         headers: { Authorization: 'Bearer ' + token }, signal: AbortSignal.timeout(5000),
       });
-      if (!receipt.ok) throw new Error('Не удалось подтвердить доставку JAR. Повторите отправку.');
+      if (!receipt.ok) throw new Error('Не удалось подтвердить доставку файла. Повторите отправку.');
       const delivery = await receipt.json();
       if (delivery.delivered) return result;
       if (!delivery.queued) break;

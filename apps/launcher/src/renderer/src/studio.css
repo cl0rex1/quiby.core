@@ -237,7 +237,7 @@
 }
 .content-category-nav {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   flex: none;
 }
@@ -499,6 +499,9 @@
   border-color: #48484e;
 }
 .library-file.is-selected { border-color: var(--color-accent); }
+.resource-pack-library .library-grid { grid-template-columns: minmax(0, 1fr); }
+.resource-pack-library .library-file > .ui-button { flex: none; }
+.resource-pack-library .library-file-copy > span { overflow-wrap: anywhere; }
 .library-file > input[type='checkbox'] { flex: none; width: 16px; height: 16px; accent-color: var(--color-accent); cursor: pointer; }
 .library-file-icon {
   flex: none;

@@ -22,6 +22,10 @@ test('checks actual resource packs and mods, not names or UI inventory', async (
     const extra = path.join(root, 'resourcepacks', 'innocent-name.ZIP');
     await fs.writeFile(extra, 'xray');
     await assert.rejects(verifyLaunchContent(root, files, new Map()), /не входит/);
+    const packApprovals = new Map([['innocent-name.ZIP', digest('xray')]]);
+    await verifyLaunchContent(root, files, new Map(), packApprovals);
+    await fs.writeFile(extra, 'changed after review');
+    await assert.rejects(verifyLaunchContent(root, files, new Map(), packApprovals), /после одобрения/);
     await fs.unlink(extra);
     const folder = path.join(root, 'resourcepacks', 'unpacked');
     await fs.mkdir(folder);

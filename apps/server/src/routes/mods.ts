@@ -18,18 +18,32 @@ export const whitelistRequestSchema = z.object({
   user_discord_id: z.string().optional(),
   mc_username: z.string().min(3).max(16).regex(/^[a-zA-Z0-9_]+$/).optional(),
   mod_name: z.string().min(1).max(100),
-  filename: z.string().min(1).max(255).regex(/\.jar$/i, 'Must be a .jar file'),
+  filename: z.string().min(1).max(255).regex(/^[^/\\]+\.(jar|zip)$/i, 'Нужен JAR мода или ZIP ресурспака'),
   hash_sha1: z.string().length(40, 'Must be 40-char hex SHA-1').regex(/^[a-fA-F0-9]+$/),
   reason: z.string().min(10, 'Reason must be at least 10 characters').max(1000),
   project_url: z.union([z.literal(''), z.string().max(2048).url().refine(value => /^https?:\/\//i.test(value))]).optional(),
 });
 
+// Resource packs require an explicit decision; Modrinth presence alone is not admission.
+router.post('/resourcepacks/verify', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const parsed = z.object({ hash_sha1: z.string().regex(/^[a-f0-9]{40}$/) }).safeParse(req.body);
+  if (!parsed.success) return res.sendStatus(400);
+  try {
+    const row = await dbGet<any>("SELECT status, decision_reason FROM mod_whitelist_requests WHERE hash_sha1=? AND lower(filename) LIKE '%.zip' ORDER BY CASE WHEN status IN ('approved','rejected') THEN 0 ELSE 1 END,COALESCE(review_sequence,0) DESC,id DESC LIMIT 1", [parsed.data.hash_sha1]);
+    return res.json({ status: row?.status || 'unverified', isAllowed: row?.status === 'approved',
+      reason: row?.decision_reason || 'Ресурспак требует проверки администрации' });
+  } catch { return res.sendStatus(500); }
+});
+
 // Files are private; download links are short-lived and issued only to the review bot.
-router.get('/review-file/:hash', (req, res) => {
+router.get('/review-file/:hash', async (req, res) => {
   if (!validReviewLink(req.params.hash, Number(req.query.expires), String(req.query.signature || ''))) return res.sendStatus(403);
   const bytes = getReviewFile(req.params.hash);
   if (!bytes) return res.sendStatus(404);
-  return res.attachment(req.params.hash + '.jar').send(bytes);
+  try {
+    const row = await dbGet<any>('SELECT filename FROM mod_whitelist_requests WHERE hash_sha1=? ORDER BY id DESC LIMIT 1', [req.params.hash]);
+    return res.attachment(row?.filename || req.params.hash + '.jar').send(bytes);
+  } catch { return res.sendStatus(500); }
 });
 router.put('/review-file/:hash', requireAuth, async (req: AuthenticatedRequest, res, next) => {
   if (!/^[a-f0-9]{40}$/.test(req.params.hash)) return res.sendStatus(400);
@@ -58,13 +72,13 @@ router.get('/review-delivery/:hash', requireAuth, async (req: AuthenticatedReque
 router.post('/whitelist-request-file', requireAuth, raw({ type: 'application/octet-stream', limit: '8mb' }), async (req: AuthenticatedRequest, res) => {
   try {
     const payload = whitelistRequestSchema.safeParse(JSON.parse(decodeURIComponent(req.get('x-mod-request') || '')));
-    if (!payload.success || !Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ error: 'Некорректная заявка или JAR' });
+    if (!payload.success || !Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ error: 'Некорректная заявка или файл' });
     const hash = createHash('sha1').update(req.body).digest('hex');
     if (hash !== payload.data.hash_sha1.toLowerCase()) return res.status(400).json({ error: 'Хеш файла не совпадает' });
     putReviewFile(hash, req.body);
     const request = await submitWhitelistRequest({ ...payload.data, hash_sha1: hash, file_required: true,
       user_discord_id: req.user!.discordId, mc_username: req.user!.mcUsername });
-    return res.json({ success: true, request, message: 'Заявка с JAR передана боту. Файл временно находится в памяти до доставки в Discord.' });
+    return res.json({ success: true, request, message: 'Заявка с файлом передана боту. Файл временно находится в памяти до доставки в Discord.' });
   } catch (error) { return res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка отправки' }); }
 });
 

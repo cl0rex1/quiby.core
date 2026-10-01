@@ -36,6 +36,7 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
   }, [isOpen, mod]);
 
   if (!isOpen || !mod) return null;
+  const resourcePack = /\.zip$/i.test(mod.filename);
 
   const meta = resolveModMetadata(
     mod.name,
@@ -47,7 +48,7 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason.trim()) {
-      setError('Пожалуйста, заполните описание мода');
+      setError('Пожалуйста, заполните описание файла');
       return;
     }
 
@@ -55,7 +56,7 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
     setError(null);
 
     try {
-      if (!mod.hashSha1 || !session?.token) throw new Error('Выберите JAR и войдите в аккаунт.');
+      if (!mod.hashSha1 || !session?.token) throw new Error('Выберите файл и войдите в аккаунт.');
       const result = await window.quibyApi.uploadModReview(mod.hashSha1, session.token, {
         mod_name: mod.name, filename: mod.filename, reason: reason.trim(), project_url: projectUrl.trim(),
       });
@@ -106,7 +107,7 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
                 {meta.displayName}
               </h3>
               <p className="text-[11px] text-zinc-400">
-                Заявка на добавление мода
+                {resourcePack ? 'Заявка на ресурспак' : 'Заявка на добавление мода'}
               </p>
             </div>
           </div>
@@ -121,7 +122,7 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
         </div>
 
         {!session?.token && <p className="inline-error">Войдите в аккаунт, чтобы отправить заявку.</p>}
-        <p className="text-xs text-zinc-400">Администрация рассмотрит конкретную версию файла. JAR до 8 МиБ отправится вложением в Discord без хранения на диске API. Дождитесь подтверждения доставки. Решение появится автоматически.</p>
+        <p className="text-xs text-zinc-400">Администрация рассмотрит конкретную версию файла. Файл до 8 МиБ отправится вложением в Discord без хранения на диске API. Дождитесь подтверждения доставки. Решение появится автоматически.</p>
         {/* Minimal Form: 2 Inputs Only */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (

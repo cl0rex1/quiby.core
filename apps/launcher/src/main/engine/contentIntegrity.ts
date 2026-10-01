@@ -25,7 +25,7 @@ async function digest(filename: string, algorithm: string): Promise<string> {
 
 /** File admission, not a claim that arbitrary Java bytecode or textures can be proven safe. */
 export async function verifyLaunchContent(
-  gameDir: string, files: ManagedFile[], approvedMods: ReadonlyMap<string, string>,
+  gameDir: string, files: ManagedFile[], approvedMods: ReadonlyMap<string, string>, approvedPacks: ReadonlyMap<string, string> = new Map(),
 ): Promise<void> {
   const expected = new Map(files.map(file => [file.path.replace(/\\/g, '/'), file.sha256.toLowerCase()]));
   for (const relative of expected.keys()) {
@@ -54,6 +54,8 @@ export async function verifyLaunchContent(
       const officialHash = expected.get(relative);
       if (officialHash) {
         if (await digest(filename, 'sha256') !== officialHash) throw new Error(`Файл сборки изменён: ${relative}. Повторите проверку сборки.`);
+      } else if (directory === 'resourcepacks' && approvedPacks.has(entry.name)) {
+        if (await digest(filename, 'sha256') !== approvedPacks.get(entry.name)) throw new Error(`Ресурспак изменён после одобрения: ${entry.name}`);
       } else if (directory === 'mods' && approvedMods.has(entry.name)) {
         if (await digest(filename, 'sha1') !== approvedMods.get(entry.name)) throw new Error(`Мод изменён после одобрения: ${entry.name}. Требуется новая проверка.`);
       } else {

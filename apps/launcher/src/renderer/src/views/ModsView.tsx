@@ -28,6 +28,7 @@ import { resolveModMetadata, MOD_CATEGORIES, ModCategory, matchesModCategory } f
 import { ModWhitelistModal } from '../components/ModWhitelistModal';
 import { SchematicsExplorer } from '../components/SchematicsExplorer';
 import { ShadersExplorer } from '../components/ShadersExplorer';
+import { ResourcePacksExplorer } from '../components/ResourcePacksExplorer';
 import { ScreenshotGallery } from '../components/ScreenshotGallery';
 import type { NotificationItem } from '../utils/notifications';
 import { ModIcon } from '../components/ModIcon';
@@ -65,7 +66,7 @@ interface ModsViewProps {
 }
 
 export type SwitcherMode = 'official' | 'custom';
-export type ContentCategory = 'mods' | 'schematics' | 'shaders' | 'screenshots';
+export type ContentCategory = 'mods' | 'schematics' | 'shaders' | 'screenshots' | 'resourcepacks';
 export type ModFilterCategory = 'all' | ModCategory;
 
 export const ModsView: React.FC<ModsViewProps> = ({
@@ -265,10 +266,12 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
       <header className="page-heading"><div><p className="page-kicker">БИБЛИОТЕКА QUIBY</p><h1>Твой контент.</h1><p>Больше возможностей для твоего мира.</p></div><span className="content-edition">1.21.1 / NEOFORGE</span></header>
       <nav className="content-category-nav" aria-label="Тип контента">
-        {([['mods', 'Моды', 'Механики и возможности', Package], ['shaders', 'Шейдеры', 'Свет и атмосфера', Sun], ['schematics', 'Схематики', 'Идеи и постройки', Layers], ['screenshots', 'Скриншоты', 'Мои кадры из игры', ImageIcon]] as const).map(([id, label, description, Icon]) => <button key={id} type="button" aria-current={contentCategory === id ? 'page' : undefined} onClick={() => { setContentCategory(id); onUpdateSelectedModIds([]); }}><Icon size={19}/><span><strong>{label}</strong><small>{description}</small></span><span className="category-arrow">↗</span></button>)}
+        {([['mods', 'Моды', 'Механики и возможности', Package], ['resourcepacks', 'Ресурспаки', 'Текстуры и вайтлист', Package], ['shaders', 'Шейдеры', 'Свет и атмосфера', Sun], ['schematics', 'Схематики', 'Идеи и постройки', Layers], ['screenshots', 'Скриншоты', 'Мои кадры из игры', ImageIcon]] as const).map(([id, label, description, Icon]) => <button key={id} type="button" aria-current={contentCategory === id ? 'page' : undefined} onClick={() => { setContentCategory(id); onUpdateSelectedModIds([]); }}><Icon size={19}/><span><strong>{label}</strong><small>{description}</small></span><span className="category-arrow">↗</span></button>)}
       </nav>
 
-      {contentCategory === 'schematics' ? (
+      {contentCategory === 'resourcepacks' ? (
+        <ResourcePacksExplorer gameDir={gameDir} files={manifest?.files || []} session={session} onNotify={onNotify} />
+      ) : contentCategory === 'schematics' ? (
         <SchematicsExplorer gameDir={gameDir} onNotify={onNotify} />
       ) : contentCategory === 'shaders' ? (
         <ShadersExplorer gameDir={gameDir} onNotify={onNotify} />

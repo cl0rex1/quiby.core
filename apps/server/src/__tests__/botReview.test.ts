@@ -52,6 +52,26 @@ test('bot API authenticates, attributes requests and atomically applies idempote
     mc_username: 'Spoofed',
   };
   try {
+    const packBytes = Buffer.from('test-resourcepack');
+    const packHash = createHash('sha1').update(packBytes).digest('hex');
+    const packBody = { ...payload, filename: 'textures.zip', hash_sha1: packHash };
+    const uploadPack = await request('/api/mods/whitelist-request-file', { method: 'POST', headers: {
+      Authorization: 'Bearer ' + token, 'Content-Type': 'application/octet-stream',
+      'X-Mod-Request': encodeURIComponent(JSON.stringify(packBody)),
+    }, body: packBytes });
+    assert.equal(uploadPack.status, 200);
+    const packId = (await uploadPack.json()).request.id;
+    const packDecision = async () => (await request('/api/mods/resourcepacks/verify', { method: 'POST', headers: playerHeaders, body: JSON.stringify({ hash_sha1: packHash }) })).json();
+    assert.equal((await packDecision()).isAllowed, false);
+    assert.equal((await request('/api/mods/resourcepacks/verify', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ hash_sha1: packHash }) })).status, 401);
+    const packQueue = await (await request('/api/bot/mod-whitelist-requests', { headers: botHeaders })).json();
+    assert.ok(packQueue.requests.some((item: any) => item.id === packId && item.filename === 'textures.zip' && item.file));
+    for (const [decision, allowed] of [['approved', true], ['rejected', false]] as const) {
+      assert.equal((await request('/api/bot/mod-whitelist-requests/' + packId, { method: 'PATCH', headers: botHeaders,
+        body: JSON.stringify({ decision, reviewer_discord_id: '234567890123456789', reason: 'Reviewed resource pack' }) })).status, 200);
+      assert.equal((await packDecision()).isAllowed, allowed);
+    }
+    await dbRun('DELETE FROM mod_whitelist_requests WHERE id=?', [packId]);
     assert.equal((await request('/api/auth/dev-login', { method: 'POST' })).status, 404);
     assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${oldDevToken}` } })).status, 401);
     assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${legacyToken}` } })).status, 401);
