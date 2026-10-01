@@ -38,7 +38,7 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
   if (!isOpen || !mod) return null;
   const resourcePack = /\.zip$/i.test(mod.filename);
 
-  const meta = resolveModMetadata(
+  const meta = resourcePack ? { displayName: mod.name, iconUrl: mod.iconUrl } : resolveModMetadata(
     mod.name,
     mod.filename,
     mod.description,
@@ -140,7 +140,7 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Для чего нужен этот мод на сервере..."
+              placeholder={resourcePack ? 'Для чего нужен этот ресурспак…' : 'Для чего нужен этот мод на сервере…'}
               rows={3}
               minLength={10}
               maxLength={1000}
@@ -153,13 +153,13 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
           {/* Link (Optional) */}
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-zinc-400">
-              Ссылка на мод (желательно)
+              Ссылка на {resourcePack ? 'ресурспак' : 'мод'} (желательно)
             </label>
             <input
               type="url"
               value={projectUrl}
               onChange={(e) => setProjectUrl(e.target.value)}
-              placeholder="https://modrinth.com/mod/... (необязательно)"
+              placeholder={resourcePack ? 'https://modrinth.com/resourcepack/…' : 'https://modrinth.com/mod/…'}
               className="w-full bg-zinc-950/80 border border-white/10 rounded-2xl px-3.5 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30"
               disabled={isSubmitting}
             />

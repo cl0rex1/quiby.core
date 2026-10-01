@@ -1,12 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ArrowUpRight,
-  FolderOpen,
   Layers,
-  Loader2,
-  Plus,
   RefreshCw,
-  Search,
   Sun,
   Trash2,
   Upload,
@@ -14,6 +9,8 @@ import {
 
 import { ContentSelectionDock, SelectionCheck } from './ContentSelectionDock';
 import { useFileDrop } from '../utils/useFileDrop';
+import { ContentToolbar, ContentSearch, useContentView } from './ContentToolbar';
+import { allVisibleSelected, toggleVisibleSelection } from '../utils/contentSelection';
 
 type Kind = 'shaderpacks' | 'schematics';
 interface LocalFile {
@@ -38,6 +35,7 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
   const input = useRef<HTMLInputElement>(null);
   const desktop = Boolean(window.quibyApi);
   const shader = kind === 'shaderpacks';
+  const [viewMode, setViewMode] = useContentView(kind);
   const Icon = shader ? Sun : Layers;
   const accept = shader ? '.zip' : '.nbt,.schem,.schematic';
   const read = () =>
@@ -133,7 +131,7 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
         : `${Math.max(1, Math.round(file.size / 1024))} КБ`;
   return (
     <section
-      className="content-library view-enter"
+      className={`content-library ${selectedFiles.length ? 'has-selection' : ''}`}
       aria-label={shader ? 'Библиотека шейдеров' : 'Библиотека схематик'}
     >
       <input
@@ -144,41 +142,13 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
         hidden
         onChange={(e) => void addFiles(e.target.files)}
       />
-      <div className="content-toolbar">
-        <div className="library-count">
-          На компьютере <span>{files.length}</span>
-        </div>
-        <div className="toolbar-actions">
-          <button type="button" className="ui-button" disabled={busy || !filtered.length} onClick={() => setSelectedFiles(previous => filtered.every(file => previous.includes(file.filename)) ? previous.filter(name => !filtered.some(file => file.filename === name)) : [...new Set([...previous, ...filtered.map(file => file.filename)])])}>Выбрать все видимые</button>
-          <button
-            className="ui-button"
-            disabled={!desktop || busy}
-            onClick={() => void window.quibyApi.openContentFolder(gameDir, kind).catch(report)}
-          >
-            <FolderOpen size={14} /> Открыть папку
-          </button>
-          <button
-            className="ui-button is-primary"
-            disabled={!desktop || busy}
-            onClick={() => input.current?.click()}
-          >
-            {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}Добавить файл
-          </button>
-        </div>
-      </div>
-      <div className="content-search">
-        <Search size={15} />
-        <input
-          aria-label={shader ? 'Поиск шейдеров' : 'Поиск схематик'}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Найти по названию или имени файла"
-        />
-        <span>{accept}</span>
-      </div>
+      <ContentToolbar label={shader ? 'Шейдеры' : 'Схематики'} total={files.length} visible={filtered.length} mode={viewMode} onMode={setViewMode} busy={!desktop || busy}
+        selection={{ allSelected: allVisibleSelected(selectedFiles, filtered.map(file => file.filename)), onSelectAll: () => setSelectedFiles(previous => toggleVisibleSelection(previous, filtered.map(file => file.filename))) }}
+        onAdd={() => input.current?.click()} onFolder={() => void window.quibyApi.openContentFolder(gameDir, kind).catch(report)} onRefresh={() => void refresh().catch(report)} />
+      <ContentSearch value={search} onChange={setSearch} label={shader ? 'Поиск шейдеров' : 'Поиск схематик'} hint={accept} />
       {dragging && <div className="content-import-overlay"><Upload size={36} /><strong>Отпустите файлы для импорта</strong><span>{accept} · до 100 МБ</span></div>}
       <ContentSelectionDock count={selectedFiles.length} total={files.length} allSelected={filtered.length > 0 && filtered.every(file => selectedFiles.includes(file.filename))} busy={busy}
-        onSelectAll={() => setSelectedFiles(previous => filtered.every(file => previous.includes(file.filename)) ? previous.filter(name => !filtered.some(file => file.filename === name)) : [...new Set([...previous, ...filtered.map(file => file.filename)])])}
+        onSelectAll={() => setSelectedFiles(previous => toggleVisibleSelection(previous, filtered.map(file => file.filename)))}
         onClear={() => setSelectedFiles([])} onDelete={() => void removeSelected()} />
       {error && (
         <div className="inline-error" role="alert">
@@ -198,10 +168,10 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
       )}
       <div className="library-scroll">
         {filtered.length ? (
-          <div className="library-grid">
+          <div className={`library-grid is-${viewMode}`}>
             {filtered.map((file) => (
               <article className={`library-file ${selectedFiles.includes(file.filename) ? 'is-selected' : ''}`} key={file.filename}>
-                <SelectionCheck checked={selectedFiles.includes(file.filename)} onToggle={() => setSelectedFiles(previous => previous.includes(file.filename) ? previous.filter(name => name !== file.filename) : [...previous, file.filename])} label={`Выделить ${file.filename}`} />
+                <SelectionCheck disabled={busy} checked={selectedFiles.includes(file.filename)} onToggle={() => setSelectedFiles(previous => previous.includes(file.filename) ? previous.filter(name => name !== file.filename) : [...previous, file.filename])} label={`Выделить ${file.filename}`} />
                 <div className="library-file-icon">
                   <Icon size={23} />
                 </div>
@@ -234,9 +204,9 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
             <h2>
               {search
                 ? 'Ничего не найдено'
-                : shader
-                  ? 'Другой свет. Тот же мир.'
-                  : 'Большая идея начинается с чертежа.'}
+                  : shader
+                  ? 'Шейдеров пока нет'
+                  : 'Схематик пока нет'}
             </h2>
             <p>
               {search
@@ -247,23 +217,9 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
                     ? 'Добавьте шейдерпак в ZIP. Выбрать его можно в настройках графики Minecraft.'
                     : 'Импортируйте .nbt, .schem или .schematic. Файлы сохранятся в папку schematics.'}
             </p>
-            {!search && (
-              <span className="library-empty-caption">
-                {shader ? 'СВЕТ / ТЕНИ / АТМОСФЕРА' : 'CREATE / СХЕМЫ / ПОСТРОЙКИ'}
-                <ArrowUpRight size={12} />
-              </span>
-            )}
           </div>
         )}
       </div>
-      <footer className="library-footer">
-        <span>{kind}/</span>
-        <span>
-          {shader
-            ? 'Выбор активного шейдера — в игре'
-            : 'Совместимость чертежа зависит от установленных модов'}
-        </span>
-      </footer>
     </section>
   );
 }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { getSavedSkinLibrary, renameSavedSkin } from '../skinLibrary';
+import { getSavedSkinLibrary, renameSavedSkin, getSkinDisplayName, type SavedSkinItem } from '../skinLibrary';
 
 test('skin captions persist without changing the source name or texture', () => {
   const entries = new Map<string, string>();
@@ -13,6 +13,7 @@ test('skin captions persist without changing the source name or texture', () => 
   try {
     renameSavedSkin('skin1', '  Мой   скин  ');
     assert.deepEqual(getSavedSkinLibrary()[0], { ...original, caption: 'Мой скин' });
+    assert.equal(getSkinDisplayName(getSavedSkinLibrary(), 'source.png', 'texture'), 'Мой скин');
     renameSavedSkin('skin1', 'я'.repeat(40));
     assert.equal(getSavedSkinLibrary()[0].caption?.length, 24);
     const before = entries.get('quiby_skin_library');
@@ -21,4 +22,14 @@ test('skin captions persist without changing the source name or texture', () => 
   } finally {
     Reflect.deleteProperty(globalThis, 'localStorage');
   }
+});
+
+test('caption lookup distinguishes skins with the same filename and keeps unnamed skins usable', () => {
+  const library = [
+    { name: 'skin', dataUri: 'first', caption: 'Первый' },
+    { name: 'skin', dataUri: 'second', caption: 'Второй' },
+  ] as SavedSkinItem[];
+  assert.equal(getSkinDisplayName(library, 'skin', 'second'), 'Второй');
+  assert.equal(getSkinDisplayName(library, 'old-skin'), 'old-skin');
+  assert.equal(getSkinDisplayName(library, null), null);
 });

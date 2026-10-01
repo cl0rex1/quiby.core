@@ -9,6 +9,7 @@ import { version as LAUNCHER_VERSION } from '../../../package.json';
 import { MinimalSidebar, ActiveTab } from './components/MinimalSidebar';
 import { CharacterStage } from './views/CharacterStage';
 import { InGameLaunchStage } from './views/InGameLaunchStage';
+import { getSavedSkinLibrary, getSkinDisplayName } from './utils/skinLibrary';
 import { SkinWardrobeView } from './views/SkinWardrobeView';
 import { ModsView, CustomModItem } from './views/ModsView';
 import { SettingsView } from './views/SettingsView';
@@ -148,6 +149,8 @@ export const App: React.FC = () => {
   const [selectedCape, setSelectedCape] = useState<CapePreset>(CAPE_PRESETS[1]);
   const [customSkinImg, setCustomSkinImg] = useState<HTMLImageElement | null>(null);
   const [customSkinName, setCustomSkinName] = useState<string | null>(null);
+  const [skinLibrary, setSkinLibrary] = useState(getSavedSkinLibrary);
+  const skinDisplayName = getSkinDisplayName(skinLibrary, customSkinName, customSkinImg?.src);
   const [activeDefaultSkinIdx, setActiveDefaultSkinIdx] = useState(0);
 
   const handleSelectCape = (cape: CapePreset) => {
@@ -581,7 +584,7 @@ export const App: React.FC = () => {
                     logs={logs}
                     totalPlaytimeSeconds={totalPlaytimeSeconds}
                     customSkinImg={customSkinImg}
-                    customSkinName={customSkinName}
+                    customSkinName={skinDisplayName}
                     activeDefaultSkinIdx={activeDefaultSkinIdx}
                     selectedCape={selectedCape}
                     onKill={handleKillGame}
@@ -594,7 +597,7 @@ export const App: React.FC = () => {
                     serverStatus={serverStatus}
                     totalPlaytimeSeconds={totalPlaytimeSeconds}
                     customSkinImg={customSkinImg}
-                    customSkinName={customSkinName}
+                    customSkinName={skinDisplayName}
                     activeDefaultSkinIdx={activeDefaultSkinIdx}
                     selectedCape={selectedCape}
                     isInGame={false}
@@ -608,6 +611,7 @@ export const App: React.FC = () => {
 
               {activeTab === 'wardrobe' && (
                 <SkinWardrobeView
+                  onLibraryChange={() => setSkinLibrary(getSavedSkinLibrary())}
                   customSkinImg={customSkinImg}
                   customSkinName={customSkinName}
                   activeDefaultSkinIdx={activeDefaultSkinIdx}
@@ -659,54 +663,6 @@ export const App: React.FC = () => {
               localStorage.setItem('quiby_auto_connect', String(val));
               handleUpdateSettings({ ...settings, autoJoinServer: val });
             }}
-            batchActions={
-              activeTab === 'mods' && selectedModIds.length > 0
-                ? {
-                    count: selectedModIds.length,
-                    totalCount: customMods.length,
-                    isAllSelected: customMods.length > 0 && selectedModIds.length === customMods.length,
-                    onSelectAll: () => {
-                      if (selectedModIds.length === customMods.length) {
-                        setSelectedModIds([]);
-                      } else {
-                        setSelectedModIds(customMods.map((m) => m.id));
-                      }
-                    },
-                    onEnableAll: () => {
-                      handleUpdateCustomMods(
-                        customMods.map((m) =>
-                          selectedModIds.includes(m.id) && m.safetyStatus === 'approved'
-                            ? { ...m, enabled: true }
-                            : m
-                        )
-                      );
-                    },
-                    onDisableAll: () => {
-                      handleUpdateCustomMods(
-                        customMods.map((m) =>
-                          selectedModIds.includes(m.id) ? { ...m, enabled: false } : m
-                        )
-                      );
-                    },
-                    onDeleteAll: async () => {
-                      try {
-                        if (window.quibyApi) {
-                          await Promise.all(customMods
-                            .filter((m) => selectedModIds.includes(m.id))
-                            .map((m) => window.quibyApi.removeCustomMod(settings.gameDir, m.filename)));
-                        }
-                        handleUpdateCustomMods(customMods.filter((m) => !selectedModIds.includes(m.id)));
-                        setSelectedModIds([]);
-                      } catch (error) {
-                        handleNotify('Не удалось удалить моды', error instanceof Error ? error.message : 'Проверьте папку mods.', 'error');
-                      }
-                    },
-                    onClear: () => {
-                      setSelectedModIds([]);
-                    },
-                  }
-                : null
-            }
             logs={logs}
             onClearLogs={() => setLogs([])}
             onLaunch={handleLaunchGame}

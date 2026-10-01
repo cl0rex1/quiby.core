@@ -1,28 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { 
   Play, 
   User, 
   Save, 
   X, 
   Check, 
-  Trash2, 
-  ToggleRight, 
-  ToggleLeft,
-  CheckSquare
 } from 'lucide-react';
 import { AuthSession, DownloadProgress, LaunchState, LogEntry, ServerStatus } from '@quiby/shared';
 import { ActiveTab } from './MinimalSidebar';
-
-export interface BatchActionConfig {
-  count: number;
-  totalCount?: number;
-  isAllSelected?: boolean;
-  onSelectAll?: () => void;
-  onEnableAll: () => void;
-  onDisableAll: () => void;
-  onDeleteAll: () => void;
-  onClear: () => void;
-}
 
 interface FloatingActionDeckProps {
   activeTab: ActiveTab;
@@ -35,7 +20,6 @@ interface FloatingActionDeckProps {
   onClearLogs?: () => void;
   autoConnect?: boolean;
   onToggleAutoConnect?: (val: boolean) => void;
-  batchActions?: BatchActionConfig | null;
   onLaunch: () => void;
   onKill: () => void;
   onOpenLogin: () => void;
@@ -52,26 +36,14 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   launchState,
   autoConnect = true,
   onToggleAutoConnect,
-  batchActions,
   onLaunch,
   onOpenLogin,
   hasUnsavedChanges = false,
   onSave,
   onCancel,
 }) => {
-  const [cachedBatchActions, setCachedBatchActions] = useState<BatchActionConfig | null>(batchActions || null);
-
-  useEffect(() => {
-    if (batchActions) {
-      setCachedBatchActions(batchActions);
-    }
-  }, [batchActions]);
-
   const isBusy = launchState.status === 'updating' || launchState.status === 'starting';
   const isRunning = launchState.status === 'running';
-  const hasBatch = Boolean(batchActions && batchActions.count > 0);
-  const displayBatch = batchActions || cachedBatchActions;
-
   // Case 1: On Home Tab -> Keep Play Button, InGameLaunchStage handles active running controls
   if (activeTab === 'home') {
     if (isRunning || isBusy) {
@@ -145,72 +117,6 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   // Case 2: Other Tabs -> Solid Dock for Batch Actions & Save (if applicable)
   return (
     <>
-      {/* 1. SEPARATE ACTIONS DOCK: Positioned in Bottom-Center with Solid Surface */}
-      <div
-        className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-40 select-none transition-all duration-200 ease-out ${
-          hasBatch
-            ? 'translate-y-0 opacity-100 scale-100 pointer-events-auto'
-            : 'translate-y-8 opacity-0 scale-95 pointer-events-none'
-        }`}
-      >
-        {displayBatch && (
-          <div className="flex items-center gap-2 p-1.5 rounded-full bg-surface-900 border border-surface-border shadow-2xl h-[48px]">
-            {/* Selected Count / Select All Button */}
-            <button
-              type="button"
-              onClick={displayBatch.onSelectAll}
-              className="h-9 px-3 rounded-full bg-surface-800 hover:bg-surface-750 border border-surface-border flex items-center justify-center text-xs font-bold text-white font-mono shrink-0 shadow-sm gap-1.5 cursor-pointer press-feedback"
-              title={displayBatch.isAllSelected ? 'Снять выбор со всех' : 'Выбрать все моды'}
-            >
-              <CheckSquare size={13} className={displayBatch.isAllSelected ? 'text-emerald-400' : 'text-zinc-400'} />
-              <span>{displayBatch.count}{displayBatch.totalCount ? `/${displayBatch.totalCount}` : ''}</span>
-            </button>
-
-            {/* Action: Enable All */}
-            <button
-              type="button"
-              onClick={displayBatch.onEnableAll}
-              className="h-9 px-3.5 rounded-full bg-surface-800 hover:bg-surface-750 border border-surface-border text-xs font-bold text-zinc-200 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer press-feedback shadow-sm shrink-0"
-              title="Включить все выбранные моды"
-            >
-              <ToggleRight size={16} className="text-emerald-400" />
-              <span>Включить</span>
-            </button>
-
-            {/* Action: Disable All */}
-            <button
-              type="button"
-              onClick={displayBatch.onDisableAll}
-              className="h-9 px-3.5 rounded-full bg-surface-800 hover:bg-surface-750 border border-surface-border text-xs font-bold text-zinc-200 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer press-feedback shadow-sm shrink-0"
-              title="Отключить все выбранные моды"
-            >
-              <ToggleLeft size={16} className="text-zinc-400" />
-              <span>Отключить</span>
-            </button>
-
-            {/* Action: Delete All */}
-            <button
-              type="button"
-              onClick={displayBatch.onDeleteAll}
-              className="w-9 h-9 rounded-full bg-surface-800 hover:bg-rose-950/80 border border-surface-border text-zinc-400 hover:text-rose-400 flex items-center justify-center cursor-pointer press-feedback shrink-0 shadow-sm transition-colors"
-              title="Удалить выбранные моды"
-            >
-              <Trash2 size={14} />
-            </button>
-
-            {/* Dismiss selection */}
-            <button
-              type="button"
-              onClick={displayBatch.onClear}
-              className="w-9 h-9 rounded-full bg-surface-800 hover:bg-surface-750 border border-surface-border text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer press-feedback shrink-0 shadow-sm transition-colors"
-              title="Снять выбор"
-            >
-              <X size={15} />
-            </button>
-          </div>
-        )}
-      </div>
-
       {/* 2. OPTIONAL SAVE DOCK: Clean, immediate save without delays or animations */}
       {hasUnsavedChanges && (
         <div className="fixed bottom-8 right-8 z-40 select-none pointer-events-auto transition-all duration-200 ease-out">

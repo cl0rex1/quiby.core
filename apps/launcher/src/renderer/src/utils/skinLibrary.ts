@@ -14,6 +14,13 @@ export interface SavedSkinItem {
 
 const STORAGE_KEY = 'quiby_skin_library';
 
+/** Captions are presentation only; filenames remain stable for skin synchronization. */
+export function getSkinDisplayName(library: SavedSkinItem[], sourceName: string | null, dataUri?: string): string | null {
+  const item = (dataUri ? library.find(skin => skin.dataUri === dataUri) : undefined)
+    || library.find(skin => skin.name === sourceName);
+  return item?.caption || sourceName;
+}
+
 /**
  * Loads all saved skins from LocalStorage.
  */

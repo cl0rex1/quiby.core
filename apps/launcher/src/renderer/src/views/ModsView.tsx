@@ -1,26 +1,15 @@
 import { useFileDrop } from '../utils/useFileDrop';
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  FolderGit2, 
-  Search, 
-  Package, 
-  FolderOpen, 
-  Plus, 
-  ToggleLeft, 
+import React, { useState, useRef } from 'react';
+import {
+  Package,
+  ToggleLeft,
   ToggleRight,
   Trash2,
   ExternalLink,
-  Loader2,
-  Check,
   Upload,
-  X,
-  CheckSquare,
   Layers,
-  FileCode,
   Sun,
   Image as ImageIcon,
-  ShieldCheck,
-  Sparkles,
   Filter
 } from 'lucide-react';
 import { ModpackManifest, AuthSession } from '@quiby/shared';
@@ -31,6 +20,9 @@ import { ShadersExplorer } from '../components/ShadersExplorer';
 import { ResourcePacksExplorer } from '../components/ResourcePacksExplorer';
 import { ScreenshotGallery } from '../components/ScreenshotGallery';
 import type { NotificationItem } from '../utils/notifications';
+import { ContentToolbar, ContentSearch, useContentView } from '../components/ContentToolbar';
+import { ContentSelectionDock, SelectionCheck } from '../components/ContentSelectionDock';
+import { allVisibleSelected, toggleVisibleSelection } from '../utils/contentSelection';
 import { ModIcon } from '../components/ModIcon';
 
 export interface CustomModItem {
@@ -84,6 +76,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
   const [switcherMode, setSwitcherMode] = useState<SwitcherMode>('custom');
   const [filterCategory, setFilterCategory] = useState<ModFilterCategory>('all');
   const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useContentView('mods');
+  const [batchBusy, setBatchBusy] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const isDragging = useFileDrop(files => handleFiles(files), contentCategory === 'mods');
   const [activeWhitelistMod, setActiveWhitelistMod] = useState<CustomModItem | null>(null);
@@ -124,12 +118,23 @@ export const ModsView: React.FC<ModsViewProps> = ({
     }
   };
 
-  const handleSelectAllCustom = () => {
-    if (selectedModIds.length === filteredCustom.length) {
-      onUpdateSelectedModIds([]);
-    } else {
-      onUpdateSelectedModIds(filteredCustom.map((m) => m.id));
+  const handleSelectAllCustom = () => onUpdateSelectedModIds(toggleVisibleSelection(selectedModIds, filteredCustom.map(mod => mod.id)));
+  const deleteSelected = async () => {
+    if (batchBusy) return;
+    setBatchBusy(true);
+    const removed: string[] = [];
+    try {
+      for (const mod of customMods.filter(item => selectedModIds.includes(item.id))) {
+        await window.quibyApi.removeCustomMod(gameDir, mod.filename);
+        removed.push(mod.id);
+      }
+    } catch (error) { onNotify?.('Не удалось удалить моды', error instanceof Error ? error.message : undefined, 'error'); }
+    finally {
+      onUpdateCustomMods(previous => previous.filter(mod => !removed.includes(mod.id)));
+      onUpdateSelectedModIds(selectedModIds.filter(id => !removed.includes(id)));
+      setBatchBusy(false);
     }
+    if (removed.length) onNotify?.('Моды удалены', `Файлов: ${removed.length}`, 'info');
   };
 
   const toggleCustomMod = (id: string) => {
@@ -243,7 +248,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
     return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
   };
 
-  const isAllSelected = filteredCustom.length > 0 && selectedModIds.length === filteredCustom.length;
+  const isAllSelected = allVisibleSelected(selectedModIds, filteredCustom.map(mod => mod.id));
 
   const CATEGORY_CHIPS: { id: ModFilterCategory; label: string }[] = [{ id: 'all', label: 'Все' }, ...MOD_CATEGORIES];
 
@@ -278,78 +283,20 @@ export const ModsView: React.FC<ModsViewProps> = ({
       ) : contentCategory === 'screenshots' ? (
         <ScreenshotGallery gameDir={gameDir} onNotify={onNotify} />
       ) : (
-        <>
-          {/* Sub-Header Toolbar: Switcher, Fast Actions & Folders */}
-          <div className="content-toolbar">
-            {/* Segmented Switcher: Сборка vs Мои моды */}
-            <div className="flex items-center gap-2.5 w-full sm:w-auto">
-              <div className="inline-flex p-1 rounded-2xl bg-surface-900 border border-surface-border shadow-inner gap-1">
-                <button
-                  type="button"
-                  onClick={() => setSwitcherMode('official')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
-                    switcherMode === 'official'
-                      ? 'bg-surface-800 text-white border border-[#bb74ff]/40 shadow-sm'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  <span>Сборка ({officialFiles.length})</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSwitcherMode('custom')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 press-feedback ${
-                    switcherMode === 'custom'
-                      ? 'bg-surface-800 text-white border border-[#bb74ff]/40 shadow-sm'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  <span>Мои моды ({customMods.length})</span>
-                  {isVerifying && <Loader2 size={11} className="animate-spin text-[#bb74ff]" />}
-                </button>
-              </div>
-
-              {/* Select All Button for Custom Mods */}
-              {switcherMode === 'custom' && filteredCustom.length > 0 && (
-                <button
-                  type="button"
-                  onClick={handleSelectAllCustom}
-                  className={`h-8 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 shadow-sm press-feedback ${
-                    isAllSelected
-                      ? 'bg-surface-800 border-[#bb74ff]/50 text-white'
-                      : 'bg-surface-900 border-surface-border text-zinc-300 hover:text-white hover:bg-surface-850'
-                  }`}
-                >
-                  <CheckSquare size={13} className={isAllSelected ? 'text-emerald-400' : 'text-zinc-400'} />
-                  <span>{isAllSelected ? 'Снять выбор' : `Выбрать все (${filteredCustom.length})`}</span>
-                </button>
-              )}
+        <section className={`content-library ${switcherMode === 'custom' && selectedModIds.length ? 'has-selection' : ''}`}>
+          <ContentToolbar label="Моды" total={switcherMode === 'custom' ? customMods.length : officialFiles.length} visible={switcherMode === 'custom' ? filteredCustom.length : filteredOfficial.length}
+            mode={viewMode} onMode={setViewMode} busy={batchBusy || isVerifying} onAdd={() => fileInputRef.current?.click()} onFolder={handleOpenModsFolder}
+            selection={switcherMode === 'custom' ? { allSelected: isAllSelected, onSelectAll: handleSelectAllCustom } : undefined}>
+            <div className="content-source-toggle" role="group" aria-label="Источник модов">
+              <button type="button" aria-pressed={switcherMode === 'official'} onClick={() => { setSwitcherMode('official'); onUpdateSelectedModIds([]); }}>Сборка</button>
+              <button type="button" aria-pressed={switcherMode === 'custom'} onClick={() => setSwitcherMode('custom')}>Мои моды</button>
             </div>
-
-            {/* Quick Actions */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="ui-button is-primary"
-              >
-                <Plus size={15} className="stroke-[2.5]" />
-                <span>Добавить файл</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleOpenModsFolder}
-                className="ui-button"
-                title="Открыть папку mods в проводнике"
-              >
-                <FolderOpen size={13} className="text-zinc-400" />
-                <span>Открыть папку</span>
-              </button>
-            </div>
-          </div>
-
+          </ContentToolbar>
+          <ContentSearch value={search} onChange={setSearch} label="Поиск модов" hint=".jar"/>
+          {switcherMode === 'custom' && <ContentSelectionDock count={selectedModIds.length} total={customMods.length} allSelected={isAllSelected} busy={batchBusy}
+            onSelectAll={handleSelectAllCustom} onClear={() => onUpdateSelectedModIds([])} onDelete={() => void deleteSelected()} deleteLabel="Удалить"
+            onEnable={() => onUpdateCustomMods(previous => previous.map(mod => selectedModIds.includes(mod.id) && mod.safetyStatus === 'approved' ? { ...mod, enabled: true } : mod))}
+            onDisable={() => onUpdateCustomMods(previous => previous.map(mod => selectedModIds.includes(mod.id) ? { ...mod, enabled: false } : mod))}/>}
           {/* Filter Bar: Category Chips & Search Bar */}
           <div className="mod-filterbar">
             {/* Fast Category Filter Chips */}
@@ -374,27 +321,6 @@ export const ModsView: React.FC<ModsViewProps> = ({
               ))}
             </div>
 
-            {/* Fast Search Bar with Clear Button */}
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-3 top-2.5 text-zinc-500" size={13} />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Поиск по названию или файлу..."
-                className="w-full bg-surface-900 border border-surface-border focus:border-[#bb74ff]/50 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none transition-colors"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch('')}
-                  className="absolute right-2 top-2 text-zinc-500 hover:text-white p-0.5 cursor-pointer press-feedback"
-                  title="Очистить поиск"
-                >
-                  <X size={13} />
-                </button>
-              )}
-            </div>
           </div>
 
           {/* Main Mods Grid Container */}
@@ -407,7 +333,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                   <p>Моды не найдены по текущему фильтру</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                <div className={`mod-grid is-${viewMode}`}>
                   {filteredOfficial.map((file, idx) => {
                     const rawName = file.modName || file.path.replace('mods/', '').replace('.jar', '');
                     const iconUrl = file.modIconUrl?.startsWith('/') ? `${serverUrl}${file.modIconUrl}` : file.modIconUrl;
@@ -478,7 +404,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                <div className={`mod-grid is-${viewMode}`}>
                   {filteredCustom.map((mod) => {
                     const isApproved = mod.safetyStatus === 'approved';
                     const isPending = mod.safetyStatus === 'pending';
@@ -509,19 +435,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                       >
                         <div className="flex items-center justify-between gap-2 min-w-0 w-full">
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          {/* Checkbox selector */}
-                          <button
-                            type="button"
-                            onClick={() => toggleSelectMod(mod.id)}
-                            className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-all cursor-pointer press-feedback ${
-                              isSelected
-                                ? 'bg-[#bb74ff] text-surface-950 shadow-sm'
-                                : 'bg-surface-850 border border-surface-border text-transparent hover:border-[#bb74ff]/50'
-                            }`}
-                            title={isSelected ? 'Снять выбор' : 'Выбрать мод'}
-                          >
-                            <Check size={12} className="stroke-[3]" />
-                          </button>
+                          <SelectionCheck disabled={batchBusy} checked={isSelected} onToggle={() => toggleSelectMod(mod.id)} label={`Выделить ${mod.filename}`} />
 
                           {/* Logo / Monogram */}
                           <ModIcon src={meta.iconUrl} name={meta.displayName} />
@@ -591,7 +505,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           <button
                             type="button"
                             onClick={() => toggleCustomMod(mod.id)}
-                            disabled={!isApproved}
+                            disabled={batchBusy || !isApproved}
                             className={`p-0.5 transition-all press-feedback ${
                               !isApproved ? 'opacity-25 cursor-not-allowed' : 'cursor-pointer'
                             }`}
@@ -617,6 +531,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           {/* Delete */}
                           <button
                             type="button"
+                            disabled={batchBusy}
                             onClick={(e) => handleDeleteCustomMod(e, mod.id)}
                             className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer press-feedback"
                             title="Удалить мод"
@@ -640,7 +555,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
               )
             )}
           </div>
-        </>
+        </section>
       )}
 
       {/* Whitelist Submission Modal Dialog */}

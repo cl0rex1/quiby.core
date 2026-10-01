@@ -1,4 +1,4 @@
-import { packHash, packDecision } from './engine/resourcePackAdmission';
+import { resourcePackCatalog, resourcePackInventory } from './engine/resourcePackCatalog';
 import { checkContentLinks } from './engine/contentIntegrity';
 import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, ClipboardItem } from 'electron';
 import path from 'path';
@@ -362,25 +362,8 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     const root = gameDir || getDefaultGameDir(); await checkContentLinks(root);
     await shell.trashItem(path.join(root, 'resourcepacks', filename));
   });
-  ipcMain.handle('resourcepacks:list', async (_, gameDir: string, official: { path: string; sha256: string }[], token: string) => {
-    const root = gameDir || getDefaultGameDir();
-    await checkContentLinks(root);
-    const dir = path.join(root, 'resourcepacks');
-    fs.mkdirSync(dir, { recursive: true });
-    const items = [];
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (!entry.isFile() || !/\.zip$/i.test(entry.name)) continue;
-      const file = path.join(dir, entry.name), size = fs.statSync(file).size;
-      if (size > 512 * 1024 * 1024) continue;
-      const hash = await packHash(file);
-      const expected = official.find(item => item.path === 'resourcepacks/' + entry.name);
-      const trusted = expected && await packHash(file, 'sha256') === expected.sha256.toLowerCase();
-      const decision = trusted ? { status: 'approved', isAllowed: true, reason: 'Ресурспак сборки' }
-        : await packDecision(hash, token, DEFAULT_SERVER_URL);
-      items.push({ filename: entry.name, hashSha1: hash, size, official: !!trusted, ...decision });
-    }
-    return items;
-  });
+  ipcMain.handle('resourcepacks:inventory', (_, gameDir: string) => resourcePackInventory(gameDir || getDefaultGameDir()));
+  ipcMain.handle('resourcepacks:list', (_, gameDir: string, official: { path: string; sha256: string }[], token: string) => resourcePackCatalog(gameDir || getDefaultGameDir(), official, token, DEFAULT_SERVER_URL));
   ipcMain.handle('resourcepacks:add', async (_, gameDir: string, filename: string, bytes: Uint8Array) => {
     if (!/^[^/\\:\x00]+\.zip$/i.test(filename) || !bytes?.length || bytes.length > 100 * 1024 * 1024) throw new Error('Нужен ZIP до 100 МиБ');
     const root = gameDir || getDefaultGameDir();

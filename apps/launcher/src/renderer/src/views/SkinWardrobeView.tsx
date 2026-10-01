@@ -8,6 +8,7 @@ import {
   SavedSkinItem,
   renameSavedSkin,
   getSavedSkinLibrary,
+  getSkinDisplayName,
   addSkinToLibrary,
   removeSkinFromLibrary,
   createChibiPreviewUri,
@@ -21,6 +22,7 @@ interface SkinWardrobeViewProps {
   onSetCustomSkin: (img: HTMLImageElement | null, name: string | null) => void;
   onSetDefaultSkinIdx: (idx: number) => void;
   onSelectCape: (cape: CapePreset) => void;
+  onLibraryChange?: () => void;
 }
 
 interface PendingSkinData {
@@ -38,6 +40,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   onSetCustomSkin,
   onSetDefaultSkinIdx,
   onSelectCape,
+  onLibraryChange,
 }) => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const isDragging = useFileDrop(files => { if (files[0]) void processSkinFile(files[0]); });
@@ -100,6 +103,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   ) => {
     addSkinToLibrary(name, canvas);
     setLibrary(getSavedSkinLibrary());
+    onLibraryChange?.();
     onSetCustomSkin(img, name);
   };
 
@@ -122,9 +126,10 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
     e.stopPropagation();
     const updated = removeSkinFromLibrary(id);
     setLibrary(updated);
+    onLibraryChange?.();
 
     const deletedItem = library.find((i) => i.id === id);
-    if (deletedItem && customSkinName === deletedItem.name) {
+    if (deletedItem && activeLibraryItem?.id === deletedItem.id) {
       onSetCustomSkin(null, null);
     }
   };
@@ -139,8 +144,11 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
     document.body.removeChild(a);
   };
 
+  const activeLibraryItem = customSkinImg
+    ? library.find(item => item.dataUri === customSkinImg.src) || library.find(item => item.name === customSkinName)
+    : undefined;
   const currentDisplayName = customSkinImg
-    ? library.find(item => item.name === customSkinName)?.caption || customSkinName || 'Пользовательский скин'
+    ? getSkinDisplayName(library, customSkinName, customSkinImg.src) || 'Пользовательский скин'
     : DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Скин';
 
   const oldestSkinToReplace = library.length >= 6 ? library[library.length - 1] : null;
@@ -149,7 +157,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
     <div className="wardrobe-page view-enter">
       <header className="page-heading"><div><p className="page-kicker">ТВОЙ ПЕРСОНАЖ</p><h1>Будь собой.</h1><p>Скины, детали и узнаваемый силуэт.</p></div><span className="content-edition">ГАРДЕРОБ / S6</span></header>
       {editingSkin && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Название скина">
-        <form className="surface-panel rounded-3xl p-6 w-full max-w-sm space-y-4" onSubmit={event => { event.preventDefault(); try { setLibrary(renameSavedSkin(editingSkin.id, caption)); setEditingSkin(null); } catch (error) { setCaptionError(error instanceof Error ? error.message : 'Не удалось сохранить подпись'); } }}>
+        <form className="surface-panel rounded-3xl p-6 w-full max-w-sm space-y-4" onSubmit={event => { event.preventDefault(); try { setLibrary(renameSavedSkin(editingSkin.id, caption)); onLibraryChange?.(); setEditingSkin(null); } catch (error) { setCaptionError(error instanceof Error ? error.message : 'Не удалось сохранить подпись'); } }}>
           <label className="block text-sm font-semibold">Название скина<input autoFocus className="ui-input mt-3 w-full" value={caption} maxLength={24} onChange={event => setCaption(event.target.value)} onKeyDown={event => { if (event.key === 'Escape') setEditingSkin(null); }} /></label>
           <p className="text-xs text-zinc-400">До 24 символов</p>
           {captionError && <p role="alert" className="text-rose-400 text-xs">{captionError}</p>}
@@ -266,7 +274,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
       </div>
 
       {/* Right Column: Control Panel with Glass Components */}
-      <div className="flex-1 flex flex-col space-y-4 overflow-y-auto pr-1">
+      <div className="wardrobe-controls">
         {/* Validation Error Banner */}
         {validationError && (
           <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs animate-in fade-in">
@@ -326,7 +334,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
             <div className="grid grid-cols-3 gap-3">
               {library.map((item) => {
-                const isSelected = customSkinImg && customSkinName === item.name;
+                const isSelected = activeLibraryItem?.id === item.id;
                 return (
                   <div
                     key={item.id}
@@ -347,7 +355,6 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                       />
                     </div>
 
-                    <span className="skin-collection-caption" title={item.caption || item.name}>{item.caption || item.name}</span>
                     {/* Active Checkmark */}
                     {isSelected && (
                       <div className="absolute bottom-2 left-2 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center shadow-sm z-10">
