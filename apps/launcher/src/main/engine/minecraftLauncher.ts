@@ -16,6 +16,7 @@ import { resolveJava21 } from './javaDetector';
 import { getLatestModpackManifest } from './manifestSource';
 import { readCrashDetails } from './crashDetails';
 import { prepareResourcePackAdmission } from './resourcePackAdmission';
+import { guardModDirectory } from './modDirectoryGuard';
 
 let runningGameProcess: ChildProcess | null = null;
 let gameStartTime: number | null = null;
@@ -38,6 +39,8 @@ export async function launchMinecraft(
   launchInProgress = true;
   stopRequested = false;
   const recentGameOutput: string[] = [];
+  let modGuard: ReturnType<typeof guardModDirectory> | undefined;
+  let integrityFailure: string | undefined;
   const sendLog = (level: LogEntry['level'], message: string, source: LogEntry['source'] = 'launcher') => {
     if (source !== 'launcher') {
       recentGameOutput.push(message);
@@ -237,7 +240,14 @@ export async function launchMinecraft(
     sendLog('info', `🚀 Запуск Java 21: ${javaBin}`);
     setLaunchState({ status: 'starting' });
 
+    modGuard = guardModDirectory(gameDir, manifest.files, approvedCustomMods, error => {
+      integrityFailure = `Проверка модов: ${error.message}\nMinecraft остановлен: папка mods изменилась после проверки. Уберите неподтверждённый файл или подайте заявку в вайтлист и запустите игру снова.`;
+      sendLog('error', integrityFailure);
+      if (runningGameProcess) killGameProcess();
+    });
     await verifyLaunchContent(gameDir, manifest.files, approvedCustomMods, packAdmission.approved);
+    await modGuard.check();
+    if (integrityFailure) throw new Error(integrityFailure);
     const gameProcess = spawn(javaBin, fullArgs, {
       cwd: gameDir,
       env: { ...process.env },
@@ -258,6 +268,7 @@ export async function launchMinecraft(
     });
 
     runningGameProcess = gameProcess;
+    if (integrityFailure) killGameProcess();
     launchInProgress = false;
     gameStartTime = Date.now();
     trackedPlaytimeSeconds = 0;
@@ -300,6 +311,7 @@ export async function launchMinecraft(
     gameProcess.on('error', (err) => {
       if (finished) return;
       finished = true;
+      modGuard?.close();
       stopPlaytimeTracking();
       sendLog('error', `Ошибка процесса Java: ${err.message}`);
       setLaunchState({ status: 'crashed', error: err.message });
@@ -310,14 +322,15 @@ export async function launchMinecraft(
     gameProcess.on('exit', (code) => {
       if (finished) return;
       finished = true;
+      modGuard?.close();
       const startedAt = gameStartTime || Date.now();
       stopPlaytimeTracking();
       sendLog('info', `Процесс Minecraft завершился с кодом: ${code}`);
-      const crashed = code !== 0 && !stopRequested;
+      const crashed = !!integrityFailure || (code !== 0 && !stopRequested);
       setLaunchState({
         status: crashed ? 'crashed' : 'stopped',
         exitCode: code ?? undefined,
-        error: crashed ? readCrashDetails(gameDir, startedAt, code, recentGameOutput) : undefined,
+        error: crashed ? integrityFailure || readCrashDetails(gameDir, startedAt, code, recentGameOutput) : undefined,
       });
       runningGameProcess = null;
 
@@ -328,6 +341,7 @@ export async function launchMinecraft(
     });
 
   } catch (error: any) {
+    modGuard?.close();
     launchInProgress = false;
     stopPlaytimeTracking();
     updateDiscordRpcStatus({ details: 'В главном меню лаунчера', state: 'quiby. Season 6 · Minecraft 1.21.1' });

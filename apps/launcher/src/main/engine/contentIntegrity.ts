@@ -26,15 +26,16 @@ async function digest(filename: string, algorithm: string): Promise<string> {
 /** File admission, not a claim that arbitrary Java bytecode or textures can be proven safe. */
 export async function verifyLaunchContent(
   gameDir: string, files: ManagedFile[], approvedMods: ReadonlyMap<string, string>, approvedPacks: ReadonlyMap<string, string> = new Map(),
+  directories: readonly ('mods' | 'resourcepacks')[] = ['mods', 'resourcepacks'],
 ): Promise<void> {
   const expected = new Map(files.map(file => [file.path.replace(/\\/g, '/'), file.sha256.toLowerCase()]));
   for (const relative of expected.keys()) {
-    if (/^(mods\/[^/]+\.jar|resourcepacks\/[^/]+\.zip)$/i.test(relative)) {
+    if (directories.includes(relative.split('/')[0] as 'mods' | 'resourcepacks') && /^(mods\/[^/]+\.jar|resourcepacks\/[^/]+\.zip)$/i.test(relative)) {
       const stat = await fs.lstat(path.join(gameDir, relative)).catch(() => null);
       if (!stat?.isFile() || stat.isSymbolicLink()) throw new Error(`Отсутствует обычный файл сборки: ${relative}`);
     }
   }
-  for (const directory of ['mods', 'resourcepacks']) {
+  for (const directory of directories) {
     const root = path.join(gameDir, directory);
     const rootStat = await fs.lstat(root).catch(error => {
       if (error.code === 'ENOENT') return null;
