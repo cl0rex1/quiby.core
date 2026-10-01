@@ -109,9 +109,6 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
 
       <header className="auth-topbar">
         <img src={quibyLogo} alt="quiby." className="auth-brand" />
-        <button type="button" className="auth-skip" onClick={onClose} disabled={loading}>
-          К лаунчеру <ArrowRight size={14} />
-        </button>
       </header>
 
       <div className="auth-content">

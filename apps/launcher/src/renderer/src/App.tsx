@@ -43,7 +43,7 @@ function storedSession(): AuthSession | null {
   }
 }
 
-const syncSelectedSkin = createSkinSynchronizer(SERVER_URL);
+const syncSelectedSkin = createSkinSynchronizer(SERVER_URL, fetch, candidate => storedSession()?.token === candidate.token);
 
 const defaultSettings: LauncherSettings = {
   ramMinMb: 4096,
@@ -150,6 +150,7 @@ export const App: React.FC = () => {
   const [activeDefaultSkinIdx, setActiveDefaultSkinIdx] = useState(0);
 
   const handleSelectCape = (cape: CapePreset) => {
+    if (!session || storedSession()?.token !== session.token) return;
     setSelectedCape(cape);
     localStorage.setItem('quiby_cape', cape.id);
   };
@@ -157,6 +158,7 @@ export const App: React.FC = () => {
   const skinSyncWarningShown = useRef(false);
 
   const handleSetCustomSkin = (img: HTMLImageElement | null, name: string | null) => {
+    if (!session || storedSession()?.token !== session.token) return;
     setCustomSkinImg(img);
     setCustomSkinName(name);
     if (img && img.src) {
@@ -176,6 +178,7 @@ export const App: React.FC = () => {
   };
 
   const handleSetDefaultSkinIdx = (idx: number) => {
+    if (!session || storedSession()?.token !== session.token) return;
     setActiveDefaultSkinIdx(idx);
     localStorage.setItem('quiby_default_skin_idx', String(idx));
   };
@@ -487,7 +490,7 @@ export const App: React.FC = () => {
       {/* 1. Window Controls & Dragging Header (Height: 32px / h-8) */}
       <WindowHeader />
 
-      {!isAuthModalOpen && <>
+      {!isAuthModalOpen && session && <>
 
       {/* Workspace owns the update banner so sidebar padding applies to it. */}
       <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
@@ -718,8 +721,8 @@ export const App: React.FC = () => {
 
       {/* Discord Auth Page */}
       <DiscordAuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        isOpen={isAuthModalOpen || !session}
+        onClose={() => { if (storedSession()) setIsAuthModalOpen(false); }}
         onSuccess={handleLoginSuccess}
         serverUrl={SERVER_URL}
       />
