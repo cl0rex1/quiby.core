@@ -5,6 +5,7 @@ import { applyBuildToMods, selectedBuild } from './utils/buildProfiles';
 import { WindowHeader } from './components/WindowHeader';
 import { LauncherUpdateBanner } from './components/LauncherUpdateBanner';
 import type { UpdateState } from '../../main/updates';
+import { version as LAUNCHER_VERSION } from '../../../package.json';
 import { MinimalSidebar, ActiveTab } from './components/MinimalSidebar';
 import { CharacterStage } from './views/CharacterStage';
 import { InGameLaunchStage } from './views/InGameLaunchStage';
@@ -246,7 +247,7 @@ export const App: React.FC = () => {
       checking = true;
       try {
         const response = await fetch(`${SERVER_URL}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}`, 'x-quiby-launcher-version': LAUNCHER_VERSION },
           signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]),
         });
         if (controller.signal.aborted || storedSession()?.token !== token) return;
@@ -437,6 +438,10 @@ export const App: React.FC = () => {
   };
 
   const handleLaunchGame = async () => {
+    if (launcherUpdate?.required) {
+      handleNotify('Обновление обязательно', 'Установите обновление лаунчера из верхней плашки перед запуском игры.', 'error');
+      return;
+    }
     if (!session || session.expiresAt <= Date.now()) {
       setSession(null);
       localStorage.removeItem('quiby_session');

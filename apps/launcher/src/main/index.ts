@@ -11,7 +11,7 @@ import { launchMinecraft, killGameProcess } from './engine/minecraftLauncher';
 import { hashCustomModBytes, requireApprovedCustomMod, evaluateCustomMod } from './engine/customModVerification';
 import { contentDirectory, contentFilePath, installLocalContent, listLocalContent, ContentKind } from './engine/localContent';
 import { configureDiscordRpc } from './rpc/discordRpc';
-import { registerUpdates } from './updates';
+import { registerUpdates, requireCurrentLauncher, markUpdateRequired } from './updates';
 import { getLatestModpackManifest } from './engine/manifestSource';
 
 let mainWindow: BrowserWindow | null = null;
@@ -495,14 +495,20 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
       customModFilenames: string[] = [],
       disabledCustomModFilenames: string[] = []
     ) => {
+      await requireCurrentLauncher();
       let authResponse: Response;
       try {
         authResponse = await fetch(`${DEFAULT_SERVER_URL}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${session?.token || ''}` },
+          headers: { Authorization: `Bearer ${session?.token || ''}`, 'x-quiby-launcher-version': app.getVersion() },
           signal: AbortSignal.timeout(10000),
         });
       } catch {
         throw new Error('Не удалось проверить вход через Discord. Проверьте соединение с сервером.');
+      }
+      if (authResponse.status === 426) {
+        const policy = await authResponse.json() as { minimumVersion?: string };
+        markUpdateRequired(policy.minimumVersion);
+        throw new Error('Обновление лаунчера обязательно. Скачайте и установите обновление из верхней плашки.');
       }
       if (!authResponse.ok) {
         throw new Error('Сессия Discord недействительна. Войдите заново.');

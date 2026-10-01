@@ -14,7 +14,7 @@ import modsRoutes from './routes/mods';
 import botRoutes from './routes/bot';
 import skinsRoutes from './routes/skins';
 import { getLatestManifest, publishModpackVersion } from './services/modpackService';
-import { ModpackManifest } from '@quiby/shared';
+import { ModpackManifest, MINIMUM_LAUNCHER_VERSION } from '@quiby/shared';
 
 async function refreshReleasedModpack(): Promise<void> {
   try {
@@ -64,6 +64,7 @@ async function bootstrap() {
       status: 'ok',
       service: 'quiby.core backend server',
       version: '6.0.0-neoforge-1.21.1',
+      minimumLauncherVersion: MINIMUM_LAUNCHER_VERSION,
       time: new Date().toISOString(),
     });
   });

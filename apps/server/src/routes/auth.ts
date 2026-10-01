@@ -12,6 +12,7 @@ import {
 } from '../services/discord';
 import { AuthenticatedRequest, requireAuth } from '../middleware/auth';
 import { AuthSession, UserProfile } from '@quiby/shared';
+import { requireSupportedLauncher } from '../middleware/launcherVersion';
 import { submitUsernameChangeRequest } from '../services/usernameChangeService';
 
 const router = Router();
@@ -263,7 +264,7 @@ router.post('/bind-mc', async (req: Request, res: Response) => {
 });
 
 // 4. Get current profile (requires JWT)
-router.get('/me', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+router.get('/me', requireSupportedLauncher, requireAuth, (req: AuthenticatedRequest, res: Response) => {
   return res.json({ user: req.user });
 });
 

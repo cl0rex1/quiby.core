@@ -132,3 +132,4 @@ export interface LogEntry {
 }
 
 export { lightingOverrideSignature, hasGammaMixinEvidence } from './lightingDetection';
+export { MINIMUM_LAUNCHER_VERSION, LAUNCHER_DOWNLOAD_URL, supportsLauncher } from './launcherPolicy';
