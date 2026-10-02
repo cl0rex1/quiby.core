@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.17",
+  "version": "6.1.18",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 274082741,
+  "totalSize": 274096145,
   "files": [
     {
       "path": "config/DistantHorizons.toml",
@@ -1568,10 +1568,10 @@
       "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
-      "path": "mods/quiby-1.21.1-1.1.12.jar",
-      "sha256": "c6b080b2136c6dbcf6141bb71828c5e6c61f1eb87d8729224f2d42127c1a6f37",
-      "size": 3537365,
-      "downloadUrl": "/api/modpack/files/imported/c6b080b2136c6dbcf6141bb71828c5e6c61f1eb87d8729224f2d42127c1a6f37/quiby-1.21.1-1.1.12.jar",
+      "path": "mods/quiby-1.21.1-1.1.13.jar",
+      "sha256": "f0d83a8ad31e26cb76ab7dfd9874c35a0de4bc738a32a5452d5647fbf74ebcba",
+      "size": 3550769,
+      "downloadUrl": "/api/modpack/files/imported/f0d83a8ad31e26cb76ab7dfd9874c35a0de4bc738a32a5452d5647fbf74ebcba/quiby-1.21.1-1.1.13.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1580,7 +1580,7 @@
       ],
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.1.12",
+      "modVersion": "1.1.13",
       "modDescription": "Русская локализация, рецепты, скины, реакции на урон и фирменная загрузка Minecraft.",
       "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },
@@ -1831,7 +1831,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Контроль ресурспаков внутри Minecraft: при открытии списка и перезагрузке ресурсов не допускаются ZIP без одобрения или с изменённым содержимым. Новый quiby.mod 1.1.12. Совместно с лаунчером 1.0.1-beta.18 и обновлённым API.",
+  "changelog": "Серверная сборка: вход по Discord-сессии лаунчера с проверкой ключа до появления в мире; исправлен возврат к offline-рэгдоллу на выделенном сервере. Требуется обновление API и лаунчера.",
   "serverAddress": "",
   "updatedAt": "2026-09-28T21:50:43.482158Z"
 }

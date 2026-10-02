@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import { config } from './config';
 import { initDatabase } from './models/db';
 import authRoutes from './routes/auth';
+import gameRoutes from './routes/game';
 import modpackRoutes from './routes/modpack';
 import newsRoutes from './routes/news';
 import statusRoutes from './routes/status';
@@ -71,6 +72,7 @@ async function bootstrap() {
 
   // API Routes
   app.use('/api/auth', authRoutes);
+  app.use('/api/game', gameRoutes);
   app.use('/api/modpack', modpackRoutes);
   app.use('/api/news', newsRoutes);
   app.use('/api/status', statusRoutes);

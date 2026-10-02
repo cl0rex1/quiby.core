@@ -1,0 +1,20 @@
+services:
+  minecraft:
+    build: .
+    container_name: quiby-minecraft
+    restart: unless-stopped
+    init: true
+    stdin_open: true
+    tty: true
+    stop_grace_period: 2m
+    environment:
+      EULA: "${EULA:-false}"
+      MIN_MEMORY: "${MIN_MEMORY:-2G}"
+      MAX_MEMORY: "${MAX_MEMORY:-8G}"
+    ports:
+      - "25565:25565/tcp"
+      - "24454:24454/udp"
+    volumes:
+      - minecraft-data:/data
+volumes:
+  minecraft-data:

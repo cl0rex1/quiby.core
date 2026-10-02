@@ -1,0 +1,29 @@
+{
+  "toml": {
+    "quiby-access-server.toml": {
+      "": { "enabled": true, "apiUrl": "https://api.quiby.me" }
+    },
+    "offbalance-server.toml": {
+      "balance": { "balanceEnabled": false },
+      "hurtProxy": { "hurtProxyEnabled": true, "hurtProxyMobsTarget": true },
+      "recovery": { "recoveryGateEnabled": false },
+      "recovery.manualDismount": { "dismountRequireGrounded": true }
+    },
+    "quiby-server.toml": {
+      "ragdoll": { "onDamage": true, "minDamage": 9.0, "onExplosion": true, "cooldownTicks": 20 }
+    },
+    "sable_player_ragdoll-server.toml": {
+      "trigger": { "minDismountTicks": 20 },
+      "debug": { "debugLogging": false }
+    },
+    "explosionoverhaul/explosionoverhaul-common.toml": {
+      "General": { "enableExplosionClustering": false }
+    }
+  },
+  "json": {
+    "explosionoverhaul/ExplosionSourceBlacklist.json": {
+      "minecraft:wind_charge": "VANILLA",
+      "minecraft:breeze_wind_charge": "VANILLA"
+    }
+  }
+}

@@ -1,7 +1,7 @@
 import { spawn, exec, ChildProcess } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-import { BrowserWindow } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { AuthSession, LauncherSettings, LaunchState, LogEntry, ModpackManifest } from '@quiby/shared';
 import { syncModpackFiles } from './downloader';
 import { configureEarlyLoading } from './earlyLoading';
@@ -17,6 +17,7 @@ import { getLatestModpackManifest } from './manifestSource';
 import { readCrashDetails } from './crashDetails';
 import { prepareResourcePackAdmission } from './resourcePackAdmission';
 import { guardModDirectory } from './modDirectoryGuard';
+import { prepareGameAdmission } from './gameAdmission';
 
 let runningGameProcess: ChildProcess | null = null;
 let gameStartTime: number | null = null;
@@ -248,9 +249,10 @@ export async function launchMinecraft(
     await verifyLaunchContent(gameDir, manifest.files, approvedCustomMods, packAdmission.approved);
     await modGuard.check();
     if (integrityFailure) throw new Error(integrityFailure);
+    const gameAdmission = await prepareGameAdmission(serverBaseUrl, session.token, app.getVersion());
     const gameProcess = spawn(javaBin, fullArgs, {
       cwd: gameDir,
-      env: { ...process.env },
+      env: { ...process.env, ...gameAdmission },
       windowsHide: true,
     });
 

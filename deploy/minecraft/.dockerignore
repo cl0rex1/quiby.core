@@ -1,0 +1,12 @@
+*
+!Dockerfile
+!start.sh
+!prepare.py
+!server-pack.json
+!config-policy.json
+!server.properties.example
+!neoforge-21.1.250-installer.jar
+!mods/
+!mods/**
+!config-templates/
+!config-templates/**

@@ -1,0 +1,3 @@
+# Verify the Quiby account and launcher signing key before entering the world.
+enabled = true
+apiUrl = "https://api.quiby.me"

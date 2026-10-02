@@ -1,0 +1,22 @@
+# Quiby Season 6 / Minecraft 1.21.1 / NeoForge 21.1.250
+# Discord authentication in the launcher does not verify Minecraft logins here.
+online-mode=false
+server-ip=
+server-port=25565
+level-name=world
+motd=Quiby | Season 6
+max-players=25
+view-distance=8
+simulation-distance=6
+difficulty=normal
+gamemode=survival
+pvp=true
+allow-flight=true
+enable-command-block=false
+enable-rcon=false
+enable-query=false
+# Quiby checks the account whitelist through the API before joining the world.
+white-list=false
+enforce-whitelist=false
+enforce-secure-profile=false
+spawn-protection=0

@@ -1,0 +1,13 @@
+[ragdoll]
+	#Enter ragdoll after actual health damage. Creative and spectator players are excluded.
+	onDamage = true
+	#Minimum damage from a single hit after mitigation to trigger ragdoll (2 damage = 1 heart). Small hits do not accumulate. Explosion-area reactions are configured separately.
+	# Default: 9.0
+	# Range: 0.0 ~ 1024.0
+	minDamage = 9.0
+	#Enter ragdoll in the exposed area of an explosion, including non-damaging blasts.
+	onExplosion = true
+	#Minimum ticks between automatic triggers; an active ragdoll is never restarted.
+	# Default: 20
+	# Range: 0 ~ 1200
+	cooldownTicks = 20
