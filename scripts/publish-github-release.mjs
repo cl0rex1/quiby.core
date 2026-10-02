@@ -103,11 +103,21 @@ if (kind === 'pack') {
     await fs.access(archive);
     payloads.set(path.basename(archive), archive);
   }
+  const serverPack = process.argv.find(arg => arg.startsWith('--server-pack='))?.slice('--server-pack='.length);
+  if (serverPack) {
+    const archive = path.resolve(serverPack);
+    const checksumPath = archive + '.sha256';
+    const checksum = (await fs.readFile(checksumPath, 'utf8')).trim().split(/\s+/)[0];
+    const actual = crypto.createHash('sha256').update(await fs.readFile(archive)).digest('hex');
+    if (checksum !== actual) throw new Error('Server pack checksum mismatch');
+    payloads.set(path.basename(archive), archive);
+    payloads.set(path.basename(checksumPath), checksumPath);
+  }
   if (process.argv.includes('--check')) {
     console.log(`Validated ${source.files.length} manifest files and ${payloads.size} unique release assets`);
     process.exit(0);
   }
-  const value = await release(tag, `quiby. Season 6 ${source.version} (Тестовая)`, `Тестовая сборка для тестеров. Visual, Standard, Draft — Minecraft 1.21.1 / NeoForge 21.1.250.\n\n${source.changelog || ''}\n\n${serverUpdate ? 'Minecraft-сервер также нужно обновить: архив quiby-server-update-' + source.version + '.zip содержит моды, конфиг и инструкцию. ' : ''}Файлы клиента выбираются по SHA-256 манифесту.`, false);
+  const value = await release(tag, `quiby. Season 6 ${source.version} (Тестовая)`, `Тестовая сборка для тестеров. Visual, Standard, Draft — Minecraft 1.21.1 / NeoForge 21.1.250.\n\n${source.changelog || ''}\n\n${serverPack ? 'Полная серверная сборка: ' + path.basename(serverPack) + ' (инструкция внутри). ' : ''}${serverUpdate ? 'Minecraft-сервер также нужно обновить: архив quiby-server-update-' + source.version + '.zip содержит моды, конфиг и инструкцию. ' : ''}Файлы клиента выбираются по SHA-256 манифесту.`, false);
   const existing = new Map((await listedAssets(value)).map(asset => [asset.name, asset]));
   let uploaded = 0;
   for (const [filename, sourcePath] of payloads) {
