@@ -1159,3 +1159,15 @@ img, video, canvas { -webkit-user-drag: none; }
 .library-file-icon { border-color: var(--color-rule); background: var(--color-paper-3); }
 .skin-caption-field { display: flex; flex-direction: column; gap: 12px; min-width: 0; font-size: 14px; font-weight: 600; }
 .skin-caption-field input { display: block; box-sizing: border-box; width: 100%; min-width: 0; min-height: 42px; padding: 10px 12px; border: 1px solid var(--color-rule); border-radius: 10px; font-size: 13px; font-weight: 400; line-height: 20px; color: var(--color-ink); user-select: text; }
+
+.bundled-mod-toggle { display: grid; place-items: center; min-width: 36px; min-height: 36px; color: var(--color-ink-2); border-radius: 8px; cursor: pointer; }
+.bundled-mod-toggle:hover { background: var(--color-paper-hover); }
+.skin-caption-badge { cursor: text; transition: border-color 150ms ease; }
+.skin-caption-badge:hover:not(:disabled) { border-color: var(--color-accent); }
+.jvm-options summary { min-height: 48px; cursor: pointer; }
+.jvm-options summary small { display: block; margin-top: 4px; font-size: 10px; font-weight: 400; color: var(--color-ink-2); }
+.jvm-options form { padding-top: 16px; }
+.jvm-options p { font-size: 12px; line-height: 1.6; color: var(--color-ink-2); }
+.jvm-options textarea { display: block; width: 100%; min-width: 0; box-sizing: border-box; padding: 12px; border: 1px solid var(--color-rule); border-radius: 10px; background: var(--color-paper); color: var(--color-ink); font: 12px/1.7 var(--font-mono); resize: vertical; user-select: text; }
+.jvm-options textarea[aria-invalid='true'] { border-color: var(--color-warning); }
+.jvm-options-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }

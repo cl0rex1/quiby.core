@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { getSavedSkinLibrary, renameSavedSkin, getSkinDisplayName, type SavedSkinItem } from '../skinLibrary';
+import { getSavedSkinLibrary, renameSavedSkin, getSkinDisplayName, getDefaultSkinCaption, renameDefaultSkin, type SavedSkinItem } from '../skinLibrary';
 
 test('skin captions persist without changing the source name or texture', () => {
   const entries = new Map<string, string>();
@@ -11,6 +11,11 @@ test('skin captions persist without changing the source name or texture', () => 
     setItem: (key: string, value: string) => entries.set(key, value),
   } });
   try {
+    assert.equal(getDefaultSkinCaption('Steve'), 'Steve');
+    renameDefaultSkin('Steve', '  Мой   персонаж ');
+    assert.equal(getDefaultSkinCaption('Steve'), 'Мой персонаж');
+    assert.equal(getDefaultSkinCaption('Alex'), 'Alex');
+    assert.throws(() => renameDefaultSkin('Other', 'Имя'));
     renameSavedSkin('skin1', '  Мой   скин  ');
     assert.deepEqual(getSavedSkinLibrary()[0], { ...original, caption: 'Мой скин' });
     assert.equal(getSkinDisplayName(getSavedSkinLibrary(), 'source.png', 'texture'), 'Мой скин');

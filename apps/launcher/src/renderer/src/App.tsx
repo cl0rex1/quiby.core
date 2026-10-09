@@ -632,6 +632,8 @@ export const App: React.FC = () => {
                   selectedModIds={selectedModIds}
                   onUpdateSelectedModIds={setSelectedModIds}
                   onUpdateCustomMods={handleUpdateCustomMods}
+                  disabledBundledMods={settings.disabledBundledMods || []}
+                  onToggleBundledMod={modId => { const disabled = settings.disabledBundledMods || []; void handleUpdateSettings({ ...settings, disabledBundledMods: disabled.includes(modId) ? disabled.filter(id => id !== modId) : [...disabled, modId] }); }}
                   onNotify={handleNotify}
                 />
               )}

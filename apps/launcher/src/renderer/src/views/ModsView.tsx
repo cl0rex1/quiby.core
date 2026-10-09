@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
   Filter
 } from 'lucide-react';
+import { canDisableBundledMod } from '../../../shared/modpackProfiles';
 import { ModpackManifest, AuthSession } from '@quiby/shared';
 import { resolveModMetadata, MOD_CATEGORIES, ModCategory, matchesModCategory } from '../utils/knownMods';
 import { ModWhitelistModal } from '../components/ModWhitelistModal';
@@ -50,6 +51,8 @@ interface ModsViewProps {
   selectedModIds: string[];
   onUpdateSelectedModIds: (ids: string[]) => void;
   onUpdateCustomMods: (mods: React.SetStateAction<CustomModItem[]>) => void;
+  disabledBundledMods?: string[];
+  onToggleBundledMod?: (modId: string) => void;
   onNotify?: (
     title: string,
     message?: string,
@@ -71,6 +74,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
   selectedModIds,
   onUpdateSelectedModIds,
   onUpdateCustomMods,
+  disabledBundledMods = [],
+  onToggleBundledMod,
   onNotify,
 }) => {
   const [contentCategory, setContentCategory] = useState<ContentCategory>('mods');
@@ -339,6 +344,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
                     const rawName = file.modName || file.path.replace('mods/', '').replace('.jar', '');
                     const iconUrl = file.modIconUrl?.startsWith('/') ? `${serverUrl}${file.modIconUrl}` : file.modIconUrl;
                     const meta = resolveModMetadata(rawName, file.path, file.modDescription, iconUrl, file.modProjectUrl, file.modId);
+                    const toggleable = canDisableBundledMod(file);
+                    const disabled = toggleable && disabledBundledMods.includes(file.modId!);
 
                     return (
                       <div
@@ -361,13 +368,14 @@ export const ModsView: React.FC<ModsViewProps> = ({
                               {meta.description}
                             </p>
                             <p className="text-[10px] text-zinc-500 font-mono truncate">
-                              {file.modVersion || '1.21.1'} • {formatSize(file.size)}
+                              {file.modVersion || '1.21.1'} • {formatSize(file.size)}{toggleable && ` • ${disabled ? 'Выключен' : 'Клиентский'}`}
                             </p>
                           </div>
                         </div>
 
                         {/* Status badge & external link */}
                         <div className="flex items-center gap-2 shrink-0">
+                          {toggleable && <button type="button" role="switch" aria-checked={!disabled} aria-label={`${disabled ? 'Включить' : 'Отключить'} ${meta.displayName} в сборке`} title="Применится при следующем запуске игры" disabled={!onToggleBundledMod} onClick={() => onToggleBundledMod?.(file.modId!)} className="bundled-mod-toggle">{disabled ? <ToggleLeft size={24}/> : <ToggleRight size={24} className="text-emerald-400"/>}</button>}
                           {meta.projectUrl && (<a
                             href={meta.projectUrl}
                             target="_blank"

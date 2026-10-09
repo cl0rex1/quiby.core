@@ -121,9 +121,27 @@ export function removeSkinFromLibrary(id: string): SavedSkinItem[] {
   return updated;
 }
 
-export function renameSavedSkin(id: string, caption: string): SavedSkinItem[] {
+function cleanSkinCaption(caption: string): string {
   const clean = Array.from(caption.trim().replace(/\s+/g, ' ')).slice(0, 24).join('');
   if (!clean) throw new Error('Введите название скина');
+  return clean;
+}
+
+export function getDefaultSkinCaption(name: string): string {
+  try { const value = JSON.parse(localStorage.getItem('quiby_default_skin_captions') || '{}')[name]; return typeof value === 'string' && value.trim() ? cleanSkinCaption(value) : name; }
+  catch { return name; }
+}
+
+export function renameDefaultSkin(name: string, caption: string): void {
+  if (!['Steve', 'Alex'].includes(name)) throw new Error('Неизвестный базовый скин');
+  const clean = cleanSkinCaption(caption);
+  let saved: Record<string, string> = {};
+  try { saved = JSON.parse(localStorage.getItem('quiby_default_skin_captions') || '{}'); } catch { /* Replace corrupt captions only. */ }
+  localStorage.setItem('quiby_default_skin_captions', JSON.stringify({ ...saved, [name]: clean }));
+}
+
+export function renameSavedSkin(id: string, caption: string): SavedSkinItem[] {
+  const clean = cleanSkinCaption(caption);
   const updated = getSavedSkinLibrary().map(item => item.id === id ? { ...item, caption: clean } : item);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   return updated;

@@ -6,6 +6,7 @@ export interface ModpackFile {
   downloadUrl?: string;
   action: 'sync' | 'optional' | 'keep_local';
   side?: 'client' | 'both' | 'server';
+  userToggleable?: boolean;
   modId?: string;
   modName?: string;
   modVersion?: string;
@@ -101,6 +102,7 @@ export interface LauncherSettings {
   totalPlaytimeSeconds?: number;
   graphicsPreset?: 'potato' | 'optimal' | 'ultra';
   modpackProfile?: 'clean' | 'optimal' | 'full';
+  disabledBundledMods?: string[];
 }
 
 export interface DownloadProgress {

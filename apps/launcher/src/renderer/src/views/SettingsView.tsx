@@ -16,6 +16,7 @@ import { selectedBuild } from '../utils/buildProfiles';
 import { RamSlider } from '../components/RamSlider';
 import { MotionToggle, useMotion } from '../components/MotionProvider';
 import type { UpdateState } from '../../../main/updates';
+import { parseCustomJvmArgs } from '../../../shared/jvmArgs';
 
 interface SettingsViewProps {
   onChooseBuild: () => void;
@@ -33,6 +34,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
   );
   const [detectingJava, setDetectingJava] = useState(false);
   const [error, setError] = useState('');
+  const [jvmDraft, setJvmDraft] = useState(settings.customJvmArgs || '');
+  useEffect(() => setJvmDraft(settings.customJvmArgs || ''), [settings.customJvmArgs]);
+  let jvmCount = 0, jvmError = '';
+  try { jvmCount = parseCustomJvmArgs(jvmDraft).length; }
+  catch (cause) { jvmError = cause instanceof Error ? cause.message : 'Проверьте параметры Java.'; }
   const [updateState, setUpdateState] = useState<UpdateState | null>(null);
   const { reduced, systemReduced, active: motionActive } = useMotion();
   const buildPreview = useRef<HTMLVideoElement>(null);
@@ -87,7 +93,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
         <div>
           <p className="page-kicker">ТВОЁ ПРОСТРАНСТВО</p>
           <h1>Под тебя.</h1>
-          <p>Комфорт в деталях. Всё сохраняется автоматически.</p>
+          <p>Комфорт в деталях. Основные настройки сохраняются автоматически.</p>
         </div>
         <span className="quiet-status">
           <Check size={13} /> Автосохранение
@@ -375,19 +381,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
                   </button>
                 </div>
               </section>
-              <details className="settings-group">
+              <details className="settings-group jvm-options">
                 <summary>
-                  <SlidersHorizontal size={15} /> Дополнительные параметры Java
+                  <SlidersHorizontal size={16} /><span>Дополнительные параметры Java<small>{settings.customJvmArgs ? 'Свои параметры' : 'По умолчанию'}</small></span>
                 </summary>
-                <label className="field-label" htmlFor="jvm-args">
-                  Аргументы JVM
-                </label>
-                <input
-                  id="jvm-args"
-                  value={settings.customJvmArgs}
-                  onChange={(e) => update({ customJvmArgs: e.target.value })}
-                  placeholder="Необязательно"
-                />
+                <form onSubmit={event => { event.preventDefault(); if (!jvmError) update({ customJvmArgs: jvmDraft.trim() }); }}>
+                  <p>Обычно менять их не требуется. Память задаётся во вкладке «Игра», путь Java — выше. Эти параметры применятся при следующем запуске.</p>
+                  <label className="field-label" htmlFor="jvm-args">Ваши параметры JVM</label>
+                  <textarea id="jvm-args" rows={4} maxLength={4096} spellCheck={false} value={jvmDraft} onChange={event => setJvmDraft(event.target.value)} aria-invalid={Boolean(jvmError)} aria-describedby="jvm-help" placeholder={'Например:\n-Dfile.encoding=UTF-8\n-Xlog:gc'}/>
+                  <p id="jvm-help" role={jvmError ? 'alert' : 'status'} className={jvmError ? 'inline-error' : ''}>{jvmError || `Параметров: ${jvmCount}. Разделяйте пробелами или переносами строк; значения с пробелами заключайте в кавычки.`}</p>
+                  <div className="jvm-options-actions"><button type="button" className="ui-button" disabled={!jvmDraft && !settings.customJvmArgs} onClick={() => { setJvmDraft(''); update({ customJvmArgs: '' }); }}>Вернуть по умолчанию</button><button type="submit" className="ui-button is-primary" disabled={Boolean(jvmError) || jvmDraft.trim() === (settings.customJvmArgs || '').trim()}>Сохранить параметры</button></div>
+                </form>
               </details>
             </>
           )}

@@ -11,6 +11,8 @@ import { hashCustomModFile, requireApprovedCustomMod } from './customModVerifica
 import { checkContentLinks, verifyLaunchContent } from './contentIntegrity';
 import { updateDiscordRpcStatus } from '../rpc/discordRpc';
 import { selectModpackProfile } from '../../shared/modpackProfiles';
+import { applyBundledModSelection } from './bundledModSelection';
+import { parseCustomJvmArgs } from '../../shared/jvmArgs';
 import { applyResourcePackProfile } from './resourcePackProfile';
 import { resolveJava21 } from './javaDetector';
 import { getLatestModpackManifest } from './manifestSource';
@@ -81,6 +83,7 @@ export async function launchMinecraft(
   };
 
   try {
+    const customJavaArgs = parseCustomJvmArgs(settings.customJvmArgs || '');
     setLaunchState({ status: 'updating' });
     const profileName = settings.modpackProfile === 'full' ? 'Visual' : settings.modpackProfile === 'clean' ? 'Draft' : 'Standard';
     updateDiscordRpcStatus({ details: 'Готовится к игре', state: `Сборка ${profileName} · quiby. S6` });
@@ -89,7 +92,8 @@ export async function launchMinecraft(
 
     // 1. Fetch Modpack Manifest from server
     sendLog('info', '🌐 Запрос актуального манифеста сборки...');
-    const manifest = selectModpackProfile(await getLatestModpackManifest(serverBaseUrl), settings.modpackProfile);
+    const profileManifest = selectModpackProfile(await getLatestModpackManifest(serverBaseUrl), settings.modpackProfile);
+    const manifest = selectModpackProfile(profileManifest, settings.modpackProfile, settings.disabledBundledMods);
     const javaBin = await resolveJava21(settings.javaPath, path.join(settings.gameDir, 'runtime'), (label, downloaded, total) => {
       if (!win || win.isDestroyed()) return;
       win.webContents.send('download-progress', {
@@ -109,7 +113,8 @@ export async function launchMinecraft(
     const modsDir = path.join(gameDir, 'mods');
     await checkContentLinks(gameDir);
     fs.mkdirSync(modsDir, { recursive: true });
-    const officialMods = new Set(manifest.files.map((file) => file.path.replace(/\\/g, '/')));
+    const officialMods = new Set(profileManifest.files.map((file) => file.path.replace(/\\/g, '/')));
+    applyBundledModSelection(gameDir, profileManifest, manifest);
     for (const filename of disabledCustomModFilenames) {
       if (!/^[^/\\]+\.jar$/i.test(filename) || officialMods.has(`mods/${filename}`)) continue;
       const activePath = path.join(modsDir, filename);
@@ -185,7 +190,7 @@ export async function launchMinecraft(
     }
 
     if (settings.customJvmArgs) {
-      settings.customJvmArgs.split(' ').filter(Boolean).forEach(arg => jvmArgs.push(arg));
+      jvmArgs.push(...customJavaArgs);
     }
 
     jvmArgs.push(`-Dquiby.resourcePackHashes=${packAdmission.hashes.join(',')}`);

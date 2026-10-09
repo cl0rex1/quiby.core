@@ -790,7 +790,9 @@
       "modName": "Better Ping Display",
       "modVersion": "1.1",
       "modDescription": "Shows the actual ping number instead of just bars in the player list.",
-      "modIconUrl": "/api/modpack/files/imported/icons/4e037c01e80607e25fe7c1829f69a288cc474b93e17b8e8832ce7e8437cc0621.png"
+      "modIconUrl": "/api/modpack/files/imported/icons/4e037c01e80607e25fe7c1829f69a288cc474b93e17b8e8832ce7e8437cc0621.png",
+      "side": "client",
+      "userToggleable": true
     },
     {
       "path": "mods/Clumps-neoforge-1.21.1-19.0.0.1.jar",
@@ -824,7 +826,9 @@
       "modVersion": "19.0.5",
       "modDescription": "Adds the ability to search for keybinds using their name in the KeyBinding menu, this allows players to easily find a key binding in the menu.",
       "modProjectUrl": "https://www.curseforge.com/minecraft/mc-mods/controlling",
-      "modIconUrl": "/api/modpack/files/imported/icons/4cd83f1cd4921750b0c985197221170e2bd41d87fe1828c699ee87ba262f80e7.png"
+      "modIconUrl": "/api/modpack/files/imported/icons/4cd83f1cd4921750b0c985197221170e2bd41d87fe1828c699ee87ba262f80e7.png",
+      "side": "client",
+      "userToggleable": true
     },
     {
       "path": "mods/DistantHorizons-3.3.2-1.21.1-fabric-neoforge.jar",
@@ -891,7 +895,9 @@
       "modName": "InvMove",
       "modVersion": "0.9.3",
       "modDescription": "Lets you move while in inventories.",
-      "modIconUrl": "/api/modpack/files/imported/icons/6436256b12c8c3776c3e9273b6e4b25a11eb35385f7aa34dc5d9d9c19153c188.png"
+      "modIconUrl": "/api/modpack/files/imported/icons/6436256b12c8c3776c3e9273b6e4b25a11eb35385f7aa34dc5d9d9c19153c188.png",
+      "side": "client",
+      "userToggleable": true
     },
     {
       "path": "mods/Jade-1.21.1-NeoForge-15.10.6.jar",
@@ -925,7 +931,9 @@
       "modVersion": "2.26.1",
       "modDescription": "A mod that enhances the inventory management by adding various additional functions to the usual mouse buttons.",
       "modProjectUrl": "https://minecraft.curseforge.com/projects/mouse-tweaks",
-      "modIconUrl": "/api/modpack/files/imported/icons/43e8e2d2ea11cc999a282da455eae3374884717be6cb6741a2911dbacfef490c.png"
+      "modIconUrl": "/api/modpack/files/imported/icons/43e8e2d2ea11cc999a282da455eae3374884717be6cb6741a2911dbacfef490c.png",
+      "side": "client",
+      "userToggleable": true
     },
     {
       "path": "mods/RoughlyEnoughItems-16.0.799-neoforge.jar",
@@ -1320,7 +1328,9 @@
       "modVersion": "3.0.0+mc1.21",
       "modDescription": "Allows you to play Minecraft in a borderless fullscreen window.",
       "modProjectUrl": "https://github.com/Kir-Antipov/cubes-without-borders",
-      "modIconUrl": "/api/modpack/files/imported/icons/eeaae737aba76ab1f7b5647db2b658e071da495bcfcb026231dc08fc5acb4ebb.png"
+      "modIconUrl": "/api/modpack/files/imported/icons/eeaae737aba76ab1f7b5647db2b658e071da495bcfcb026231dc08fc5acb4ebb.png",
+      "side": "client",
+      "userToggleable": true
     },
     {
       "path": "mods/entity_model_features-3.3.9-1.21-neoforge.jar",
@@ -1367,7 +1377,9 @@
       "modVersion": "1.11.2",
       "modDescription": "This mod uses async path-tracing to hide Tiles/Entities that are not visible.",
       "modProjectUrl": "https://modrinth.com/mod/entityculling",
-      "modIconUrl": "/api/modpack/files/imported/icons/55dd496b9ac0cf7fd0eb7dc2980b9c8d2d2b75c5c622e53a02ca1b8f084b3931.png"
+      "modIconUrl": "/api/modpack/files/imported/icons/55dd496b9ac0cf7fd0eb7dc2980b9c8d2d2b75c5c622e53a02ca1b8f084b3931.png",
+      "side": "client",
+      "userToggleable": true
     },
     {
       "path": "mods/explosionoverhaul-0.2.3.0-neoforge.jar",

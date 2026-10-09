@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { ArrowUpRight, Shirt } from 'lucide-react';
 import { AuthSession, ModpackManifest, ServerStatus } from '@quiby/shared';
 import { DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
+import { getDefaultSkinCaption } from '../utils/skinLibrary';
 import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
 import { usePointerDepth } from '../hooks/usePointerDepth';
 import quibySeasonLogo from '../assets/quiby_season6_logo.png';
@@ -48,7 +49,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
     if (motionActive) void bannerVideo.current.play().catch(() => {});
     else bannerVideo.current.pause();
   }, [buildId, motionActive]);
-  const skinName = customSkinName || DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve';
+  const skinName = customSkinName || getDefaultSkinCaption(DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve');
   const hours = Math.floor(totalPlaytimeSeconds / 3600);
   const minutes = Math.floor((totalPlaytimeSeconds % 3600) / 60);
   const playtime = hours ? `${hours} ч ${minutes} мин` : `${minutes} мин`;
