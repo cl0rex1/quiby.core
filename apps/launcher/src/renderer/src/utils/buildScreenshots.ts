@@ -15,6 +15,8 @@ import standardVideo from '../assets/builds/videos/standard.mp4';
 import visualVideo from '../assets/builds/videos/visual.mp4';
 
 const videos: Record<BuildId, string> = { draft: draftVideo, standard: standardVideo, visual: visualVideo };
+const posters: Record<BuildId, string> = { draft, standard, visual };
 
 export const buildVideo = (id: BuildId) => videos[id];
+export const buildPoster = (id: BuildId) => posters[id];
 export const authScenes = [visual, ship, mountain, village, airship, standard, explosion, coast, draft, cottage, mountainShip];

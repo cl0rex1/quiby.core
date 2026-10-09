@@ -1,5 +1,8 @@
+import { ReviewContext } from './components/ReviewContext';
+import { upsertNotification } from './utils/notifications';
 import { createSkinSynchronizer } from './utils/skinSync';
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { normalizeSettings } from '../../shared/launcherSettings';
 import { selectModpackProfile } from '../../shared/modpackProfiles';
 import { applyBuildToMods, selectedBuild } from './utils/buildProfiles';
 import { WindowHeader } from './components/WindowHeader';
@@ -39,7 +42,8 @@ function storedSession(): AuthSession | null {
     const value = localStorage.getItem('quiby_session');
     if (!value) return null;
     const session = JSON.parse(value) as AuthSession;
-    return session.token && session.expiresAt > Date.now() ? session : null;
+    return typeof session.token === 'string' && session.token && session.expiresAt > Date.now()
+      && session.user && typeof session.user.mcUsername === 'string' ? session : null;
   } catch {
     return null;
   }
@@ -69,11 +73,18 @@ export const App: React.FC = () => {
   const [remoteManifest, setManifest] = useState<ModpackManifest | null>(null);
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [newsAvailable, setNewsAvailable] = useState(false);
+  const [newsLoading, setNewsLoading] = useState(true);
+  const [serverLoading, setServerLoading] = useState(true);
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const pendingLogs = useRef<LogEntry[]>([]);
+  const clearLogs = () => { pendingLogs.current = []; setLogs([]); };
   const [launchState, setLaunchState] = useState<LaunchState>({ status: 'idle' });
   const [launcherUpdate, setLauncherUpdate] = useState<UpdateState | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
+  const [launchPending, setLaunchPending] = useState(false);
+  const launchRequested = useRef(false);
+  const latestLaunchState = useRef<LaunchState>({ status: 'idle' });
   const [selectedModIds, setSelectedModIds] = useState<string[]>([]);
 
   // Notifications State
@@ -83,14 +94,14 @@ export const App: React.FC = () => {
   const [activeToast, setActiveToast] = useState<ToastData | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
-  const handleNotify = (
+  const handleNotify = useCallback((
     title: string,
     message?: string,
     type: 'success' | 'info' | 'warning' | 'error' = 'success',
     modInfo?: NotificationItem['modInfo']
   ) => {
     const newNotif: NotificationItem = {
-      id: 'notif-' + crypto.randomUUID(),
+      id: modInfo?.hashSha1 ? 'review-' + modInfo.hashSha1 : 'notif-' + crypto.randomUUID(),
       title,
       message,
       type,
@@ -98,15 +109,15 @@ export const App: React.FC = () => {
       read: false,
       modInfo,
     };
-    setNotifications((prev) => [newNotif, ...prev].slice(0, 100));
-    setSelectedNotificationId(newNotif.id);
+    setNotifications(prev => upsertNotification(prev, newNotif));
+    setSelectedNotificationId(current => current || newNotif.id);
     setActiveToast({
       id: newNotif.id,
       title,
       message,
       type,
     });
-  };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -114,7 +125,11 @@ export const App: React.FC = () => {
       if (!active) return;
       setNotifications(current => {
         const ids = new Set(current.map(item => item.id));
-        return [...current, ...saved.filter(item => item && typeof item.id === 'string' && !ids.has(item.id))]
+        const restored = saved.filter(item => item && typeof item.id === 'string' && !ids.has(item.id)).map(item =>
+          item.modInfo?.reviewStage === 'uploading' ? { ...item, type: 'error' as const, read: false, timestamp: Date.now(),
+            message: 'Отправка прервана закрытием лаунчера. Повторите заявку в разделе контента.',
+            modInfo: { ...item.modInfo, reviewStage: 'error' as const } } : item);
+        return [...current, ...restored]
           .sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
       });
     }).catch(() => {}).finally(() => { if (active) setNotificationsLoaded(true); });
@@ -128,18 +143,25 @@ export const App: React.FC = () => {
 
   // 1. Settings State (Auto-saving)
   const [settings, setSettings] = useState<LauncherSettings>(defaultSettings);
+  const [settingsStatus, setSettingsStatus] = useState<'loading' | 'saved' | 'saving' | 'error'>('loading');
+  const settingsRevision = useRef(0);
   const manifest = useMemo(() => remoteManifest ? selectModpackProfile(remoteManifest, settings.modpackProfile) : null, [remoteManifest, settings.modpackProfile]);
 
   const handleUpdateSettings = async (newSettings: LauncherSettings) => {
+    newSettings = normalizeSettings(newSettings, defaultSettings);
+    const revision = ++settingsRevision.current;
     setSettings(newSettings);
+    setSettingsStatus('saving');
     if (newSettings.autoJoinServer !== undefined) {
       setAutoConnect(newSettings.autoJoinServer);
       localStorage.setItem('quiby_auto_connect', String(newSettings.autoJoinServer));
     }
     try {
-      if (window.quibyApi) await window.quibyApi.saveSettings(newSettings);
+      if (!window.quibyApi || !await window.quibyApi.saveSettings(newSettings)) throw new Error('Settings save failed');
+      if (revision === settingsRevision.current) setSettingsStatus('saved');
       return true;
     } catch {
+      if (revision === settingsRevision.current) setSettingsStatus('error');
       handleNotify('Не удалось сохранить настройки', 'Проверьте доступ к папке лаунчера.', 'error');
       return false;
     }
@@ -154,6 +176,7 @@ export const App: React.FC = () => {
   const [activeDefaultSkinIdx, setActiveDefaultSkinIdx] = useState(0);
 
   const handleSelectCape = (cape: CapePreset) => {
+    if (launchRequested.current || ['updating', 'starting', 'running'].includes(latestLaunchState.current.status)) return;
     if (!session || storedSession()?.token !== session.token) return;
     setSelectedCape(cape);
     localStorage.setItem('quiby_cape', cape.id);
@@ -162,6 +185,7 @@ export const App: React.FC = () => {
   const skinSyncWarningShown = useRef(false);
 
   const handleSetCustomSkin = (img: HTMLImageElement | null, name: string | null) => {
+    if (launchRequested.current || ['updating', 'starting', 'running'].includes(latestLaunchState.current.status)) return;
     if (!session || storedSession()?.token !== session.token) return;
     setCustomSkinImg(img);
     setCustomSkinName(name);
@@ -182,6 +206,7 @@ export const App: React.FC = () => {
   };
 
   const handleSetDefaultSkinIdx = (idx: number) => {
+    if (launchRequested.current || ['updating', 'starting', 'running'].includes(latestLaunchState.current.status)) return;
     if (!session || storedSession()?.token !== session.token) return;
     setActiveDefaultSkinIdx(idx);
     localStorage.setItem('quiby_default_skin_idx', String(idx));
@@ -198,12 +223,71 @@ export const App: React.FC = () => {
     });
   };
 
+  const reviewsInFlight = useRef(new Set<string>());
+  const publishReview = useCallback((info: NonNullable<NotificationItem['modInfo']>, message: string) => {
+    const stage = info.reviewStage!;
+    const item: NotificationItem = { id: 'review-' + info.hashSha1, title: `Заявка: ${info.name}`, message,
+      type: stage === 'approved' ? 'success' : ['error', 'rejected'].includes(stage) ? 'error' : 'info',
+      timestamp: Date.now(), read: false, modInfo: info };
+    setNotifications(previous => upsertNotification(previous, item));
+    setCustomMods(previous => {
+      const failed = stage === 'error';
+      if (!previous.some(mod => mod.hashSha1 === info.hashSha1 && Boolean(mod.reviewDeliveryFailed) !== failed)) return previous;
+      const next = previous.map(mod => mod.hashSha1 === info.hashSha1 ? { ...mod, reviewDeliveryFailed: failed } : mod);
+      localStorage.setItem('quiby_custom_mods', JSON.stringify(next));
+      return next;
+    });
+    setActiveToast(previous => previous?.id === item.id && (previous.title !== item.title || previous.message !== item.message || previous.type !== item.type)
+      ? { id: item.id, title: item.title, message: item.message, type: item.type } : previous);
+  }, []);
+  const submitReview = (mod: CustomModItem, reason: string, projectUrl: string) => {
+    if (!session?.token || !mod.hashSha1) throw new Error('Выберите файл и войдите в аккаунт.');
+    if (reviewsInFlight.current.has(mod.hashSha1)) throw new Error('Заявка уже отправляется. Статус — в уведомлениях.');
+    const hash = mod.hashSha1;
+    const info = { name: mod.name, filename: mod.filename, hashSha1: hash };
+    reviewsInFlight.current.add(hash);
+    setSelectedNotificationId('review-' + hash);
+    publishReview({ ...info, reviewStage: 'uploading' }, 'Файл отправляется в фоне…');
+    setActiveToast({ id: 'review-' + hash, title: 'Отправляем заявку', message: 'Статус — в уведомлениях.', type: 'info' });
+    void window.quibyApi.uploadModReview(hash, session.token, { mod_name: mod.name.slice(0, 100), filename: mod.filename, reason, project_url: projectUrl })
+      .then(result => {
+        if (!result.success) throw new Error(result.message || 'Не удалось отправить заявку');
+        publishReview({ ...info, reviewStage: result.delivered ? 'pending' : 'queued' }, result.delivered ? 'Файл доставлен. Ожидаем решения.' : 'Заявка принята. Ожидаем доставки.');
+        handleUpdateCustomMods(previous => previous.map(item => item.hashSha1 === hash ? { ...item, safetyStatus: 'pending', safetyReason: 'Ожидаем решения' } : item));
+      }).catch(error => publishReview({ ...info, reviewStage: 'error' }, error instanceof Error ? error.message : 'Не удалось отправить файл. Повторите заявку.'))
+      .finally(() => reviewsInFlight.current.delete(hash));
+  };
+  useEffect(() => {
+    if (!session?.token || !notificationsLoaded) return;
+    const controller = new AbortController();
+    let busy = false;
+    const refresh = async () => {
+      if (busy || document.hidden) return;
+      busy = true;
+      try {
+        const response = await fetch(`${SERVER_URL}/api/mods/reviews/mine`, { headers: { Authorization: `Bearer ${session.token}` }, signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]) });
+        if (!response.ok) return;
+        const items = await response.json();
+        if (controller.signal.aborted || !Array.isArray(items)) return;
+        for (const item of items) {
+          if (reviewsInFlight.current.has(item.hashSha1)) continue;
+          publishReview({ name: item.name, filename: item.filename, hashSha1: item.hashSha1, reviewStage: item.stage }, item.message);
+        }
+      } catch { /* Keep the last confirmed status while offline. */ }
+      finally { busy = false; }
+    };
+    void refresh();
+    const timer = setInterval(refresh, 20000);
+    window.addEventListener('focus', refresh);
+    return () => { controller.abort(); clearInterval(timer); window.removeEventListener('focus', refresh); };
+  }, [session?.token, publishReview, notificationsLoaded]);
+
   const modsForRefresh = useRef(customMods);
   modsForRefresh.current = customMods;
   useEffect(() => {
     let cancelled = false, busy = false;
     const refresh = async () => {
-      if (busy || !window.quibyApi) return;
+      if (busy || document.hidden || !window.quibyApi) return;
       busy = true;
       try {
         for (const mod of modsForRefresh.current) {
@@ -216,7 +300,7 @@ export const App: React.FC = () => {
             if (!latest) continue;
             const nextStatus = result.status === 'unverified' && latest.safetyStatus === 'pending' ? 'pending' : result.status;
             if (nextStatus !== latest.safetyStatus) {
-              handleNotify(result.isAllowed ? 'Мод разрешён' : 'Статус мода изменён', `${mod.name}: ${result.reason}`, result.isAllowed ? 'success' : 'warning');
+
               handleUpdateCustomMods(previous => previous.map(item => item.id !== mod.id ? item : {
                 ...item, safetyStatus: nextStatus, safetyReason: result.reason,
                 enabled: result.isAllowed ? item.enabled : false,
@@ -280,6 +364,8 @@ export const App: React.FC = () => {
 
   // Initial Load (Saved Storage & IPC)
   useEffect(() => {
+    let active = true;
+    const initialRevision = settingsRevision.current;
     // Check Onboarding
     const onboarded = localStorage.getItem('quiby_onboarded');
     if (!onboarded) {
@@ -312,9 +398,7 @@ export const App: React.FC = () => {
     const savedName = localStorage.getItem('quiby_custom_skin_name');
     if (savedSkinData) {
       const img = new Image();
-      img.onload = () => {
-        setCustomSkinImg(img);
-      };
+      img.onload = () => { if (active) setCustomSkinImg(img); };
       img.src = savedSkinData;
       setCustomSkinName(savedName || 'custom.png');
     }
@@ -322,7 +406,7 @@ export const App: React.FC = () => {
     // Restore Default Skin Choice (Steve / Alex)
     const savedDefIdx = localStorage.getItem('quiby_default_skin_idx');
     if (savedDefIdx !== null) {
-      const idx = parseInt(savedDefIdx, 10) || 0;
+      const idx = savedDefIdx === '1' ? 1 : 0;
       setActiveDefaultSkinIdx(idx);
     }
 
@@ -331,35 +415,56 @@ export const App: React.FC = () => {
     if (savedModsJson) {
       try {
         const parsed = JSON.parse(savedModsJson);
-        if (Array.isArray(parsed)) setCustomMods(parsed.filter((mod) => !String(mod.id).startsWith('test-')));
+        if (Array.isArray(parsed)) setCustomMods(parsed.filter((mod) => mod && typeof mod.id === 'string' && typeof mod.filename === 'string' && typeof mod.name === 'string' && !mod.id.startsWith('test-')));
       } catch (_) {}
     }
 
     // Restore Launcher Settings from Electron IPC
     if (window.quibyApi) {
       window.quibyApi.getSettings().then((s) => {
-        if (s) {
-          setSettings(s);
+        if (active && s && initialRevision === settingsRevision.current) {
+          setSettings(normalizeSettings(s, defaultSettings));
+          setSettingsStatus('saved');
           if (s.autoJoinServer !== undefined) {
             setAutoConnect(s.autoJoinServer);
           }
         }
+      }).catch(() => {
+        if (!active) return;
+        setSettingsStatus('error');
+        handleNotify('Не удалось загрузить настройки', 'Откройте настройки и повторите сохранение перед запуском.', 'error');
       });
 
       const unsubscribeProgress = window.quibyApi.onDownloadProgress((p) => {
         setDownloadProgress(p);
       });
 
-      const unsubscribeLog = window.quibyApi.onGameLog((log) => {
-        setLogs((prev) => [...prev.slice(-1000), log]);
+      // Minecraft can emit hundreds of messages per second. Render one bounded batch.
+      const logTimer = window.setInterval(() => {
+        if (!pendingLogs.current.length) return;
+        const batch = pendingLogs.current;
+        pendingLogs.current = [];
+        setLogs(previous => [...previous, ...batch].slice(-1000));
+      }, 100);
+      const unsubscribeLog = window.quibyApi.onGameLog(log => {
+        pendingLogs.current.push(log);
+        if (pendingLogs.current.length > 1000) pendingLogs.current.shift();
       });
 
+      let receivedLiveState = false;
       const unsubscribeState = window.quibyApi.onLaunchStateChange((state) => {
+        receivedLiveState = true;
+        latestLaunchState.current = state;
         setLaunchState(state);
         if (state.status === 'crashed') {
           handleNotify('Сбой Minecraft', state.error || `Игра завершилась с кодом ${state.exitCode ?? 'неизвестно'}.`, 'error');
         }
       });
+      void window.quibyApi.getLaunchState().then(state => {
+        if (!active || receivedLiveState) return;
+        latestLaunchState.current = state;
+        setLaunchState(state);
+      }).catch(() => {});
 
       const unsubscribePlaytime = window.quibyApi.onPlaytimeTick?.((sec) => {
         setTotalPlaytimeSeconds((prev) => {
@@ -387,8 +492,10 @@ export const App: React.FC = () => {
       void window.quibyApi.getUpdateState().then(showAvailableUpdate).catch(() => {});
 
       return () => {
+        active = false;
         unsubscribeProgress?.();
         unsubscribeLog?.();
+        window.clearInterval(logTimer);
         unsubscribeState?.();
         unsubscribePlaytime?.();
         unsubscribePlaytimeEnd?.();
@@ -402,24 +509,25 @@ export const App: React.FC = () => {
     let timer: ReturnType<typeof setTimeout>;
     let nextContentRefresh = 0;
     const controller = new AbortController();
-    const getJson = (route: string) => fetch(`${SERVER_URL}${route}`, { signal: controller.signal })
+    const getJson = (route: string) => fetch(`${SERVER_URL}${route}`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]) })
       .then(response => response.ok ? response.json() : null).catch(() => null);
     const refresh = async () => {
       if (!document.hidden) {
         const refreshContent = Date.now() >= nextContentRefresh;
-        const [status, content] = await Promise.all([
-          getJson('/api/status'),
+        const [, , content] = await Promise.all([
+          getJson('/api/status').then(status => { if (!stopped) { setServerStatus(status); setServerLoading(false); } }),
+          getJson('/api/news').then(articles => {
+            if (stopped) return;
+            if (Array.isArray(articles)) setNews(articles);
+            setNewsAvailable(Array.isArray(articles)); setNewsLoading(false);
+          }),
           refreshContent ? Promise.all([
             window.quibyApi?.getLatestModpackManifest().catch(() => null) ?? getJson('/api/modpack/latest'),
-            getJson('/api/news'),
           ]) : null,
         ]);
         if (stopped) return;
-        setServerStatus(status);
         if (content) {
-          setManifest(content[0]);
-          setNews(Array.isArray(content[1]) ? content[1] : []);
-          setNewsAvailable(Array.isArray(content[1]));
+          if (content[0]) setManifest(content[0]);
           nextContentRefresh = Date.now() + 300000;
         }
       }
@@ -428,6 +536,23 @@ export const App: React.FC = () => {
     void refresh();
     return () => { stopped = true; clearTimeout(timer); controller.abort(); };
   }, []);
+
+  useEffect(() => {
+    if (!notificationsLoaded) return;
+    const key = 'quiby_news_seen';
+    let seen: Record<string, string> = {};
+    try { const value = JSON.parse(localStorage.getItem(key) || '{}'); if (value && typeof value === 'object' && !Array.isArray(value)) seen = value; } catch { /* Recover corrupt receipts. */ }
+    const incoming: NotificationItem[] = [];
+    for (const article of news) {
+      if (!article.broadcastRevision || seen[article.id] === article.broadcastRevision) continue;
+      seen[article.id] = article.broadcastRevision;
+      incoming.push({ id: 'news-' + article.id, newsRevision: article.broadcastRevision, title: article.title, message: article.content, timestamp: Date.now(), read: false, type: 'info' });
+    }
+    if (!incoming.length) return;
+    setNotifications(previous => incoming.reduce((items, item) => upsertNotification(items, item), previous));
+    setActiveToast({ id: incoming[0].id, title: incoming.length === 1 ? incoming[0].title : 'Новые объявления', message: 'Откройте почту, чтобы прочитать.', type: 'info' });
+    try { localStorage.setItem(key, JSON.stringify(Object.fromEntries(Object.entries(seen).slice(-500)))); } catch { /* Notifications still persist through the desktop bridge. */ }
+  }, [news, notificationsLoaded]);
 
   // Instant, clean tab navigation without blocking guards
   const handleSelectTab = (nextTab: ActiveTab) => {
@@ -441,6 +566,11 @@ export const App: React.FC = () => {
   };
 
   const handleLaunchGame = async () => {
+    if (launchRequested.current || ['updating', 'starting', 'running'].includes(latestLaunchState.current.status)) return;
+    if (settingsStatus !== 'saved') {
+      handleNotify('Настройки ещё не сохранены', 'Дождитесь сохранения или повторите его в настройках.', 'warning');
+      return;
+    }
     if (launcherUpdate?.required) {
       handleNotify('Обновление обязательно', 'Установите обновление лаунчера из верхней плашки перед запуском игры.', 'error');
       return;
@@ -457,11 +587,18 @@ export const App: React.FC = () => {
     }
     setActiveTab('home');
     if (!window.quibyApi) return;
+    launchRequested.current = true;
+    setLaunchPending(true);
+    setDownloadProgress(null);
+    clearLogs();
+    latestLaunchState.current = { status: 'idle' };
     try {
       const selectedSkin = localStorage.getItem('quiby_custom_skin_data');
       if (selectedSkin) await syncSelectedSkin(session, selectedSkin);
     } catch (err) {
       handleNotify('Не удалось синхронизировать скин', err instanceof Error ? err.message : 'Проверьте соединение и попробуйте снова.', 'error');
+      launchRequested.current = false;
+      setLaunchPending(false);
       return;
     }
     const activeModFiles = customMods
@@ -483,18 +620,23 @@ export const App: React.FC = () => {
         }
         return;
       }
-      // The main process sends a crash state with the full diagnostic report.
-      console.error('Launch Error:', err);
+      // Engine failures already arrive with a crash report; preflight failures do not.
+      if (latestLaunchState.current.status !== 'crashed') {
+        handleNotify('Не удалось запустить игру', err instanceof Error ? err.message : 'Повторите запуск.', 'error');
+      }
+    } finally {
+      launchRequested.current = false;
+      setLaunchPending(false);
     }
   };
 
   const handleKillGame = () => {
-    window.quibyApi?.killGame();
+    void window.quibyApi?.killGame().catch(error => handleNotify('Не удалось остановить игру', String(error), 'error'));
   };
 
   // Otherwise, render the Main Launcher Window:
   return (
-    <div style={{ '--sidebar-width': isNotificationsOpen ? '310px' : sidebarCollapsed ? '72px' : '192px' } as React.CSSProperties} className="launcher-app flex flex-col h-screen w-screen bg-[#0c0c0d] text-zinc-100 overflow-hidden select-none font-sans relative">
+    <ReviewContext.Provider value={submitReview}><div style={{ '--sidebar-width': isNotificationsOpen ? '310px' : sidebarCollapsed ? '72px' : '192px' } as React.CSSProperties} className="launcher-app flex flex-col h-screen w-screen bg-[#0c0c0d] text-zinc-100 overflow-hidden select-none font-sans relative">
       {/* 1. Window Controls & Dragging Header (Height: 32px / h-8) */}
       <WindowHeader />
 
@@ -558,6 +700,7 @@ export const App: React.FC = () => {
               onToast={(title, type) => setActiveToast({ id: `copy-${Date.now()}`, title, type })}
               news={news}
               newsAvailable={newsAvailable}
+              newsLoading={newsLoading}
               notification={
                 notifications.find((n) => n.id === selectedNotificationId) || null
               }
@@ -588,13 +731,14 @@ export const App: React.FC = () => {
                     activeDefaultSkinIdx={activeDefaultSkinIdx}
                     selectedCape={selectedCape}
                     onKill={handleKillGame}
-                    onClearLogs={() => setLogs([])}
+                    onClearLogs={clearLogs}
                   />
                 ) : (
                   <CharacterStage
                     session={session}
                     manifest={manifest}
                     serverStatus={serverStatus}
+                    serverLoading={serverLoading}
                     totalPlaytimeSeconds={totalPlaytimeSeconds}
                     customSkinImg={customSkinImg}
                     customSkinName={skinDisplayName}
@@ -611,6 +755,7 @@ export const App: React.FC = () => {
 
               {activeTab === 'wardrobe' && (
                 <SkinWardrobeView
+                  gameActive={launchPending || ['updating', 'starting', 'running'].includes(launchState.status)}
                   onLibraryChange={() => setSkinLibrary(getSavedSkinLibrary())}
                   customSkinImg={customSkinImg}
                   customSkinName={customSkinName}
@@ -624,6 +769,7 @@ export const App: React.FC = () => {
 
               {activeTab === 'mods' && (
                 <ModsView
+                  gameActive={launchPending || ['updating', 'starting', 'running'].includes(launchState.status)}
                   manifest={manifest}
                   serverUrl={SERVER_URL}
                   gameDir={settings.gameDir}
@@ -641,6 +787,8 @@ export const App: React.FC = () => {
               {activeTab === 'settings' && (
                 <SettingsView
                   settings={settings}
+                  saveStatus={settingsStatus}
+                  onRetrySave={() => void handleUpdateSettings(settings)}
                   onUpdateSettings={handleUpdateSettings}
                   onChooseBuild={() => setIsOnboardingOpen(true)}
                   hasServerAddress={Boolean(manifest?.serverAddress)}
@@ -658,6 +806,8 @@ export const App: React.FC = () => {
             serverStatus={serverStatus}
             hasServerAddress={Boolean(manifest?.serverAddress)}
             launchState={launchState}
+            launchPending={launchPending || settingsStatus === 'loading' || settingsStatus === 'saving'}
+            launchBlocked={launcherUpdate?.required ? 'Обновите лаунчер' : settingsStatus === 'error' ? 'Проверьте настройки' : undefined}
             downloadProgress={downloadProgress}
             autoConnect={autoConnect}
             onToggleAutoConnect={(val) => {
@@ -666,7 +816,7 @@ export const App: React.FC = () => {
               handleUpdateSettings({ ...settings, autoJoinServer: val });
             }}
             logs={logs}
-            onClearLogs={() => setLogs([])}
+            onClearLogs={clearLogs}
             onLaunch={handleLaunchGame}
             onKill={handleKillGame}
             onOpenLogin={() => setIsAuthModalOpen(true)}
@@ -704,7 +854,7 @@ export const App: React.FC = () => {
 
       {/* First Launch Onboarding Modal */}
       <FirstLaunchOnboardingModal
-        isOpen={isOnboardingOpen && !isAuthModalOpen}
+        isOpen={isOnboardingOpen && !isAuthModalOpen && settingsStatus !== 'loading'}
         settings={settings}
         onClose={() => setIsOnboardingOpen(false)}
         onApplyPreset={async (updated, profile) => {
@@ -716,7 +866,7 @@ export const App: React.FC = () => {
           handleNotify('Настройки сохранены', 'Память и клиентские моды настроены.', 'success');
         }}
       />
-    </div>
+    </div></ReviewContext.Provider>
   );
 };
 

@@ -74,6 +74,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
           tempBindingToken,
           mcUsername: mcUsername.trim(),
         }),
+        signal: AbortSignal.timeout(15000),
       });
 
       const data = await res.json();

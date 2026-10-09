@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle2, AlertCircle, Info, Bell } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Info, Bell, X } from 'lucide-react';
 
 export interface ToastData {
   id: string;
@@ -16,27 +16,33 @@ export function FloatingNotificationToast({
   onDismiss: () => void;
 }) {
   const [exiting, setExiting] = useState(false);
+  const [paused, setPaused] = useState(false);
   const dismiss = useRef(onDismiss);
   useEffect(() => {
     dismiss.current = onDismiss;
   }, [onDismiss]);
   useEffect(() => {
-    if (!toast) return;
+    if (!toast || paused) return;
     setExiting(false);
-    const exitTimer = window.setTimeout(() => setExiting(true), 3900);
-    const dismissTimer = window.setTimeout(() => dismiss.current(), 4200);
+    const duration = toast.type === 'error' || toast.type === 'warning' ? 10000 : 6000;
+    const exitTimer = window.setTimeout(() => setExiting(true), duration - 300);
+    const dismissTimer = window.setTimeout(() => dismiss.current(), duration);
     return () => {
       window.clearTimeout(exitTimer);
       window.clearTimeout(dismissTimer);
     };
-  }, [toast]);
+  }, [toast, paused]);
+  useEffect(() => { setPaused(false); setExiting(false); }, [toast?.id]);
   if (!toast) return null;
   const type = toast.type || 'success';
   const Icon = { success: CheckCircle2, error: AlertCircle, warning: Bell, info: Info }[type];
   return (
-    <div className={'launcher-toast ' + (exiting ? 'is-exiting' : '')} role="status" aria-live="polite">
+    <div key={toast.id} className={'launcher-toast ' + (exiting ? 'is-exiting' : '')} role={type === 'error' ? 'alert' : 'status'}
+      onMouseEnter={() => { setPaused(true); setExiting(false); }} onMouseLeave={() => setPaused(false)}
+      onFocus={() => { setPaused(true); setExiting(false); }} onBlur={() => setPaused(false)}>
       <Icon size={18} className={'toast-icon is-' + type} />
-      <span>{toast.title}</span>
+      <div className="toast-copy"><strong>{toast.title}</strong>{toast.message && <p>{toast.message}</p>}</div>
+      <button type="button" className="icon-button" aria-label="Закрыть уведомление" onClick={onDismiss}><X size={15} /></button>
     </div>
   );
 }

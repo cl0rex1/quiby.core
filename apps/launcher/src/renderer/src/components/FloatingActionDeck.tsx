@@ -15,6 +15,8 @@ interface FloatingActionDeckProps {
   serverStatus: ServerStatus | null;
   hasServerAddress: boolean;
   launchState: LaunchState;
+  launchPending?: boolean;
+  launchBlocked?: string;
   downloadProgress: DownloadProgress | null;
   logs?: LogEntry[];
   onClearLogs?: () => void;
@@ -34,6 +36,8 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   serverStatus,
   hasServerAddress,
   launchState,
+  launchPending = false,
+  launchBlocked,
   autoConnect = true,
   onToggleAutoConnect,
   onLaunch,
@@ -64,6 +68,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
           {session && hasServerAddress && (
             <button
               type="button"
+              aria-pressed={autoConnect}
               onClick={() => onToggleAutoConnect?.(!autoConnect)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors cursor-pointer press-feedback text-xs font-semibold select-none ${
                 autoConnect
@@ -102,11 +107,12 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
             <button
               type="button"
               onClick={onLaunch}
-              disabled={!session.user.isWhitelisted}
+              disabled={!session.user.isWhitelisted || launchPending || Boolean(launchBlocked)}
+              aria-busy={launchPending}
               className="launcher-primary-button flex items-center gap-2.5 cursor-pointer press-feedback"
             >
               <Play size={16} fill="currentColor" />
-              <span>{session.user.isWhitelisted ? 'Запустить игру' : 'Доступ закрыт'}</span>
+              <span>{!session.user.isWhitelisted ? 'Доступ закрыт' : launchPending ? 'Подготовка…' : launchBlocked || 'Запустить игру'}</span>
             </button>
           )}
         </div>

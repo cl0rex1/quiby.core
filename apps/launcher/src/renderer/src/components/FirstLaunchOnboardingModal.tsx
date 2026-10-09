@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { LauncherSettings } from '@quiby/shared';
 import { BUILD_PROFILES, BuildId, selectedBuild } from '../utils/buildProfiles';
-import { buildVideo } from '../utils/buildScreenshots';
+import { buildVideo, buildPoster } from '../utils/buildScreenshots';
 import { MotionToggle, useMotion } from './MotionProvider';
 
 interface Props {
@@ -152,7 +152,7 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
           aria-labelledby={'build-tab-' + buildId}
         >
           <div className="build-gallery">
-            <video key={buildId} ref={video} src={buildVideo(buildId)}
+            <video key={buildId} ref={video} src={buildVideo(buildId)} poster={buildPoster(buildId)}
               className="build-screenshot view-enter" autoPlay={motionActive} muted loop playsInline preload="metadata"
               aria-label={build.name + ' — видео сборки'} />
           </div>

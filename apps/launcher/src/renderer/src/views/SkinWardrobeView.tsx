@@ -1,5 +1,6 @@
+import { ModalDialog } from '../components/ModalDialog';
 import { useFileDrop } from '../utils/useFileDrop';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Upload, Trash2, Check, AlertCircle, Download, User, ArrowRight, X, Sparkles, Lock, Pencil } from 'lucide-react';
 import { DEFAULT_SKINS, CAPE_PRESETS, CapePreset } from '../utils/chibiRenderer';
 import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
@@ -17,6 +18,7 @@ import {
 } from '../utils/skinLibrary';
 
 interface SkinWardrobeViewProps {
+  gameActive?: boolean;
   customSkinImg: HTMLImageElement | null;
   customSkinName: string | null;
   activeDefaultSkinIdx: number;
@@ -35,6 +37,7 @@ interface PendingSkinData {
 }
 
 export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
+  gameActive = false,
   customSkinImg,
   customSkinName,
   activeDefaultSkinIdx,
@@ -45,7 +48,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   onLibraryChange,
 }) => {
   const [validationError, setValidationError] = useState<string | null>(null);
-  const isDragging = useFileDrop(files => { if (files[0]) void processSkinFile(files[0]); });
+  const isDragging = useFileDrop(files => { if (files[0]) void processSkinFile(files[0]); }, !gameActive);
   const [library, setLibrary] = useState<SavedSkinItem[]>([]);
   const [pendingSkin, setPendingSkin] = useState<PendingSkinData | null>(null);
 
@@ -54,49 +57,41 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   const [caption, setCaption] = useState('');
   const [captionError, setCaptionError] = useState('');
 
+  const skinRequest = useRef(0);
+  useEffect(() => { skinRequest.current++; if (gameActive) { setPendingSkin(null); closeCaption(); } }, [gameActive]);
+  useEffect(() => () => { skinRequest.current++; }, []);
+
   // Load saved skin library on mount
   useEffect(() => {
     setLibrary(getSavedSkinLibrary());
   }, []);
 
   const processSkinFile = async (file: File) => {
+    if (gameActive) return;
+    const request = ++skinRequest.current;
     setValidationError(null);
-
-    const validation = await validateSkinFile(file);
-    if (!validation.valid) {
-      setValidationError(validation.error || 'Некорректный файл скина');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    try {
+      const validation = await validateSkinFile(file);
+      if (request !== skinRequest.current) return;
+      if (!validation.valid || !validation.convertedImg) throw new Error(validation.error || 'Некорректный файл скина');
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Не удалось обработать изображение');
+      ctx.imageSmoothingEnabled = false;
+      // The validator converts legacy limbs; HD textures must be scaled, not cropped.
+      ctx.drawImage(validation.convertedImg, 0, 0, 64, 64);
       const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 64;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        ctx.drawImage(img, 0, 0);
-
-        const cleanName = file.name.replace(/\.[^/.]+$/, '');
-        const previewUri = createChibiPreviewUri(canvas);
-
-        const currentLib = getSavedSkinLibrary();
-        if (currentLib.length >= 6) {
-          setPendingSkin({
-            name: cleanName,
-            canvas,
-            convertedImg: img,
-            previewUri,
-          });
-        } else {
-          commitAddSkinToLibrary(cleanName, canvas, img);
-        }
-      };
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+      img.src = canvas.toDataURL('image/png');
+      await img.decode();
+      if (request !== skinRequest.current) return;
+      const cleanName = file.name.replace(/\.[^/.]+$/, '');
+      if (getSavedSkinLibrary().length >= 6) {
+        setPendingSkin({ name: cleanName, canvas, convertedImg: img, previewUri: createChibiPreviewUri(canvas) });
+      } else commitAddSkinToLibrary(cleanName, canvas, img);
+    } catch (error) {
+      if (request === skinRequest.current) setValidationError(error instanceof Error ? error.message : 'Не удалось сохранить скин');
+    }
   };
 
   const commitAddSkinToLibrary = (
@@ -112,13 +107,18 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
   const handleConfirmReplaceSkin = () => {
     if (!pendingSkin) return;
-    commitAddSkinToLibrary(pendingSkin.name, pendingSkin.canvas, pendingSkin.convertedImg);
-    setPendingSkin(null);
+    try {
+      commitAddSkinToLibrary(pendingSkin.name, pendingSkin.canvas, pendingSkin.convertedImg);
+      setPendingSkin(null);
+    } catch (error) { setPendingSkin(null); setValidationError(error instanceof Error ? error.message : 'Не удалось сохранить скин'); }
   };
 
   const handleSelectLibraryItem = (item: SavedSkinItem) => {
+    if (gameActive) return;
+    const request = ++skinRequest.current;
     const img = new Image();
     img.onload = () => {
+      if (request !== skinRequest.current) return;
       onSetCustomSkin(img, item.name);
       setValidationError(null);
     };
@@ -127,7 +127,9 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
   const handleDeleteLibraryItem = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    const updated = removeSkinFromLibrary(id);
+    let updated: SavedSkinItem[];
+    try { updated = removeSkinFromLibrary(id); }
+    catch (error) { setValidationError(error instanceof Error ? error.message : 'Не удалось удалить скин'); return; }
     setLibrary(updated);
     onLibraryChange?.();
 
@@ -166,15 +168,15 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   return (
     <div className="wardrobe-page view-enter">
       <header className="page-heading"><div><p className="page-kicker">ТВОЙ ПЕРСОНАЖ</p><h1>Будь собой.</h1><p>Скины, детали и узнаваемый силуэт.</p></div><span className="content-edition">ГАРДЕРОБ / S6</span></header>
-      {(editingSkin || editingDefault) && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Название скина">
+      {(editingSkin || editingDefault) && <ModalDialog label="Название скина" onClose={closeCaption}>
         <form className="surface-panel rounded-3xl p-6 w-full max-w-sm space-y-4" onSubmit={event => { event.preventDefault(); try { if (editingSkin) setLibrary(renameSavedSkin(editingSkin.id, caption)); else renameDefaultSkin(editingDefault!, caption); onLibraryChange?.(); closeCaption(); } catch (error) { setCaptionError(error instanceof Error ? error.message : 'Не удалось сохранить подпись'); } }}>
           <label className="skin-caption-field">Название скина<input autoFocus value={caption} maxLength={24} onChange={event => setCaption(event.target.value)} onKeyDown={event => { if (event.key === 'Escape') closeCaption(); }} /></label>
           <p className="text-xs text-zinc-400">До 24 символов</p>
           {captionError && <p role="alert" className="text-rose-400 text-xs">{captionError}</p>}
           <div className="flex justify-end gap-2"><button type="button" className="ui-button" onClick={closeCaption}>Отмена</button><button type="submit" className="ui-button is-primary" disabled={!caption.trim()}>Сохранить</button></div>
         </form>
-      </div>}
-      <div className="wardrobe-layout">
+      </ModalDialog>}
+      <>{gameActive && <p className="content-lock-notice" role="status">Смена скина доступна после закрытия игры.</p>}<fieldset disabled={gameActive} className="wardrobe-layout wardrobe-fieldset">
       {/* Full-Window Drag & Drop Overlay */}
       {isDragging && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90  border-4 border-dashed border-[#bb74ff] p-8 pointer-events-none animate-in fade-in duration-150">
@@ -190,7 +192,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
       {/* Confirmation Modal when Collection is Full (6/6) */}
       {pendingSkin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90  p-4 animate-in fade-in duration-200">
+        <ModalDialog label="Коллекция заполнена" onClose={() => setPendingSkin(null)}>
           <div className="surface-panel rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -205,6 +207,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
               <button
                 onClick={() => setPendingSkin(null)}
+                aria-label="Закрыть"
                 className="p-1 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors press-feedback"
               >
                 <X size={16} />
@@ -259,7 +262,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </ModalDialog>
       )}
 
       {/* Left Column: Character Stage Preview with Glass Depth */}
@@ -276,7 +279,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
           />
 
           {/* Minimal Floating Name Badge */}
-          <button type="button" disabled={Boolean(customSkinImg && !activeLibraryItem)} onDoubleClick={editActiveCaption} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); editActiveCaption(); } }} title="Дважды нажмите, чтобы изменить подпись скина" className="skin-caption-badge mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full surface-panel text-xs font-medium text-zinc-200 shadow-sm">
+          <button type="button" disabled={Boolean(customSkinImg && !activeLibraryItem)} onClick={editActiveCaption} title="Изменить название скина" className="skin-caption-badge mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full surface-panel text-xs font-medium text-zinc-200 shadow-sm">
             <User size={12} className="text-zinc-400" />
             <span className="truncate max-w-[200px] apple-subheading">{currentDisplayName}</span>
           </button>
@@ -324,7 +327,8 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
             className="hidden"
             onChange={(e) => {
               if (e.target.files?.[0]) {
-                processSkinFile(e.target.files[0]);
+                void processSkinFile(e.target.files[0]);
+                e.target.value = '';
               }
             }}
           />
@@ -348,7 +352,6 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                 return (
                   <div
                     key={item.id}
-                    onClick={() => handleSelectLibraryItem(item)}
                     title={item.caption || item.name}
                     className={`group relative flex flex-col items-center justify-center p-2 rounded-2xl border transition-all cursor-pointer aspect-square overflow-hidden press-feedback ${
                       isSelected
@@ -357,13 +360,13 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                     }`}
                   >
                     {/* Live Chibi Thumbnail */}
-                    <div className="w-full h-full flex items-center justify-center p-1">
+                    <button type="button" aria-label={`Выбрать скин ${item.caption || item.name}`} aria-pressed={isSelected} onClick={() => handleSelectLibraryItem(item)} className="w-full h-full flex items-center justify-center p-1 rounded-xl">
                       <img
                         src={item.chibiPreviewUri}
                         alt={item.name}
                         className="max-w-full max-h-full object-contain [image-rendering:pixelated] drop-shadow-md pointer-events-none select-none transition-transform group-hover:scale-105"
                       />
-                    </div>
+                    </button>
 
                     {/* Active Checkmark */}
                     {isSelected && (
@@ -410,6 +413,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
                 <button
                   key={skin.id}
                   onClick={() => {
+                    skinRequest.current++;
                     onSetCustomSkin(null, null);
                     onSetDefaultSkinIdx(idx);
                     setValidationError(null);
@@ -476,7 +480,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
           </div>
         </div>
       </div>
-      </div>
+      </fieldset></>
     </div>
   );
 };

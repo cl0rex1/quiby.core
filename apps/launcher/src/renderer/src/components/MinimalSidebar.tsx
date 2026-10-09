@@ -198,6 +198,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
           <button
             type="button"
             onClick={onOpenNotifications}
+            aria-label={unreadNotificationsCount ? `Почта, непрочитанных: ${unreadNotificationsCount}` : 'Почта'}
             className="flex items-center w-full h-11 rounded-xl cursor-pointer text-zinc-400 hover:text-white hover:bg-surface-850 transition-colors press-feedback relative"
             title={!expanded ? 'Почта' : undefined}
           >
@@ -228,6 +229,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
             <button
               type="button"
               onClick={onOpenProfile}
+              aria-label={`Профиль: ${session.user.mcUsername}`}
               className="flex items-center w-full h-11 rounded-xl cursor-pointer hover:bg-surface-850 transition-colors press-feedback"
               title={!expanded ? `Профиль: ${session.user.mcUsername}` : undefined}
             >
@@ -381,7 +383,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
                         {n.modInfo ? (isSuccess ? 'Одобрено' : isError ? 'Отклонено' : isWarning ? 'На рассмотрении' : 'Инфо') : (isError ? 'Ошибка' : isWarning ? 'Внимание' : isSuccess ? 'Готово' : 'Инфо')}
                       </span>
                     </div>
-                    <span className="text-[10px] font-mono text-zinc-500 shrink-0">
+                    <span className="text-[10px] font-mono text-zinc-400 shrink-0">
                       {formatShortTime(n.timestamp)}
                     </span>
                   </div>

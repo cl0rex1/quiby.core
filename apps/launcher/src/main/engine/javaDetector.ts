@@ -1,8 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import { execSync, spawnSync } from 'child_process';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import os from 'os';
 import { installJava21, managedJavaPath, type JavaProgress } from './managedJava';
+
+const runFile = promisify(execFile);
 
 export interface JavaInstallation {
   path: string;
@@ -20,8 +23,8 @@ export async function detectInstalledJava(runtimeRoot?: string): Promise<JavaIns
 
   // 1. Check PATH java
   try {
-    const whichCmd = platform === 'win32' ? 'where java' : 'which java';
-    const output = execSync(whichCmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+    const { stdout } = await runFile(platform === 'win32' ? 'where.exe' : 'which', ['java'], { encoding: 'utf8', windowsHide: true, timeout: 5000 });
+    const output = stdout.trim();
     if (output) {
       output.split('\n').forEach(p => candidatePaths.push(p.trim()));
     }
@@ -80,7 +83,7 @@ export async function detectInstalledJava(runtimeRoot?: string): Promise<JavaIns
 
   for (const javaBin of uniquePaths) {
     try {
-      const versionInfo = getJavaVersion(javaBin);
+      const versionInfo = await getJavaVersion(javaBin);
       if (versionInfo) {
         installations.push({
           path: javaBin,
@@ -96,10 +99,9 @@ export async function detectInstalledJava(runtimeRoot?: string): Promise<JavaIns
   return installations;
 }
 
-export function getJavaVersion(javaBin: string): { major: number; full: string; is64Bit: boolean } | null {
+export async function getJavaVersion(javaBin: string): Promise<{ major: number; full: string; is64Bit: boolean } | null> {
   try {
-    const result = spawnSync(javaBin.replace(/javaw\.exe$/i, 'java.exe'), ['-XshowSettings:properties', '-version'], { encoding: 'utf8', windowsHide: true, timeout: 10000 });
-    if (result.error || result.status !== 0) return null;
+    const result = await runFile(javaBin.replace(/javaw\.exe$/i, 'java.exe'), ['-XshowSettings:properties', '-version'], { encoding: 'utf8', windowsHide: true, timeout: 10000 });
     const output = `${result.stdout || ''}\n${result.stderr || ''}`;
     const match = output.match(/(?:java|openjdk) version "([^"]+)"/) || output.match(/version "([^"]+)"/);
     if (match) {
@@ -124,10 +126,10 @@ export function getRecommendedJava(installations: JavaInstallation[]): JavaInsta
 
 export async function resolveJava21(selectedPath: string, runtimeRoot: string, progress?: JavaProgress): Promise<string> {
   const consolePath = (selectedPath || 'java').replace(/javaw\.exe$/i, 'java.exe');
-  const selected = getJavaVersion(consolePath);
+  const selected = await getJavaVersion(consolePath);
   if (selected?.major === 21 && selected.is64Bit) return consolePath;
   const managed = managedJavaPath(runtimeRoot);
-  const bundled = getJavaVersion(managed);
+  const bundled = await getJavaVersion(managed);
   if (bundled?.major === 21 && bundled.is64Bit) return managed;
   const installed = getRecommendedJava(await detectInstalledJava());
   if (installed) return installed.path;

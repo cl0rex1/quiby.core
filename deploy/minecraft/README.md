@@ -1,4 +1,4 @@
-# Quiby: серверная сборка 6.1.19
+# Quiby: серверная сборка 6.1.20
 
 Minecraft **1.21.1**, NeoForge **21.1.250**, Java **21**. 36 основных JAR,
 включая Create, Aeronautics, Sable, Off Balance, Explosion Overhaul, дополнения
@@ -12,10 +12,10 @@ Create, Quiby и Simple Voice Chat. Вложенные зависимости с
 В этой сборке включена проверка аккаунта **до появления игрока в мире**.
 Нужны обновлённый API с `/api/game/join-ticket` и
 `/api/game/verify-join-ticket`, лаунчер с `prepareGameAdmission` и клиентский
-**quiby.mod 1.1.14** и Create Radars **5.0-EA-3.0.0-1.21.1**. Новая клиентская
-клиентская сборка **6.1.19** и лаунчер beta.22 содержат нужный протокол входа.
+**quiby.mod 1.1.15** и Create Radars **5.0-EA-3.0.0-1.21.1**. Новая клиентская
+клиентская сборка **6.1.20** и лаунчер beta.23 содержат нужный протокол входа.
 Старый лаунчер и старый клиентский Quiby будут отклонены. Серверный мод сам не обновляет клиент.
-До обновления Minecraft-сервера доставьте клиентам сборку 6.1.19.
+До обновления Minecraft-сервера доставьте клиентам сборку 6.1.20.
 
 Лаунчер получает после Discord-входа билет только для Minecraft и создаёт
 временную пару Ed25519. Перед входом сервер проверяет билет, ник, UUID,
@@ -40,7 +40,7 @@ Discord/API токен не передаётся в игру; закрытый �
 
 ```bash
 mkdir -p ~/quiby-minecraft
-unzip quiby-server-6.1.19.zip -d ~/quiby-minecraft
+unzip quiby-server-6.1.20.zip -d ~/quiby-minecraft
 cd ~/quiby-minecraft
 ```
 
@@ -158,7 +158,7 @@ Create-аддонов; они не остановили загрузку. Linux/
 ## Повторная сборка в репозитории
 
 Python 3.11+; установленная сборка из `.quiby-launcher`; собранный
-`quiby.mod/build/libs/quiby-1.21.1-1.1.14.jar` в соседнем репозитории:
+`quiby.mod/build/libs/quiby-1.21.1-1.1.15.jar` в соседнем репозитории:
 
 ```powershell
 python scripts/test-server-pack.py

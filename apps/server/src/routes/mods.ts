@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { dbGet, dbRun } from '../models/db';
+import { dbAll, dbGet, dbRun } from '../models/db';
 import { getReviewFile, putReviewFile, validReviewLink } from '../services/modReviewFiles';
 import { Router, Request, Response, raw } from 'express';
 import { z } from 'zod';
@@ -61,6 +61,25 @@ router.put('/review-file/:hash', requireAuth, async (req: AuthenticatedRequest, 
   try { putReviewFile(req.params.hash, req.body); }
   catch (error) { return res.status(413).json({ error: String(error) }); }
   return res.json({ success: true });
+});
+
+// Only the current player's submitted requests, with the latest decision for that file.
+router.get('/reviews/mine', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const rows = await dbAll<any>(`SELECT own.*, decision.status AS decision_status, decision.decision_reason AS final_reason
+      FROM mod_whitelist_requests own LEFT JOIN mod_whitelist_requests decision ON decision.id=(
+        SELECT id FROM mod_whitelist_requests WHERE hash_sha1=own.hash_sha1 AND status IN ('approved','rejected')
+        ORDER BY COALESCE(review_sequence,0) DESC,id DESC LIMIT 1)
+      WHERE own.user_discord_id=? AND own.auto_detected=0 AND own.id=(
+        SELECT MAX(id) FROM mod_whitelist_requests WHERE user_discord_id=own.user_discord_id AND hash_sha1=own.hash_sha1 AND auto_detected=0)
+      ORDER BY own.id DESC LIMIT 100`, [req.user!.discordId]);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.json(rows.map(row => {
+      const stage = row.decision_status || (row.discord_message_id ? 'pending' : getReviewFile(row.hash_sha1) ? 'queued' : 'error');
+      const messages: Record<string, string> = { approved: 'Файл одобрен.', rejected: 'Заявка отклонена.', pending: 'Файл доставлен. Ожидаем решения.', queued: 'Заявка принята. Ожидаем доставки.', error: 'Файл не доставлен. Отправьте заявку повторно.' };
+      return { hashSha1: row.hash_sha1, filename: row.filename, name: row.mod_name, stage, message: row.final_reason || messages[stage] };
+    }));
+  } catch { return res.status(500).json({ error: 'Не удалось получить заявки' }); }
 });
 
 router.get('/review-delivery/:hash', requireAuth, async (req: AuthenticatedRequest, res) => {

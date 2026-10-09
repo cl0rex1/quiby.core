@@ -1,6 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveModMetadata, MOD_CATEGORIES, matchesModCategory } from '../knownMods';
+import { resolveModMetadata, MOD_CATEGORIES, matchesModCategory, MOD_FILTERS, matchesModFilter } from '../knownMods';
+
+test('simplified filters keep uncertain mods in Other and group voice/audio together', () => {
+  assert.equal(MOD_FILTERS.length, 5);
+  const known = resolveModMetadata('Create', 'create.jar');
+  assert.equal(matchesModFilter(known, 'gameplay', 'approved'), true);
+  for (const status of ['pending', 'blocked', 'unverified']) {
+    assert.equal(matchesModFilter(known, 'other', status), true);
+    assert.equal(matchesModFilter(known, 'gameplay', status), false);
+  }
+  assert.equal(matchesModFilter({ ...known, category: 'interface', categoryLabel: 'Голос' }, 'visuals'), true);
+  assert.equal(matchesModFilter(resolveModMetadata('Mystery', 'mystery.jar'), 'other', 'approved'), true);
+});
 
 test('optimization mods are recognized from the shipped filenames', () => {
   for (const file of ['BadOptimizations-2.4.1-1.21.1.jar', 'c2me-neoforge-mc1.21.1-0.4.0-alpha.0.122.jar',

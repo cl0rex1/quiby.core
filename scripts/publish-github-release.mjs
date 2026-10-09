@@ -55,6 +55,15 @@ async function publish(value) {
   console.log(`Published ${updated.html_url}`);
 }
 
+async function publishedRelease(tag) {
+  for (let page = 1; ; page++) {
+    const batch = await request(`${api}/releases?per_page=100&page=${page}`);
+    const found = batch.find(item => item.tag_name === tag && !item.draft);
+    if (found) return found;
+    if (batch.length < 100) throw new Error(`Published release ${tag} not found; draft assets cannot be reused.`);
+  }
+}
+
 if (kind === 'pack') {
   const source = JSON.parse(await fs.readFile(path.join(root, 'modpacks/quiby-s6/manifest.json'), 'utf8'));
   const tag = `v${source.version}`;
@@ -67,7 +76,7 @@ if (kind === 'pack') {
   const assetBase = `https://github.com/${owner}/${repo}/releases/download/${tag}/`;
   const reuseTag = process.argv.find(arg => arg.startsWith('--reuse-assets-from='))?.split('=')[1];
   const reusedAssets = reuseTag
-    ? new Set((await listedAssets(await request(`${api}/releases/tags/${encodeURIComponent(reuseTag)}`))).map(asset => asset.name))
+    ? new Set((await listedAssets(await publishedRelease(reuseTag))).map(asset => asset.name))
     : new Set();
   const reusedBase = reuseTag ? `https://github.com/${owner}/${repo}/releases/download/${reuseTag}/` : '';
   const payloads = new Map();

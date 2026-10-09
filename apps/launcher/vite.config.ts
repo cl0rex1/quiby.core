@@ -4,11 +4,11 @@ import electron from 'vite-plugin-electron';
 import renderer from 'vite-plugin-electron-renderer';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   base: './',
   plugins: [
     react(),
-    electron([
+    mode !== 'test' && electron([
       {
         entry: 'src/main/index.ts',
         vite: {
@@ -33,7 +33,7 @@ export default defineConfig({
         },
       },
     ]),
-    renderer(),
+    mode !== 'test' && renderer(),
   ],
   resolve: {
     alias: {
@@ -43,4 +43,4 @@ export default defineConfig({
   server: {
     port: 5173,
   },
-});
+}));

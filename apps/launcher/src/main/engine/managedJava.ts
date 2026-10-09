@@ -75,7 +75,7 @@ async function downloadRuntime(root: string, progress: JavaProgress): Promise<st
     if (!home || entries.filter(entry => entry.isDirectory()).length !== 1) throw new Error('Неожиданная структура архива Java.');
     const extractedHome = path.join(unpacked, home.name);
     const relativeBin = path.relative(path.join(destination, 'home'), executable);
-    const version = getJavaVersion(path.join(extractedHome, relativeBin));
+    const version = await getJavaVersion(path.join(extractedHome, relativeBin));
     if (version?.major !== 21 || !version.is64Bit) throw new Error('Скачанная Java 21 не запускается или не является 64-битной.');
     // Only this managed runtime directory can be replaced; system Java is untouched.
     if (path.dirname(destination) !== root || !path.basename(destination).startsWith('java21-')) throw new Error('Недопустимая папка Java.');

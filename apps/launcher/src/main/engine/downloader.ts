@@ -6,10 +6,10 @@ import { pipeline } from 'stream/promises';
 import { DownloadProgress, ModpackFile, ModpackManifest } from '@quiby/shared';
 import { BrowserWindow } from 'electron';
 
-export async function computeFileSha256(filePath: string): Promise<string> {
+async function computeFileHash(filePath: string, algorithm: 'sha256' | 'sha1'): Promise<string> {
   if (!fs.existsSync(filePath)) return '';
   return new Promise((resolve) => {
-    const hash = crypto.createHash('sha256');
+    const hash = crypto.createHash(algorithm);
     const stream = fs.createReadStream(filePath);
     stream.on('error', () => resolve(''));
     stream.on('data', chunk => hash.update(chunk));
@@ -17,19 +17,25 @@ export async function computeFileSha256(filePath: string): Promise<string> {
   });
 }
 
-export async function downloadFile(url: string, destPath: string, onBytes?: (bytes: number) => void, expectedSha256?: string): Promise<void> {
+export const computeFileSha256 = (filePath: string) => computeFileHash(filePath, 'sha256');
+
+export async function downloadFile(url: string, destPath: string, onBytes?: (bytes: number) => void, expectedHash?: string, idleTimeoutMs = 60000): Promise<void> {
   const dir = path.dirname(destPath);
-  const tempPath = `${destPath}.part`;
+  const tempPath = `${destPath}.${crypto.randomUUID()}.part`;
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to download ${url}: ${res.status} ${res.statusText}`);
-  }
-
+  const controller = new AbortController();
+  let timeout: ReturnType<typeof setTimeout>;
+  const resetTimeout = () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => controller.abort(new Error(`Загрузка ${path.basename(destPath)} прервана: сервер не отвечает. Повторите запуск.`)), idleTimeoutMs);
+  };
+  resetTimeout();
   try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`Failed to download ${url}: ${res.status} ${res.statusText}`);
     if (!res.body) {
       const buffer = Buffer.from(await res.arrayBuffer());
       fs.writeFileSync(tempPath, buffer);
@@ -38,19 +44,24 @@ export async function downloadFile(url: string, destPath: string, onBytes?: (byt
       await pipeline(
         Readable.fromWeb(res.body as any),
         new Transform({ transform(chunk, _encoding, callback) {
+          resetTimeout();
           onBytes?.(chunk.length);
           callback(null, chunk);
         } }),
         fs.createWriteStream(tempPath)
       );
     }
-    if (expectedSha256 && (await computeFileSha256(tempPath)).toLowerCase() !== expectedSha256.toLowerCase()) {
-      throw new Error(`SHA-256 не совпадает: ${path.basename(destPath)}`);
+    clearTimeout(timeout!);
+    const algorithm = expectedHash?.length === 40 ? 'sha1' : 'sha256';
+    if (expectedHash && (await computeFileHash(tempPath, algorithm)).toLowerCase() !== expectedHash.toLowerCase()) {
+      throw new Error(`${algorithm === 'sha1' ? 'SHA-1' : 'SHA-256'} не совпадает: ${path.basename(destPath)}`);
     }
     fs.renameSync(tempPath, destPath);
   } catch (error) {
     await fs.promises.rm(tempPath, { force: true }).catch(() => {});
     throw error;
+  } finally {
+    clearTimeout(timeout!);
   }
 }
 

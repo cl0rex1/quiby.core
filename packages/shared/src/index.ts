@@ -85,6 +85,7 @@ export interface NewsArticle {
   date: string;
   bannerUrl?: string;
   pin?: boolean;
+  broadcastRevision?: string;
 }
 
 export interface LauncherSettings {

@@ -12,18 +12,33 @@ export function contentFilePath(gameDir: string, kind: ContentKind, filename: st
     throw new Error('Недопустимое имя файла');
   return path.join(contentDirectory(gameDir, kind), filename);
 }
-export async function listLocalContent(gameDir: string, kind: ContentKind) {
+async function checkedDirectory(gameDir: string, kind: ContentKind) {
   const dir = contentDirectory(gameDir, kind);
   await fs.promises.mkdir(dir, { recursive: true });
+  const stat = await fs.promises.lstat(dir);
+  if (!stat.isDirectory() || stat.isSymbolicLink()) throw new Error(`Папка ${kind} не должна быть ссылкой.`);
+  return dir;
+}
+export async function checkedContentFilePath(gameDir: string, kind: ContentKind, filename: string) {
+  const target = contentFilePath(gameDir, kind, filename);
+  await checkedDirectory(gameDir, kind);
+  return target;
+}
+export async function listLocalContent(gameDir: string, kind: ContentKind) {
+  const dir = await checkedDirectory(gameDir, kind);
   const entries = await fs.promises.readdir(dir, { withFileTypes: true });
   const files = entries.filter(
     (entry) =>
       (entry.isFile() && extensions[kind].test(entry.name)) ||
       (kind === 'shaderpacks' && entry.isDirectory()),
   );
-  return Promise.all(
+  const items = await Promise.all(
     files.map(async (entry) => {
-      const stat = await fs.promises.stat(path.join(dir, entry.name));
+      const stat = await fs.promises.lstat(path.join(dir, entry.name)).catch(error => {
+        if (error.code === 'ENOENT') return null; // An external deletion must not hide the whole library.
+        throw error;
+      });
+      if (!stat || stat.isSymbolicLink()) return null;
       return {
         name: entry.name.replace(/\.(zip|nbt|schem|schematic)$/i, '').replace(/_/g, ' '),
         filename: entry.name,
@@ -33,6 +48,7 @@ export async function listLocalContent(gameDir: string, kind: ContentKind) {
       };
     }),
   );
+  return items.filter((item): item is NonNullable<typeof item> => item !== null);
 }
 export async function installLocalContent(
   gameDir: string,
@@ -43,7 +59,7 @@ export async function installLocalContent(
   const target = contentFilePath(gameDir, kind, filename);
   if (!extensions[kind].test(filename) || !bytes?.length || bytes.length > 100 * 1024 * 1024)
     throw new Error('Нужен поддерживаемый файл размером до 100 МБ');
-  await fs.promises.mkdir(path.dirname(target), { recursive: true });
+  await checkedDirectory(gameDir, kind);
   let handle: fs.promises.FileHandle;
   try {
     handle = await fs.promises.open(target, 'wx');

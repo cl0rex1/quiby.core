@@ -90,6 +90,11 @@ export async function initDatabase(): Promise<void> {
     )
   `);
 
+  const newsColumns = await dbAll<{ name: string }>('PRAGMA table_info(news)');
+  for (const column of ['broadcast_revision', 'updated_at']) {
+    if (!newsColumns.some(item => item.name === column)) await dbRun(`ALTER TABLE news ADD COLUMN ${column} TEXT`);
+  }
+
   // Anti-Cheat: Verified Mods Table (Modrinth / CurseForge / Admin Whitelist Cache)
   await dbRun(`
     CREATE TABLE IF NOT EXISTS verified_mods (
@@ -149,6 +154,7 @@ export async function initDatabase(): Promise<void> {
     if (!requestColumns.some(column => column.name === name)) await dbRun('ALTER TABLE mod_whitelist_requests ADD COLUMN ' + name + ' ' + type);
   }
   await dbRun('CREATE INDEX IF NOT EXISTS mod_requests_hash_review ON mod_whitelist_requests(hash_sha1, review_sequence DESC)');
+  await dbRun('CREATE INDEX IF NOT EXISTS mod_requests_owner_hash ON mod_whitelist_requests(user_discord_id, auto_detected, hash_sha1, id DESC)');
   await dbRun('CREATE INDEX IF NOT EXISTS mod_requests_queue ON mod_whitelist_requests(status, id)');
 
   await dbRun(`

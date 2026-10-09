@@ -16,6 +16,12 @@ export const quibyApi = {
   splashReady: () => ipcRenderer.invoke('splash:ready'),
   minimize: () => ipcRenderer.invoke('window:minimize'),
   maximize: () => ipcRenderer.invoke('window:maximize'),
+  isMaximized: (): Promise<boolean> => ipcRenderer.invoke('window:is-maximized'),
+  onMaximized: (callback: (maximized: boolean) => void) => {
+    const handler = (_: unknown, maximized: boolean) => callback(maximized);
+    ipcRenderer.on('window:maximized', handler);
+    return () => ipcRenderer.removeListener('window:maximized', handler);
+  },
   close: () => ipcRenderer.invoke('window:close'),
 
   // Settings
@@ -66,6 +72,7 @@ export const quibyApi = {
     ipcRenderer.invoke('mods:remove', gameDir, filename),
 
   // Game Engine
+  getLaunchState: (): Promise<LaunchState> => ipcRenderer.invoke('game:state'),
   launchGame: (session: AuthSession, settings: LauncherSettings, customModFilenames?: string[], disabledCustomModFilenames?: string[]) =>
     ipcRenderer.invoke('game:launch', session, settings, customModFilenames, disabledCustomModFilenames),
   killGame: () => ipcRenderer.invoke('game:kill'),

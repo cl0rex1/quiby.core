@@ -63,3 +63,29 @@ test('local libraries ignore symbolic links', async (t) => {
     await fs.rm(dir, { recursive: true, force: true });
   }
 });
+
+test('simultaneous imports cannot overwrite each other', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'quiby-content-race-'));
+  try {
+    const results = await Promise.allSettled([
+      installLocalContent(dir, 'shaderpacks', 'pack.zip', new Uint8Array([1, 2, 3])),
+      installLocalContent(dir, 'shaderpacks', 'pack.zip', new Uint8Array([4, 5, 6])),
+    ]);
+    assert.equal(results.filter(result => result.status === 'fulfilled').length, 1);
+    const bytes = Array.from(await fs.readFile(path.join(dir, 'shaderpacks', 'pack.zip')));
+    assert.ok(JSON.stringify(bytes) === '[1,2,3]' || JSON.stringify(bytes) === '[4,5,6]');
+    assert.deepEqual(await fs.readdir(path.join(dir, 'shaderpacks')), ['pack.zip']);
+  } finally { await fs.rm(dir, { recursive: true, force: true }); }
+});
+
+test('a redirected library directory cannot write into another folder', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'quiby-content-junction-'));
+  try {
+    const elsewhere = path.join(dir, 'elsewhere');
+    await fs.mkdir(elsewhere);
+    await fs.symlink(elsewhere, path.join(dir, 'shaderpacks'), process.platform === 'win32' ? 'junction' : 'dir');
+    await assert.rejects(installLocalContent(dir, 'shaderpacks', 'pack.zip', new Uint8Array([1])), /ссылкой/);
+    await assert.rejects(listLocalContent(dir, 'shaderpacks'), /ссылкой/);
+    assert.deepEqual(await fs.readdir(elsewhere), []);
+  } finally { await fs.rm(dir, { recursive: true, force: true }); }
+});

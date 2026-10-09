@@ -1,5 +1,5 @@
 import { DiscordAvatar } from './DiscordAvatar';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, LogOut, UserRound, X } from 'lucide-react';
 import type { AuthSession } from '@quiby/shared';
 
@@ -17,20 +17,25 @@ export function ProfileDialog({ session, serverUrl, onClose, onSignOut }: Props)
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const dialog = useRef<HTMLDialogElement>(null);
+  const previousFocus = useRef(document.activeElement);
+  const accountId = session?.user.discordId;
 
   useEffect(() => {
-    if (!session) return;
+    if (!accountId) return;
     setChangingUsername(false);
     setRequestedUsername('');
     setReason('');
     setError('');
     setNotice('');
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+    const element = dialog.current;
+    previousFocus.current = document.activeElement;
+    element?.showModal();
+    return () => {
+      element?.close();
+      if (previousFocus.current instanceof HTMLElement && previousFocus.current.isConnected) previousFocus.current.focus();
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [session, onClose]);
+  }, [accountId]);
 
   if (!session) return null;
 
@@ -44,6 +49,7 @@ export function ProfileDialog({ session, serverUrl, onClose, onSignOut }: Props)
         method: 'POST',
         headers: { Authorization: `Bearer ${session.token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ requestedUsername: requestedUsername.trim(), reason: reason.trim() }),
+        signal: AbortSignal.timeout(15000),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || 'Не удалось отправить заявку.');
@@ -59,20 +65,21 @@ export function ProfileDialog({ session, serverUrl, onClose, onSignOut }: Props)
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-5" onMouseDown={onClose}>
-      <section
-        role="dialog"
+      <dialog
+        ref={dialog}
+        onCancel={event => { event.preventDefault(); if (!submitting) onClose(); }}
+        onClick={event => { if (event.target === event.currentTarget && !submitting) onClose(); }}
         aria-modal="true"
         aria-labelledby="profile-title"
-        className="w-full max-w-sm rounded-2xl border border-[#39313f] bg-[#1a181d] p-6 shadow-2xl"
-        onMouseDown={event => event.stopPropagation()}
+        className="launcher-dialog profile-dialog"
       >
+        <div className="launcher-dialog-body">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#bb74ff]">QUIBY / ПРОФИЛЬ</p>
             <h2 id="profile-title" className="mt-1 text-xl font-bold text-white">Твой аккаунт</h2>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-2 text-zinc-400 hover:bg-white/10 hover:text-white" aria-label="Закрыть профиль">
+          <button type="button" onClick={onClose} disabled={submitting} className="icon-button" aria-label="Закрыть профиль">
             <X size={18} />
           </button>
         </div>
@@ -95,7 +102,7 @@ export function ProfileDialog({ session, serverUrl, onClose, onSignOut }: Props)
               <span>Почему нужно изменить ник</span>
               <textarea value={reason} onChange={event => setReason(event.target.value)} minLength={5} maxLength={500} required disabled={submitting} rows={2} className="w-full resize-none rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none focus:border-[#bb74ff]" placeholder="Например, ошибся при вводе" />
             </label>
-            <p className="text-[11px] leading-relaxed text-zinc-500">Смена ника проверяется администрацией. До одобрения аккаунт останется с текущим ником.</p>
+            <p className="text-[11px] leading-relaxed text-zinc-400">Смена ника проверяется администрацией. До одобрения аккаунт останется с текущим ником.</p>
             <div className="flex gap-2">
               <button type="button" onClick={() => { setChangingUsername(false); setError(''); }} disabled={submitting} className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-xs text-zinc-300 hover:bg-white/5 disabled:opacity-50">Отмена</button>
               <button type="submit" disabled={submitting} className="flex-1 rounded-lg bg-[#a65ee8] px-3 py-2 text-xs font-semibold text-white hover:bg-[#bc7ff0] disabled:opacity-50">{submitting ? 'Отправляем…' : 'Подать заявку'}</button>
@@ -106,10 +113,10 @@ export function ProfileDialog({ session, serverUrl, onClose, onSignOut }: Props)
             <UserRound size={16} /> Сменить ник через заявку
           </button>
         )}
-        <button type="button" onClick={onSignOut} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm text-zinc-300 transition-colors hover:border-rose-400/40 hover:bg-rose-400/10 hover:text-rose-200">
+        <button type="button" onClick={onSignOut} disabled={submitting} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm text-zinc-300 transition-colors hover:border-rose-400/40 hover:bg-rose-400/10 hover:text-rose-200">
           <LogOut size={16} /> Выйти из аккаунта
         </button>
-      </section>
-    </div>
+        </div>
+      </dialog>
   );
 }

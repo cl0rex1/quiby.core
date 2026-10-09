@@ -27,6 +27,9 @@ let playtimeInterval: NodeJS.Timeout | null = null;
 let launchInProgress = false;
 let trackedPlaytimeSeconds = 0;
 let stopRequested = false;
+let currentLaunchState: LaunchState = { status: 'idle' };
+export const isGameActive = () => launchInProgress || Boolean(runningGameProcess);
+export const getLaunchState = (): LaunchState => ({ ...currentLaunchState });
 
 export async function launchMinecraft(
   session: AuthSession,
@@ -62,6 +65,7 @@ export async function launchMinecraft(
   };
 
   const setLaunchState = (state: LaunchState) => {
+    currentLaunchState = state;
     if (win && !win.isDestroyed()) {
       win.webContents.send('launch-state-change', state);
     }

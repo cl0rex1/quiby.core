@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.19",
+  "version": "6.1.20",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 274215857,
+  "totalSize": 274227438,
   "files": [
     {
       "path": "config/DistantHorizons.toml",
@@ -1580,10 +1580,10 @@
       "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
-      "path": "mods/quiby-1.21.1-1.1.14.jar",
-      "sha256": "41a901ed5e193bf15248fa85975be8539bc0e297da0ed384ad8b1e0416115396",
-      "size": 3551185,
-      "downloadUrl": "/api/modpack/files/imported/41a901ed5e193bf15248fa85975be8539bc0e297da0ed384ad8b1e0416115396/quiby-1.21.1-1.1.14.jar",
+      "path": "mods/quiby-1.21.1-1.1.15.jar",
+      "sha256": "ad8edcd247c92446171d7dc0fa9f77162d39f9f862c95be074e574bcbb3392bf",
+      "size": 3562766,
+      "downloadUrl": "/api/modpack/files/imported/ad8edcd247c92446171d7dc0fa9f77162d39f9f862c95be074e574bcbb3392bf/quiby-1.21.1-1.1.15.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1592,15 +1592,15 @@
       ],
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.1.14",
-      "modDescription": "Русская локализация, скины, реакции на урон, проверка входа и фирменная загрузка Minecraft. Подготовка дополнения Create Radars.",
+      "modVersion": "1.1.15",
+      "modDescription": "Локализация, скины, проверка входа, рецепты Create Radars и цепная детонация снарядов Create Big Cannons.",
       "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },
     {
-      "path": "mods/quiby-early-loading-1.21.1-1.1.12.jar",
+      "path": "mods/quiby-early-loading-1.21.1-1.1.15.jar",
       "sha256": "1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99",
       "size": 3036102,
-      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.12.jar",
+      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.15.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1609,7 +1609,7 @@
       ],
       "modId": "quiby_early_loading",
       "modName": "Quiby Early Loading",
-      "modVersion": "1.1.12",
+      "modVersion": "1.1.15",
       "modDescription": "Фирменная анимация на раннем экране NeoForge."
     },
     {
@@ -1843,7 +1843,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Create Radars 5.0-EA-3.0.0 и Quiby 1.1.14; удалены семь дополнительных рецептов Radars и переведены все 242 строки. Исправлены заявки на ресурспаки и карточки контента. Добавлены переключатели выбранных клиентских модов, улучшены параметры Java и переименование подписей скинов.",
+  "changelog": "Quiby 1.1.15: семь недостающих рецептов Create Radars, оригинальные названия модов и цепная детонация разрывных снарядов CBC с учётом укрытий и ограничением нагрузки. Лаунчер beta.23: плавные раскрытия, фоновая отправка заявок, единая карточка статуса, упрощённые фильтры и блокировка смены скинов во время игры.",
   "serverAddress": "",
-  "updatedAt": "2026-10-09T12:34:39.944287+00:00"
+  "updatedAt": "2026-10-09T20:30:05.544314Z"
 }

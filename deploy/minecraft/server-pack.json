@@ -1,5 +1,5 @@
 {
-  "packVersion": "6.1.19",
+  "packVersion": "6.1.20",
   "minecraft": "1.21.1",
   "neoforge": "21.1.250",
   "java": 21,
@@ -297,15 +297,15 @@
       }
     },
     {
-      "file": "quiby-1.21.1-1.1.14.jar",
+      "file": "quiby-1.21.1-1.1.15.jar",
       "modIds": [
         "quiby"
       ],
-      "sha256": "41a901ed5e193bf15248fa85975be8539bc0e297da0ed384ad8b1e0416115396",
+      "sha256": "ad8edcd247c92446171d7dc0fa9f77162d39f9f862c95be074e574bcbb3392bf",
       "versions": {
-        "quiby": "1.1.14"
+        "quiby": "1.1.15"
       },
-      "sourceFile": "quiby-1.21.1-1.1.13.jar",
+      "sourceFile": "quiby-1.21.1-1.1.14.jar",
       "builtQuiby": true
     },
     {

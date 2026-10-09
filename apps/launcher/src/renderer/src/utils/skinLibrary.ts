@@ -28,7 +28,17 @@ export function getSavedSkinLibrary(): SavedSkinItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw);
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const seen = new Set<string>();
+    return parsed.filter((item): item is SavedSkinItem => {
+      if (!item || typeof item !== 'object' || typeof item.id !== 'string' || !item.id || seen.has(item.id)
+        || typeof item.name !== 'string' || typeof item.dataUri !== 'string' || typeof item.chibiPreviewUri !== 'string'
+        || !['alex', 'steve'].includes(item.bodyType) || !Number.isFinite(item.createdAt)
+        || (item.caption !== undefined && typeof item.caption !== 'string')) return false;
+      seen.add(item.id);
+      return true;
+    }).slice(0, 6);
   } catch {
     return [];
   }
@@ -101,7 +111,7 @@ export function addSkinToLibrary(
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   } catch (e) {
-    console.error('Failed to save skin to localStorage', e);
+    throw new Error('Не удалось сохранить скин. Освободите место в хранилище лаунчера и повторите.');
   }
 
   return item;
@@ -116,7 +126,7 @@ export function removeSkinFromLibrary(id: string): SavedSkinItem[] {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   } catch (e) {
-    console.error('Failed to update skin library in localStorage', e);
+    throw new Error('Не удалось сохранить изменения коллекции. Повторите попытку.');
   }
   return updated;
 }

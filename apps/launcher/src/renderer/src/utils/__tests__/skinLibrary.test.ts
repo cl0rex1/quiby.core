@@ -1,6 +1,29 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { getSavedSkinLibrary, renameSavedSkin, getSkinDisplayName, getDefaultSkinCaption, renameDefaultSkin, type SavedSkinItem } from '../skinLibrary';
+import { getSavedSkinLibrary, removeSkinFromLibrary, renameSavedSkin, getSkinDisplayName, getDefaultSkinCaption, renameDefaultSkin, type SavedSkinItem } from '../skinLibrary';
+
+test('corrupt skin storage cannot crash the wardrobe or produce duplicate cards', () => {
+  let raw = '';
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: () => raw } });
+  const skin = { id: 'one', name: 'skin', dataUri: 'texture', chibiPreviewUri: 'preview', bodyType: 'steve', createdAt: 1 };
+  try {
+    for (const invalid of ['null', '{}', '12', '"text"', '{broken', '[null, 1, {}, "skin"]']) {
+      raw = invalid; assert.deepEqual(getSavedSkinLibrary(), []);
+    }
+    raw = JSON.stringify([skin, skin, { ...skin, id: 'bad', caption: {} }]);
+    assert.deepEqual(getSavedSkinLibrary(), [skin]);
+    raw = JSON.stringify(Array.from({ length: 20 }, (_, i) => ({ ...skin, id: String(i) })));
+    assert.equal(getSavedSkinLibrary().length, 6);
+  } finally { Reflect.deleteProperty(globalThis, 'localStorage'); }
+});
+
+test('failed skin deletion reports persistence failure instead of claiming success', () => {
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
+    getItem: () => '[]', setItem: () => { throw new Error('QuotaExceededError'); },
+  } });
+  try { assert.throws(() => removeSkinFromLibrary('one'), /Не удалось сохранить/); }
+  finally { Reflect.deleteProperty(globalThis, 'localStorage'); }
+});
 
 test('skin captions persist without changing the source name or texture', () => {
   const entries = new Map<string, string>();

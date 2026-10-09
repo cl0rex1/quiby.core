@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from 'react';
-import { Pause, Play } from 'lucide-react';
 
 const MotionContext = createContext({ reduced: false, systemReduced: false, active: true, toggle: () => {} });
 export const useMotion = () => useContext(MotionContext);
@@ -47,18 +46,7 @@ export function MotionProvider({ children }: { children: React.ReactNode }) {
 
 export function MotionToggle({ compact = false }: { compact?: boolean }) {
   const { reduced, systemReduced, toggle } = useMotion();
-  return (
-    <button
-      type="button"
-      className={`motion-toggle app-no-drag ${compact ? 'is-compact' : ''}`}
-      aria-pressed={reduced}
-      onClick={toggle}
-      disabled={systemReduced}
-      title={systemReduced ? 'Уменьшение движения включено в системе' : 'Уменьшить движение интерфейса'}
-    >
-      {reduced ? <Pause size={13} /> : <Play size={13} />}
-      <span>Reduce motion</span>
-      <span className="motion-toggle-state">{reduced ? 'ON' : 'OFF'}</span>
-    </button>
-  );
+  return <label className={`motion-switch app-no-drag ${compact ? 'is-compact' : ''}`} title={systemReduced ? 'Уменьшение движения включено в системе' : undefined}>
+    <span>Меньше движения</span><input className="setting-switch" type="checkbox" role="switch" aria-label="Меньше движения" checked={reduced} onChange={toggle} disabled={systemReduced}/>
+  </label>;
 }

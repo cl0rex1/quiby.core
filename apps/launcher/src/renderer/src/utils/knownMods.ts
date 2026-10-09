@@ -371,3 +371,19 @@ export function resolveModMetadata(
     projectUrl: safeProjectUrl,
   };
 }
+
+
+export const MOD_FILTERS = [
+  { id: 'gameplay', label: 'Геймплей', categories: ['gameplay', 'mechanisms'] },
+  { id: 'visuals', label: 'Вид и звук', categories: ['graphics', 'audio'] },
+  { id: 'interface', label: 'Удобство', categories: ['interface'] },
+  { id: 'performance', label: 'Оптимизация', categories: ['optimization'] },
+  { id: 'other', label: 'Другое', categories: ['library', 'launcher', 'utility'] },
+] as const;
+export type ModFilter = typeof MOD_FILTERS[number]['id'] | 'all';
+export function matchesModFilter(meta: ModMetadata, filter: ModFilter, status?: string): boolean {
+  if (filter === 'all') return true;
+  if (status && status !== 'approved') return filter === 'other';
+  if (meta.categoryLabel === 'Звук' || meta.categoryLabel === 'Голос') return filter === 'visuals';
+  return Boolean(MOD_FILTERS.find(item => item.id === filter)?.categories.some(category => category === meta.category));
+}

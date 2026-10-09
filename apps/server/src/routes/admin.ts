@@ -1,3 +1,4 @@
+import { newsSchema, saveNews } from '../services/newsService';
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
@@ -127,18 +128,9 @@ router.delete('/players/:discordId', async (req: Request, res: Response) => {
 // 6. Create News Article
 router.post('/news', async (req: Request, res: Response) => {
   try {
-    const { title, excerpt, content, author, tag, bannerUrl, pin } = req.body;
-    if (!title || !content || !author) {
-      return res.status(400).json({ error: 'Missing required news fields' });
-    }
-
-    const id = `news-${Date.now()}`;
-    await dbRun(
-      'INSERT INTO news (id, title, excerpt, content, author, tag, banner_url, pin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
-      [id, title, excerpt || title, content, author, tag || 'announcement', bannerUrl || null, pin ? 1 : 0]
-    );
-
-    return res.json({ success: true, id });
+    const parsed = newsSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: 'Проверьте заголовок, текст, автора и параметры новости' });
+    return res.status(201).json({ success: true, ...await saveNews(parsed.data) });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

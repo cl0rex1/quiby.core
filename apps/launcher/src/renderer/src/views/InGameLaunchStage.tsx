@@ -1,3 +1,4 @@
+import { Disclosure } from '../components/Disclosure';
 import React, { useEffect, useRef, useState } from 'react';
 import { Check, Copy, Square, Terminal, Trash2 } from 'lucide-react';
 import { AuthSession, DownloadProgress, LaunchState, LogEntry } from '@quiby/shared';
@@ -90,15 +91,15 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
           </div>
         </section>
       </div>
-      <details className="launch-console" open={consoleOpen} onToggle={event => setConsoleOpen(event.currentTarget.open)}>
-        <summary><Terminal size={15} /><span>Журнал запуска</span><small>{logs.length} строк</small><span className="console-disclosure">{consoleOpen ? 'Скрыть' : 'Показать'}</span></summary>
-        {consoleOpen && <>
+      <Disclosure className="launch-console" open={consoleOpen} onOpenChange={setConsoleOpen}
+        title={<><Terminal size={15}/><span>Журнал запуска</span><small>{logs.length} строк</small></>}>
+        <>
           <div className="launch-console-tools"><span role="status">{copyState || 'Вывод Minecraft'}</span><button type="button" title="Скопировать журнал" onClick={copyLogs} disabled={!logs.length}><Copy size={14} /></button>{onClearLogs && <button type="button" title="Очистить журнал" onClick={onClearLogs} disabled={!logs.length}><Trash2 size={14} /></button>}</div>
           <div ref={logViewport} className="launch-log-lines" onScroll={event => { const el = event.currentTarget; followLogs.current = el.scrollHeight - el.scrollTop - el.clientHeight < 32; }}>
             {logs.length ? logs.slice(-500).map(log => <p key={log.id} data-level={log.level}><time>{log.timestamp}</time><span>{log.message}</span></p>) : <p>Ожидаем сообщения Minecraft…</p>}
           </div>
-        </>}
-      </details>
+        </>
+      </Disclosure>
     </div>
   );
 };

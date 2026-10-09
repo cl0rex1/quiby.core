@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Minus, Square, Copy, X } from 'lucide-react';
 export const WindowHeader: React.FC = () => {
   const [isMaximized, setIsMaximized] = useState(false);
+  useEffect(() => {
+    let active = true;
+    const unsubscribe = window.quibyApi?.onMaximized(setIsMaximized);
+    void window.quibyApi?.isMaximized().then(value => { if (active) setIsMaximized(value); }).catch(() => {});
+    return () => { active = false; unsubscribe?.(); };
+  }, []);
 
   const handleMinimize = () => {
     window.quibyApi?.minimize();
@@ -9,7 +15,6 @@ export const WindowHeader: React.FC = () => {
 
   const handleMaximize = () => {
     window.quibyApi?.maximize();
-    setIsMaximized(!isMaximized);
   };
 
   const handleClose = () => {

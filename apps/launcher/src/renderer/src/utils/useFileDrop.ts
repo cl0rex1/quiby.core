@@ -9,19 +9,21 @@ export function useFileDrop(onDrop: (files: FileList) => void, enabled = true) {
     setDragging(false);
     if (!enabled) return;
     let depth = 0;
+    const modalOpen = () => Boolean(document.querySelector('dialog[open], [role="dialog"][aria-modal="true"]'));
     const enter = (event: DragEvent) => {
       if (!event.dataTransfer?.types.includes('Files')) return;
+      if (modalOpen()) { event.preventDefault(); return; }
       event.preventDefault(); depth++; setDragging(true);
     };
     const over = (event: DragEvent) => {
       if (!event.dataTransfer?.types.includes('Files')) return;
-      event.preventDefault(); event.dataTransfer.dropEffect = 'copy';
+      event.preventDefault(); event.dataTransfer.dropEffect = modalOpen() ? 'none' : 'copy';
     };
     const leave = () => { depth = Math.max(0, depth - 1); if (!depth) setDragging(false); };
     const drop = (event: DragEvent) => {
       depth = 0; setDragging(false);
       if (!event.dataTransfer?.types.includes('Files')) return;
-      event.preventDefault(); callback.current(event.dataTransfer.files);
+      event.preventDefault(); if (!modalOpen()) callback.current(event.dataTransfer.files);
     };
     const reset = () => { depth = 0; setDragging(false); };
     window.addEventListener('dragenter', enter); window.addEventListener('dragover', over);

@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { BrowserWindow } from 'electron';
-import { downloadFile, computeFileSha256 } from './downloader';
+import { downloadFile } from './downloader';
 
 export interface MojangVersionInfo {
   id: string;
@@ -75,22 +75,21 @@ export async function ensureMinecraftVanilla(
       });
     }
 
-    const manifestRes = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json');
+    const manifestRes = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json', { signal: AbortSignal.timeout(15000) });
+    if (!manifestRes.ok) throw new Error(`Mojang: HTTP ${manifestRes.status}`);
     const manifest = await manifestRes.json();
     const targetVer = manifest.versions.find((v: any) => v.id === version);
     if (!targetVer) {
       throw new Error(`Minecraft version ${version} not found in Mojang manifest.`);
     }
 
-    const verRes = await fetch(targetVer.url);
-    const verData = await verRes.text();
-    fs.writeFileSync(versionJsonPath, verData, 'utf8');
+    await downloadFile(targetVer.url, versionJsonPath, undefined, targetVer.sha1);
   }
 
   const versionJson: MojangVersionInfo = JSON.parse(fs.readFileSync(versionJsonPath, 'utf8'));
 
   // 2. Download client.jar if missing
-  if (!fs.existsSync(clientJar) || fs.statSync(clientJar).size < 1000) {
+  if (!fs.existsSync(clientJar) || fs.statSync(clientJar).size !== versionJson.downloads.client.size) {
     if (win && !win.isDestroyed()) {
       win.webContents.send('download-progress', {
         stage: 'manifest',
@@ -98,7 +97,7 @@ export async function ensureMinecraftVanilla(
         progressPercent: 30,
       });
     }
-    await downloadFile(versionJson.downloads.client.url, clientJar);
+    await downloadFile(versionJson.downloads.client.url, clientJar, undefined, versionJson.downloads.client.sha1);
   }
 
   // 3. Collect libraries
@@ -112,8 +111,8 @@ export async function ensureMinecraftVanilla(
       const libPath = path.join(librariesDir, art.path);
       libraryPaths.push(libPath);
 
-      if (!fs.existsSync(libPath)) {
-        await downloadFile(art.url, libPath);
+      if (!fs.existsSync(libPath) || fs.statSync(libPath).size !== art.size) {
+        await downloadFile(art.url, libPath, undefined, art.sha1);
       }
     }
   }
@@ -121,9 +120,9 @@ export async function ensureMinecraftVanilla(
   // 4. Download Asset Index and missing objects
   const assetIndexDir = path.join(gameDir, 'assets', 'indexes');
   const assetIndexPath = path.join(assetIndexDir, `${versionJson.assetIndex.id}.json`);
-  if (!fs.existsSync(assetIndexPath)) {
+  if (!fs.existsSync(assetIndexPath) || fs.statSync(assetIndexPath).size !== versionJson.assetIndex.size) {
     if (!fs.existsSync(assetIndexDir)) fs.mkdirSync(assetIndexDir, { recursive: true });
-    await downloadFile(versionJson.assetIndex.url, assetIndexPath);
+    await downloadFile(versionJson.assetIndex.url, assetIndexPath, undefined, versionJson.assetIndex.sha1);
   }
 
   await ensureMinecraftAssets(assetIndexPath, gameDir, win);
@@ -141,19 +140,22 @@ async function ensureMinecraftAssets(
     const raw = fs.readFileSync(assetIndexPath, 'utf8');
     const index = JSON.parse(raw);
     const objects = index.objects;
-    if (!objects || typeof objects !== 'object') return;
+    if (!objects || typeof objects !== 'object') throw new Error('Некорректный индекс ресурсов Minecraft');
 
     const objectsDir = path.join(gameDir, 'assets', 'objects');
     if (!fs.existsSync(objectsDir)) fs.mkdirSync(objectsDir, { recursive: true });
 
     // Collect missing objects
     const missing: Array<{ hash: string; subDir: string; destPath: string; url: string }> = [];
+    const seen = new Set<string>();
     for (const key of Object.keys(objects)) {
-      const { hash } = objects[key];
-      if (!hash) continue;
+      const { hash, size } = objects[key];
+      if (typeof hash !== 'string' || !/^[a-f0-9]{40}$/i.test(hash)) throw new Error('Некорректный хеш ресурса Minecraft');
+      if (seen.has(hash)) continue;
+      seen.add(hash);
       const subDir = hash.substring(0, 2);
       const destPath = path.join(objectsDir, subDir, hash);
-      if (!fs.existsSync(destPath)) {
+      if (!fs.existsSync(destPath) || fs.statSync(destPath).size !== size) {
         missing.push({
           hash,
           subDir,
@@ -178,12 +180,14 @@ async function ensureMinecraftAssets(
     let completed = 0;
     for (let i = 0; i < missing.length; i += concurrency) {
       const batch = missing.slice(i, i + concurrency);
-      await Promise.all(
+      const results = await Promise.allSettled(
         batch.map(async (item) => {
-          await downloadFile(item.url, item.destPath);
+          await downloadFile(item.url, item.destPath, undefined, item.hash);
           completed++;
         })
       );
+      const failure = results.find(result => result.status === 'rejected');
+      if (failure?.status === 'rejected') throw failure.reason;
       if (win && !win.isDestroyed() && i % 48 === 0) {
         const pct = Math.round(35 + (completed / missing.length) * 15);
         win.webContents.send('download-progress', {

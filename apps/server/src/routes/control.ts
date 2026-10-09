@@ -1,3 +1,4 @@
+import { listNews, newsSchema, saveNews } from '../services/newsService';
 import { Router, Request, Response, NextFunction } from 'express';
 import { createHash, timingSafeEqual } from 'crypto';
 import jwt from 'jsonwebtoken';
@@ -110,6 +111,26 @@ router.patch('/players/:id', wrap(async (req, res) => {
   const result = await dbRun('UPDATE users SET is_whitelisted=? WHERE discord_id=?', [body.data.allowed ? 1 : 0, req.params.id]);
   if (!result.changes) return res.status(404).json({ error: 'Игрок не найден' });
   await audit(body.data.allowed ? 'players:allow' : 'players:block', req.params.id, 'Доступ через лаунчер и проверку сессии');
+  res.json({ success: true });
+}));
+router.get('/news', wrap(async (req, res) => {
+  const query = querySchema.safeParse(req.query);
+  if (!query.success) return res.status(400).json({ error: 'Некорректный запрос' });
+  const all = (await listNews()).filter(item => `${item.title} ${item.content}`.toLowerCase().includes(query.data.search.toLowerCase()));
+  res.json({ items: all.slice((query.data.page - 1) * 30, query.data.page * 30), total: all.length, pageSize: 30 });
+}));
+for (const method of ['post', 'put'] as const) router[method](method === 'post' ? '/news' : '/news/:id', wrap(async (req, res) => {
+  const parsed = newsSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Проверьте заголовок (3–160), текст (3–20000), автора и тип новости' });
+  const result = await saveNews(parsed.data, method === 'put' ? req.params.id : undefined);
+  if (!result) return res.status(404).json({ error: 'Новость не найдена' });
+  await audit(parsed.data.broadcast ? 'news:broadcast' : 'news:save', result.id, parsed.data.title);
+  res.status(method === 'post' ? 201 : 200).json({ success: true, ...result });
+}));
+router.delete('/news/:id', wrap(async (req, res) => {
+  const result = await dbRun('DELETE FROM news WHERE id=?', [req.params.id]);
+  if (!result.changes) return res.status(404).json({ error: 'Новость не найдена' });
+  await audit('news:delete', req.params.id, 'Удалена из ленты');
   res.json({ success: true });
 }));
 export default router;

@@ -19,12 +19,15 @@ export interface DiscordAuthResult {
   error?: string;
 }
 
-export function startDiscordOAuthFlow(serverBaseUrl: string): Promise<DiscordAuthResult> {
-  return new Promise((resolve, reject) => {
+export function startDiscordOAuthFlow(serverBaseUrl: string, port = LOCAL_PORT): Promise<DiscordAuthResult> {
+  return new Promise((resolve) => {
     let server: http.Server | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let exchanging = false;
     const expectedState = crypto.randomBytes(32).toString('hex');
 
     const cleanup = () => {
+      clearTimeout(timer);
       if (server) {
         server.close();
         server = null;
@@ -32,7 +35,7 @@ export function startDiscordOAuthFlow(serverBaseUrl: string): Promise<DiscordAut
     };
 
     server = http.createServer(async (req, res) => {
-      const urlObj = new URL(req.url || '', `http://localhost:${LOCAL_PORT}`);
+      const urlObj = new URL(req.url || '', `http://localhost:${port}`);
       
       if (urlObj.pathname === '/callback') {
         const code = urlObj.searchParams.get('code');
@@ -41,8 +44,7 @@ export function startDiscordOAuthFlow(serverBaseUrl: string): Promise<DiscordAut
         if (urlObj.searchParams.get('state') !== expectedState) {
           res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
           res.end('Invalid authorization state. Return to the launcher and try again.');
-          cleanup();
-          return resolve({ needsBinding: false, error: 'Invalid Discord authorization state' });
+          return;
         }
 
         if (error || !code) {
@@ -52,12 +54,15 @@ export function startDiscordOAuthFlow(serverBaseUrl: string): Promise<DiscordAut
           return resolve({ needsBinding: false, error: error || 'No authorization code returned' });
         }
 
+        if (exchanging) { res.writeHead(409); res.end('Authorization is already in progress.'); return; }
+        exchanging = true;
         try {
-          const redirectUri = `http://localhost:${LOCAL_PORT}/callback`;
+          const redirectUri = `http://localhost:${port}/callback`;
           const response = await fetch(`${serverBaseUrl}/api/auth/discord/callback`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code, redirectUri }),
+            signal: AbortSignal.timeout(15000),
           });
 
           const data = await response.json();
@@ -80,19 +85,26 @@ export function startDiscordOAuthFlow(serverBaseUrl: string): Promise<DiscordAut
           cleanup();
           return resolve({ needsBinding: false, error: err.message });
         }
-      }
+      } else { res.writeHead(404); res.end('Not found'); }
     });
 
-    server.listen(LOCAL_PORT, '127.0.0.1', async () => {
+    server.on('error', (error: NodeJS.ErrnoException) => {
+      cleanup();
+      resolve({ needsBinding: false, error: error.code === 'EADDRINUSE'
+        ? 'Вход уже открыт или порт авторизации занят. Завершите предыдущую попытку и повторите вход.'
+        : `Не удалось открыть окно входа: ${error.message}` });
+    });
+    server.listen(port, '127.0.0.1', async () => {
       try {
-        const res = await fetch(`${serverBaseUrl}/api/auth/discord/url`);
+        const res = await fetch(`${serverBaseUrl}/api/auth/discord/url`, { signal: AbortSignal.timeout(15000) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         
         if (data.url) {
           const discordAuthUrl = new URL(data.url);
-          discordAuthUrl.searchParams.set('redirect_uri', `http://localhost:${LOCAL_PORT}/callback`);
+          discordAuthUrl.searchParams.set('redirect_uri', `http://localhost:${port}/callback`);
           discordAuthUrl.searchParams.set('state', expectedState);
-          shell.openExternal(discordAuthUrl.toString());
+          await shell.openExternal(discordAuthUrl.toString());
         } else {
           cleanup();
           resolve({ needsBinding: false, error: data.error || 'Could not get Discord OAuth URL' });
@@ -104,9 +116,9 @@ export function startDiscordOAuthFlow(serverBaseUrl: string): Promise<DiscordAut
     });
 
     // Timeout after 3 minutes
-    setTimeout(() => {
+    timer = setTimeout(() => {
       cleanup();
-      resolve({ needsBinding: false, error: 'Authentication timed out' });
+      resolve({ needsBinding: false, error: 'Время ожидания входа истекло. Попробуйте ещё раз.' });
     }, 180000);
   });
 }

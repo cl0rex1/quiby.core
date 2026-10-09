@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { ArrowUpRight, Shirt } from 'lucide-react';
+import { ArrowUpRight, Loader2, Shirt } from 'lucide-react';
 import { AuthSession, ModpackManifest, ServerStatus } from '@quiby/shared';
 import { DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
 import { getDefaultSkinCaption } from '../utils/skinLibrary';
@@ -7,13 +7,14 @@ import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
 import { usePointerDepth } from '../hooks/usePointerDepth';
 import quibySeasonLogo from '../assets/quiby_season6_logo.png';
 import { BuildId } from '../utils/buildProfiles';
-import { buildVideo } from '../utils/buildScreenshots';
+import { buildVideo, buildPoster } from '../utils/buildScreenshots';
 import { useMotion } from '../components/MotionProvider';
 
 interface CharacterStageProps {
   session: AuthSession | null;
   manifest: ModpackManifest | null;
   serverStatus: ServerStatus | null;
+  serverLoading?: boolean;
   totalPlaytimeSeconds?: number;
   customSkinImg: HTMLImageElement | null;
   customSkinName: string | null;
@@ -30,6 +31,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
   session,
   manifest,
   serverStatus,
+  serverLoading,
   totalPlaytimeSeconds = 0,
   customSkinImg,
   customSkinName,
@@ -96,7 +98,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
         </section>
 
         <section className="season-panel" aria-label="Сборка и сервер">
-          <video key={buildId} ref={bannerVideo} className="season-panel-video" src={buildVideo(buildId)} autoPlay={motionActive} muted loop playsInline preload="metadata" aria-hidden="true" />
+          <video key={buildId} ref={bannerVideo} className="season-panel-video" src={buildVideo(buildId)} poster={buildPoster(buildId)} autoPlay={motionActive} muted loop playsInline preload="metadata" aria-hidden="true" />
           <div className="season-panel-intro">
             <div className="season-label"><span>МИР 06</span><span>CREATE / AERONAUTICS</span></div>
             <img src={quibySeasonLogo} alt="quiby Season 6" className="season-mark" />
@@ -104,7 +106,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
           </div>
 
           <dl className="season-facts">
-            <div><dt>СЕРВЕР</dt><dd className={serverStatus?.online ? 'fact-online' : ''}>{statusText}</dd></div>
+            <div><dt>СЕРВЕР</dt><dd className={serverStatus?.online ? 'fact-online' : ''}>{serverLoading ? <span className="server-loading" role="status"><Loader2 size={13} className="loading-spinner"/>Подключаемся…</span> : statusText}</dd></div>
             <div><dt>СБОРКА</dt><dd>{manifest ? `Версия ${manifest.version}` : 'Версия недоступна'}</dd></div>
             <div><dt>ВРЕМЯ В ИГРЕ</dt><dd>{playtime}</dd></div>
           </dl>

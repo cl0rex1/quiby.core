@@ -2,6 +2,7 @@ import { useFileDrop } from '../utils/useFileDrop';
 import React, { useState, useRef } from 'react';
 import {
   Package,
+  Loader2,
   Palette,
   ToggleLeft,
   ToggleRight,
@@ -15,7 +16,7 @@ import {
 } from 'lucide-react';
 import { canDisableBundledMod } from '../../../shared/modpackProfiles';
 import { ModpackManifest, AuthSession } from '@quiby/shared';
-import { resolveModMetadata, MOD_CATEGORIES, ModCategory, matchesModCategory } from '../utils/knownMods';
+import { resolveModMetadata, MOD_FILTERS, ModFilter, matchesModFilter } from '../utils/knownMods';
 import { ModWhitelistModal } from '../components/ModWhitelistModal';
 import { SchematicsExplorer } from '../components/SchematicsExplorer';
 import { ShadersExplorer } from '../components/ShadersExplorer';
@@ -36,6 +37,7 @@ export interface CustomModItem {
   hashSha1?: string;
   safetyStatus?: 'approved' | 'pending' | 'blocked' | 'unverified';
   safetyReason?: string;
+  reviewDeliveryFailed?: boolean;
   categories?: string[];
   projectUrl?: string;
   iconUrl?: string;
@@ -43,6 +45,7 @@ export interface CustomModItem {
 }
 
 interface ModsViewProps {
+  gameActive?: boolean;
   manifest: ModpackManifest | null;
   serverUrl: string;
   gameDir: string;
@@ -63,10 +66,11 @@ interface ModsViewProps {
 
 export type SwitcherMode = 'official' | 'custom';
 export type ContentCategory = 'mods' | 'schematics' | 'shaders' | 'screenshots' | 'resourcepacks';
-export type ModFilterCategory = 'all' | ModCategory;
+export type ModFilterCategory = ModFilter;
 
 export const ModsView: React.FC<ModsViewProps> = ({
   manifest,
+  gameActive = false,
   serverUrl,
   gameDir,
   customMods,
@@ -85,18 +89,25 @@ export const ModsView: React.FC<ModsViewProps> = ({
   const [viewMode, setViewMode] = useContentView('mods');
   const [batchBusy, setBatchBusy] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const isDragging = useFileDrop(files => handleFiles(files), contentCategory === 'mods');
+  const importInProgress = useRef(false);
+  const isDragging = useFileDrop(files => handleFiles(files), contentCategory === 'mods' && !gameActive);
   const [activeWhitelistMod, setActiveWhitelistMod] = useState<CustomModItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const officialFiles = (manifest?.files || []).filter(file => /^mods\/.*\.jar$/i.test(file.path.replace(/\\/g, '/')));
 
-  const handleFiles = (files: FileList | File[]) => {
-    Array.from(files).forEach((file) => {
-      if (file.name.endsWith('.jar')) {
-        handleAddCustomModFile(file);
-      }
-    });
+  const handleFiles = async (files: FileList | File[]) => {
+    if (gameActive) return;
+    if (importInProgress.current) {
+      onNotify?.('Проверка уже идёт', 'Дождитесь завершения импорта файлов.', 'info');
+      return;
+    }
+    importInProgress.current = true;
+    setIsVerifying(true);
+    try {
+      // A batch of large JARs must not be read and verified in memory all at once.
+      for (const file of Array.from(files)) await handleAddCustomModFile(file);
+    } finally { importInProgress.current = false; setIsVerifying(false); }
   };
 
   const filteredOfficial = officialFiles.filter((f) => {
@@ -105,7 +116,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
     const matchesSearch =
       meta.displayName.toLowerCase().includes(search.toLowerCase()) ||
       f.path.toLowerCase().includes(search.toLowerCase());
-    return matchesSearch && matchesModCategory(meta, filterCategory);
+    return matchesSearch && matchesModFilter(meta, filterCategory);
   });
 
   const filteredCustom = customMods.filter((m) => {
@@ -113,7 +124,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
     const matchesSearch =
       m.name.toLowerCase().includes(search.toLowerCase()) ||
       m.filename.toLowerCase().includes(search.toLowerCase());
-    return matchesSearch && matchesModCategory(meta, filterCategory, m.categories);
+    return matchesSearch && matchesModFilter(meta, filterCategory, m.safetyStatus);
   });
 
   const toggleSelectMod = (id: string) => {
@@ -126,7 +137,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
   const handleSelectAllCustom = () => onUpdateSelectedModIds(toggleVisibleSelection(selectedModIds, filteredCustom.map(mod => mod.id)));
   const deleteSelected = async () => {
-    if (batchBusy) return;
+    if (batchBusy || gameActive) return;
     setBatchBusy(true);
     const removed: string[] = [];
     try {
@@ -155,6 +166,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
   const handleDeleteCustomMod = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    if (gameActive) return;
     const target = customMods.find((m) => m.id === id);
     if (target && window.quibyApi) {
       try {
@@ -189,18 +201,18 @@ export const ModsView: React.FC<ModsViewProps> = ({
       description: meta.description,
     };
 
-    onUpdateCustomMods((previous) => [initialMod, ...previous.filter(mod => mod.filename !== file.name)]);
+    onUpdateCustomMods((previous) => [initialMod, ...previous]);
     setSwitcherMode('custom');
 
-    setIsVerifying(true);
     try {
-      const result = await window.quibyApi.stageCustomMod(file.name, new Uint8Array(await file.arrayBuffer()), session?.token);
+      if (manifest?.files.some(entry => entry.path.replace(/\\/g, '/') === `mods/${file.name}`)) {
+        throw new Error('Этот мод уже входит в сборку сервера');
+      }
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const result = await window.quibyApi.stageCustomMod(file.name, bytes, session?.token);
       if (result.isAllowed) {
-        if (manifest?.files.some((entry) => entry.path.replace(/\\/g, '/') === `mods/${file.name}`)) {
-          throw new Error('Этот мод уже входит в сборку сервера');
-        }
         if (!window.quibyApi) throw new Error('Установка модов доступна только в приложении лаунчера');
-        await window.quibyApi.installCustomMod(gameDir, file.name, new Uint8Array(await file.arrayBuffer()), session?.token);
+        await window.quibyApi.installCustomMod(gameDir, file.name, bytes, session?.token);
       }
       const verifiedMeta = resolveModMetadata(
         result.name || initialMod.name,
@@ -222,16 +234,14 @@ export const ModsView: React.FC<ModsViewProps> = ({
         enabled: result.isAllowed,
       };
 
-      onUpdateCustomMods((previous) => previous.map((m) => (m.id === tempId ? verifiedMod : m)));
+      onUpdateCustomMods(previous => [verifiedMod, ...previous.filter(mod => mod.id !== tempId && mod.filename !== file.name)]);
       if (result.isAllowed) onNotify?.('Мод добавлен', `${file.name} установлен в папку mods.`, 'success');
-      else if (result.status === 'unverified') onNotify?.('Мод ожидает одобрения', 'Файл сохранён отдельно. Решение обновится автоматически, повторно добавлять мод не нужно.', 'warning');
+      else if (result.status === 'unverified') onNotify?.('Мод ожидает одобрения', 'Файл сохранён отдельно. Отправьте заявку для проверки.', 'warning', { name: verifiedMod.name, filename: verifiedMod.filename, hashSha1: verifiedMod.hashSha1, status: 'unverified' });
       else onNotify?.('Мод заблокирован', result.reason, 'error');
     } catch (e) {
       console.error('Failed to verify mod file:', e);
       onUpdateCustomMods((previous) => previous.filter((m) => m.id !== tempId));
       onNotify?.('Не удалось добавить мод', e instanceof Error ? e.message : 'Проверьте файл и попробуйте снова.', 'error');
-    } finally {
-      setIsVerifying(false);
     }
   };
 
@@ -256,7 +266,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
   const isAllSelected = allVisibleSelected(selectedModIds, filteredCustom.map(mod => mod.id));
 
-  const CATEGORY_CHIPS: { id: ModFilterCategory; label: string }[] = [{ id: 'all', label: 'Все' }, ...MOD_CATEGORIES];
+  const CATEGORY_CHIPS: { id: ModFilterCategory; label: string }[] = [{ id: 'all', label: 'Все' }, ...MOD_FILTERS];
 
   return (
     <div className="content-page view-enter">
@@ -270,8 +280,9 @@ export const ModsView: React.FC<ModsViewProps> = ({
         className="hidden"
         onChange={(e) => {
           if (e.target.files) {
-            handleFiles(e.target.files);
+            void handleFiles(Array.from(e.target.files));
           }
+          e.target.value = '';
         }}
       />
 
@@ -280,8 +291,9 @@ export const ModsView: React.FC<ModsViewProps> = ({
         {([['mods', 'Моды', 'Механики и возможности', Package], ['resourcepacks', 'Ресурспаки', 'Текстуры и вайтлист', Palette], ['shaders', 'Шейдеры', 'Свет и атмосфера', Sun], ['schematics', 'Схематики', 'Идеи и постройки', Layers], ['screenshots', 'Скриншоты', 'Мои кадры из игры', ImageIcon]] as const).map(([id, label, description, Icon]) => <button key={id} type="button" aria-current={contentCategory === id ? 'page' : undefined} onClick={() => { setContentCategory(id); onUpdateSelectedModIds([]); }}><Icon size={19}/><span><strong>{label}</strong><small>{description}</small></span><span className="category-arrow">↗</span></button>)}
       </nav>
 
+      {gameActive && (contentCategory === 'mods' || contentCategory === 'resourcepacks') && <p className="content-lock-notice">Установка и удаление доступны после закрытия игры.</p>}
       {contentCategory === 'resourcepacks' ? (
-        <ResourcePacksExplorer gameDir={gameDir} files={manifest?.files || []} session={session} onNotify={onNotify} />
+        <ResourcePacksExplorer gameActive={gameActive} gameDir={gameDir} files={manifest?.files || []} session={session} onNotify={onNotify} />
       ) : contentCategory === 'schematics' ? (
         <SchematicsExplorer gameDir={gameDir} onNotify={onNotify} />
       ) : contentCategory === 'shaders' ? (
@@ -291,7 +303,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
       ) : (
         <section className={`content-library ${switcherMode === 'custom' && selectedModIds.length ? 'has-selection' : ''}`}>
           <ContentToolbar label="Моды" total={switcherMode === 'custom' ? customMods.length : officialFiles.length} visible={switcherMode === 'custom' ? filteredCustom.length : filteredOfficial.length}
-            mode={viewMode} onMode={setViewMode} busy={batchBusy || isVerifying} onAdd={() => fileInputRef.current?.click()} onFolder={handleOpenModsFolder}
+            mode={viewMode} onMode={setViewMode} busy={gameActive || batchBusy || isVerifying} onAdd={() => fileInputRef.current?.click()} onFolder={handleOpenModsFolder}
             selection={switcherMode === 'custom' ? { allSelected: isAllSelected, onSelectAll: handleSelectAllCustom } : undefined}>
             <div className="content-source-toggle" role="group" aria-label="Источник модов">
               <button type="button" aria-pressed={switcherMode === 'official'} onClick={() => { setSwitcherMode('official'); onUpdateSelectedModIds([]); }}>Сборка</button>
@@ -299,7 +311,8 @@ export const ModsView: React.FC<ModsViewProps> = ({
             </div>
           </ContentToolbar>
           <ContentSearch value={search} onChange={setSearch} label="Поиск модов" hint=".jar"/>
-          {switcherMode === 'custom' && <ContentSelectionDock count={selectedModIds.length} total={customMods.length} allSelected={isAllSelected} busy={batchBusy}
+          {isVerifying && <p className="content-lock-notice server-loading" role="status"><Loader2 size={15} className="loading-spinner"/>Проверяем файлы на сервере…</p>}
+          {switcherMode === 'custom' && <ContentSelectionDock count={selectedModIds.length} total={customMods.length} allSelected={isAllSelected} busy={gameActive || batchBusy || isVerifying}
             onSelectAll={handleSelectAllCustom} onClear={() => onUpdateSelectedModIds([])} onDelete={() => void deleteSelected()} deleteLabel="Удалить"
             onEnable={() => onUpdateCustomMods(previous => previous.map(mod => selectedModIds.includes(mod.id) && mod.safetyStatus === 'approved' ? { ...mod, enabled: true } : mod))}
             onDisable={() => onUpdateCustomMods(previous => previous.map(mod => selectedModIds.includes(mod.id) ? { ...mod, enabled: false } : mod))}/>}
@@ -307,7 +320,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
           <div className="mod-filterbar">
             {/* Fast Category Filter Chips */}
             <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-              <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider flex items-center gap-1 mr-1 shrink-0">
+              <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1 mr-1 shrink-0">
                 <Filter size={11} className="text-[#bb74ff]" />
                 <span>Категория:</span>
               </span>
@@ -437,7 +450,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                       >
                         <div className="flex items-center justify-between gap-2 min-w-0 w-full">
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <SelectionCheck disabled={batchBusy} checked={isSelected} onToggle={() => toggleSelectMod(mod.id)} label={`Выделить ${mod.filename}`} />
+                          <SelectionCheck disabled={gameActive || batchBusy || isVerifying} checked={isSelected} onToggle={() => toggleSelectMod(mod.id)} label={`Выделить ${mod.filename}`} />
 
                           {/* Logo / Monogram */}
                           <ModIcon src={meta.iconUrl} name={meta.displayName} />
@@ -507,7 +520,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           <button
                             type="button"
                             onClick={() => toggleCustomMod(mod.id)}
-                            disabled={batchBusy || !isApproved}
+                            disabled={gameActive || batchBusy || isVerifying || !isApproved}
                             className={`p-0.5 transition-all press-feedback ${
                               !isApproved ? 'opacity-25 cursor-not-allowed' : 'cursor-pointer'
                             }`}
@@ -533,7 +546,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                           {/* Delete */}
                           <button
                             type="button"
-                            disabled={batchBusy}
+                            disabled={gameActive || batchBusy || isVerifying}
                             onClick={(e) => handleDeleteCustomMod(e, mod.id)}
                             className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer press-feedback"
                             title="Удалить мод"
@@ -543,11 +556,11 @@ export const ModsView: React.FC<ModsViewProps> = ({
                         </div>
                         </div>
 
-                        {isUnverified && (
-                          <button type="button" onClick={(e) => handleOpenWhitelistModal(e, mod)}
+                        {(isUnverified || (isPending && mod.reviewDeliveryFailed)) && (
+                          <button type="button" disabled={isVerifying || !mod.hashSha1} onClick={(e) => handleOpenWhitelistModal(e, mod)}
                             className="w-full min-h-10 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#a65ee8] hover:bg-[#bc7ff0] text-white border border-[#d1a5f5] text-xs font-bold shadow-md transition-colors cursor-pointer press-feedback focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e4c4ff]"
                             title="Отправить мод на проверку для вайтлиста">
-                            Подать заявку в вайтлист
+                            {mod.reviewDeliveryFailed ? 'Повторить отправку заявки' : 'Подать заявку в вайтлист'}
                           </button>
                         )}
                       </div>
@@ -567,37 +580,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
         mod={activeWhitelistMod}
         session={session}
         serverUrl={serverUrl}
-        onSuccess={(modId, modName, message) => {
-          const modItem = customMods.find((m) => m.id === modId);
-          onUpdateCustomMods(
-            customMods.map((m) =>
-              m.id === modId
-                ? {
-                    ...m,
-                    safetyStatus: 'pending',
-                    safetyReason: message || 'Заявка принята и находится на рассмотрении',
-                  }
-                : m
-            )
-          );
-          if (onNotify) {
-            onNotify(
-              `Заявка на мод «${modName}» принята`,
-              message || 'Заявка принята. Ожидайте доставки файла и решения администрации.',
-              'success',
-              modItem
-                ? {
-                    name: modItem.name,
-                    filename: modItem.filename,
-                    iconUrl: modItem.iconUrl,
-                    status: 'pending',
-                    hashSha1: modItem.hashSha1,
-                    description: modItem.description,
-                  }
-                : undefined
-            );
-          }
-        }}
+
       />
     </div>
   );

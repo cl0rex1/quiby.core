@@ -1,6 +1,6 @@
 {
   "name": "@quiby/launcher",
-  "version": "1.0.1-beta.22",
+  "version": "1.0.1-beta.23",
   "description": "quiby. Season 6 Minecraft 1.21.1 NeoForge Desktop Launcher",
   "main": "dist/main/index.js",
   "scripts": {
@@ -10,7 +10,9 @@
     "release:github": "npm run dist:win && node ../../scripts/publish-github-release.mjs launcher",
     "preview": "vite preview",
     "start": "electron .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.tests.json",
+    "test:ui": "playwright test",
+    "test:electron": "npm run build && electron tests/electron-smoke.cjs"
   },
   "build": {
     "appId": "fun.quiby.launcher",
@@ -60,6 +62,8 @@
     "yauzl": "3.4.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.64.0",
     "@types/discord-rpc": "^4.0.8",
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.3",

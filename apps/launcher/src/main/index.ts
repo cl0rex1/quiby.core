@@ -8,12 +8,13 @@ import os from 'os';
 import { AuthSession, LauncherSettings } from '@quiby/shared';
 import { startDiscordOAuthFlow } from './auth/discordAuth';
 import { detectInstalledJava, getRecommendedJava } from './engine/javaDetector';
-import { launchMinecraft, killGameProcess } from './engine/minecraftLauncher';
+import { launchMinecraft, killGameProcess, getLaunchState, isGameActive } from './engine/minecraftLauncher';
 import { hashCustomModBytes, requireApprovedCustomMod, evaluateCustomMod } from './engine/customModVerification';
-import { contentDirectory, contentFilePath, installLocalContent, listLocalContent, ContentKind } from './engine/localContent';
+import { contentDirectory, checkedContentFilePath, installLocalContent, listLocalContent, ContentKind } from './engine/localContent';
 import { configureDiscordRpc } from './rpc/discordRpc';
 import { registerUpdates, requireCurrentLauncher, markUpdateRequired } from './updates';
 import { getLatestModpackManifest } from './engine/manifestSource';
+import { normalizeSettings } from '../shared/launcherSettings';
 
 let mainWindow: BrowserWindow | null = null;
 let splashWindow: BrowserWindow | null = null;
@@ -98,12 +99,7 @@ function loadSettings(): LauncherSettings {
   if (fs.existsSync(filePath)) {
     try {
       const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-      delete data.serverIp; // Drop the obsolete saved address from earlier launcher versions.
-      const saved = { ...defaults, ...data };
-      saved.ramMaxMb = Number.isFinite(saved.ramMaxMb)
-        ? Math.round(saved.ramMaxMb / 1024) * 1024
-        : defaults.ramMaxMb;
-      return saved;
+      return normalizeSettings(data, defaults);
     } catch (_) {}
   }
 
@@ -112,7 +108,8 @@ function loadSettings(): LauncherSettings {
 
 function saveSettings(settings: LauncherSettings): void {
   const filePath = getSettingsFilePath();
-  fs.writeFileSync(filePath, JSON.stringify(settings, null, 2), 'utf8');
+  fs.writeFileSync(`${filePath}.tmp`, JSON.stringify(normalizeSettings(settings, loadSettings()), null, 2), 'utf8');
+  fs.renameSync(`${filePath}.tmp`, filePath);
 }
 
 function createSplashWindow(): void {
@@ -170,6 +167,9 @@ function createMainWindow(): void {
     },
   });
   configureWindow(mainWindow);
+  const publishWindowState = () => mainWindow?.webContents.send('window:maximized', mainWindow.isMaximized());
+  mainWindow.on('maximize', publishWindowState);
+  mainWindow.on('unmaximize', publishWindowState);
 
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
@@ -198,6 +198,7 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
 
   // 2. Window Controls
   ipcMain.handle('window:minimize', () => mainWindow?.minimize());
+  ipcMain.handle('window:is-maximized', () => mainWindow?.isMaximized() ?? false);
   ipcMain.handle('window:maximize', () => {
     if (mainWindow?.isMaximized()) {
       mainWindow.unmaximize();
@@ -293,7 +294,7 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     await installLocalContent(gameDir?.trim() || getDefaultGameDir(), kind, filename, Buffer.from(bytes));
   });
   ipcMain.handle('content:trash', async (_, gameDir: string, kind: ContentKind, filename: string) => {
-    await shell.trashItem(contentFilePath(gameDir?.trim() || getDefaultGameDir(), kind, filename));
+    await shell.trashItem(await checkedContentFilePath(gameDir?.trim() || getDefaultGameDir(), kind, filename));
   });
   ipcMain.handle('content:open-folder', async (_, gameDir: string, kind: ContentKind | 'mods') => {
     const dir = kind === 'mods' ? path.join(gameDir?.trim() || getDefaultGameDir(), 'mods') : contentDirectory(gameDir?.trim() || getDefaultGameDir(), kind);
@@ -358,17 +359,24 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     const dir = path.join(root, 'resourcepacks'); fs.mkdirSync(dir, { recursive: true });
     const error = await shell.openPath(dir); if (error) throw new Error(error);
   });
+  const assertGameFilesWritable = () => {
+    if (isGameActive()) throw new Error('Закройте игру перед установкой или удалением модов и ресурспаков.');
+  };
   ipcMain.handle('resourcepacks:trash', async (_, gameDir: string, filename: string) => {
+    assertGameFilesWritable();
     if (!/^[^/\\:\x00]+\.zip$/i.test(filename)) throw new Error('Недопустимое имя');
     const root = gameDir || getDefaultGameDir(); await checkContentLinks(root);
+    assertGameFilesWritable();
     await shell.trashItem(path.join(root, 'resourcepacks', filename));
   });
   ipcMain.handle('resourcepacks:inventory', (_, gameDir: string) => resourcePackInventory(gameDir || getDefaultGameDir()));
   ipcMain.handle('resourcepacks:list', (_, gameDir: string, official: { path: string; sha256: string }[], token: string) => resourcePackCatalog(gameDir || getDefaultGameDir(), official, token, DEFAULT_SERVER_URL));
   ipcMain.handle('resourcepacks:add', async (_, gameDir: string, filename: string, bytes: Uint8Array) => {
+    assertGameFilesWritable();
     if (!/^[^/\\:\x00]+\.zip$/i.test(filename) || !bytes?.length || bytes.length > 100 * 1024 * 1024) throw new Error('Нужен ZIP до 100 МиБ');
     const root = gameDir || getDefaultGameDir();
     await checkContentLinks(root);
+    assertGameFilesWritable();
     const dir = path.join(root, 'resourcepacks');
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, filename), Buffer.from(bytes), { flag: 'wx' });
@@ -384,13 +392,13 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     return hash;
   });
   ipcMain.handle('mods:stage', async (_, filename: string, bytes: Uint8Array, token?: string) => {
-    if (!/^[^/\\]+\.jar$/i.test(filename) || !bytes?.length || bytes.length > 512 * 1024 * 1024) throw new Error('Недопустимый файл');
+    if (!/^[^/\\:\x00]+\.jar$/i.test(filename) || !bytes?.length || bytes.length > 512 * 1024 * 1024) throw new Error('Недопустимый файл');
     const data = Buffer.from(bytes), hash = hashCustomModBytes(data), target = stagedModPath(hash);
     fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target, data);
     return evaluateCustomMod(filename, data, DEFAULT_SERVER_URL, token);
   });
   ipcMain.handle('mods:refresh', async (_, gameDir: string, filename: string, hash: string, token?: string) => {
-    if (!/^[^/\\]+\.jar$/i.test(filename)) throw new Error('Недопустимое имя');
+    if (!/^[^/\\:\x00]+\.jar$/i.test(filename)) throw new Error('Недопустимое имя');
     const root = gameDir || getDefaultGameDir();
     await checkContentLinks(root);
     const target = path.join(root, 'mods', filename);
@@ -418,7 +426,7 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     }
     const result = await evaluateCustomMod(filename, data, DEFAULT_SERVER_URL, token);
 
-    if (result.isAllowed && !fs.existsSync(target) && !fs.existsSync(target + '.disabled')) {
+    if (!isGameActive() && result.isAllowed && !fs.existsSync(target) && !fs.existsSync(target + '.disabled')) {
       fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target + '.disabled', data, { flag: 'wx' });
     }
     return result;
@@ -442,21 +450,27 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
   });
 
   ipcMain.handle('mods:install', async (_, gameDir: string, filename: string, bytes: Uint8Array, token?: string) => {
-    if (!/^[^/\\]+\.jar$/i.test(filename) || !bytes?.length || bytes.length > 512 * 1024 * 1024) {
+    assertGameFilesWritable();
+    if (!/^[^/\\:\x00]+\.jar$/i.test(filename) || !bytes?.length || bytes.length > 512 * 1024 * 1024) {
       throw new Error('Недопустимое имя или размер мода');
     }
     const modBytes = Buffer.from(bytes);
     await requireApprovedCustomMod(filename, hashCustomModBytes(modBytes), modBytes.length, DEFAULT_SERVER_URL, modBytes, token);
     const modsDir = path.join(gameDir?.trim() || getDefaultGameDir(), 'mods');
     await checkContentLinks(path.dirname(modsDir));
+    assertGameFilesWritable();
     fs.mkdirSync(modsDir, { recursive: true });
     fs.writeFileSync(path.join(modsDir, filename), modBytes);
     return true;
   });
 
-  ipcMain.handle('mods:remove', (_, gameDir: string, filename: string) => {
-    if (!/^[^/\\]+\.jar$/i.test(filename)) throw new Error('Недопустимое имя мода');
-    const modPath = path.join(gameDir?.trim() || getDefaultGameDir(), 'mods', filename);
+  ipcMain.handle('mods:remove', async (_, gameDir: string, filename: string) => {
+    assertGameFilesWritable();
+    if (!/^[^/\\:\x00]+\.jar$/i.test(filename)) throw new Error('Недопустимое имя мода');
+    const root = gameDir?.trim() || getDefaultGameDir();
+    await checkContentLinks(root);
+    assertGameFilesWritable();
+    const modPath = path.join(root, 'mods', filename);
     for (const candidate of [modPath, `${modPath}.disabled`]) {
       if (fs.existsSync(candidate)) fs.unlinkSync(candidate);
     }
@@ -464,6 +478,7 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
   });
 
   // 7. Game Launching
+  ipcMain.handle('game:state', () => getLaunchState());
   ipcMain.handle(
     'game:launch',
     async (
@@ -497,7 +512,7 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
       }
       await launchMinecraft(
         { ...session, user },
-        { ...settings, gameDir: settings.gameDir?.trim() || getDefaultGameDir() },
+        normalizeSettings({ ...settings, gameDir: settings.gameDir?.trim() || getDefaultGameDir() }, loadSettings()),
         DEFAULT_SERVER_URL,
         mainWindow,
         customModFilenames,

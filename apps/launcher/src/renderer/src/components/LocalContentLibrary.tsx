@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Layers,
   RefreshCw,
@@ -30,6 +30,9 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(Boolean(window.quibyApi));
+  const generation = useRef(0);
+  const mutation = useRef(false);
   const dragging = useFileDrop(files => void addFiles(files));
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const input = useRef<HTMLInputElement>(null);
@@ -38,34 +41,32 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
   const [viewMode, setViewMode] = useContentView(kind);
   const Icon = shader ? Sun : Layers;
   const accept = shader ? '.zip' : '.nbt,.schem,.schematic';
-  const read = () =>
-    shader ? window.quibyApi.getShaderpacks(gameDir) : window.quibyApi.getSchematics(gameDir);
-  const refresh = async () => {
-    if (desktop) {
-      const items = await read();
+  const refresh = useCallback(async (clearError = true) => {
+    if (!desktop) return;
+    const current = ++generation.current;
+    setLoading(true);
+    if (clearError) setError('');
+    try {
+      const items = await (kind === 'shaderpacks' ? window.quibyApi.getShaderpacks(gameDir) : window.quibyApi.getSchematics(gameDir));
+      if (current !== generation.current) return;
       setFiles(items);
       setSelectedFiles(previous => previous.filter(name => items.some((item: LocalFile) => item.filename === name)));
+    } catch (err) {
+      if (current === generation.current) setError(err instanceof Error ? err.message : 'Не удалось прочитать папку. Проверьте путь в настройках.');
+    } finally {
+      if (current === generation.current) setLoading(false);
     }
-  };
+  }, [desktop, kind, gameDir]);
   useEffect(() => {
-    let cancelled = false;
-    if (desktop)
-      read()
-        .then((items) => {
-          if (!cancelled) setFiles(items);
-        })
-        .catch(() => {
-          if (!cancelled) setError('Не удалось прочитать папку. Проверьте путь в настройках.');
-        });
-    return () => {
-      cancelled = true;
-    };
-  }, [kind, gameDir]);
-  useEffect(() => { setFiles([]); setSelectedFiles([]); }, [kind, gameDir]);
+    setFiles([]); setSelectedFiles([]);
+    void refresh();
+    return () => { generation.current++; };
+  }, [refresh]);
   const report = (err: unknown) =>
     setError(err instanceof Error ? err.message : 'Не удалось выполнить действие');
   const addFiles = async (incoming: FileList | null) => {
-    if (!incoming || busy || !desktop) return;
+    if (!incoming || mutation.current || !desktop) return;
+    mutation.current = true;
     setBusy(true);
     setError('');
     let added = 0;
@@ -86,39 +87,42 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
       report(err);
     } finally {
       try {
-        await refresh();
+        await refresh(false);
       } catch (err) {
         report(err);
       }
-      setBusy(false);
+      mutation.current = false; setBusy(false);
       if (input.current) input.current.value = '';
       if (added) onNotify?.('Файлы добавлены', `В папку ${kind} сохранено: ${added}.`, 'success');
     }
   };
   const remove = async (filename: string) => {
+    if (mutation.current) return;
+    mutation.current = true;
     setBusy(true);
     setError('');
     try {
       await window.quibyApi.trashContentFile(gameDir, kind, filename);
-      await refresh();
+      await refresh(false);
       onNotify?.('Файл в корзине', filename, 'info');
     } catch (err) {
       report(err);
     } finally {
-      setBusy(false);
+      mutation.current = false; setBusy(false);
     }
   };
   const removeSelected = async () => {
-    if (!selectedFiles.length || busy) return;
+    if (!selectedFiles.length || mutation.current) return;
+    mutation.current = true;
     setBusy(true);
     setError('');
     try {
       for (const filename of selectedFiles) await window.quibyApi.trashContentFile(gameDir, kind, filename);
       onNotify?.('Файлы перемещены в корзину', `Файлов: ${selectedFiles.length}`, 'info');
       setSelectedFiles([]);
-      await refresh();
-    } catch (err) { report(err); await refresh().catch(report); }
-    finally { setBusy(false); }
+      await refresh(false);
+    } catch (err) { report(err); await refresh(false).catch(report); }
+    finally { mutation.current = false; setBusy(false); }
   };
   const filtered = files
     .filter((file) => `${file.name} ${file.filename}`.toLowerCase().includes(search.toLowerCase()))
@@ -142,7 +146,7 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
         hidden
         onChange={(e) => void addFiles(e.target.files)}
       />
-      <ContentToolbar label={shader ? 'Шейдеры' : 'Схематики'} total={files.length} visible={filtered.length} mode={viewMode} onMode={setViewMode} busy={!desktop || busy}
+      <ContentToolbar label={shader ? 'Шейдеры' : 'Схематики'} total={files.length} visible={filtered.length} mode={viewMode} onMode={setViewMode} busy={!desktop || busy} refreshing={loading}
         selection={{ allSelected: allVisibleSelected(selectedFiles, filtered.map(file => file.filename)), onSelectAll: () => setSelectedFiles(previous => toggleVisibleSelection(previous, filtered.map(file => file.filename))) }}
         onAdd={() => input.current?.click()} onFolder={() => void window.quibyApi.openContentFolder(gameDir, kind).catch(report)} onRefresh={() => void refresh().catch(report)} />
       <ContentSearch value={search} onChange={setSearch} label={shader ? 'Поиск шейдеров' : 'Поиск схематик'} hint={accept} />
@@ -157,8 +161,6 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
             className="ui-button"
             onClick={() =>
               void refresh()
-                .then(() => setError(''))
-                .catch(report)
             }
           >
             <RefreshCw size={12} />
@@ -166,8 +168,8 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
           </button>
         </div>
       )}
-      <div className="library-scroll">
-        {filtered.length ? (
+      <div className="library-scroll" aria-busy={loading}>
+        {loading && !files.length ? <div className="library-empty" role="status"><RefreshCw className="loading-spinner" size={24} /><p>Читаем папку…</p></div> : error && !files.length ? null : filtered.length ? (
           <div className={`library-grid is-${viewMode}`}>
             {filtered.map((file) => (
               <article className={`library-file ${selectedFiles.includes(file.filename) ? 'is-selected' : ''}`} key={file.filename}>

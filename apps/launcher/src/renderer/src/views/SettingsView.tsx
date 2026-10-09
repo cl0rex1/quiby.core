@@ -1,3 +1,4 @@
+import { Disclosure } from '../components/Disclosure';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Cpu,
@@ -11,21 +12,25 @@ import {
   Download,
 } from 'lucide-react';
 import { LauncherSettings } from '@quiby/shared';
-import { buildVideo } from '../utils/buildScreenshots';
+import { buildVideo, buildPoster } from '../utils/buildScreenshots';
 import { selectedBuild } from '../utils/buildProfiles';
 import { RamSlider } from '../components/RamSlider';
 import { MotionToggle, useMotion } from '../components/MotionProvider';
 import type { UpdateState } from '../../../main/updates';
 import { parseCustomJvmArgs } from '../../../shared/jvmArgs';
+import { windowLimits } from '../../../shared/launcherSettings';
+import { SettingsField } from '../components/SettingsField';
 
 interface SettingsViewProps {
   onChooseBuild: () => void;
   hasServerAddress: boolean;
   settings: LauncherSettings;
+  saveStatus: 'loading' | 'saved' | 'saving' | 'error';
+  onRetrySave: () => void;
   onUpdateSettings: (newSettings: LauncherSettings) => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSettings, onChooseBuild, hasServerAddress }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus, onRetrySave, onUpdateSettings, onChooseBuild, hasServerAddress }) => {
   const build = selectedBuild(settings);
   const [section, setSection] = useState<'game' | 'appearance' | 'files'>('game');
   const [totalRamGb, setTotalRamGb] = useState(16);
@@ -55,7 +60,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
     try {
       const res = await window.quibyApi.detectJava();
       setJavaList(res.installations || []);
-      if (res.totalRamMb) setTotalRamGb(Math.round(res.totalRamMb / 1024));
+      if (res.totalRamMb) setTotalRamGb(Math.floor(res.totalRamMb / 1024));
     } catch {
       setError('Не удалось найти установленную Java. При запуске игры Java 21 скачается автоматически.');
     } finally {
@@ -65,7 +70,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
   useEffect(() => {
     void detectJava();
     const unsubscribe = window.quibyApi?.onUpdateState(setUpdateState);
-    void window.quibyApi?.getUpdateState().then(setUpdateState);
+    void window.quibyApi?.getUpdateState().then(setUpdateState).catch(() => setError('Не удалось получить состояние обновления. Откройте раздел ещё раз.'));
     return () => unsubscribe?.();
   }, []);
   const updateAction = async () => {
@@ -95,8 +100,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
           <h1>Под тебя.</h1>
           <p>Комфорт в деталях. Основные настройки сохраняются автоматически.</p>
         </div>
-        <span className="quiet-status">
-          <Check size={13} /> Автосохранение
+        <span className="quiet-status" role="status" data-state={saveStatus}>
+          <Check size={13} /> {saveStatus === 'saved' ? 'Сохранено' : saveStatus === 'saving' ? 'Сохраняем…' : saveStatus === 'loading' ? 'Загружаем…' : 'Не сохранено'}
+          {saveStatus === 'error' && <button type="button" className="ui-button" onClick={onRetrySave}>Повторить</button>}
         </span>
       </header>
       <div className="settings-layout">
@@ -137,7 +143,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
           {section === 'game' && (
             <>
               <button type="button" className="current-build" onClick={onChooseBuild}>
-                <video key={build.id} ref={buildPreview} className="current-build-video" src={buildVideo(build.id)} autoPlay={motionActive} muted loop playsInline preload="metadata" aria-hidden="true" />
+                <video key={build.id} ref={buildPreview} className="current-build-video" src={buildVideo(build.id)} poster={buildPoster(build.id)} autoPlay={motionActive} muted loop playsInline preload="metadata" aria-hidden="true" />
                 <span className="current-build-copy"><small>ТВОЯ СБОРКА</small><strong>{build.name}</strong><span>{build.tagline}</span></span>
                 <span className="current-build-action">Выбрать сборку <ArrowUpRight size={17}/></span>
               </button>
@@ -182,28 +188,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
                     <p>Размер окна Minecraft в пикселях.</p>
                   </div>
                   <div className="resolution-fields">
-                    <input
+                    <SettingsField
                       aria-label="Ширина окна"
                       type="number"
-                      min={640}
-                      max={7680}
+                      min={windowLimits.width.min}
+                      max={windowLimits.width.max}
                       value={settings.windowWidth}
-                      onChange={(e) => {
-                        const n = Number(e.target.value);
-                        if (n > 0) update({ windowWidth: n });
-                      }}
+                      onCommit={value => update({ windowWidth: Number(value) })}
                     />
                     <span>×</span>
-                    <input
+                    <SettingsField
                       aria-label="Высота окна"
                       type="number"
-                      min={360}
-                      max={4320}
+                      min={windowLimits.height.min}
+                      max={windowLimits.height.max}
                       value={settings.windowHeight}
-                      onChange={(e) => {
-                        const n = Number(e.target.value);
-                        if (n > 0) update({ windowHeight: n });
-                      }}
+                      onCommit={value => update({ windowHeight: Number(value) })}
                     />
                   </div>
                 </div>
@@ -247,7 +247,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
                   <i />
                 </div>
                 <div>
-                  <span className="page-kicker">ONYX / MOTION</span>
+                  <span className="page-kicker">ИНТЕРФЕЙС / ДВИЖЕНИЕ</span>
                   <h2>
                     Глубина.
                     <br />
@@ -277,7 +277,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
                     <strong>Onyx Black</strong>
                     <p>Нейтральные поверхности. Фиолетовый для акцентов.</p>
                   </div>
-                  <div className="theme-swatches" aria-label="Чёрный, графитовый, фиолетовый">
+                  <div className="theme-swatches" role="img" aria-label="Чёрный, графитовый, фиолетовый">
                     <i />
                     <i />
                     <i />
@@ -304,7 +304,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
                     : updateState?.status === 'error' ? `Ошибка: ${updateState.message}`
                     : `Установлена версия ${updateState?.currentVersion || '…'}`}
                 </p>
-                {updateState?.status === 'downloading' && <div className="settings-update-progress" role="progressbar" aria-valuenow={updateState.percent ?? 0} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${Math.max(0, Math.min(100, updateState.percent ?? 0))}%` }} /></div>}
+                {updateState?.status === 'downloading' && <div className="settings-update-progress" role="progressbar" aria-label="Скачивание обновления" aria-valuenow={Math.max(0, Math.min(100, updateState.percent ?? 0))} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${Math.max(0, Math.min(100, updateState.percent ?? 0))}%` }} /></div>}
                 <button type="button" className={`ui-button ${updateState && ['available', 'ready'].includes(updateState.status) ? 'settings-update-action' : ''}`} onClick={() => void updateAction()}
                   disabled={!updateState || ['checking', 'downloading', 'development'].includes(updateState.status)}>
                   {updateState && ['available', 'ready'].includes(updateState.status) ? <Download size={15} /> : <RefreshCw size={14} />}
@@ -349,11 +349,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
                   Исполняемый файл
                 </label>
                 <div className="path-field">
-                  <input
+                  <SettingsField
                     id="java-path"
                     value={settings.javaPath}
-                    onChange={(e) => update({ javaPath: e.target.value })}
-                    placeholder="java или /usr/bin/java"
+                    onCommit={value => update({ javaPath: value || 'java' })}
+                    placeholder="java или путь к javaw.exe"
                   />
                   <button className="ui-button" onClick={() => browse('java')} disabled={!window.quibyApi}>
                     Выбрать
@@ -370,10 +370,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
                   Расположение
                 </label>
                 <div className="path-field">
-                  <input
+                  <SettingsField
                     id="game-dir"
                     value={settings.gameDir}
-                    onChange={(e) => update({ gameDir: e.target.value })}
+                    onCommit={value => update({ gameDir: value })}
                     placeholder="Папка по умолчанию"
                   />
                   <button className="ui-button" onClick={() => browse('game')} disabled={!window.quibyApi}>
@@ -381,10 +381,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
                   </button>
                 </div>
               </section>
-              <details className="settings-group jvm-options">
-                <summary>
+              <Disclosure className="settings-group jvm-options" title={<>
                   <SlidersHorizontal size={16} /><span>Дополнительные параметры Java<small>{settings.customJvmArgs ? 'Свои параметры' : 'По умолчанию'}</small></span>
-                </summary>
+                </>}>
                 <form onSubmit={event => { event.preventDefault(); if (!jvmError) update({ customJvmArgs: jvmDraft.trim() }); }}>
                   <p>Обычно менять их не требуется. Память задаётся во вкладке «Игра», путь Java — выше. Эти параметры применятся при следующем запуске.</p>
                   <label className="field-label" htmlFor="jvm-args">Ваши параметры JVM</label>
@@ -392,7 +391,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSe
                   <p id="jvm-help" role={jvmError ? 'alert' : 'status'} className={jvmError ? 'inline-error' : ''}>{jvmError || `Параметров: ${jvmCount}. Разделяйте пробелами или переносами строк; значения с пробелами заключайте в кавычки.`}</p>
                   <div className="jvm-options-actions"><button type="button" className="ui-button" disabled={!jvmDraft && !settings.customJvmArgs} onClick={() => { setJvmDraft(''); update({ customJvmArgs: '' }); }}>Вернуть по умолчанию</button><button type="submit" className="ui-button is-primary" disabled={Boolean(jvmError) || jvmDraft.trim() === (settings.customJvmArgs || '').trim()}>Сохранить параметры</button></div>
                 </form>
-              </details>
+              </Disclosure>
             </>
           )}
         </div>

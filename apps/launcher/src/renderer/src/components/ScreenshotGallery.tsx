@@ -20,6 +20,16 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
   const [selected, setSelected] = useState<{ name: string; image: string } | null>(null);
   const [selectedNames, setSelectedNames] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const viewer = useRef<HTMLDialogElement>(null);
+  const imageRequest = useRef(0);
+  const closeViewer = () => { imageRequest.current++; setSelected(null); };
+  useEffect(() => {
+    if (!selected) return;
+    const element = viewer.current;
+    const previousFocus = document.activeElement;
+    element?.showModal();
+    return () => { element?.close(); if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus(); };
+  }, [Boolean(selected)]);
 
   const refresh = useCallback(async () => {
     if (!window.quibyApi) return;
@@ -54,15 +64,16 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
   useEffect(() => {
     thumbnails.current.clear(); setScreenshots([]); setSelected(null); setSelectedNames([]);
     void refreshRef.current();
-    return () => { generation.current++; };
+    return () => { generation.current++; imageRequest.current++; };
   }, [gameDir]);
 
   const open = async (name: string) => {
+    const request = ++imageRequest.current;
     try {
       const image = await window.quibyApi.getScreenshotImage(gameDir, name, false);
-      setSelected({ name, image });
+      if (request === imageRequest.current) setSelected({ name, image });
     } catch (error) {
-      onNotify?.('Не удалось открыть скриншот', error instanceof Error ? error.message : undefined, 'error');
+      if (request === imageRequest.current) onNotify?.('Не удалось открыть скриншот', error instanceof Error ? error.message : undefined, 'error');
     }
   };
   const toggle = (name: string) => setSelectedNames(previous => previous.includes(name) ? previous.filter(item => item !== name) : [...previous, name]);
@@ -102,10 +113,15 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
         <span className="screenshot-gallery-caption"><strong title={file.name}>{file.name}</strong><small>{new Date(file.modifiedAt).toLocaleString('ru-RU')}</small></span>
       </button><div className="screenshot-gallery-check"><SelectionCheck checked={selectedNames.includes(file.name)} onToggle={() => { toggle(file.name); }} label={`Выделить ${file.name}`} /></div></div>)}</div>}
     </div>
-    {selected && <div className="screenshot-viewer" role="dialog" aria-modal="true" aria-label={selected.name} onClick={() => setSelected(null)}>
-      <div className="screenshot-viewer-toolbar" onClick={event => event.stopPropagation()}><strong>{selected.name}</strong><button type="button" className="ui-button" onClick={() => void copy(selected.name)}><Copy size={15} /> Копировать</button><button type="button" className="ui-button" disabled={busy} onClick={() => void trash([selected.name])}><Trash2 size={15} /> В корзину</button><button type="button" className="ui-button" onClick={() => setSelected(null)} aria-label="Закрыть"><X size={17} /></button></div>
+    {selected && <dialog ref={viewer} className="screenshot-viewer" aria-label={selected.name} onCancel={event => { event.preventDefault(); closeViewer(); }} onClick={closeViewer}
+      onKeyDown={event => {
+        const direction = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
+        const next = screenshots[selectedIndex + direction];
+        if (direction && next) { event.preventDefault(); void open(next.name); }
+      }}>
+      <div className="screenshot-viewer-toolbar" onClick={event => event.stopPropagation()}><strong>{selected.name}</strong><button type="button" className="ui-button" onClick={() => void copy(selected.name)}><Copy size={15} /> Копировать</button><button type="button" className="ui-button" disabled={busy} onClick={() => void trash([selected.name])}><Trash2 size={15} /> В корзину</button><button type="button" className="ui-button" onClick={closeViewer} aria-label="Закрыть"><X size={17} /></button></div>
       <div className="screenshot-viewer-body" onClick={event => event.stopPropagation()}><button type="button" className="screenshot-viewer-nav" disabled={selectedIndex <= 0} onClick={() => void open(screenshots[selectedIndex - 1].name)} aria-label="Предыдущий"><ChevronLeft /></button><img src={selected.image} alt={selected.name} /><button type="button" className="screenshot-viewer-nav" disabled={selectedIndex >= screenshots.length - 1} onClick={() => void open(screenshots[selectedIndex + 1].name)} aria-label="Следующий"><ChevronRight /></button></div>
       <span>{selectedIndex + 1} / {screenshots.length}</span>
-    </div>}
+    </dialog>}
   </section>;
 }

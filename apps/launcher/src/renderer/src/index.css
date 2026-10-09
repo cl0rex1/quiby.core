@@ -14,10 +14,12 @@
     background: var(--color-paper);
     color: var(--color-ink);
   }
-  button:focus-visible, input:focus-visible, select:focus-visible {
+  :where(button, input, select, textarea, a, summary, [tabindex]):focus-visible {
     outline: 2px solid var(--color-focus);
     outline-offset: 2px;
   }
+  button:disabled { cursor: not-allowed; opacity: .5; }
+  input, textarea { user-select: text; }
 }
 
 ::selection { background: var(--color-accent); color: var(--color-accent-ink); }

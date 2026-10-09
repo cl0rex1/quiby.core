@@ -10,5 +10,5 @@ export function DiscordAvatar({ user, className }: { user: AuthSession['user']; 
   useEffect(() => setFailed(false), [url]);
   return url && !failed
     ? <img src={url} alt="Аватар Discord" className={className} onError={() => setFailed(true)} />
-    : <span className={`${className || ''} inline-flex items-center justify-center bg-violet-400/15 text-violet-200`} aria-label="Профиль Discord"><User size={24} /></span>;
+    : <span role="img" className={`${className || ''} inline-flex items-center justify-center bg-violet-400/15 text-violet-200`} aria-label="Профиль Discord"><User size={24} /></span>;
 }
