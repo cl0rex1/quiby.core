@@ -1,5 +1,5 @@
 {
-  "packVersion": "6.1.18",
+  "packVersion": "6.1.19",
   "minecraft": "1.21.1",
   "neoforge": "21.1.250",
   "java": 21,
@@ -125,14 +125,16 @@
       }
     },
     {
-      "file": "create_radar-5.0-EA-2.0.2-1.21.1.jar",
+      "file": "create_radar-5.0-EA-3.0.0-1.21.1.jar",
       "modIds": [
         "create_radar"
       ],
-      "sha256": "2e0220bb4a59e452345ebe81faf6c1a0177337b38206f2a250b1bf7d5a9f27f1",
+      "sha256": "773e0d3bf396d071753de76313dd05ac76be4be0e350255db89e15dfdd7c1b9a",
       "versions": {
-        "create_radar": "5.0-EA-2.0.2-1.21.1"
-      }
+        "create_radar": "5.0-EA-3.0.0-1.21.1"
+      },
+      "sourceFile": "create_radar-5.0-EA-2.0.2-1.21.1.jar",
+      "importedArtifact": "imported/773e0d3bf396d071753de76313dd05ac76be4be0e350255db89e15dfdd7c1b9a/create_radar-5.0-EA-3.0.0-1.21.1.jar"
     },
     {
       "file": "createbigcannons-5.11.7+mc.1.21.1.jar",
@@ -295,15 +297,15 @@
       }
     },
     {
-      "file": "quiby-1.21.1-1.1.13.jar",
+      "file": "quiby-1.21.1-1.1.14.jar",
       "modIds": [
         "quiby"
       ],
-      "sha256": "f0d83a8ad31e26cb76ab7dfd9874c35a0de4bc738a32a5452d5647fbf74ebcba",
+      "sha256": "41a901ed5e193bf15248fa85975be8539bc0e297da0ed384ad8b1e0416115396",
       "versions": {
-        "quiby": "1.1.13"
+        "quiby": "1.1.14"
       },
-      "sourceFile": "quiby-1.21.1-1.1.12.jar",
+      "sourceFile": "quiby-1.21.1-1.1.13.jar",
       "builtQuiby": true
     },
     {

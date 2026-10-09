@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.18",
+  "version": "6.1.19",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 274096145,
+  "totalSize": 274215857,
   "files": [
     {
       "path": "config/DistantHorizons.toml",
@@ -1209,19 +1209,19 @@
       "modIconUrl": "/api/modpack/files/imported/icons/684364f563e853d56604f76706edafd5576a8779d821f64f1e59efb3aa2c72c3.png"
     },
     {
-      "path": "mods/create_radar-5.0-EA-2.0.2-1.21.1.jar",
-      "sha256": "2e0220bb4a59e452345ebe81faf6c1a0177337b38206f2a250b1bf7d5a9f27f1",
-      "size": 4443076,
+      "path": "mods/create_radar-5.0-EA-3.0.0-1.21.1.jar",
+      "sha256": "773e0d3bf396d071753de76313dd05ac76be4be0e350255db89e15dfdd7c1b9a",
+      "size": 4562372,
       "profiles": [
         "full",
         "optimal",
         "clean"
       ],
-      "downloadUrl": "/api/modpack/files/imported/2e0220bb4a59e452345ebe81faf6c1a0177337b38206f2a250b1bf7d5a9f27f1/create_radar-5.0-EA-2.0.2-1.21.1.jar",
+      "downloadUrl": "/api/modpack/files/imported/773e0d3bf396d071753de76313dd05ac76be4be0e350255db89e15dfdd7c1b9a/create_radar-5.0-EA-3.0.0-1.21.1.jar",
       "action": "sync",
       "modId": "create_radar",
       "modName": "Create: Radars",
-      "modVersion": "5.0-EA-2.0.2-1.21.1",
+      "modVersion": "5.0-EA-3.0.0-1.21.1",
       "modDescription": "Welcome to Create Radars, a mod offering a variety of tools and blocks for Surveillance, Detection, and Controlling Weapons."
     },
     {
@@ -1568,10 +1568,10 @@
       "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
-      "path": "mods/quiby-1.21.1-1.1.13.jar",
-      "sha256": "f0d83a8ad31e26cb76ab7dfd9874c35a0de4bc738a32a5452d5647fbf74ebcba",
-      "size": 3550769,
-      "downloadUrl": "/api/modpack/files/imported/f0d83a8ad31e26cb76ab7dfd9874c35a0de4bc738a32a5452d5647fbf74ebcba/quiby-1.21.1-1.1.13.jar",
+      "path": "mods/quiby-1.21.1-1.1.14.jar",
+      "sha256": "41a901ed5e193bf15248fa85975be8539bc0e297da0ed384ad8b1e0416115396",
+      "size": 3551185,
+      "downloadUrl": "/api/modpack/files/imported/41a901ed5e193bf15248fa85975be8539bc0e297da0ed384ad8b1e0416115396/quiby-1.21.1-1.1.14.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1580,8 +1580,8 @@
       ],
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.1.13",
-      "modDescription": "Русская локализация, рецепты, скины, реакции на урон и фирменная загрузка Minecraft.",
+      "modVersion": "1.1.14",
+      "modDescription": "Русская локализация, скины, реакции на урон, проверка входа и фирменная загрузка Minecraft. Подготовка дополнения Create Radars.",
       "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },
     {
@@ -1831,7 +1831,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Серверная сборка: вход по Discord-сессии лаунчера с проверкой ключа до появления в мире; исправлен возврат к offline-рэгдоллу на выделенном сервере. Требуется обновление API и лаунчера.",
+  "changelog": "Подготовлено, не опубликовано: Create Radars 3.0.0, Quiby 1.1.14, удаление наших рецептов Radars, дополнение русской локализации и подготовка точек расширения.",
   "serverAddress": "",
-  "updatedAt": "2026-09-28T21:50:43.482158Z"
+  "updatedAt": "2026-10-09T12:34:39.944287+00:00"
 }

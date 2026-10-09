@@ -12,7 +12,7 @@ export function useContentView(category: string): [ContentViewMode, (mode: Conte
 
 export function SelectAllButton({ allSelected, count, disabled, onClick }: { allSelected: boolean; count: number; disabled?: boolean; onClick: () => void }) {
   return <button type="button" className={`ui-button content-select-all ${allSelected ? 'is-selected' : ''}`} disabled={disabled || !count} onClick={onClick}>
-    <CheckSquare size={14} /><span>{allSelected ? 'Снять выбор' : `Выбрать все (${count})`}</span>
+    <CheckSquare size={14} /><span>{allSelected ? 'Снять выбор' : 'Выбрать все'}</span>
   </button>;
 }
 

@@ -2,6 +2,7 @@ import { useFileDrop } from '../utils/useFileDrop';
 import React, { useState, useRef } from 'react';
 import {
   Package,
+  Palette,
   ToggleLeft,
   ToggleRight,
   Trash2,
@@ -271,7 +272,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
       <header className="page-heading"><div><p className="page-kicker">БИБЛИОТЕКА QUIBY</p><h1>Твой контент.</h1><p>Больше возможностей для твоего мира.</p></div><span className="content-edition">1.21.1 / NEOFORGE</span></header>
       <nav className="content-category-nav" aria-label="Тип контента">
-        {([['mods', 'Моды', 'Механики и возможности', Package], ['resourcepacks', 'Ресурспаки', 'Текстуры и вайтлист', Package], ['shaders', 'Шейдеры', 'Свет и атмосфера', Sun], ['schematics', 'Схематики', 'Идеи и постройки', Layers], ['screenshots', 'Скриншоты', 'Мои кадры из игры', ImageIcon]] as const).map(([id, label, description, Icon]) => <button key={id} type="button" aria-current={contentCategory === id ? 'page' : undefined} onClick={() => { setContentCategory(id); onUpdateSelectedModIds([]); }}><Icon size={19}/><span><strong>{label}</strong><small>{description}</small></span><span className="category-arrow">↗</span></button>)}
+        {([['mods', 'Моды', 'Механики и возможности', Package], ['resourcepacks', 'Ресурспаки', 'Текстуры и вайтлист', Palette], ['shaders', 'Шейдеры', 'Свет и атмосфера', Sun], ['schematics', 'Схематики', 'Идеи и постройки', Layers], ['screenshots', 'Скриншоты', 'Мои кадры из игры', ImageIcon]] as const).map(([id, label, description, Icon]) => <button key={id} type="button" aria-current={contentCategory === id ? 'page' : undefined} onClick={() => { setContentCategory(id); onUpdateSelectedModIds([]); }}><Icon size={19}/><span><strong>{label}</strong><small>{description}</small></span><span className="category-arrow">↗</span></button>)}
       </nav>
 
       {contentCategory === 'resourcepacks' ? (
@@ -342,7 +343,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                     return (
                       <div
                         key={idx}
-                        className="flex items-center justify-between p-3 rounded-xl bg-surface-900 border border-surface-border hover:border-surface-borderLight transition-all duration-150 gap-3"
+                        className="content-file-card flex items-center justify-between p-3 rounded-xl bg-surface-900 border border-surface-border hover:border-surface-borderLight transition-all duration-150 gap-3"
                       >
                         <div className="flex items-center gap-3 truncate">
                           {/* Mod Logo or Monogram */}
@@ -354,9 +355,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                               <span className="text-xs font-bold text-white truncate">
                                 {meta.displayName}
                               </span>
-                              <span className="px-1.5 py-0.2 rounded bg-surface-850 border border-surface-border text-[9px] text-zinc-400 font-mono shrink-0">
-                                {meta.categoryLabel}
-                              </span>
+                              <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-emerald-500/10 border border-emerald-500/20 shrink-0">Проверен</span>
                             </div>
                             <p className="text-[11px] text-zinc-400 truncate leading-snug">
                               {meta.description}
@@ -369,11 +368,6 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
                         {/* Status badge & external link */}
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                            <span>• Проверен</span>
-                          </span>
-
                           {meta.projectUrl && (<a
                             href={meta.projectUrl}
                             target="_blank"
@@ -423,7 +417,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                     return (
                       <div
                         key={mod.id}
-                        className={`flex flex-col items-stretch p-3 rounded-xl border transition-all duration-150 gap-3 ${
+                        className={`content-file-card ${isSelected ? 'is-selected' : ''} flex flex-col items-stretch p-3 rounded-xl border transition-all duration-150 gap-3 ${
                           isSelected
                             ? 'bg-surface-850 border-[#bb74ff]/60 shadow-md ring-1 ring-[#bb74ff]/30'
                             : isBlocked
@@ -451,7 +445,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
                               {isApproved && (
                                 <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                  <span>• Проверен</span>
+                                  <span>Проверен</span>
                                 </span>
                               )}
 
@@ -565,7 +559,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
         mod={activeWhitelistMod}
         session={session}
         serverUrl={serverUrl}
-        onSuccess={(modId, modName) => {
+        onSuccess={(modId, modName, message) => {
           const modItem = customMods.find((m) => m.id === modId);
           onUpdateCustomMods(
             customMods.map((m) =>
@@ -573,15 +567,15 @@ export const ModsView: React.FC<ModsViewProps> = ({
                 ? {
                     ...m,
                     safetyStatus: 'pending',
-                    safetyReason: 'Заявка отправлена модераторам в Discord и находится на рассмотрении',
+                    safetyReason: message || 'Заявка принята и находится на рассмотрении',
                   }
                 : m
             )
           );
           if (onNotify) {
             onNotify(
-              `Заявка на мод «${modName}» отправлена`,
-              'Заявка на добавление мода успешно отправлена в Discord канал модерации. Модераторы проверят файл и вынесут решение.',
+              `Заявка на мод «${modName}» принята`,
+              message || 'Заявка принята. Ожидайте доставки файла и решения администрации.',
               'success',
               modItem
                 ? {

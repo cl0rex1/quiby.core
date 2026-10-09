@@ -453,15 +453,14 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid var(--color-rule);
   border-radius: 12px;
-  background: var(--color-paper-3);
-  transition: transform 180ms var(--ease-settle);
+  background: var(--color-paper-2);
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
 .library-file:hover {
-  transform: translateY(-2px);
-  border-color: #48484e;
+  border-color: var(--color-accent);
 }
 .library-file.is-selected { border-color: var(--color-accent); }
 .resource-pack-library .library-file > .ui-button { flex: none; }
@@ -471,13 +470,13 @@
   flex: none;
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   border: 1px solid #414146;
   border-radius: 10px;
   background: var(--color-paper-hover);
   color: var(--color-ink-2);
-  box-shadow: 3px 3px 0 var(--color-paper);
+  box-shadow: none;
 }
 .library-file-copy {
   flex: 1;
@@ -1101,7 +1100,7 @@ html[data-motion-paused='true'] *::after {
   transition-property: transform, opacity, color, background-color, border-color;
 }
 /* Shared file selection uses the same compact controls as the mod library. */
-.content-selection-check { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 6px; background: var(--color-paper-3); border: 1px solid var(--color-rule); color: transparent; cursor: pointer; }
+.content-selection-check { transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 6px; background: var(--color-paper-3); border: 1px solid var(--color-rule); color: transparent; cursor: pointer; }
 .content-selection-check:hover { border-color: #bb74ff80; }
 .content-selection-check.is-selected { background: #bb74ff; border-color: #bb74ff; color: #0c0c0d; }
 .content-selection-dock { position: absolute; bottom: 14px; left: 12px; right: 12px; z-index: 40; display: flex; justify-content: center; pointer-events: none; }
@@ -1122,11 +1121,11 @@ html[data-motion-paused='true'] *::after {
 .has-selection .library-scroll { padding-bottom: 76px; scroll-padding-bottom: 76px; }
 .library-grid.is-list, .mod-grid.is-list { grid-template-columns: minmax(0, 1fr); }
 .mod-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.library-file-main { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+.library-file-main { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
 .library-file-actions { display: flex; align-items: center; justify-content: flex-end; flex: none; gap: 8px; }
 .library-grid.is-grid .resource-pack-file { flex-direction: column; align-items: stretch; }
 .content-selection-placeholder { width: 20px; flex: none; }
-.resource-pack-reason { white-space: normal !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.resource-pack-reason { margin: 2px 0 0 !important; }
 .screenshot-gallery-grid { overflow: visible; padding: 12px; }
 .screenshot-gallery-grid.is-list { grid-template-columns: minmax(0, 1fr); }
 .screenshot-gallery-grid.is-list .screenshot-gallery-open { display: flex; align-items: center; padding-left: 40px; }
@@ -1150,3 +1149,13 @@ html[data-motion-paused='true'] *::after {
 .content-import-overlay strong { font-size: 20px; }
 .content-import-overlay span { color: var(--color-ink-2); font-size: 12px; }
 img, video, canvas { -webkit-user-drag: none; }
+
+/* File categories share card surfaces, hover and selection feedback. */
+.content-file-card, .screenshot-gallery-item { background: var(--color-paper-2); transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease; }
+.content-file-card:hover, .library-file:hover, .screenshot-gallery-item:hover { border-color: var(--color-accent); transform: none; }
+.content-file-card.is-selected, .library-file.is-selected, .screenshot-gallery-item.is-selected { background: var(--color-paper-selected); border-color: #bb74ff99; box-shadow: 0 0 0 1px #bb74ff4d; }
+.library-file { gap: 10px; }
+.library-file-icon svg { width: 20px; height: 20px; }
+.library-file-icon { border-color: var(--color-rule); background: var(--color-paper-3); }
+.skin-caption-field { display: flex; flex-direction: column; gap: 12px; min-width: 0; font-size: 14px; font-weight: 600; }
+.skin-caption-field input { display: block; box-sizing: border-box; width: 100%; min-width: 0; min-height: 42px; padding: 10px 12px; border: 1px solid var(--color-rule); border-radius: 10px; font-size: 13px; font-weight: 400; line-height: 20px; color: var(--color-ink); user-select: text; }

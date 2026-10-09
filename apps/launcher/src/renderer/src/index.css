@@ -201,6 +201,7 @@
 .launcher-update-banner strong { display: block; font-size: 15px; font-weight: 700; }
 .launcher-update-banner p { margin-top: 3px; font-size: 12px; color: #dbc7ec; overflow-wrap: anywhere; }
 .launcher-update-banner button {
+  min-height: 44px; cursor: pointer; -webkit-app-region: no-drag;
   display: inline-flex; align-items: center; justify-content: center; gap: 9px;
   flex-shrink: 0; padding: 11px 16px; border-radius: 10px;
   background: #e5b7ff; color: #281136; font-size: 13px; font-weight: 700;
@@ -214,3 +215,7 @@
   .launcher-update-banner { gap: 10px; padding: 12px 16px; flex-wrap: wrap; }
   .launcher-update-banner button { margin-left: auto; }
 }
+
+.launcher-update-banner { -webkit-app-region: no-drag; }
+.launcher-update-banner.is-error { background: var(--color-paper-2); border-color: var(--color-warning); }
+.launcher-update-banner.is-error strong { color: var(--color-warning); }

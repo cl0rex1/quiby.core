@@ -29,9 +29,13 @@ router.post('/resourcepacks/verify', requireAuth, async (req: AuthenticatedReque
   const parsed = z.object({ hash_sha1: z.string().regex(/^[a-f0-9]{40}$/) }).safeParse(req.body);
   if (!parsed.success) return res.sendStatus(400);
   try {
-    const row = await dbGet<any>("SELECT status, decision_reason FROM mod_whitelist_requests WHERE hash_sha1=? AND lower(filename) LIKE '%.zip' ORDER BY CASE WHEN status IN ('approved','rejected') THEN 0 ELSE 1 END,COALESCE(review_sequence,0) DESC,id DESC LIMIT 1", [parsed.data.hash_sha1]);
+    const row = await dbGet<any>("SELECT status, decision_reason, discord_message_id FROM mod_whitelist_requests WHERE hash_sha1=? AND lower(filename) LIKE '%.zip' ORDER BY CASE WHEN status IN ('approved','rejected') THEN 0 ELSE 1 END,COALESCE(review_sequence,0) DESC,id DESC LIMIT 1", [parsed.data.hash_sha1]);
     return res.json({ status: row?.status || 'unverified', isAllowed: row?.status === 'approved',
-      reason: row?.decision_reason || 'Ресурспак требует проверки администрации' });
+      reason: row?.decision_reason || (row?.status === 'pending'
+        ? row.discord_message_id ? 'Файл доставлен в Discord. Ожидаем решения администрации.'
+          : getReviewFile(parsed.data.hash_sha1) ? 'Заявка принята. Ожидаем отправки файла ботом.'
+            : 'Файл не доставлен: повторите отправку заявки с файлом.'
+        : 'Ресурспак требует проверки администрации') });
   } catch { return res.sendStatus(500); }
 });
 

@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { ArrowUpCircle, Download, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowUpCircle, Download, Loader2, RefreshCw, WifiOff } from 'lucide-react';
 import type { UpdateState } from '../../../main/updates';
 
 export function LauncherUpdateBanner({ state }: { state: UpdateState | null }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   if (!state || (!state.required && !['available', 'downloading', 'ready', 'error'].includes(state.status))) return null;
-  if (state.status === 'error' && !state.latestVersion) return null;
+  const failed = state.status === 'error';
+  const disconnected = failed && (/ERR_.*(?:INTERNET|NETWORK|NAME|CONNECTION|TIMED)|ENOTFOUND|EAI_AGAIN|ECONN|ETIMEDOUT|fetch failed|network/i.test(state.message || '')
+    || (typeof navigator !== 'undefined' && navigator.onLine === false));
+  const checking = state.status === 'checking';
   const downloading = state.status === 'downloading';
   const ready = state.status === 'ready';
   const percent = Math.max(0, Math.min(100, state.percent ?? 0));
@@ -22,14 +25,14 @@ export function LauncherUpdateBanner({ state }: { state: UpdateState | null }) {
     } finally { setBusy(false); }
   };
   return (
-    <section className="launcher-update-banner" aria-label="Обновление лаунчера">
-      <ArrowUpCircle size={28} aria-hidden="true" className="shrink-0" />
+    <section className={`launcher-update-banner${failed ? ' is-error' : ''}`} aria-label="Обновление лаунчера">
+      {failed ? <WifiOff size={28} aria-hidden="true" className="shrink-0" /> : <ArrowUpCircle size={28} aria-hidden="true" className="shrink-0" />}
       <div className="min-w-0 flex-1" role="status">
-        <strong>{ready ? 'Обновление готово к установке' : downloading ? 'Скачиваем обязательное обновление' : state.required ? 'Обновление лаунчера обязательно' : 'Доступна новая версия лаунчера'}</strong>
-        <p>{downloading ? `${percent}% · Запуск Minecraft доступен после установки` : ready ? `Версия ${state.latestVersion} · Перезапустите приложение, чтобы обновиться` : state.required ? `Версия ${state.latestVersion} · Обновите лаунчер, чтобы запустить Minecraft` : `Версия ${state.latestVersion} · Установите последние исправления и улучшения интерфейса`}</p>
-        {(error || state.status === 'error') && <p role="alert">{error || state.message || 'Не удалось загрузить обновление'}</p>}
+        <strong>{failed ? disconnected ? 'Нет соединения с сервером обновлений' : 'Не удалось проверить или скачать обновление' : checking ? 'Проверяем обновления' : ready ? 'Обновление готово к установке' : downloading ? 'Скачиваем обязательное обновление' : state.required ? 'Обновление лаунчера обязательно' : 'Доступна новая версия лаунчера'}</strong>
+        <p>{failed ? disconnected ? 'Проверьте подключение к интернету и доступ к GitHub, затем повторите попытку.' : 'Повторите проверку. Если ошибка остаётся, обратитесь к администрации.' : checking ? 'Ожидаем ответ сервера обновлений…' : downloading ? `${percent}% · Запуск Minecraft доступен после установки` : ready ? `Версия ${state.latestVersion} · Перезапустите приложение, чтобы обновиться` : state.required ? `Версия ${state.latestVersion || 'новее установленной'} · Обновите лаунчер, чтобы запустить Minecraft` : `Версия ${state.latestVersion} · Установите последние исправления и улучшения интерфейса`}</p>
+        {error && <p role="alert">{error}</p>}
       </div>
-      <button type="button" onClick={() => void act()} disabled={busy || downloading}>
+      <button type="button" onClick={() => void act()} disabled={busy || downloading || checking}>
         {busy || downloading ? <Loader2 size={18} className="animate-spin" /> : ready ? <RefreshCw size={18} /> : <Download size={18} />}
         {downloading ? `${percent}%` : ready ? 'Перезапустить и обновить' : state.status === 'error' ? 'Повторить проверку' : 'Скачать обновление'}
       </button>

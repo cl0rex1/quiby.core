@@ -42,12 +42,17 @@ def build(source, output, quiby_jar):
         raise ValueError("Server mod lock must be reviewed for the new pack version")
     entries = {}
     included, required = {"minecraft", "neoforge", "javafml"}, set()
-    expected = {item.get("sourceFile", item["file"]) for item in lock["mods"]} | {item["file"] for item in lock["excluded"]}
+    expected = {item.get("sourceFile", item["file"]) for item in lock["mods"]} | {item["file"] for item in lock["mods"] + lock["excluded"]}
     unexpected = {p.name for p in (source / "mods").glob("*.jar")} - expected
     if unexpected:
         raise ValueError("Unreviewed mods in source: " + ", ".join(sorted(unexpected)))
     for item in lock["mods"]:
         source_file = quiby_jar if item.get("builtQuiby") else source / "mods" / item["file"]
+        if item.get("importedArtifact"):
+            storage = (ROOT / "apps/server/storage/files").resolve()
+            source_file = (storage / item["importedArtifact"]).resolve()
+            if not source_file.is_relative_to(storage):
+                raise ValueError("Unsafe imported artifact path")
         raw = source_file.read_bytes()
         if hashlib.sha256(raw).hexdigest() != item["sha256"]:
             raise ValueError("Installed mod differs from lock: " + item["file"])
@@ -92,7 +97,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=pathlib.Path,
                         default=pathlib.Path(os.environ.get("APPDATA", pathlib.Path.home())) / ".quiby-launcher")
-    parser.add_argument("--output", type=pathlib.Path, default=ROOT / "temp/quiby-server-6.1.18.zip")
-    parser.add_argument("--quiby-jar", type=pathlib.Path, default=ROOT.parent / "quiby.mod/build/libs/quiby-1.21.1-1.1.13.jar")
+    parser.add_argument("--output", type=pathlib.Path, default=ROOT / "temp/quiby-server-6.1.19.zip")
+    parser.add_argument("--quiby-jar", type=pathlib.Path, default=ROOT.parent / "quiby.mod/build/libs/quiby-1.21.1-1.1.14.jar")
     args = parser.parse_args()
     build(args.source, args.output, args.quiby_jar)

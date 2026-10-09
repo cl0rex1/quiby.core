@@ -1,3 +1,4 @@
+import { reviewDelivery } from './engine/reviewDelivery';
 import { resourcePackCatalog, resourcePackInventory } from './engine/resourcePackCatalog';
 import { checkContentLinks } from './engine/contentIntegrity';
 import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, ClipboardItem } from 'electron';
@@ -433,17 +434,11 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     if (response.status === 404) throw new Error('API ещё не обновлён: отправка заявки вместе с файлом недоступна.');
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.error || 'Не удалось отправить файл: ' + response.status);
-    for (let attempt = 0; attempt < 30; attempt++) {
-      const receipt = await fetch(DEFAULT_SERVER_URL + '/api/mods/review-delivery/' + hash, {
-        headers: { Authorization: 'Bearer ' + token }, signal: AbortSignal.timeout(5000),
-      });
-      if (!receipt.ok) throw new Error('Не удалось подтвердить доставку файла. Повторите отправку.');
-      const delivery = await receipt.json();
-      if (delivery.delivered) return result;
-      if (!delivery.queued) break;
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-    throw new Error('Бот пока не подтвердил доставку файла в Discord. Повторите отправку; дубликат ожидающей заявки не создаётся.');
+    const delivery = await reviewDelivery(DEFAULT_SERVER_URL, hash, token);
+    return { ...result, delivered: delivery === 'delivered', queued: delivery === 'queued',
+      message: delivery === 'delivered' ? 'Файл доставлен в Discord. Ожидайте решения администрации.'
+        : 'Заявка принята, файл ожидает отправки ботом в Discord. Решение появится автоматически.' };
+
   });
 
   ipcMain.handle('mods:install', async (_, gameDir: string, filename: string, bytes: Uint8Array, token?: string) => {

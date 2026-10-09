@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AuthSession } from '@quiby/shared';
-import { Package, Trash2, Upload } from 'lucide-react';
+import { Palette, Trash2, Upload } from 'lucide-react';
 import type { ResourcePackItem as Pack } from '../../../main/engine/resourcePackCatalog';
 import type { CustomModItem } from '../views/ModsView';
 import { ModWhitelistModal } from './ModWhitelistModal';
@@ -130,12 +130,12 @@ export function ResourcePacksExplorer({ gameDir, files, session, onNotify }: {
       {filtered.length ? <div className={`library-grid is-${mode}`}>{filtered.map(pack => <article key={pack.filename} className={`library-file resource-pack-file ${selected.includes(pack.filename) ? 'is-selected' : ''}`}>
         <div className="library-file-main">
           {!pack.official ? <SelectionCheck disabled={busy || pack.status === 'checking'} checked={selected.includes(pack.filename)} label={`Выделить ${pack.filename}`} onToggle={() => setSelected(previous => previous.includes(pack.filename) ? previous.filter(name => name !== pack.filename) : [...previous, pack.filename])}/> : <span className="content-selection-placeholder"/>}
-          <div className="library-file-icon"><Package size={23}/></div>
+          <div className="library-file-icon"><Palette size={20}/></div>
           <div className="library-file-copy"><h3 title={pack.filename}>{pack.filename.replace(/\.zip$/i, '')}</h3><span>{pack.official ? 'Сборка' : labels[pack.status] || 'Нет допуска'} · {(pack.size / 1048576).toFixed(1)} МБ</span><p className="resource-pack-reason" title={pack.reason}>{pack.reason}</p></div>
         </div>
-        {!pack.official && <div className="library-file-actions">{!pack.isAllowed && <button className="ui-button is-primary" disabled={busy || !session?.token || pack.status === 'checking'} onClick={() => void request(pack)}>Подать заявку</button>}<button className="file-trash" title="Переместить в корзину" aria-label={`В корзину: ${pack.filename}`} disabled={busy || pack.status === 'checking'} onClick={() => void remove([pack.filename])}><Trash2 size={15}/></button></div>}
-      </article>)}</div> : <div className="library-empty"><Package size={44}/><h2>{search ? 'Ничего не найдено' : refreshing ? 'Читаем папку…' : 'Ресурспаков пока нет'}</h2><p>{search ? 'Попробуйте другое название.' : 'Добавьте ZIP. Для пользовательского ресурспака потребуется допуск.'}</p></div>}
+        {!pack.official && <div className="library-file-actions">{!pack.isAllowed && <button className="ui-button is-primary" disabled={busy || !session?.token || pack.status === 'checking'} onClick={() => void request(pack)}>{pack.status === 'pending' ? 'Проверить отправку' : 'Подать заявку'}</button>}<button className="file-trash" title="Переместить в корзину" aria-label={`В корзину: ${pack.filename}`} disabled={busy || pack.status === 'checking'} onClick={() => void remove([pack.filename])}><Trash2 size={15}/></button></div>}
+      </article>)}</div> : <div className="library-empty"><Palette size={44}/><h2>{search ? 'Ничего не найдено' : refreshing ? 'Читаем папку…' : 'Ресурспаков пока нет'}</h2><p>{search ? 'Попробуйте другое название.' : 'Добавьте ZIP. Для пользовательского ресурспака потребуется допуск.'}</p></div>}
     </div>
-    <ModWhitelistModal isOpen={Boolean(review)} mod={review} session={session} onClose={() => setReview(null)} onSuccess={() => { onNotify?.('Заявка на ресурспак отправлена', 'Решение появится автоматически.', 'success'); void fresh(); }}/>
+    <ModWhitelistModal isOpen={Boolean(review)} mod={review} session={session} onClose={() => setReview(null)} onSuccess={(_, __, message) => { onNotify?.('Заявка на ресурспак принята', message || 'Решение появится автоматически.', 'info'); void fresh(); }}/>
   </section>;
 }

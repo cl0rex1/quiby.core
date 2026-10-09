@@ -10,7 +10,7 @@ interface ModWhitelistModalProps {
   mod: CustomModItem | null;
   session?: AuthSession | null;
   serverUrl?: string;
-  onSuccess: (modId: string, modName: string) => void;
+  onSuccess: (modId: string, modName: string, message?: string) => void;
 }
 
 export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
@@ -58,10 +58,10 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
     try {
       if (!mod.hashSha1 || !session?.token) throw new Error('Выберите файл и войдите в аккаунт.');
       const result = await window.quibyApi.uploadModReview(mod.hashSha1, session.token, {
-        mod_name: mod.name, filename: mod.filename, reason: reason.trim(), project_url: projectUrl.trim(),
+        mod_name: mod.name.trim().slice(0, 100), filename: mod.filename, reason: reason.trim(), project_url: projectUrl.trim(),
       });
       if (result.success) {
-        onSuccess(mod.id, meta.displayName);
+        onSuccess(mod.id, meta.displayName, result.message);
         onClose();
       } else {
         setError(result.message || 'Ошибка отправки заявки на сервер');
