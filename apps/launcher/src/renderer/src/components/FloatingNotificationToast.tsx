@@ -36,12 +36,13 @@ export function FloatingNotificationToast({
   if (!toast) return null;
   const type = toast.type || 'success';
   const Icon = { success: CheckCircle2, error: AlertCircle, warning: Bell, info: Info }[type];
+  const label = { success: 'Готово', error: 'Ошибка', warning: 'Обратите внимание', info: 'Уведомление' }[type];
   return (
-    <div key={toast.id} className={'launcher-toast ' + (exiting ? 'is-exiting' : '')} role={type === 'error' ? 'alert' : 'status'}
+    <div key={toast.id} className={'launcher-toast is-' + type + (exiting ? ' is-exiting' : '')} role={type === 'error' ? 'alert' : 'status'}
       onMouseEnter={() => { setPaused(true); setExiting(false); }} onMouseLeave={() => setPaused(false)}
       onFocus={() => { setPaused(true); setExiting(false); }} onBlur={() => setPaused(false)}>
-      <Icon size={18} className={'toast-icon is-' + type} />
-      <div className="toast-copy"><strong>{toast.title}</strong>{toast.message && <p>{toast.message}</p>}</div>
+      <span className="toast-symbol"><Icon size={19} className={'toast-icon is-' + type}/></span>
+      <div className="toast-copy"><small>{label}</small><strong>{toast.title}</strong>{toast.message && <p>{toast.message}</p>}</div>
       <button type="button" className="icon-button" aria-label="Закрыть уведомление" onClick={onDismiss}><X size={15} /></button>
     </div>
   );

@@ -70,9 +70,9 @@ test('populated content is accessible and locks changes during a game', async ({
   await expect(page.getByRole('article').nth(1).getByRole('switch')).toHaveCount(0);
   await expect(page.getByRole('article').nth(2).getByRole('img', { name: 'Заблокирован' })).toBeVisible();
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
+  await page.getByRole('article').first().getByRole('button', { name: /Подробнее/ }).click();
   await emit(page, 'onLaunchStateChange', { status: 'running' });
   await expect(page.getByRole('switch').first()).toBeDisabled();
-  await page.getByRole('article').first().getByRole('button', { name: /Подробнее/ }).click();
   await expect(page.getByRole('button', { name: 'Удалить мод', exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Открыть папку', exact: true })).toBeEnabled();
   expect(await page.locator('.content-category-body').evaluate(element => getComputedStyle(element).animationName)).toBe('none');

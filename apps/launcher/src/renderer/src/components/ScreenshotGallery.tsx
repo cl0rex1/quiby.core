@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Copy, Image as ImageIcon, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Copy, Image as ImageIcon, Trash2, X, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
 
+import { SelectMenu } from './SelectMenu';
 import { useFileRemoval } from '../utils/useFileRemoval';
 import { ContentToolbar, ContentSearch, useContentView } from './ContentToolbar';
 import { allVisibleSelected, toggleVisibleSelection } from '../utils/contentSelection';
@@ -16,6 +17,9 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('newest');
+  const [zoomed, setZoomed] = useState(false);
+  const [viewerBusy, setViewerBusy] = useState(false);
   const [mode, setMode] = useContentView('screenshots');
   const generation = useRef(0);
   const thumbnails = useRef(new Map<string, { stamp: string; image: string }>());
@@ -24,7 +28,7 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
   const [busy, setBusy] = useState(false);
   const viewer = useRef<HTMLDialogElement>(null);
   const imageRequest = useRef(0);
-  const closeViewer = () => { imageRequest.current++; setSelected(null); };
+  const closeViewer = () => { imageRequest.current++; setSelected(null); setZoomed(false); setViewerBusy(false); };
   useEffect(() => {
     if (!selected) return;
     const element = viewer.current;
@@ -71,12 +75,13 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
 
   const open = async (name: string) => {
     const request = ++imageRequest.current;
+    setViewerBusy(true); setZoomed(false);
     try {
       const image = await window.quibyApi.getScreenshotImage(gameDir, name, false);
       if (request === imageRequest.current) setSelected({ name, image });
     } catch (error) {
       if (request === imageRequest.current) onNotify?.('Не удалось открыть скриншот', error instanceof Error ? error.message : undefined, 'error');
-    }
+    } finally { if (request === imageRequest.current) setViewerBusy(false); }
   };
   const toggle = (name: string) => setSelectedNames(previous => previous.includes(name) ? previous.filter(item => item !== name) : [...previous, name]);
   const copy = async (name: string) => {
@@ -97,35 +102,75 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
     } catch (error) { onNotify?.('Не удалось удалить скриншоты', error instanceof Error ? error.message : undefined, 'error'); }
     finally { setBusy(false); }
   };
-  const selectedIndex = selected ? screenshots.findIndex(file => file.name === selected.name) : -1;
-
-  const filtered = screenshots.filter(file => file.name.toLowerCase().includes(search.trim().toLowerCase()));
+  const filtered = screenshots.filter(file => file.name.toLowerCase().includes(search.trim().toLowerCase()))
+    .sort((a, b) => sort === 'oldest' ? a.modifiedAt - b.modifiedAt : b.modifiedAt - a.modifiedAt);
+  const selectedIndex = selected ? filtered.findIndex(file => file.name === selected.name) : -1;
   const visibleNames = filtered.map(file => file.name);
-  const selectAll = () => { setSelectedNames(previous => toggleVisibleSelection(previous, visibleNames)); };
+  const selectAll = () => setSelectedNames(previous => toggleVisibleSelection(previous, visibleNames));
+  const groups = new Map<string, Screenshot[]>();
+  for (const file of filtered) {
+    const date = new Date(file.modifiedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    const group = groups.get(date);
+    if (group) group.push(file); else groups.set(date, [file]);
+  }
+  const sizeLabel = (size: number) => size >= 1048576 ? `${(size / 1048576).toFixed(1)} МБ` : `${Math.max(1, Math.round(size / 1024))} КБ`;
+  const selectOrOpen = (event: React.MouseEvent, file: Screenshot) => {
+    if (busy) return;
+    if (selectedNames.length || event.ctrlKey || event.metaKey || event.shiftKey) {
+      if (event.shiftKey && selectedNames.length) {
+        const anchor = Math.max(0, filtered.findIndex(item => item.name === selectedNames[selectedNames.length - 1]));
+        const target = filtered.findIndex(item => item.name === file.name);
+        setSelectedNames(previous => [...new Set([...previous, ...filtered.slice(Math.min(anchor, target), Math.max(anchor, target) + 1).map(item => item.name)])]);
+      } else toggle(file.name);
+    } else void open(file.name);
+  };
   return <section className={`content-library screenshot-gallery ${selectedNames.length ? 'has-selection' : ''}`} aria-label="Библиотека скриншотов">
     <ContentToolbar label="Скриншоты" total={screenshots.length} visible={filtered.length} mode={mode} onMode={setMode} busy={busy} refreshing={loading}
       selection={{ allSelected: allVisibleSelected(selectedNames, visibleNames), onSelectAll: selectAll }} onRefresh={() => void refresh()}
       onFolder={() => void window.quibyApi.openScreenshotsFolder(gameDir).catch(error => onNotify?.('Не удалось открыть папку', error instanceof Error ? error.message : undefined, 'error'))}/>
-    <ContentSearch value={search} onChange={setSearch} label="Поиск скриншотов" hint=".png"/>
-    <ContentSelectionDock count={selectedNames.length} total={screenshots.length} allSelected={allVisibleSelected(selectedNames, visibleNames)} busy={busy}
-      onSelectAll={selectAll} onClear={() => { setSelectedNames([]); }} onDelete={() => void trash(selectedNames)}
-      onCopy={selectedNames.length === 1 ? () => void copy(selectedNames[0]) : undefined} />
-    <div ref={container} className="library-scroll">
-    {filtered.length === 0 ? <div className="library-empty"><div className="content-empty-icon"><ImageIcon size={28}/></div><h2>{search ? 'Ничего не найдено' : loading ? 'Загружаем скриншоты…' : 'Скриншотов пока нет'}</h2><p>Сделайте снимок в Minecraft клавишей F2. Он появится здесь.</p></div>
-      : <div className={`screenshot-gallery-grid is-${mode}`}>{filtered.map(file => <div key={file.name} data-file-id={file.name} className={`screenshot-gallery-item ${selectedNames.includes(file.name) ? 'is-selected' : ''}`}><button type="button" className="screenshot-gallery-open" onClick={event => { if (selectedNames.length > 0 || event.ctrlKey || event.metaKey || event.shiftKey) { if (event.shiftKey && selectedNames.length) { const anchor = filtered.findIndex(item => item.name === selectedNames[selectedNames.length - 1]); const target = filtered.findIndex(item => item.name === file.name); setSelectedNames(previous => [...new Set([...previous, ...filtered.slice(Math.min(anchor < 0 ? target : anchor, target), Math.max(anchor < 0 ? target : anchor, target) + 1).map(item => item.name)])]); } else toggle(file.name); } else void open(file.name); }}>
-        {file.thumbnail ? <img src={file.thumbnail} alt={file.name} /> : <span className="screenshot-gallery-placeholder"><ImageIcon size={26} /></span>}
-        <span className="screenshot-gallery-caption"><strong title={file.name}>{file.name}</strong><small>{new Date(file.modifiedAt).toLocaleString('ru-RU')}</small></span>
-      </button><div className="screenshot-gallery-check"><SelectionCheck disabled={busy} checked={selectedNames.includes(file.name)} onToggle={() => { toggle(file.name); }} label={`Выделить ${file.name}`} /></div></div>)}</div>}
+    <div className="photo-search"><ContentSearch value={search} onChange={setSearch} label="Поиск скриншотов"/>
+      <SelectMenu label="Порядок скриншотов" value={sort} onChange={setSort} options={[{ value: 'newest', label: 'Сначала новые' }, { value: 'oldest', label: 'Сначала старые' }]}/>
     </div>
-    {selected && <dialog ref={viewer} className="screenshot-viewer" aria-label={selected.name} onCancel={event => { event.preventDefault(); closeViewer(); }} onClick={closeViewer}
+    <ContentSelectionDock count={selectedNames.length} total={screenshots.length} allSelected={allVisibleSelected(selectedNames, visibleNames)} busy={busy}
+      onSelectAll={selectAll} onClear={() => setSelectedNames([])} onDelete={() => void trash(selectedNames)}
+      onCopy={selectedNames.length === 1 ? () => void copy(selectedNames[0]) : undefined}/>
+    <div ref={container} className="library-scroll photo-library" aria-busy={loading}>
+      {!filtered.length ? <div className="library-empty"><div className="content-empty-icon"><ImageIcon size={28}/></div>
+        <h2>{search ? 'Ничего не найдено' : loading ? 'Загружаем кадры…' : 'Здесь будут твои моменты'}</h2>
+        <p>{search ? 'Попробуйте другое название.' : 'Нажмите F2 в Minecraft. Снимок появится в галерее.'}</p></div>
+        : Array.from(groups, ([date, files]) => <section className="photo-day" key={date}>
+          <header><h2>{date}</h2><span>{files.length}</span></header>
+          <div className={`photo-grid is-${mode}`}>{files.map(file => <article key={file.name} data-file-id={file.name} className={`photo-card ${selectedNames.includes(file.name) ? 'is-selected' : ''}`}>
+            <button type="button" className="photo-card-open" aria-label={`Открыть ${file.name}`} disabled={busy} onClick={event => selectOrOpen(event, file)}>
+              <span className="photo-card-image">{file.thumbnail ? <img src={file.thumbnail} alt="" loading="lazy" decoding="async"/> : <ImageIcon size={28}/>}</span>
+              <span className="photo-card-caption"><strong title={file.name}>{file.name.replace(/\.png$/i, '')}</strong>
+                <small>{new Date(file.modifiedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}<span> · {sizeLabel(file.size)}</span></small></span>
+              <span className="photo-card-open-hint" aria-hidden="true"><Maximize2 size={17}/></span>
+            </button>
+            <div className="photo-card-check"><SelectionCheck disabled={busy} checked={selectedNames.includes(file.name)} onToggle={() => toggle(file.name)} label={`Выделить ${file.name}`}/></div>
+          </article>)}</div>
+        </section>)}
+    </div>
+    {selected && <dialog ref={viewer} className="photo-viewer" aria-label={selected.name} onCancel={event => { event.preventDefault(); closeViewer(); }}
       onKeyDown={event => {
         const direction = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
-        const next = screenshots[selectedIndex + direction];
-        if (direction && next) { event.preventDefault(); void open(next.name); }
+        const next = direction && filtered[selectedIndex + direction];
+        if (next) { event.preventDefault(); void open(next.name); }
       }}>
-      <div className="screenshot-viewer-toolbar" onClick={event => event.stopPropagation()}><strong>{selected.name}</strong><button type="button" className="ui-button" onClick={() => void copy(selected.name)}><Copy size={15} /> Копировать</button><button type="button" className="ui-button delete-action" disabled={busy} onClick={() => void trash([selected.name])}><Trash2 size={15} /> Удалить</button><button type="button" className="ui-button" onClick={closeViewer} aria-label="Закрыть"><X size={17} /></button></div>
-      <div className="screenshot-viewer-body" onClick={event => event.stopPropagation()}><button type="button" className="screenshot-viewer-nav" disabled={selectedIndex <= 0} onClick={() => void open(screenshots[selectedIndex - 1].name)} aria-label="Предыдущий"><ChevronLeft /></button><img src={selected.image} alt={selected.name} /><button type="button" className="screenshot-viewer-nav" disabled={selectedIndex >= screenshots.length - 1} onClick={() => void open(screenshots[selectedIndex + 1].name)} aria-label="Следующий"><ChevronRight /></button></div>
-      <span>{selectedIndex + 1} / {screenshots.length}</span>
+      <header className="photo-viewer-toolbar"><div><strong>{selected.name}</strong><small>{selectedIndex + 1} / {filtered.length}</small></div>
+        <div className="photo-viewer-actions"><button type="button" className="ui-button" aria-pressed={zoomed} aria-label="Масштаб изображения" onClick={() => setZoomed(!zoomed)}>{zoomed ? <Minimize2 size={16}/> : <Maximize2 size={16}/>}</button>
+          <button type="button" className="ui-button" onClick={() => void copy(selected.name)}><Copy size={15}/>Копировать</button>
+          <button type="button" className="ui-button delete-action" disabled={busy} onClick={() => void trash([selected.name])}><Trash2 size={15}/>Удалить</button>
+          <button type="button" className="ui-button" onClick={closeViewer} aria-label="Закрыть"><X size={17}/></button></div>
+      </header>
+      <div className={`photo-viewer-stage ${zoomed ? 'is-zoomed' : ''}`} aria-busy={viewerBusy}>
+        <button type="button" className="photo-viewer-nav is-prev" disabled={selectedIndex <= 0 || viewerBusy} onClick={() => void open(filtered[selectedIndex - 1].name)} aria-label="Предыдущий"><ChevronLeft/></button>
+        <div className="photo-viewer-image"><img src={selected.image} alt={selected.name} onDoubleClick={() => setZoomed(!zoomed)}/></div>
+        <button type="button" className="photo-viewer-nav is-next" disabled={selectedIndex >= filtered.length - 1 || viewerBusy} onClick={() => void open(filtered[selectedIndex + 1].name)} aria-label="Следующий"><ChevronRight/></button>
+      </div>
+      <nav className="photo-filmstrip" aria-label="Кадры рядом">{filtered.slice(Math.max(0, selectedIndex - 3), selectedIndex + 4).map(file => <button type="button" key={file.name}
+        aria-label={`Показать ${file.name}`} aria-current={file.name === selected.name ? 'true' : undefined} onClick={() => void open(file.name)}>
+        {file.thumbnail ? <img src={file.thumbnail} alt=""/> : <ImageIcon size={18}/>}</button>)}</nav>
     </dialog>}
   </section>;
 }

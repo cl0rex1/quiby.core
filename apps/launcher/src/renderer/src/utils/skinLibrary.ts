@@ -18,7 +18,12 @@ const STORAGE_KEY = 'quiby_skin_library';
 export function getSkinDisplayName(library: SavedSkinItem[], sourceName: string | null, dataUri?: string): string | null {
   const item = (dataUri ? library.find(skin => skin.dataUri === dataUri) : undefined)
     || library.find(skin => skin.name === sourceName);
-  return item?.caption || sourceName;
+  if (item?.caption) return item.caption;
+  try {
+    const fallback = JSON.parse(localStorage.getItem('quiby_active_skin_caption') || 'null');
+    if (!item && dataUri && fallback?.source === dataUri && typeof fallback.caption === 'string') return cleanSkinCaption(fallback.caption);
+  } catch { /* Use the original name if the fallback is unavailable. */ }
+  return sourceName;
 }
 
 /**
@@ -155,4 +160,8 @@ export function renameSavedSkin(id: string, caption: string): SavedSkinItem[] {
   const updated = getSavedSkinLibrary().map(item => item.id === id ? { ...item, caption: clean } : item);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   return updated;
+}
+
+export function renameActiveSkin(dataUri: string, caption: string): void {
+  localStorage.setItem('quiby_active_skin_caption', JSON.stringify({ source: dataUri, caption: cleanSkinCaption(caption) }));
 }

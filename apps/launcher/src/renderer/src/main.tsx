@@ -7,6 +7,7 @@ import './studio.css';
 import './launchpad.css';
 import './content.css';
 import './interface.css';
+import './gallery.css';
 import { MotionProvider } from './components/MotionProvider';
 import { LauncherErrorBoundary } from './components/LauncherErrorBoundary';
 

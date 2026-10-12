@@ -1,13 +1,15 @@
+import { GameContentLock } from '../components/GameContentLock';
 import { ModalDialog } from '../components/ModalDialog';
 import { useFileDrop } from '../utils/useFileDrop';
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, Trash2, Check, AlertCircle, Download, User, ArrowRight, X, Sparkles, Lock, Pencil } from 'lucide-react';
-import { DEFAULT_SKINS, CAPE_PRESETS, CapePreset } from '../utils/chibiRenderer';
+import { Upload, Trash2, Check, AlertCircle, Download, User, ArrowRight, X, Lock, Pencil } from 'lucide-react';
+import { DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
 import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
 import { validateSkinFile } from '../utils/skinValidator';
 import {
   SavedSkinItem,
   renameSavedSkin,
+  renameActiveSkin,
   renameDefaultSkin,
   getDefaultSkinCaption,
   getSavedSkinLibrary,
@@ -53,6 +55,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   const [pendingSkin, setPendingSkin] = useState<PendingSkinData | null>(null);
 
   const [editingSkin, setEditingSkin] = useState<SavedSkinItem | null>(null);
+  const [editingActive, setEditingActive] = useState(false);
   const [editingDefault, setEditingDefault] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
   const [captionError, setCaptionError] = useState('');
@@ -155,11 +158,12 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   const currentDisplayName = customSkinImg
     ? getSkinDisplayName(library, customSkinName, customSkinImg.src) || 'Пользовательский скин'
     : getDefaultSkinCaption(DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve');
-  const closeCaption = () => { setEditingSkin(null); setEditingDefault(null); };
+  const closeCaption = () => { setEditingSkin(null); setEditingDefault(null); setEditingActive(false); };
   const editActiveCaption = () => {
-    if (customSkinImg && !activeLibraryItem) return;
+    if (gameActive) return;
+    setEditingActive(Boolean(customSkinImg && !activeLibraryItem));
     setEditingSkin(activeLibraryItem || null);
-    setEditingDefault(activeLibraryItem ? null : DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve');
+    setEditingDefault(customSkinImg ? null : DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve');
     setCaption(currentDisplayName); setCaptionError('');
   };
 
@@ -168,15 +172,15 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   return (
     <div className="wardrobe-page view-enter">
       <header className="page-titlebar"><h1>Гардероб<span>.</span></h1><span className="page-caption">Твой персонаж</span></header>
-      {(editingSkin || editingDefault) && <ModalDialog label="Название скина" onClose={closeCaption}>
-        <form className="surface-panel rounded-3xl p-6 w-full max-w-sm space-y-4" onSubmit={event => { event.preventDefault(); try { if (editingSkin) setLibrary(renameSavedSkin(editingSkin.id, caption)); else renameDefaultSkin(editingDefault!, caption); onLibraryChange?.(); closeCaption(); } catch (error) { setCaptionError(error instanceof Error ? error.message : 'Не удалось сохранить подпись'); } }}>
-          <label className="skin-caption-field">Название скина<input autoFocus value={caption} maxLength={24} onChange={event => setCaption(event.target.value)} onKeyDown={event => { if (event.key === 'Escape') closeCaption(); }} /></label>
-          <p className="text-xs text-zinc-400">До 24 символов</p>
+      {(editingSkin || editingDefault || editingActive) && <ModalDialog label="Название скина" onClose={closeCaption}>
+        <form className="surface-panel rounded-3xl p-6 w-full max-w-sm space-y-4" onSubmit={event => { event.preventDefault(); try { const name = caption.trim() || editingSkin?.name || editingDefault || customSkinName || 'Пользовательский скин'; if (editingSkin) setLibrary(renameSavedSkin(editingSkin.id, name)); else if (editingActive && customSkinImg) renameActiveSkin(customSkinImg.src, name); else renameDefaultSkin(editingDefault!, name); onLibraryChange?.(); closeCaption(); } catch (error) { setCaptionError(error instanceof Error ? error.message : 'Не удалось сохранить подпись'); } }}>
+          <label className="skin-caption-field">Название скина<input autoFocus value={caption} placeholder={editingSkin?.name || editingDefault || customSkinName || 'Пользовательский скин'} maxLength={24} onChange={event => setCaption(event.target.value)} onKeyDown={event => { if (event.key === 'Escape') closeCaption(); }} /></label>
+          <p className="text-xs text-zinc-400">До 24 символов. Пустое поле вернёт исходное название.</p>
           {captionError && <p role="alert" className="text-rose-400 text-xs">{captionError}</p>}
-          <div className="flex justify-end gap-2"><button type="button" className="ui-button" onClick={closeCaption}>Отмена</button><button type="submit" className="ui-button is-primary" disabled={!caption.trim()}>Сохранить</button></div>
+          <div className="flex justify-end gap-2"><button type="button" className="ui-button" onClick={closeCaption}>Отмена</button><button type="submit" className="ui-button is-primary">Сохранить</button></div>
         </form>
       </ModalDialog>}
-      <>{gameActive && <p className="content-lock-notice" role="status">Смена скина доступна после закрытия игры.</p>}<fieldset disabled={gameActive} className="wardrobe-layout wardrobe-fieldset">
+      <GameContentLock locked={gameActive} title="Гардероб доступен после игры" className="wardrobe-lock"><fieldset disabled={gameActive} className="wardrobe-layout wardrobe-fieldset">
       {/* Full-Window Drag & Drop Overlay */}
       {isDragging && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90  border-4 border-dashed border-[#bb74ff] p-8 pointer-events-none animate-in fade-in duration-150">
@@ -279,7 +283,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
           />
 
           {/* Minimal Floating Name Badge */}
-          <button type="button" disabled={Boolean(customSkinImg && !activeLibraryItem)} onClick={editActiveCaption} title="Изменить название скина" className="skin-caption-badge mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full surface-panel text-xs font-medium text-zinc-200 shadow-sm">
+          <button type="button" disabled={gameActive} onClick={editActiveCaption} title="Изменить название скина" className="skin-caption-badge mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full surface-panel text-xs font-medium text-zinc-200 shadow-sm">
             <User size={12} className="text-zinc-400" />
             <span className="truncate max-w-[200px] apple-subheading">{currentDisplayName}</span>
           </button>
@@ -334,153 +338,34 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
           />
         </label>
 
-        {/* Section 2: Library Grid (3 on row 1, 3 on row 2, Max 6 Skins) */}
-        {library.length > 0 && (
-          <div className="surface-panel rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider apple-micro-tag">
-                Моя коллекция
-              </span>
-              <span className="text-[11px] text-zinc-400 font-mono">
-                {library.length}/6
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              {library.map((item) => {
-                const isSelected = activeLibraryItem?.id === item.id;
-                return (
-                  <div
-                    key={item.id}
-                    title={item.caption || item.name}
-                    className={`group relative flex flex-col items-center justify-center p-2 rounded-2xl border transition-all cursor-pointer aspect-square overflow-hidden press-feedback ${
-                      isSelected
-                        ? 'bg-zinc-800/90 border-white/30 shadow-md ring-1 ring-white/15 border-t-white/40'
-                        : 'surface-card text-zinc-400 hover:text-zinc-200'
-                    }`}
-                  >
-                    {/* Live Chibi Thumbnail */}
-                    <button type="button" aria-label={`Выбрать скин ${item.caption || item.name}`} aria-pressed={isSelected} onClick={() => handleSelectLibraryItem(item)} className="w-full h-full flex items-center justify-center p-1 rounded-xl">
-                      <img
-                        src={item.chibiPreviewUri}
-                        alt={item.name}
-                        className="max-w-full max-h-full object-contain [image-rendering:pixelated] drop-shadow-md pointer-events-none select-none transition-transform group-hover:scale-105"
-                      />
-                    </button>
-
-                    {/* Active Checkmark */}
-                    {isSelected && (
-                      <div className="absolute bottom-2 left-2 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center shadow-sm z-10">
-                        <Check size={9} className="text-zinc-950 stroke-[3]" />
-                      </div>
-                    )}
-
-                    {/* Action buttons in Top-Right Corner */}
-                    <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-20">
-                      <button type="button" onClick={event => { event.stopPropagation(); setEditingSkin(item); setCaption(item.caption || item.name); setCaptionError(''); }} title="Подписать скин" className="p-1.5 rounded-lg bg-zinc-900/95 text-zinc-300 hover:text-white press-feedback"><Pencil size={12} /></button>
-                      <button
-                        onClick={(e) => handleDownloadChibi(e, item)}
-                        title="Скачать чиби-аватар"
-                        className="p-1.5 rounded-lg bg-zinc-900/95 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all shadow-md press-feedback cursor-pointer"
-                      >
-                        <Download size={12} />
-                      </button>
-                      <button
-                        onClick={(e) => handleDeleteLibraryItem(e, item.id)}
-                        title="Удалить скин"
-                        className="p-1.5 rounded-lg bg-zinc-900/95 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 transition-all shadow-md press-feedback cursor-pointer"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Section 3: Default Skins (Steve & Alex) */}
-        <div className="surface-panel rounded-2xl p-4 space-y-2.5">
-          <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block apple-micro-tag">
-            Базовые скины
-          </span>
-
-          <div className="grid grid-cols-2 gap-2">
-            {DEFAULT_SKINS.map((skin, idx) => {
-              const isSelected = !customSkinImg && activeDefaultSkinIdx === idx;
-              return (
-                <button
-                  key={skin.id}
-                  onClick={() => {
-                    skinRequest.current++;
-                    onSetCustomSkin(null, null);
-                    onSetDefaultSkinIdx(idx);
-                    setValidationError(null);
-                  }}
-                  className={`py-2.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer press-feedback ${
-                    isSelected
-                      ? 'bg-zinc-800/90 border-white/25 text-white shadow-sm border-t-white/35'
-                      : 'bg-zinc-900/60 hover:bg-zinc-850 border-white/5 text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  <span className="apple-subheading">{skin.name}</span>
-                  {isSelected && <Check size={13} className="text-zinc-200" />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Section 4: Cape Presets (Плащи Quiby Season VI - Заблокировано) */}
-        <div className="surface-panel rounded-2xl p-4 space-y-2.5 relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block apple-micro-tag">
-              Плащи Quiby (Season VI)
-            </span>
-            <span className="text-[10px] text-zinc-400 font-mono flex items-center gap-1">
-              <Lock size={11} className="text-zinc-400" />
-              Скоро
-            </span>
-          </div>
-
-          {/* Locked Grid Container with Centered Lock Overlay */}
-          <div className="relative rounded-xl overflow-hidden">
-            {/* Background Dimmed Grid */}
-            <div className="grid grid-cols-2 gap-2 opacity-25 blur-[1.5px] pointer-events-none select-none">
-              {CAPE_PRESETS.map((cape) => (
-                <div
-                  key={cape.id}
-                  className="p-2.5 rounded-xl border border-white/5 bg-zinc-900/60 flex items-center gap-2.5 text-left"
-                >
-                  <div
-                    className="w-4 h-6 rounded-sm border border-white/10 shrink-0"
-                    style={{
-                      background: `linear-gradient(to bottom, ${cape.gradient[0]}, ${cape.gradient[1]})`,
-                    }}
-                  />
-                  <div className="truncate flex-1">
-                    <span className="block truncate text-[11px] font-bold text-white">
-                      {cape.name}
-                    </span>
-                    <span className="block text-[9px] text-zinc-400 font-mono">
-                      Эксклюзив
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Minimalist Center Lock Badge */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-              <div className="w-11 h-11 rounded-2xl surface-panel border border-white/15 flex items-center justify-center text-zinc-300 shadow-xl">
-                <Lock size={18} className="text-zinc-300" />
+        <section className="skin-collection">
+          <header><h2>Моя коллекция</h2><span>{library.length} / 6</span></header>
+          {library.length ? <div className="skin-collection-grid">{library.map(item => {
+            const selected = activeLibraryItem?.id === item.id;
+            return <article key={item.id} className={`skin-tile ${selected ? 'is-selected' : ''}`}>
+              <button type="button" className="skin-tile-select" aria-label={`Выбрать скин ${item.caption || item.name}`} aria-pressed={selected} onClick={() => handleSelectLibraryItem(item)}>
+                <img src={item.chibiPreviewUri} alt=""/><span>{item.caption || item.name}</span>{selected && <Check size={13}/>}
+              </button>
+              <div className="skin-tile-actions">
+                <button type="button" title="Подписать скин" aria-label={`Переименовать ${item.caption || item.name}`} onClick={() => { setEditingSkin(item); setCaption(item.caption || item.name); setCaptionError(''); }}><Pencil size={13}/></button>
+                <button type="button" title="Скачать чиби-аватар" aria-label={`Скачать ${item.caption || item.name}`} onClick={event => handleDownloadChibi(event, item)}><Download size={13}/></button>
+                <button type="button" className="delete-action" title="Удалить скин" aria-label={`Удалить ${item.caption || item.name}`} onClick={event => handleDeleteLibraryItem(event, item.id)}><Trash2 size={13}/></button>
               </div>
-            </div>
-          </div>
-        </div>
+            </article>;
+          })}</div> : <p className="skin-collection-empty">Добавьте скин, чтобы сохранить его в коллекции.</p>}
+        </section>
+        <section className="skin-collection skin-defaults">
+          <header><h2>Базовые скины</h2><span>2 образа</span></header>
+          <div className="skin-default-grid">{DEFAULT_SKINS.map((skin, index) => {
+            const selected = !customSkinImg && activeDefaultSkinIdx === index;
+            return <button key={skin.id} type="button" aria-pressed={selected} onClick={() => { skinRequest.current++; onSetCustomSkin(null, null); onSetDefaultSkinIdx(index); setValidationError(null); }}>
+              <span className={`default-skin-mark is-${skin.name.toLowerCase()}`} aria-hidden="true">{skin.name[0]}</span><span>{skin.name}</span>{selected && <Check size={14}/>}
+            </button>;
+          })}</div>
+        </section>
+        <section className="cape-coming-soon"><span><Lock size={18}/></span><div><h2>Плащи Quiby</h2><p>Образы сезона VI появятся здесь.</p></div><small>Скоро</small></section>
       </div>
-      </fieldset></>
+      </fieldset></GameContentLock>
     </div>
   );
 };

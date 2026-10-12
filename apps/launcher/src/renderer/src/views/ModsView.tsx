@@ -1,5 +1,5 @@
 import { useFileDrop } from '../utils/useFileDrop';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Package,
   Loader2,
@@ -23,6 +23,7 @@ import type { NotificationItem } from '../utils/notifications';
 import { ContentToolbar, ContentSearch, useContentView } from '../components/ContentToolbar';
 import { ContentSelectionDock } from '../components/ContentSelectionDock';
 import { allVisibleSelected, toggleVisibleSelection } from '../utils/contentSelection';
+import { GameContentLock } from '../components/GameContentLock';
 import { ContentFileCard } from '../components/ContentFileCard';
 import { SelectMenu } from '../components/SelectMenu';
 import { useFileRemoval } from '../utils/useFileRemoval';
@@ -94,6 +95,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
   const importInProgress = useRef(false);
   const isDragging = useFileDrop(files => handleFiles(files), contentCategory === 'mods' && !gameActive);
   const [activeWhitelistMod, setActiveWhitelistMod] = useState<CustomModItem | null>(null);
+  useEffect(() => { if (gameActive) setActiveWhitelistMod(null); }, [gameActive]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const officialFiles = (manifest?.files || []).filter(file => /^mods\/.*\.jar$/i.test(file.path.replace(/\\/g, '/')));
@@ -275,8 +277,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
         ))}
       </nav>
 
-      {gameActive && (contentCategory === 'mods' || contentCategory === 'resourcepacks') && <p className="content-lock-notice">Установка и удаление доступны после закрытия игры.</p>}
-      <div className="content-category-body" key={contentCategory}>
+      <GameContentLock className="content-category-body" key={contentCategory} locked={gameActive && (contentCategory === 'mods' || contentCategory === 'resourcepacks')} title="Контент доступен после игры">
       {contentCategory === 'resourcepacks' ? (
         <ResourcePacksExplorer gameActive={gameActive} gameDir={gameDir} files={manifest?.files || []} session={session} onNotify={onNotify}/>
       ) : contentCategory === 'schematics' ? (
@@ -351,7 +352,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
           </div>
         </section>
       )}
-      </div>
+      </GameContentLock>
       <ModWhitelistModal isOpen={Boolean(activeWhitelistMod)} onClose={() => setActiveWhitelistMod(null)} mod={activeWhitelistMod} session={session} serverUrl={serverUrl}/>
     </div>
   );

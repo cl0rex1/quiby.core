@@ -296,7 +296,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus
                     : updateState?.status === 'ready' ? 'Перезапустить и установить' : 'Проверить обновления'}
                 </button>
               </section>
-              <section className="settings-group">
+              <section className="settings-group java-settings">
                 <div className="settings-group-heading">
                   <Cpu size={17} />
                   <h2>Среда Java</h2>
@@ -333,7 +333,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus
                   </button>
                 </div>
               </section>
-              <section className="settings-group">
+              <section className="settings-group game-directory-settings">
                 <div className="settings-group-heading">
                   <FolderOpen size={17} />
                   <h2>Папка игры</h2>
