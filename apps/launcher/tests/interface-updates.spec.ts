@@ -21,7 +21,8 @@ test('Java disclosure animates both directions and collapsed controls cannot rec
 test('selection actions animate and suspicious files belong to the unified Other filter', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' }); await boot(page); await content(page, 'Моды');
   await page.locator('input[type=file]').first().setInputFiles({ name: 'review.jar', mimeType: 'application/java-archive', buffer: Buffer.from('test') });
-  await page.getByRole('button', { name: 'Другое', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Категория модов' }).click();
+  await page.getByRole('option', { name: 'Другое', exact: true }).click();
   const selection = page.getByRole('checkbox', { name: 'Выделить review.jar' });
   await expect(selection).toBeVisible(); await selection.click();
   const dock = page.getByRole('toolbar', { name: 'Управление выбранными файлами' });
@@ -29,7 +30,8 @@ test('selection actions animate and suspicious files belong to the unified Other
   expect(await dock.evaluate(el => getComputedStyle(el).animationName)).not.toBe('none');
   await page.getByRole('button', { name: 'Снять выделение', exact: true }).click();
   await expect(page.locator('.content-selection-dock')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Геймплей', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Категория модов' }).click();
+  await page.getByRole('option', { name: 'Геймплей', exact: true }).click();
   await expect(selection).toHaveCount(0);
 });
 

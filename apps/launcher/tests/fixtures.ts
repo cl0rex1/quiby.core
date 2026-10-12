@@ -37,11 +37,11 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
         getLaunchState: () => ({ status: localStorage.getItem('fixture-running') ? 'running' : 'idle' }),
         isMaximized: () => false, getTotalRamMb: () => 16384,
         detectJava: () => ({ installations: [], recommended: null, totalRamMb: 16384 }),
-        getUpdateState: () => ({ status: 'current', currentVersion: '1.0.1-beta.22' }), getLatestModpackManifest: () => manifest,
+        getUpdateState: () => ({ status: 'current', currentVersion: '1.0.1-beta.22' }), getLatestModpackManifest: () => ({ ...manifest, files: JSON.parse(localStorage.getItem('fixture-bundled-mods') || '[]') }),
         getShaderpacks: dir => [...(control.files[`shaderpacks:${dir}`] || [])],
         getSchematics: dir => [...(control.files[`schematics:${dir}`] || [])],
-        getResourcePackInventory: () => [], getResourcePacks: () => [],
-        getScreenshots: () => ['one.png', 'two.png', 'three.png'].map(name => ({ name, size: 10, modifiedAt: 1000 })),
+        getResourcePackInventory: dir => [...(control.files[`resourcepacks:${dir}`] || [])], getResourcePacks: dir => [...(control.files[`resourcepacks:${dir}`] || [])],
+        getScreenshots: dir => control.files[`screenshots:${dir}`] || ['one.png', 'two.png', 'three.png'].map(name => ({ name, size: 10, modifiedAt: 1000 })),
         getScreenshotImage: () => image,
         installContentFile: (dir, kind, filename) => { (control.files[`${kind}:${dir}`] ||= []).push({ name: filename, filename, size: 10, updatedAt: 1000 }); },
         stageCustomMod: async filename => {
@@ -52,11 +52,14 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
             return { name: filename, isAllowed: filename !== 'review.jar', status: filename === 'review.jar' ? 'unverified' : 'approved', hashSha1: 'a'.repeat(40), reason: 'Fixture' };
           } finally { control.activeImports--; }
         },
+        trashContentFile: (dir, kind, filename) => { control.files[`${kind}:${dir}`] = (control.files[`${kind}:${dir}`] || []).filter(file => file.filename !== filename); },
+        trashResourcePack: (dir, filename) => { control.files[`resourcepacks:${dir}`] = (control.files[`resourcepacks:${dir}`] || []).filter(file => file.filename !== filename); },
+        trashScreenshots: (dir, names) => { control.files[`screenshots:${dir}`] = methods.getScreenshots(dir).filter((file: any) => !names.includes(file.name)); },
         uploadModReview: () => ({ success: true, delivered: true }),
         refreshCustomMod: () => ({ isAllowed: true, status: 'approved' }),
         launchGame: () => { throw Error('Сервер авторизации недоступен'); },
       };
-      for (const name of ['minimize', 'maximize', 'close', 'killGame', 'openContentFolder', 'openResourcePacksFolder', 'openScreenshotsFolder', 'installCustomMod', 'removeCustomMod', 'trashContentFile', 'trashScreenshots', 'copyScreenshot', 'checkForUpdates', 'downloadUpdate', 'installUpdate']) methods[name] = () => true;
+      for (const name of ['minimize', 'maximize', 'close', 'killGame', 'openContentFolder', 'openResourcePacksFolder', 'openScreenshotsFolder', 'installCustomMod', 'removeCustomMod', 'copyScreenshot', 'checkForUpdates', 'downloadUpdate', 'installUpdate']) methods[name] = () => true;
       (window as any).quibyApi = new Proxy({}, { get(_target, name: string) {
         if (name.startsWith('on')) return (callback: (value: unknown) => void) => {
           (listeners[name] ||= []).push(callback);

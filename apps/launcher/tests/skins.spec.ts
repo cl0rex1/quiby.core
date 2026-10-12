@@ -33,7 +33,7 @@ test('malformed persisted collection does not crash the wardrobe', async ({ page
   await boot(page);
   await page.evaluate(() => localStorage.setItem('quiby_skin_library', '{"unexpected":true}'));
   await page.getByLabel('Гардероб', { exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Будь собой.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Гардероб.' })).toBeVisible();
   await page.getByTitle('Изменить название скина').click();
   await expect(page.getByRole('dialog')).toBeVisible();
 });

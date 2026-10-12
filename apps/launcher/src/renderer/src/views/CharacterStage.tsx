@@ -63,12 +63,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
 
   return (
     <div {...depth} className="launcher-home view-enter">
-      <div className="home-heading">
-        <div>
-          <p className="home-kicker">QUIBY / СЕЗОН 06</p>
-          <h1>Твой мир. Твой ход.</h1>
-        </div>
-      </div>
+      <header className="page-titlebar"><h1>Главная<span>.</span></h1><span className="page-caption">Сезон 06</span></header>
 
       <div className="home-content">
         <section className="pilot-panel" aria-label="Персонаж">
@@ -77,7 +72,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
             <span>{session ? 'АККАУНТ ПОДКЛЮЧЁН' : 'ГОСТЬ'}</span>
           </div>
           <button type="button" className="pilot-figure" onClick={onOpenWardrobe} title="Открыть гардероб">
-            <span className="pilot-plinth" aria-hidden="true" /><span className="pilot-figure-number" aria-hidden="true">06</span>
+            <span className="pilot-plinth" aria-hidden="true" />
             <ChibiCharacterDisplay
               customSkinImg={customSkinImg}
               activeDefaultSkinIdx={activeDefaultSkinIdx}

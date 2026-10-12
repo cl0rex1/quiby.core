@@ -3,13 +3,14 @@ import {
   Layers,
   RefreshCw,
   Sun,
-  Trash2,
   Upload,
 } from 'lucide-react';
 
-import { ContentSelectionDock, SelectionCheck } from './ContentSelectionDock';
+import { ContentSelectionDock } from './ContentSelectionDock';
 import { useFileDrop } from '../utils/useFileDrop';
 import { ContentToolbar, ContentSearch, useContentView } from './ContentToolbar';
+import { ContentFileCard } from './ContentFileCard';
+import { useFileRemoval } from '../utils/useFileRemoval';
 import { allVisibleSelected, toggleVisibleSelection } from '../utils/contentSelection';
 
 type Kind = 'shaderpacks' | 'schematics';
@@ -26,6 +27,7 @@ export interface LibraryProps {
 }
 
 export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & { kind: Kind }) {
+  const { container, animateRemoval } = useFileRemoval();
   const [files, setFiles] = useState<LocalFile[]>([]);
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
@@ -103,8 +105,10 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
     setError('');
     try {
       await window.quibyApi.trashContentFile(gameDir, kind, filename);
+      await animateRemoval([filename]);
+      setFiles(previous => previous.filter(file => file.filename !== filename));
       await refresh(false);
-      onNotify?.('Файл в корзине', filename, 'info');
+      onNotify?.('Файл удалён', filename, 'info');
     } catch (err) {
       report(err);
     } finally {
@@ -116,13 +120,21 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
     mutation.current = true;
     setBusy(true);
     setError('');
+    const removed: string[] = [];
     try {
-      for (const filename of selectedFiles) await window.quibyApi.trashContentFile(gameDir, kind, filename);
-      onNotify?.('Файлы перемещены в корзину', `Файлов: ${selectedFiles.length}`, 'info');
-      setSelectedFiles([]);
+      for (const filename of selectedFiles) {
+        await window.quibyApi.trashContentFile(gameDir, kind, filename);
+        removed.push(filename);
+      }
+    } catch (err) { report(err); }
+    finally {
+      await animateRemoval(removed);
+      setFiles(previous => previous.filter(file => !removed.includes(file.filename)));
+      setSelectedFiles(previous => previous.filter(name => !removed.includes(name)));
       await refresh(false);
-    } catch (err) { report(err); await refresh(false).catch(report); }
-    finally { mutation.current = false; setBusy(false); }
+      mutation.current = false; setBusy(false);
+    }
+    if (removed.length) onNotify?.('Файлы удалены', `Файлов: ${removed.length}`, 'info');
   };
   const filtered = files
     .filter((file) => `${file.name} ${file.filename}`.toLowerCase().includes(search.toLowerCase()))
@@ -168,41 +180,21 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
           </button>
         </div>
       )}
-      <div className="library-scroll" aria-busy={loading}>
+      <div ref={container} className="library-scroll" aria-busy={loading}>
         {loading && !files.length ? <div className="library-empty" role="status"><RefreshCw className="loading-spinner" size={24} /><p>Читаем папку…</p></div> : error && !files.length ? null : filtered.length ? (
           <div className={`library-grid is-${viewMode}`}>
             {filtered.map((file) => (
-              <article className={`library-file ${selectedFiles.includes(file.filename) ? 'is-selected' : ''}`} key={file.filename}>
-                <SelectionCheck disabled={busy} checked={selectedFiles.includes(file.filename)} onToggle={() => setSelectedFiles(previous => previous.includes(file.filename) ? previous.filter(name => name !== file.filename) : [...previous, file.filename])} label={`Выделить ${file.filename}`} />
-                <div className="library-file-icon">
-                  <Icon size={23} />
-                </div>
-                <div className="library-file-copy">
-                  <h3>{file.name}</h3>
-                  <p title={file.filename}>{file.filename}</p>
-                  <span>
-                    {sizeLabel(file)} · {new Date(file.updatedAt).toLocaleDateString('ru-RU')}
-                  </span>
-                </div>
-                <button
-                  className="file-trash"
-                  title="Переместить в корзину"
-                  aria-label={`В корзину: ${file.filename}`}
-                  disabled={busy}
-                  onClick={() => void remove(file.filename)}
-                >
-                  <Trash2 size={15} />
-                </button>
-              </article>
+              <ContentFileCard key={file.filename} fileId={file.filename} name={file.name} filename={file.filename}
+                icon={<Icon size={22}/>} description={`${shader ? 'Шейдерпак' : 'Схематика'} · ${new Date(file.updatedAt).toLocaleDateString('ru-RU')}`}
+                size={sizeLabel(file)} busy={busy} selected={selectedFiles.includes(file.filename)}
+                onSelect={() => setSelectedFiles(previous => previous.includes(file.filename) ? previous.filter(name => name !== file.filename) : [...previous, file.filename])}
+                onDelete={() => void remove(file.filename)}/>
+
             ))}
           </div>
         ) : (
           <div className="library-empty">
-            <div className="library-emblem" aria-hidden="true">
-              <i />
-              <i />
-              <Icon size={44} />
-            </div>
+            <div className="content-empty-icon" aria-hidden="true"><Icon size={28}/></div>
             <h2>
               {search
                 ? 'Ничего не найдено'

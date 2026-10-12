@@ -45,15 +45,13 @@ export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({ 
   };
 
   return (
-    <div className="message-hub view-enter flex-1 h-full overflow-y-auto p-6 md:p-8">
-      <header className="message-hub-header page-heading">
-        <div><p className="home-kicker">QUIBY / СВЯЗЬ</p><h1>Новости и уведомления</h1></div>
-        <div className="message-hub-tabs" role="tablist" aria-label="Разделы сообщений">
+    <div className="message-hub view-enter">
+      <header className="page-titlebar"><h1>Почта<span>.</span></h1><span className="page-caption">Новости и уведомления</span></header>
+        <div className="section-tabs" role="tablist" aria-label="Разделы сообщений">
           <button type="button" role="tab" aria-selected={tab === 'news'} onClick={() => setTab('news')}><Newspaper size={15} /> Новости</button>
           <button type="button" role="tab" aria-selected={tab === 'notifications'} onClick={() => setTab('notifications')}><Mail size={15} /> Уведомления</button>
         </div>
-      </header>
-
+      <div className="message-hub-body" key={tab}>
       {tab === 'news' ? (
         <div className="message-hub-list">
           {newsLoading ? <div className="message-empty" role="status"><Loader2 className="loading-spinner" size={22}/>Загружаем новости…</div> : news.length === 0 ? <div className="message-empty">{newsAvailable ? 'Новостей пока нет. Опубликованные записи сервера появятся здесь.' : 'Не удалось загрузить новости. Проверьте соединение с API.'}</div> : news.map((article) => (
@@ -68,7 +66,7 @@ export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({ 
       ) : notification ? (
         <article className="message-article message-detail">
           <div className="message-meta"><span>{{ success: 'Готово', info: 'Информация', warning: 'Внимание', error: 'Ошибка' }[notification.type || 'info']}</span><time dateTime={new Date(notification.timestamp).toISOString()}>{dateLabel(notification.timestamp)}</time></div>
-          <div className="message-detail-title"><h2>{notification.title}</h2><div className="message-actions">{notification.title === 'Сбой Minecraft' && notification.message && <button className="message-copy" type="button" onClick={() => void downloadCrashLog()} title="Сохранить полный лог"><Download size={15} /><span>Скачать лог</span></button>}<button className="message-copy" type="button" onClick={copyNotification} title="Скопировать уведомление"><Copy size={15} /><span>Копировать</span></button><button type="button" onClick={() => onDeleteNotification(notification.id)} title="Удалить уведомление" aria-label="Удалить уведомление"><Trash2 size={16} /></button></div></div>
+          <div className="message-detail-title"><h2>{notification.title}</h2><div className="message-actions">{notification.title === 'Сбой Minecraft' && notification.message && <button className="message-copy" type="button" onClick={() => void downloadCrashLog()} title="Сохранить полный лог"><Download size={15} /><span>Скачать лог</span></button>}<button className="message-copy" type="button" onClick={copyNotification} title="Скопировать уведомление"><Copy size={15} /><span>Копировать</span></button><button type="button" className="delete-action" onClick={() => onDeleteNotification(notification.id)} title="Удалить уведомление" aria-label="Удалить уведомление"><Trash2 size={16} /></button></div></div>
           {notification.modInfo?.reviewStage && <ReviewTimeline info={notification.modInfo}/>}
           {notification.message && <p>{notification.message}</p>}
           {notification.modInfo && (
@@ -81,6 +79,7 @@ export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({ 
           {notification.modInfo && <button type="button" onClick={onNavigateToMods} className="message-open-mods">Открыть контент <ArrowUpRight size={15} /></button>}
         </article>
       ) : <div className="message-empty">Выберите уведомление в списке слева.</div>}
+      </div>
     </div>
   );
 };

@@ -4,15 +4,12 @@ import {
   Package,
   Loader2,
   Palette,
-  ToggleLeft,
-  ToggleRight,
-  Trash2,
-  ExternalLink,
   Upload,
   Layers,
   Sun,
   Image as ImageIcon,
-  Filter
+  SlidersHorizontal,
+  ToggleRight
 } from 'lucide-react';
 import { canDisableBundledMod } from '../../../shared/modpackProfiles';
 import { ModpackManifest, AuthSession } from '@quiby/shared';
@@ -24,9 +21,11 @@ import { ResourcePacksExplorer } from '../components/ResourcePacksExplorer';
 import { ScreenshotGallery } from '../components/ScreenshotGallery';
 import type { NotificationItem } from '../utils/notifications';
 import { ContentToolbar, ContentSearch, useContentView } from '../components/ContentToolbar';
-import { ContentSelectionDock, SelectionCheck } from '../components/ContentSelectionDock';
+import { ContentSelectionDock } from '../components/ContentSelectionDock';
 import { allVisibleSelected, toggleVisibleSelection } from '../utils/contentSelection';
-import { ModIcon } from '../components/ModIcon';
+import { ContentFileCard } from '../components/ContentFileCard';
+import { SelectMenu } from '../components/SelectMenu';
+import { useFileRemoval } from '../utils/useFileRemoval';
 
 export interface CustomModItem {
   id: string;
@@ -84,6 +83,9 @@ export const ModsView: React.FC<ModsViewProps> = ({
 }) => {
   const [contentCategory, setContentCategory] = useState<ContentCategory>('mods');
   const [switcherMode, setSwitcherMode] = useState<SwitcherMode>('custom');
+  const [bundledFilter, setBundledFilter] = useState('all');
+  const { container, animateRemoval } = useFileRemoval();
+  const deletionInProgress = useRef(false);
   const [filterCategory, setFilterCategory] = useState<ModFilterCategory>('all');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useContentView('mods');
@@ -97,7 +99,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
   const officialFiles = (manifest?.files || []).filter(file => /^mods\/.*\.jar$/i.test(file.path.replace(/\\/g, '/')));
 
   const handleFiles = async (files: FileList | File[]) => {
-    if (gameActive) return;
+    if (gameActive || deletionInProgress.current) return;
     if (importInProgress.current) {
       onNotify?.('Проверка уже идёт', 'Дождитесь завершения импорта файлов.', 'info');
       return;
@@ -116,7 +118,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
     const matchesSearch =
       meta.displayName.toLowerCase().includes(search.toLowerCase()) ||
       f.path.toLowerCase().includes(search.toLowerCase());
-    return matchesSearch && matchesModFilter(meta, filterCategory);
+    return matchesSearch && matchesModFilter(meta, filterCategory) && (bundledFilter === 'all' || canDisableBundledMod(f));
   });
 
   const filteredCustom = customMods.filter((m) => {
@@ -136,49 +138,35 @@ export const ModsView: React.FC<ModsViewProps> = ({
   };
 
   const handleSelectAllCustom = () => onUpdateSelectedModIds(toggleVisibleSelection(selectedModIds, filteredCustom.map(mod => mod.id)));
-  const deleteSelected = async () => {
-    if (batchBusy || gameActive) return;
+  const deleteMods = async (ids: string[]) => {
+    if (deletionInProgress.current || gameActive || isVerifying) return;
+    deletionInProgress.current = true;
     setBatchBusy(true);
     const removed: string[] = [];
     try {
-      for (const mod of customMods.filter(item => selectedModIds.includes(item.id))) {
+      for (const mod of customMods.filter(item => ids.includes(item.id))) {
         await window.quibyApi.removeCustomMod(gameDir, mod.filename);
         removed.push(mod.id);
       }
     } catch (error) { onNotify?.('Не удалось удалить моды', error instanceof Error ? error.message : undefined, 'error'); }
     finally {
+      await animateRemoval(removed);
       onUpdateCustomMods(previous => previous.filter(mod => !removed.includes(mod.id)));
       onUpdateSelectedModIds(selectedModIds.filter(id => !removed.includes(id)));
       setBatchBusy(false);
+      deletionInProgress.current = false;
     }
     if (removed.length) onNotify?.('Моды удалены', `Файлов: ${removed.length}`, 'info');
   };
 
   const toggleCustomMod = (id: string) => {
     const target = customMods.find((m) => m.id === id);
-    if (target?.safetyStatus !== 'approved') return;
+    if (gameActive || batchBusy || isVerifying || target?.safetyStatus !== 'approved') return;
 
     const updated = customMods.map((m) =>
       m.id === id ? { ...m, enabled: !m.enabled } : m
     );
     onUpdateCustomMods(updated);
-  };
-
-  const handleDeleteCustomMod = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (gameActive) return;
-    const target = customMods.find((m) => m.id === id);
-    if (target && window.quibyApi) {
-      try {
-        await window.quibyApi.removeCustomMod(gameDir, target.filename);
-      } catch (error) {
-        onNotify?.('Не удалось удалить мод', error instanceof Error ? error.message : 'Проверьте папку mods.', 'error');
-        return;
-      }
-    }
-    const updated = customMods.filter((m) => m.id !== id);
-    onUpdateCustomMods(updated);
-    onUpdateSelectedModIds(selectedModIds.filter((item) => item !== id));
   };
 
   const handleAddCustomModFile = async (file: File) => {
@@ -245,8 +233,7 @@ export const ModsView: React.FC<ModsViewProps> = ({
     }
   };
 
-  const handleOpenWhitelistModal = (e: React.MouseEvent, mod: CustomModItem) => {
-    e.stopPropagation();
+  const handleOpenWhitelistModal = (mod: CustomModItem) => {
     setActiveWhitelistMod(mod);
   };
 
@@ -266,322 +253,106 @@ export const ModsView: React.FC<ModsViewProps> = ({
 
   const isAllSelected = allVisibleSelected(selectedModIds, filteredCustom.map(mod => mod.id));
 
-  const CATEGORY_CHIPS: { id: ModFilterCategory; label: string }[] = [{ id: 'all', label: 'Все' }, ...MOD_FILTERS];
+  const categories: { id: ModFilterCategory; label: string }[] = [{ id: 'all', label: 'Все категории' }, ...MOD_FILTERS];
+  const busy = gameActive || batchBusy || isVerifying;
+  const hasFilter = Boolean(search || filterCategory !== 'all' || (switcherMode === 'official' && bundledFilter !== 'all'));
+  const resetFilters = () => { setSearch(''); setFilterCategory('all'); setBundledFilter('all'); };
 
   return (
     <div className="content-page view-enter">
-      {isDragging && <div className="content-import-overlay"><Upload size={36} /><strong>Отпустите моды для проверки</strong><span>.JAR · до 512 МБ</span></div>}
-      {/* Hidden File Input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".jar"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          if (e.target.files) {
-            void handleFiles(Array.from(e.target.files));
-          }
-          e.target.value = '';
-        }}
-      />
+      {isDragging && <div className="content-import-overlay"><Upload size={36}/><strong>Отпустите моды для проверки</strong><span>.JAR · до 512 МБ</span></div>}
+      <input ref={fileInputRef} type="file" accept=".jar" multiple hidden disabled={busy}
+        onChange={event => { if (event.target.files) void handleFiles(Array.from(event.target.files)); event.target.value = ''; }}/>
 
-      <header className="page-heading"><div><p className="page-kicker">БИБЛИОТЕКА QUIBY</p><h1>Твой контент.</h1><p>Больше возможностей для твоего мира.</p></div><span className="content-edition">1.21.1 / NEOFORGE</span></header>
-      <nav className="content-category-nav" aria-label="Тип контента">
-        {([['mods', 'Моды', 'Механики и возможности', Package], ['resourcepacks', 'Ресурспаки', 'Текстуры и вайтлист', Palette], ['shaders', 'Шейдеры', 'Свет и атмосфера', Sun], ['schematics', 'Схематики', 'Идеи и постройки', Layers], ['screenshots', 'Скриншоты', 'Мои кадры из игры', ImageIcon]] as const).map(([id, label, description, Icon]) => <button key={id} type="button" aria-current={contentCategory === id ? 'page' : undefined} onClick={() => { setContentCategory(id); onUpdateSelectedModIds([]); }}><Icon size={19}/><span><strong>{label}</strong><small>{description}</small></span><span className="category-arrow">↗</span></button>)}
+      <header className="page-titlebar">
+        <h1>Контент<span>.</span></h1>
+        <span className="content-build"><i aria-hidden="true"/>{manifest?.gameVersion || '1.21.1'}<span>NeoForge</span></span>
+      </header>
+      <nav className="content-category-nav section-tabs" aria-label="Тип контента">
+        {([['mods', 'Моды', Package], ['resourcepacks', 'Ресурспаки', Palette], ['shaders', 'Шейдеры', Sun], ['schematics', 'Схематики', Layers], ['screenshots', 'Скриншоты', ImageIcon]] as const).map(([id, label, Icon]) => (
+          <button key={id} type="button" aria-current={contentCategory === id ? 'page' : undefined}
+            onClick={() => { setContentCategory(id); onUpdateSelectedModIds([]); }}><Icon size={16}/><span>{label}</span></button>
+        ))}
       </nav>
 
       {gameActive && (contentCategory === 'mods' || contentCategory === 'resourcepacks') && <p className="content-lock-notice">Установка и удаление доступны после закрытия игры.</p>}
+      <div className="content-category-body" key={contentCategory}>
       {contentCategory === 'resourcepacks' ? (
-        <ResourcePacksExplorer gameActive={gameActive} gameDir={gameDir} files={manifest?.files || []} session={session} onNotify={onNotify} />
+        <ResourcePacksExplorer gameActive={gameActive} gameDir={gameDir} files={manifest?.files || []} session={session} onNotify={onNotify}/>
       ) : contentCategory === 'schematics' ? (
-        <SchematicsExplorer gameDir={gameDir} onNotify={onNotify} />
+        <SchematicsExplorer gameDir={gameDir} onNotify={onNotify}/>
       ) : contentCategory === 'shaders' ? (
-        <ShadersExplorer gameDir={gameDir} onNotify={onNotify} />
+        <ShadersExplorer gameDir={gameDir} onNotify={onNotify}/>
       ) : contentCategory === 'screenshots' ? (
-        <ScreenshotGallery gameDir={gameDir} onNotify={onNotify} />
+        <ScreenshotGallery gameDir={gameDir} onNotify={onNotify}/>
       ) : (
-        <section className={`content-library ${switcherMode === 'custom' && selectedModIds.length ? 'has-selection' : ''}`}>
+        <section className={`content-library mod-library ${switcherMode === 'custom' && selectedModIds.length ? 'has-selection' : ''}`} aria-label="Библиотека модов">
           <ContentToolbar label="Моды" total={switcherMode === 'custom' ? customMods.length : officialFiles.length} visible={switcherMode === 'custom' ? filteredCustom.length : filteredOfficial.length}
-            mode={viewMode} onMode={setViewMode} busy={gameActive || batchBusy || isVerifying} onAdd={() => fileInputRef.current?.click()} onFolder={handleOpenModsFolder}
+            mode={viewMode} onMode={setViewMode} busy={busy} onAdd={() => fileInputRef.current?.click()} onFolder={handleOpenModsFolder}
             selection={switcherMode === 'custom' ? { allSelected: isAllSelected, onSelectAll: handleSelectAllCustom } : undefined}>
             <div className="content-source-toggle" role="group" aria-label="Источник модов">
-              <button type="button" aria-pressed={switcherMode === 'official'} onClick={() => { setSwitcherMode('official'); onUpdateSelectedModIds([]); }}>Сборка</button>
               <button type="button" aria-pressed={switcherMode === 'custom'} onClick={() => setSwitcherMode('custom')}>Мои моды</button>
+              <button type="button" aria-pressed={switcherMode === 'official'} onClick={() => { setSwitcherMode('official'); onUpdateSelectedModIds([]); }}>Сборка</button>
             </div>
           </ContentToolbar>
-          <ContentSearch value={search} onChange={setSearch} label="Поиск модов" hint=".jar"/>
+          <div className="content-find-row">
+            <ContentSearch value={search} onChange={setSearch} label="Поиск модов"/>
+            {switcherMode === 'official' && <SelectMenu label="Моды сборки" icon={<ToggleRight size={15}/>} value={bundledFilter}
+              className={bundledFilter !== 'all' ? 'is-active' : ''} onChange={setBundledFilter}
+              options={[{ value: 'all', label: 'Все моды' }, { value: 'toggleable', label: 'Можно отключить' }]}/>}
+            <SelectMenu label="Категория модов" icon={<SlidersHorizontal size={14}/>} value={filterCategory}
+              className={filterCategory !== 'all' ? 'is-active' : ''} onChange={value => setFilterCategory(value as ModFilterCategory)}
+              options={categories.map(category => ({ value: category.id, label: category.label }))}/>
+          </div>
           {isVerifying && <p className="content-lock-notice server-loading" role="status"><Loader2 size={15} className="loading-spinner"/>Проверяем файлы на сервере…</p>}
-          {switcherMode === 'custom' && <ContentSelectionDock count={selectedModIds.length} total={customMods.length} allSelected={isAllSelected} busy={gameActive || batchBusy || isVerifying}
-            onSelectAll={handleSelectAllCustom} onClear={() => onUpdateSelectedModIds([])} onDelete={() => void deleteSelected()} deleteLabel="Удалить"
+          {switcherMode === 'custom' && <ContentSelectionDock count={selectedModIds.length} total={customMods.length} allSelected={isAllSelected} busy={busy}
+            onSelectAll={handleSelectAllCustom} onClear={() => onUpdateSelectedModIds([])} onDelete={() => void deleteMods(selectedModIds)} deleteLabel="Удалить"
             onEnable={() => onUpdateCustomMods(previous => previous.map(mod => selectedModIds.includes(mod.id) && mod.safetyStatus === 'approved' ? { ...mod, enabled: true } : mod))}
             onDisable={() => onUpdateCustomMods(previous => previous.map(mod => selectedModIds.includes(mod.id) ? { ...mod, enabled: false } : mod))}/>}
-          {/* Filter Bar: Category Chips & Search Bar */}
-          <div className="mod-filterbar">
-            {/* Fast Category Filter Chips */}
-            <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-              <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1 mr-1 shrink-0">
-                <Filter size={11} className="text-[#bb74ff]" />
-                <span>Категория:</span>
-              </span>
-              {CATEGORY_CHIPS.map((chip) => (
-                <button
-                  key={chip.id}
-                  type="button"
-                  onClick={() => setFilterCategory(chip.id)}
-                  className={`px-3 py-1 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer press-feedback ${
-                    filterCategory === chip.id
-                      ? 'bg-surface-800 border border-[#bb74ff]/60 text-white font-semibold shadow-sm'
-                      : 'bg-surface-900 hover:bg-surface-850 border border-surface-border text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  {chip.label}
-                </button>
-              ))}
-            </div>
-
-          </div>
-
-          {/* Main Mods Grid Container */}
-          <div className="mod-results library-scroll">
-            {switcherMode === 'official' ? (
-              /* Official Modpack Mods Grid */
-              filteredOfficial.length === 0 ? (
-                <div className="py-20 text-center text-zinc-500 text-xs space-y-2">
-                  <Package size={32} className="mx-auto text-zinc-600" />
-                  <p>Моды не найдены по текущему фильтру</p>
-                </div>
-              ) : (
-                <div className={`mod-grid is-${viewMode}`}>
-                  {filteredOfficial.map((file, idx) => {
-                    const rawName = file.modName || file.path.replace('mods/', '').replace('.jar', '');
-                    const iconUrl = file.modIconUrl?.startsWith('/') ? `${serverUrl}${file.modIconUrl}` : file.modIconUrl;
-                    const meta = resolveModMetadata(rawName, file.path, file.modDescription, iconUrl, file.modProjectUrl, file.modId);
-                    const toggleable = canDisableBundledMod(file);
-                    const disabled = toggleable && disabledBundledMods.includes(file.modId!);
-
-                    return (
-                      <div
-                        key={idx}
-                        className="content-file-card flex items-center justify-between p-3 rounded-xl bg-surface-900 border border-surface-border hover:border-surface-borderLight transition-all duration-150 gap-3"
-                      >
-                        <div className="flex items-center gap-3 truncate">
-                          {/* Mod Logo or Monogram */}
-                          <ModIcon src={meta.iconUrl} name={meta.displayName} />
-
-                          {/* Details */}
-                          <div className="truncate space-y-0.5">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-bold text-white truncate">
-                                {meta.displayName}
-                              </span>
-                              <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-emerald-500/10 border border-emerald-500/20 shrink-0">Проверен</span>
-                            </div>
-                            <p className="text-[11px] text-zinc-400 truncate leading-snug">
-                              {meta.description}
-                            </p>
-                            <p className="text-[10px] text-zinc-500 font-mono truncate">
-                              {file.modVersion || '1.21.1'} • {formatSize(file.size)}{toggleable && ` • ${disabled ? 'Выключен' : 'Клиентский'}`}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Status badge & external link */}
-                        <div className="flex items-center gap-2 shrink-0">
-                          {toggleable && <button type="button" role="switch" aria-checked={!disabled} aria-label={`${disabled ? 'Включить' : 'Отключить'} ${meta.displayName} в сборке`} title="Применится при следующем запуске игры" disabled={!onToggleBundledMod} onClick={() => onToggleBundledMod?.(file.modId!)} className="bundled-mod-toggle">{disabled ? <ToggleLeft size={24}/> : <ToggleRight size={24} className="text-emerald-400"/>}</button>}
-                          {meta.projectUrl && (<a
-                            href={meta.projectUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-surface-800 transition-colors press-feedback"
-                            title="Открыть страницу мода"
-                          >
-                            <ExternalLink size={13} />
-                          </a>)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )
+          <div ref={container} className="mod-results library-scroll" key={switcherMode}>
+            {(switcherMode === 'official' ? filteredOfficial.length : filteredCustom.length) === 0 ? (
+              <div className="library-empty mod-empty">
+                <div className="content-empty-icon"><Package size={28}/></div>
+                <h2>{hasFilter ? 'Ничего не нашлось' : switcherMode === 'custom' ? 'Место для твоих модов' : 'В сборке пока нет модов'}</h2>
+                <p>{hasFilter ? 'Попробуйте другое название или выберите все категории.' : switcherMode === 'custom' ? 'Перетащите сюда .jar или выберите файл. Мы проверим его перед установкой.' : 'Моды появятся после загрузки списка сборки.'}</p>
+                {hasFilter ? <button className="ui-button" type="button" onClick={resetFilters}>Сбросить фильтры</button>
+                  : switcherMode === 'custom' && <button className="ui-button is-primary" type="button" disabled={busy} onClick={() => fileInputRef.current?.click()}>Добавить первый мод</button>}
+              </div>
             ) : (
-              /* Custom Player Mods Grid */
-              filteredCustom.length === 0 ? (
-                <div className="library-empty mod-empty">
-                  <div className="library-emblem" aria-hidden="true"><i/><i/><Package size={44}/></div>
-                  <div className="space-y-1">
-                    <h2>
-                      {search || filterCategory !== 'all' ? 'Моды не найдены по запросу' : 'Твои моды. Твои возможности.'}
-                    </h2>
-                    <p className="text-zinc-500 text-xs max-w-sm mx-auto">
-                      Добавьте .jar — проверим файл перед установкой. Неизвестным модам потребуется одобрение.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className={`mod-grid is-${viewMode}`}>
-                  {filteredCustom.map((mod) => {
-                    const isApproved = mod.safetyStatus === 'approved';
-                    const isPending = mod.safetyStatus === 'pending';
-                    const isBlocked = mod.safetyStatus === 'blocked';
-                    const isUnverified = !isApproved && !isPending && !isBlocked;
-                    const isSelected = selectedModIds.includes(mod.id);
-
-                    const meta = resolveModMetadata(
-                      mod.name,
-                      mod.filename,
-                      mod.description,
-                      mod.iconUrl,
-                      mod.projectUrl
-                    );
-
-                    return (
-                      <div
-                        key={mod.id}
-                        className={`content-file-card ${isSelected ? 'is-selected' : ''} flex flex-col items-stretch p-3 rounded-xl border transition-all duration-150 gap-3 ${
-                          isSelected
-                            ? 'bg-surface-850 border-[#bb74ff]/60 shadow-md ring-1 ring-[#bb74ff]/30'
-                            : isBlocked
-                            ? 'bg-rose-950/20 border-rose-500/30'
-                            : mod.enabled
-                            ? 'bg-surface-900 border-surface-border hover:border-surface-borderLight shadow-sm'
-                            : 'bg-surface-900/50 border-surface-border'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2 min-w-0 w-full">
-                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <SelectionCheck disabled={gameActive || batchBusy || isVerifying} checked={isSelected} onToggle={() => toggleSelectMod(mod.id)} label={`Выделить ${mod.filename}`} />
-
-                          {/* Logo / Monogram */}
-                          <ModIcon src={meta.iconUrl} name={meta.displayName} />
-
-                          {/* Title, Clean Filename & Status Badge */}
-                          <div className="min-w-0 space-y-0.5">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-xs font-bold text-white truncate">
-                                {meta.displayName}
-                              </span>
-
-                              {/* Status Badges */}
-                              {isApproved && (
-                                <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                  <span>Проверен</span>
-                                </span>
-                              )}
-
-                              {isPending && (
-                                <span className="text-[10px] font-mono text-amber-400 flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-amber-500/10 border border-amber-500/20">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                                  <span>• Вайтлист</span>
-                                </span>
-                              )}
-
-                              {isBlocked && (
-                                <span className="text-[10px] font-mono text-rose-400 flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-rose-500/10 border border-rose-500/20">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                                  <span>• Запрещен</span>
-                                </span>
-                              )}
-
-                              {isUnverified && (
-                                <span className="text-[10px] font-mono text-zinc-400 flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-zinc-800 border border-zinc-700">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
-                                  <span>• В проверке</span>
-                                </span>
-                              )}
-                            </div>
-
-                            <p className="text-[11px] text-zinc-400 truncate leading-snug">
-                              {meta.description}
-                            </p>
-
-                            <div className="flex items-center gap-2 min-w-0 font-mono text-[10px] text-zinc-500">
-                              <span className="truncate min-w-0" title={mod.filename}>{mod.filename}</span>
-                              <span className="shrink-0">• {formatSize(mod.size)}</span>
-                            </div>
-                          </div>
-                          </div>
-
-                          {/* Compact controls stay separate from the mod name and whitelist CTA. */}
-                          <div className="flex items-center gap-1.5 shrink-0">
-                          {/* Modrinth Link */}
-                          {meta.projectUrl && (<a
-                            href={meta.projectUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-surface-800 transition-colors press-feedback"
-                            title="Открыть страницу мода"
-                          >
-                            <ExternalLink size={13} />
-                          </a>)}
-
-                          {/* Toggle Switch */}
-                          <button
-                            type="button"
-                            onClick={() => toggleCustomMod(mod.id)}
-                            disabled={gameActive || batchBusy || isVerifying || !isApproved}
-                            className={`p-0.5 transition-all press-feedback ${
-                              !isApproved ? 'opacity-25 cursor-not-allowed' : 'cursor-pointer'
-                            }`}
-                            title={
-                              isBlocked
-                                ? 'Запрещенный мод'
-                                : isPending
-                                ? 'Мод на рассмотрении'
-                                : isUnverified
-                                ? 'Требуется вайтлист'
-                                : mod.enabled
-                                ? 'Отключить мод'
-                                : 'Включить мод'
-                            }
-                          >
-                            {mod.enabled ? (
-                              <ToggleRight size={24} className="text-emerald-400 stroke-[2]" />
-                            ) : (
-                              <ToggleLeft size={24} className="text-zinc-500 stroke-[2]" />
-                            )}
-                          </button>
-
-                          {/* Delete */}
-                          <button
-                            type="button"
-                            disabled={gameActive || batchBusy || isVerifying}
-                            onClick={(e) => handleDeleteCustomMod(e, mod.id)}
-                            className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer press-feedback"
-                            title="Удалить мод"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                        </div>
-
-                        {(isUnverified || (isPending && mod.reviewDeliveryFailed)) && (
-                          <button type="button" disabled={isVerifying || !mod.hashSha1} onClick={(e) => handleOpenWhitelistModal(e, mod)}
-                            className="w-full min-h-10 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#a65ee8] hover:bg-[#bc7ff0] text-white border border-[#d1a5f5] text-xs font-bold shadow-md transition-colors cursor-pointer press-feedback focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e4c4ff]"
-                            title="Отправить мод на проверку для вайтлиста">
-                            {mod.reviewDeliveryFailed ? 'Повторить отправку заявки' : 'Подать заявку в вайтлист'}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )
+              <div className={`mod-grid is-${viewMode}`}>
+                {switcherMode === 'official' ? filteredOfficial.map(file => {
+                  const rawName = file.modName || file.path.replace('mods/', '').replace('.jar', '');
+                  const iconUrl = file.modIconUrl?.startsWith('/') ? `${serverUrl}${file.modIconUrl}` : file.modIconUrl;
+                  const meta = resolveModMetadata(rawName, file.path, file.modDescription, iconUrl, file.modProjectUrl, file.modId);
+                  const toggleable = canDisableBundledMod(file);
+                  const disabled = toggleable && disabledBundledMods.includes(file.modId!);
+                  return <ContentFileCard key={file.path} fileId={file.path} name={meta.displayName} description={meta.description} iconUrl={meta.iconUrl} projectUrl={meta.projectUrl}
+                    filename={file.path} size={`${file.modVersion || '1.21.1'} · ${formatSize(file.size)}`}
+                    enabled={!disabled} busy={busy || !onToggleBundledMod} onToggle={toggleable ? () => onToggleBundledMod?.(file.modId!) : undefined}/>;
+                }) : filteredCustom.map(mod => {
+                  const isApproved = mod.safetyStatus === 'approved';
+                  const isPending = mod.safetyStatus === 'pending';
+                  const isBlocked = mod.safetyStatus === 'blocked';
+                  const needsReview = (!isApproved && !isPending && !isBlocked) || (isPending && mod.reviewDeliveryFailed);
+                  const meta = resolveModMetadata(mod.name, mod.filename, mod.description, mod.iconUrl, mod.projectUrl);
+                  return <ContentFileCard key={mod.id} fileId={mod.id} name={meta.displayName} description={meta.description} iconUrl={meta.iconUrl} projectUrl={meta.projectUrl}
+                    filename={mod.filename} size={formatSize(mod.size)} reason={mod.safetyReason} deleteLabel="Удалить мод"
+                    notice={isApproved ? undefined : isBlocked ? 'Заблокирован' : isPending ? 'На проверке' : 'Нужен допуск'}
+                    tone={isBlocked ? 'danger' : 'warning'}
+                    enabled={mod.enabled} busy={busy} selected={selectedModIds.includes(mod.id)} onSelect={() => toggleSelectMod(mod.id)}
+                    onToggle={isApproved ? () => toggleCustomMod(mod.id) : undefined} onDelete={() => void deleteMods([mod.id])}>
+                    {needsReview && <button type="button" className="mod-review-button" disabled={busy || !mod.hashSha1} onClick={() => handleOpenWhitelistModal(mod)}>
+                      {mod.reviewDeliveryFailed ? 'Повторить отправку заявки' : 'Подать заявку в вайтлист'}
+                    </button>}
+                  </ContentFileCard>;
+                })}
+              </div>
             )}
           </div>
         </section>
       )}
-
-      {/* Whitelist Submission Modal Dialog */}
-      <ModWhitelistModal
-        isOpen={Boolean(activeWhitelistMod)}
-        onClose={() => setActiveWhitelistMod(null)}
-        mod={activeWhitelistMod}
-        session={session}
-        serverUrl={serverUrl}
-
-      />
+      </div>
+      <ModWhitelistModal isOpen={Boolean(activeWhitelistMod)} onClose={() => setActiveWhitelistMod(null)} mod={activeWhitelistMod} session={session} serverUrl={serverUrl}/>
     </div>
   );
 };

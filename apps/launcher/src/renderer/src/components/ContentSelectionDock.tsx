@@ -6,7 +6,7 @@ export function SelectionCheck({ checked, label, onToggle, disabled }: { checked
   return <button type="button" disabled={disabled} className={`content-selection-check ${checked ? 'is-selected' : ''}`} role="checkbox" aria-checked={checked} aria-label={label} onClick={event => { event.stopPropagation(); onToggle(); }}><Check size={12} strokeWidth={3} /></button>;
 }
 
-export function ContentSelectionDock({ count, total, allSelected, busy, onSelectAll, onClear, onDelete, onCopy, onEnable, onDisable, deleteLabel = 'В корзину' }: {
+export function ContentSelectionDock({ count, total, allSelected, busy, onSelectAll, onClear, onDelete, onCopy, onEnable, onDisable, deleteLabel = 'Удалить' }: {
   count: number; total: number; allSelected: boolean; busy: boolean;
   onSelectAll: () => void; onClear: () => void; onDelete: () => void; onCopy?: () => void;
   onEnable?: () => void; onDisable?: () => void; deleteLabel?: string;
@@ -27,7 +27,7 @@ export function ContentSelectionDock({ count, total, allSelected, busy, onSelect
       {onCopy && <button type="button" className="content-batch-button" disabled={busy || !count} onClick={onCopy}><Copy size={14} />Копировать</button>}
       {onEnable && <button type="button" className="content-batch-button" disabled={busy || !count} onClick={onEnable}><ToggleRight size={16}/>Включить</button>}
       {onDisable && <button type="button" className="content-batch-button" disabled={busy || !count} onClick={onDisable}><ToggleLeft size={16}/>Отключить</button>}
-      <button type="button" className="content-batch-button" disabled={busy || !count} onClick={onDelete}><Trash2 size={14} />{deleteLabel}</button>
+      <button type="button" className="content-batch-button delete-action" disabled={busy || !count} onClick={onDelete}><Trash2 size={14} />{deleteLabel}</button>
       <button type="button" className="content-batch-button" disabled={busy || !count} onClick={onClear} aria-label="Снять выделение"><X size={15} /></button>
     </div>
   </div>;

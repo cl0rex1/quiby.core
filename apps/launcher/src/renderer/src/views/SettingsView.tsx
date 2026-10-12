@@ -19,6 +19,7 @@ import { MotionToggle, useMotion } from '../components/MotionProvider';
 import type { UpdateState } from '../../../main/updates';
 import { parseCustomJvmArgs } from '../../../shared/jvmArgs';
 import { windowLimits } from '../../../shared/launcherSettings';
+import { SelectMenu } from '../components/SelectMenu';
 import { SettingsField } from '../components/SettingsField';
 
 interface SettingsViewProps {
@@ -94,19 +95,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus
 
   return (
     <div className="settings-page view-enter">
-      <header className="page-heading">
-        <div>
-          <p className="page-kicker">ТВОЁ ПРОСТРАНСТВО</p>
-          <h1>Под тебя.</h1>
-          <p>Комфорт в деталях. Основные настройки сохраняются автоматически.</p>
-        </div>
-        <span className="quiet-status" role="status" data-state={saveStatus}>
+      <header className="page-titlebar">
+        <h1>Настройки<span>.</span></h1>
+        <span className="settings-save-status" title="Изменения сохраняются автоматически" role="status" data-state={saveStatus}>
           <Check size={13} /> {saveStatus === 'saved' ? 'Сохранено' : saveStatus === 'saving' ? 'Сохраняем…' : saveStatus === 'loading' ? 'Загружаем…' : 'Не сохранено'}
           {saveStatus === 'error' && <button type="button" className="ui-button" onClick={onRetrySave}>Повторить</button>}
         </span>
       </header>
       <div className="settings-layout">
-        <nav className="settings-nav" aria-label="Разделы настроек">
+        <nav className="section-tabs" aria-label="Разделы настроек">
           {(
             [
               ['game', 'Игра', Monitor],
@@ -122,19 +119,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus
             >
               <Icon size={17} />
               <span>{label}</span>
-              <ArrowUpRight size={13} />
             </button>
           ))}
-          <div className="settings-note">
-            <span>QUIBY CORE</span>
-            <p>
-              Minecraft 1.21.1
-              <br />
-              NeoForge · Java 21
-            </p>
-          </div>
         </nav>
-        <div className="settings-body view-enter" key={section}>
+        <div className="settings-body" data-section={section} key={section}>
           {error && (
             <p className="inline-error" role="alert">
               {error}
@@ -147,6 +135,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus
                 <span className="current-build-copy"><small>ТВОЯ СБОРКА</small><strong>{build.name}</strong><span>{build.tagline}</span></span>
                 <span className="current-build-action">Выбрать сборку <ArrowUpRight size={17}/></span>
               </button>
+              <div className="settings-game-grid"><div className="settings-memory">
               <RamSlider
                 ramMb={settings.ramMaxMb}
                 totalSystemRamGb={totalRamGb}
@@ -177,7 +166,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus
                   </button>
                 ))}
               </div>
-              <section className="settings-group">
+              </div><section className="settings-group">
                 <div className="settings-group-heading">
                   <Monitor size={17} />
                   <h2>Окно игры</h2>
@@ -235,7 +224,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus
                     onChange={(e) => update({ autoJoinServer: e.target.checked })}
                   />
               </label>}
-              </section>
+              </section></div>
             </>
           )}
           {section === 'appearance' && (
@@ -247,12 +236,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus
                   <i />
                 </div>
                 <div>
-                  <span className="page-kicker">ИНТЕРФЕЙС / ДВИЖЕНИЕ</span>
-                  <h2>
-                    Глубина.
-                    <br />
-                    Без лишнего.
-                  </h2>
+                  <h2>Движение в интерфейсе</h2>
                   <p>
                     {reduced
                       ? 'Спокойный интерфейс. Пространственные эффекты и движение персонажей отключены.'
@@ -270,7 +254,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus
                         : 'Отключает наклоны, появления и анимацию персонажа.'}
                     </p>
                   </div>
-                  <MotionToggle />
+                  <MotionToggle compact />
                 </div>
                 <div className="setting-row">
                   <div>
@@ -330,20 +314,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus
                   Нужна Java 21 (64-битная). Если подходящей версии нет, лаунчер скачает её при запуске игры. Путь можно выбрать вручную.
                 </p>
                 {javaList.length > 0 && (
-                  <select
-                    aria-label="Установленные версии Java"
-                    value={settings.javaPath}
-                    onChange={(e) => update({ javaPath: e.target.value })}
-                  >
-                    <option value={settings.javaPath}>{settings.javaPath}</option>
-                    {javaList
-                      .filter((j) => j.path !== settings.javaPath)
-                      .map((j) => (
-                        <option key={j.path} value={j.path}>
-                          {j.versionString} — {j.path}
-                        </option>
-                      ))}
-                  </select>
+                  <SelectMenu label="Установленные версии Java" value={settings.javaPath} onChange={value => update({ javaPath: value })}
+                    options={[{ value: settings.javaPath, label: settings.javaPath }, ...javaList.filter(java => java.path !== settings.javaPath).map(java => ({ value: java.path, label: `${java.versionString} — ${java.path}` }))]}/>
+
                 )}
                 <label className="field-label" htmlFor="java-path">
                   Исполняемый файл

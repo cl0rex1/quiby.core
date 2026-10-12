@@ -5,6 +5,8 @@ import { SplashWindowView } from './components/SplashWindowView';
 import './index.css';
 import './studio.css';
 import './launchpad.css';
+import './content.css';
+import './interface.css';
 import { MotionProvider } from './components/MotionProvider';
 import { LauncherErrorBoundary } from './components/LauncherErrorBoundary';
 

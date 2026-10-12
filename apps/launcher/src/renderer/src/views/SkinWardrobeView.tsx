@@ -167,7 +167,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
   return (
     <div className="wardrobe-page view-enter">
-      <header className="page-heading"><div><p className="page-kicker">ТВОЙ ПЕРСОНАЖ</p><h1>Будь собой.</h1><p>Скины, детали и узнаваемый силуэт.</p></div><span className="content-edition">ГАРДЕРОБ / S6</span></header>
+      <header className="page-titlebar"><h1>Гардероб<span>.</span></h1><span className="page-caption">Твой персонаж</span></header>
       {(editingSkin || editingDefault) && <ModalDialog label="Название скина" onClose={closeCaption}>
         <form className="surface-panel rounded-3xl p-6 w-full max-w-sm space-y-4" onSubmit={event => { event.preventDefault(); try { if (editingSkin) setLibrary(renameSavedSkin(editingSkin.id, caption)); else renameDefaultSkin(editingDefault!, caption); onLibraryChange?.(); closeCaption(); } catch (error) { setCaptionError(error instanceof Error ? error.message : 'Не удалось сохранить подпись'); } }}>
           <label className="skin-caption-field">Название скина<input autoFocus value={caption} maxLength={24} onChange={event => setCaption(event.target.value)} onKeyDown={event => { if (event.key === 'Escape') closeCaption(); }} /></label>

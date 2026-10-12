@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AuthSession } from '@quiby/shared';
-import { Palette, Trash2, Upload } from 'lucide-react';
+import { Palette, Upload } from 'lucide-react';
 import type { ResourcePackItem as Pack } from '../../../main/engine/resourcePackCatalog';
 import type { CustomModItem } from '../views/ModsView';
 import { ModWhitelistModal } from './ModWhitelistModal';
 import { ContentToolbar, ContentSearch, useContentView } from './ContentToolbar';
-import { ContentSelectionDock, SelectionCheck } from './ContentSelectionDock';
+import { ContentSelectionDock } from './ContentSelectionDock';
+import { ContentFileCard } from './ContentFileCard';
+import { useFileRemoval } from '../utils/useFileRemoval';
 import { allVisibleSelected, toggleVisibleSelection } from '../utils/contentSelection';
 import { useFileDrop } from '../utils/useFileDrop';
 
@@ -16,6 +18,7 @@ export function ResourcePacksExplorer({ gameDir, files, session, onNotify, gameA
   gameDir: string; files: { path: string; sha256: string }[]; session?: AuthSession | null;
   onNotify?: (title: string, message?: string, type?: 'success' | 'info' | 'warning' | 'error') => void;
 }) {
+  const { container, animateRemoval } = useFileRemoval();
   const cacheKey = `${gameDir}:${session?.user.discordId || ''}`;
   const [packs, setPacks] = useState<Pack[]>(() => inventories.get(cacheKey) || []);
   const [search, setSearch] = useState('');
@@ -111,8 +114,13 @@ export function ResourcePacksExplorer({ gameDir, files, session, onNotify, gameA
         await window.quibyApi.trashResourcePack(gameDir, name); removed.push(name);
       }
     } catch (err) { failure = message(err); }
-    finally { setSelected(previous => previous.filter(name => !removed.includes(name))); await fresh(); if (failure) setError(failure); setBusy(false); }
-    if (removed.length) onNotify?.('Ресурспаки в корзине', `Файлов: ${removed.length}`, 'info');
+    finally {
+      await animateRemoval(removed);
+      setPacks(previous => previous.filter(pack => !removed.includes(pack.filename)));
+      setSelected(previous => previous.filter(name => !removed.includes(name)));
+      await fresh(); if (failure) setError(failure); setBusy(false);
+    }
+    if (removed.length) onNotify?.('Ресурспаки удалены', `Файлов: ${removed.length}`, 'info');
   };
   const filtered = packs.filter(pack => pack.filename.toLowerCase().includes(search.trim().toLowerCase()));
   const selectable = filtered.filter(pack => !pack.official && pack.status !== 'checking').map(pack => pack.filename);
@@ -127,15 +135,17 @@ export function ResourcePacksExplorer({ gameDir, files, session, onNotify, gameA
     {error && <div className="inline-error" role="alert">{error}</div>}
     {dragging && <div className="content-import-overlay"><Upload size={36}/><strong>Отпустите ресурспаки для импорта</strong><span>ZIP · до 100 МБ</span></div>}
     <ContentSelectionDock count={selected.length} total={packs.filter(pack => !pack.official).length} allSelected={allVisibleSelected(selected, selectable)} busy={busy || gameActive} onSelectAll={selectAll} onClear={() => setSelected([])} onDelete={() => void remove(selected)}/>
-    <div className="library-scroll">
-      {filtered.length ? <div className={`library-grid is-${mode}`}>{filtered.map(pack => <article key={pack.filename} className={`library-file resource-pack-file ${selected.includes(pack.filename) ? 'is-selected' : ''}`}>
-        <div className="library-file-main">
-          {!pack.official ? <SelectionCheck disabled={busy || gameActive || pack.status === 'checking'} checked={selected.includes(pack.filename)} label={`Выделить ${pack.filename}`} onToggle={() => setSelected(previous => previous.includes(pack.filename) ? previous.filter(name => name !== pack.filename) : [...previous, pack.filename])}/> : <span className="content-selection-placeholder"/>}
-          <div className="library-file-icon"><Palette size={20}/></div>
-          <div className="library-file-copy"><h3 title={pack.filename}>{pack.filename.replace(/\.zip$/i, '')}</h3><span>{pack.official ? 'Сборка' : labels[pack.status] || 'Нет допуска'} · {(pack.size / 1048576).toFixed(1)} МБ</span><p className="resource-pack-reason" title={pack.reason}>{pack.reason}</p></div>
-        </div>
-        {!pack.official && <div className="library-file-actions">{!pack.isAllowed && <button className="ui-button is-primary" disabled={busy || !session?.token || pack.status === 'checking'} onClick={() => void request(pack)}>{pack.status === 'pending' ? 'Проверить отправку' : 'Подать заявку'}</button>}<button className="file-trash" title="Переместить в корзину" aria-label={`В корзину: ${pack.filename}`} disabled={busy || gameActive || pack.status === 'checking'} onClick={() => void remove([pack.filename])}><Trash2 size={15}/></button></div>}
-      </article>)}</div> : <div className="library-empty"><Palette size={44}/><h2>{search ? 'Ничего не найдено' : refreshing ? 'Читаем папку…' : 'Ресурспаков пока нет'}</h2><p>{search ? 'Попробуйте другое название.' : 'Добавьте ZIP. Для пользовательского ресурспака потребуется допуск.'}</p></div>}
+    <div ref={container} className="library-scroll">
+      {filtered.length ? <div className={`library-grid is-${mode}`}>{filtered.map(pack => <ContentFileCard key={pack.filename}
+        fileId={pack.filename} name={pack.filename.replace(/\.zip$/i, '')} filename={pack.filename} icon={<Palette size={22}/>}
+        description={pack.official ? 'Ресурспак сборки' : 'Ресурспак'} size={`${(pack.size / 1048576).toFixed(1)} МБ`}
+        notice={!pack.isAllowed && !pack.official ? labels[pack.status] || 'Нет допуска' : undefined} reason={pack.reason}
+        tone={pack.status === 'rejected' ? 'danger' : 'warning'} busy={busy || gameActive || pack.status === 'checking'}
+        selected={selected.includes(pack.filename)}
+        onSelect={!pack.official ? () => setSelected(previous => previous.includes(pack.filename) ? previous.filter(name => name !== pack.filename) : [...previous, pack.filename]) : undefined}
+        onDelete={!pack.official ? () => void remove([pack.filename]) : undefined}>
+        {!pack.official && !pack.isAllowed && <button className="mod-review-button" disabled={busy || gameActive || !session?.token || pack.status === 'checking'} onClick={() => void request(pack)}>{pack.status === 'pending' ? 'Проверить отправку' : 'Подать заявку'}</button>}
+      </ContentFileCard>)}</div> : <div className="library-empty"><div className="content-empty-icon"><Palette size={28}/></div><h2>{search ? 'Ничего не найдено' : refreshing ? 'Читаем папку…' : 'Ресурспаков пока нет'}</h2><p>{search ? 'Попробуйте другое название.' : 'Добавьте ZIP. Для пользовательского ресурспака потребуется допуск.'}</p></div>}
     </div>
     <ModWhitelistModal isOpen={Boolean(review)} mod={review} session={session} onClose={() => setReview(null)}/>
   </section>;

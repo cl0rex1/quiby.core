@@ -11,8 +11,9 @@ export function useContentView(category: string): [ContentViewMode, (mode: Conte
 }
 
 export function SelectAllButton({ allSelected, count, disabled, onClick }: { allSelected: boolean; count: number; disabled?: boolean; onClick: () => void }) {
-  return <button type="button" className={`ui-button content-select-all ${allSelected ? 'is-selected' : ''}`} disabled={disabled || !count} onClick={onClick}>
-    <CheckSquare size={14} /><span>{allSelected ? 'Снять выбор' : 'Выбрать все'}</span>
+  const label = allSelected ? 'Снять выбор' : 'Выбрать все';
+  return <button type="button" className={`ui-button content-select-all content-icon-button ${allSelected ? 'is-selected' : ''}`} title={label} aria-label={label} disabled={disabled || !count} onClick={onClick}>
+    <CheckSquare size={16} />
   </button>;
 }
 
@@ -24,7 +25,7 @@ export function ContentToolbar({ label, total, visible = total, mode, onMode, se
   return <div className="content-toolbar">
     <div className="content-toolbar-summary">
       {children}
-      <div className="library-count">{label}<span aria-label={`Показано ${visible} из ${total}`}>{visible === total ? total : `${visible}/${total}`}</span></div>
+      <div className="library-count">{!children && label}<span aria-label={`Показано ${visible} из ${total}`}>{visible === total ? total : `${visible}/${total}`}</span></div>
       {selection && <SelectAllButton count={selection.count ?? visible} allSelected={selection.allSelected} disabled={busy} onClick={selection.onSelectAll} />}
     </div>
     <div className="toolbar-actions">
@@ -33,14 +34,14 @@ export function ContentToolbar({ label, total, visible = total, mode, onMode, se
         <button type="button" title="Список" aria-label="Список" aria-pressed={mode === 'list'} onClick={() => onMode('list')}><List size={16}/></button>
       </div>
       {onAdd && <button type="button" className="ui-button is-primary" disabled={busy} onClick={onAdd}><Plus size={14}/>Добавить файл</button>}
-      <button type="button" className="ui-button" disabled={busy} onClick={onFolder}><FolderOpen size={14}/>Открыть папку</button>
+      <button type="button" className="ui-button content-icon-button" disabled={!window.quibyApi} onClick={onFolder} title="Открыть папку" aria-label="Открыть папку"><FolderOpen size={16}/></button>
       {onRefresh && <button type="button" className="ui-button content-refresh" disabled={busy || refreshing} onClick={onRefresh} title="Обновить список" aria-label="Обновить список">{refreshing ? <Loader2 size={14} className="animate-spin"/> : <RefreshCw size={14}/>}</button>}
     </div>
   </div>;
 }
 
 export function ContentSearch({ value, onChange, label, hint }: { value: string; onChange: (value: string) => void; label: string; hint?: string }) {
-  return <div className="content-search"><Search size={15}/><input aria-label={label} value={value} onChange={event => onChange(event.target.value)} placeholder="Найти по названию или имени файла"/>
+  return <div className="content-search"><Search size={16}/><input type="search" aria-label={label} value={value} onChange={event => onChange(event.target.value)} placeholder="Поиск по названию или файлу"/>
     {value && <button type="button" aria-label="Очистить поиск" onClick={() => onChange('')}><X size={14}/></button>}{hint && <span>{hint}</span>}
   </div>;
 }
