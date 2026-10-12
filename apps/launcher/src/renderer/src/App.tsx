@@ -1,3 +1,4 @@
+import { useMotion } from './components/MotionProvider';
 import { ReviewContext } from './components/ReviewContext';
 import { upsertNotification } from './utils/notifications';
 import { createSkinSynchronizer } from './utils/skinSync';
@@ -80,6 +81,14 @@ export const App: React.FC = () => {
   const [launcherUpdate, setLauncherUpdate] = useState<UpdateState | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [launchPending, setLaunchPending] = useState(false);
+  const [launchTransition, setLaunchTransition] = useState(false);
+  const { active: motionActive } = useMotion();
+  useEffect(() => {
+    if (!launchTransition) return;
+    if (!motionActive) { setLaunchTransition(false); return; }
+    const timer = window.setTimeout(() => setLaunchTransition(false), 650);
+    return () => window.clearTimeout(timer);
+  }, [launchTransition, motionActive]);
   const launchRequested = useRef(false);
   const latestLaunchState = useRef<LaunchState>({ status: 'idle' });
   const [selectedModIds, setSelectedModIds] = useState<string[]>([]);
@@ -454,6 +463,7 @@ export const App: React.FC = () => {
         latestLaunchState.current = state;
         setLaunchState(state);
         if (state.status === 'crashed') {
+          setLaunchTransition(false);
           handleNotify('Сбой Minecraft', state.error || `Игра завершилась с кодом ${state.exitCode ?? 'неизвестно'}.`, 'error');
         }
       });
@@ -584,6 +594,7 @@ export const App: React.FC = () => {
     setActiveTab('home');
     if (!window.quibyApi) return;
     launchRequested.current = true;
+    setLaunchTransition(motionActive);
     setLaunchPending(true);
     setDownloadProgress(null);
     clearLogs();
@@ -592,6 +603,7 @@ export const App: React.FC = () => {
       const selectedSkin = localStorage.getItem('quiby_custom_skin_data');
       if (selectedSkin) await syncSelectedSkin(session, selectedSkin);
     } catch (err) {
+      setLaunchTransition(false);
       handleNotify('Не удалось синхронизировать скин', err instanceof Error ? err.message : 'Проверьте соединение и попробуйте снова.', 'error');
       launchRequested.current = false;
       setLaunchPending(false);
@@ -606,6 +618,7 @@ export const App: React.FC = () => {
     try {
       await window.quibyApi.launchGame(session, settings, activeModFiles, disabledModFiles);
     } catch (err) {
+      setLaunchTransition(false);
       if (err instanceof Error && err.message.includes('У аккаунта нет доступа')) {
         const current = storedSession();
         if (current?.token === session.token) {
@@ -715,7 +728,7 @@ export const App: React.FC = () => {
           ) : (
             <>
               {activeTab === 'home' && (
-                launchState.status === 'updating' || launchState.status === 'starting' || launchState.status === 'running' ? (
+                !launchTransition && ((launchPending && launchState.status !== 'crashed') || launchState.status === 'updating' || launchState.status === 'starting' || launchState.status === 'running') ? (
                   <InGameLaunchStage
                     session={session}
                     launchState={launchState}
@@ -730,7 +743,7 @@ export const App: React.FC = () => {
                     onClearLogs={clearLogs}
                   />
                 ) : (
-                  <CharacterStage manifest={manifest} buildId={selectedBuild(settings).id} totalPlaytimeSeconds={totalPlaytimeSeconds}/>
+                  <CharacterStage manifest={manifest} buildId={selectedBuild(settings).id} totalPlaytimeSeconds={totalPlaytimeSeconds} launching={launchTransition}/>
                 )
               )}
 
@@ -783,6 +796,7 @@ export const App: React.FC = () => {
         {!isNotificationsOpen && (
           <FloatingActionDeck
             activeTab={activeTab}
+            transitioning={launchTransition}
             session={session}
             launchState={launchState}
             launchPending={launchPending || settingsStatus === 'loading' || settingsStatus === 'saving'}

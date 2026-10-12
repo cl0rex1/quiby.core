@@ -10,6 +10,7 @@ import { ActiveTab } from './MinimalSidebar';
 
 interface FloatingActionDeckProps {
   activeTab: ActiveTab;
+  transitioning?: boolean;
   session: AuthSession | null;
   launchState: LaunchState;
   launchPending?: boolean;
@@ -23,6 +24,7 @@ interface FloatingActionDeckProps {
 
 export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   activeTab,
+  transitioning = false,
   session,
   launchState,
   launchPending = false,
@@ -37,12 +39,12 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   const isRunning = launchState.status === 'running';
   // Case 1: On Home Tab -> Keep Play Button, InGameLaunchStage handles active running controls
   if (activeTab === 'home') {
-    if (isRunning || isBusy) {
+    if ((isRunning || isBusy) && !transitioning) {
       return null;
     }
 
     return (
-      <div className="launcher-dock home-launch-dock">
+      <div className={`launcher-dock home-launch-dock ${transitioning ? 'is-launching' : ''}`} >
         {/* Right Side: Primary Play Button */}
         <div className="relative flex items-center gap-3">
           {!session ? (

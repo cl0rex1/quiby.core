@@ -146,6 +146,11 @@ dialog.photo-viewer { position: fixed; inset: 32px 0 0; width: 100vw; height: ca
 .home-launch-dock .launcher-primary-button:hover:not(:disabled) > svg { background: #d5b7ef; }
 .home-launch-dock .launcher-primary-button:active:not(:disabled) { transform: translateY(0) scale(.98); }
 .home-launch-dock .launcher-primary-button:focus-visible { outline: 2px solid #eee3fc; outline-offset: 5px; box-shadow: 0 0 0 4px #8f68b580; }
+/* Launch runs in parallel; keep the scene visible until the zoom finishes. */
+.home-scene.is-launching .home-scene-art { animation: home-launch-zoom 650ms cubic-bezier(.35, 0, .2, 1) forwards; transform-origin: 50% 45%; }
+.home-scene.is-launching :is(.home-build, .home-playtime, .home-season-logo), .home-launch-dock.is-launching { animation: home-launch-fade 260ms ease forwards; pointer-events: none; }
+@keyframes home-launch-zoom { from { transform: scale(1); opacity: 1; } 65% { opacity: 1; } to { transform: scale(1.7); opacity: 0; } }
+@keyframes home-launch-fade { to { opacity: 0; transform: translateY(6px); } }
 @keyframes home-reveal { from { opacity: .4; transform: scale(1.035); } to { opacity: 1; transform: scale(1); } }
 @keyframes home-detail-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .inbox-drawer { background: var(--color-paper-2); padding: 18px 12px 12px; }

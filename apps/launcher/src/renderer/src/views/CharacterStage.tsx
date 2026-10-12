@@ -5,7 +5,7 @@ import { BUILD_PROFILES, type BuildId } from '../utils/buildProfiles';
 import { buildVideo, buildPoster } from '../utils/buildScreenshots';
 import { useMotion } from '../components/MotionProvider';
 
-export const CharacterStage = memo(function CharacterStage({ manifest, buildId, totalPlaytimeSeconds }: { manifest: ModpackManifest | null; buildId: BuildId; totalPlaytimeSeconds: number }) {
+export const CharacterStage = memo(function CharacterStage({ manifest, buildId, totalPlaytimeSeconds, launching = false }: { manifest: ModpackManifest | null; buildId: BuildId; totalPlaytimeSeconds: number; launching?: boolean }) {
   const { active } = useMotion();
   const minutes = Math.floor(Math.max(0, Number.isFinite(totalPlaytimeSeconds) ? totalPlaytimeSeconds : 0) / 60);
   const playtime = minutes >= 60 ? `${Math.floor(minutes / 60)} ч ${minutes % 60} мин` : `${minutes} мин`;
@@ -14,7 +14,7 @@ export const CharacterStage = memo(function CharacterStage({ manifest, buildId, 
     if (active) void video.current?.play().catch(() => {});
     else video.current?.pause();
   }, [buildId, active]);
-  return <section className="home-scene view-enter" data-build={buildId} aria-label="Мир Quiby">
+  return <section className={`home-scene view-enter ${launching ? 'is-launching' : ''}`} aria-busy={launching} data-build={buildId} aria-label="Мир Quiby">
     <div className="home-scene-art" key={buildId}>
       <img className="home-scene-poster" src={buildPoster(buildId)} alt=""/>
       <video key={buildId} ref={video} className="home-scene-video" src={buildVideo(buildId)} poster={buildPoster(buildId)} autoPlay={active} muted loop playsInline preload="none" aria-hidden="true"/>
