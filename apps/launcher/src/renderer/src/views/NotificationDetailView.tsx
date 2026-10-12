@@ -46,8 +46,7 @@ export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({ 
 
   return (
     <div className="message-hub view-enter">
-      <header className="page-titlebar"><h1>Почта<span>.</span></h1><span className="page-caption">Новости и уведомления</span></header>
-        <div className="section-tabs" role="tablist" aria-label="Разделы сообщений">
+        <div className="section-tabs message-top-tabs" role="tablist" aria-label="Разделы сообщений">
           <button type="button" role="tab" aria-selected={tab === 'news'} onClick={() => setTab('news')}><Newspaper size={15} /> Новости</button>
           <button type="button" role="tab" aria-selected={tab === 'notifications'} onClick={() => setTab('notifications')}><Mail size={15} /> Уведомления</button>
         </div>

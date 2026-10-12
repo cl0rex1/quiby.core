@@ -29,11 +29,13 @@ export const CharacterStage = memo(function CharacterStage({ manifest, buildId }
     if (active) void video.current?.play().catch(() => {});
     else video.current?.pause();
   }, [buildId, active]);
-  return <section className="home-scene view-enter" aria-label="Мир Quiby">
+  return <section className="home-scene view-enter" data-build={buildId} aria-label="Мир Quiby">
+    <div className="home-scene-art" key={buildId}>
     <img className="home-scene-poster" src={buildPoster(buildId)} alt=""/>
     <video key={buildId} ref={video} className="home-scene-video" src={buildVideo(buildId)} poster={buildPoster(buildId)} autoPlay={active} muted loop playsInline preload="none" aria-hidden="true"/>
-    <div className="home-scene-shade"/>
-    <div className="home-build"><strong>{BUILD_PROFILES.find(build => build.id === buildId)?.name}</strong><span>{manifest?.version || '—'}</span></div>
+    </div>
+    <div className="home-scene-shade" aria-hidden="true"/>
+    <div className="home-build"><span className="home-build-mark" aria-hidden="true"/><strong>{BUILD_PROFILES.find(build => build.id === buildId)?.name}</strong><span>{manifest?.version || '—'}</span></div>
     <HomeClock/>
     <img className="home-season-logo" src={quibySeasonLogo} alt="quiby Season 6"/>
   </section>;

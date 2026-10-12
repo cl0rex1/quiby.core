@@ -290,21 +290,10 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
         }`}
       >
         {/* Top Bar: Title & Quick Actions */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#2c2c30] shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-surface-800 border border-surface-border flex items-center justify-center text-[#bb74ff] shadow-sm">
-              <Mail size={13} />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold tracking-wider text-white uppercase">
-                Почта
-              </span>
-              {notifications.length > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-surface-850 border border-surface-border text-[10px] font-mono text-zinc-300">
-                  {notifications.length}
-                </span>
-              )}
-            </div>
+        <div className="inbox-header">
+          <div className="inbox-heading">
+            <h1>Почта<span>.</span></h1>
+            {notifications.length > 0 && <span className="inbox-count">{notifications.length}</span>}
           </div>
 
           {/* Quick Actions */}

@@ -124,21 +124,39 @@ dialog.photo-viewer { position: fixed; inset: 32px 0 0; width: 100vw; height: ca
 @media (hover: none) { .photo-card-check { opacity: 1; } }
 @media (max-width: 800px) { .settings-body :is(.java-settings, .game-directory-settings) { display: flex; flex-direction: column; } }
 
-/* Minimal home: existing build footage, with only corner information. */
-.home-scene { position: relative; width: 100%; height: 100%; min-height: 0; overflow: hidden; background: #101012; isolation: isolate; }
-.home-scene-poster, .home-scene-video, .home-scene-shade { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.home-scene-video { animation: photo-viewer-enter 600ms ease; }
-.home-scene-shade { background: linear-gradient(180deg, #0009, transparent 32%, transparent 58%, #0009); }
-.home-build, .home-clock { position: absolute; top: 30px; color: #fff; text-shadow: 0 2px 12px #000; }
-.home-build { left: 32px; display: flex; align-items: baseline; gap: 12px; }
-.home-build strong { font: 500 17px var(--font-body); }
-.home-build span { font: 11px var(--font-mono); color: #e6e3ec; }
-.home-clock { right: 32px; font: 400 23px var(--font-mono); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
-.home-season-logo { position: absolute; width: clamp(150px, 23vw, 255px); left: 30px; bottom: 28px; filter: drop-shadow(0 4px 16px #0008); }
-.launcher-dock.home-launch-dock { position: fixed; inset: auto 30px 30px auto; height: auto; width: auto; padding: 0; border: 0; background: none; box-shadow: none; backdrop-filter: none; z-index: 30; }
-.home-launch-dock .launcher-primary-button { min-width: 165px; border-radius: 10px; padding: 14px 22px; box-shadow: 0 4px 24px #0003; }
+/* Cinematic build canvas: quiet corners and a single launch action. */
+.home-scene { --scene-light: 174 142 226; position: relative; width: 100%; height: 100%; min-height: 0; overflow: hidden; background: #101012; isolation: isolate; }
+.home-scene[data-build='standard'] { --scene-light: 152 184 202; }
+.home-scene[data-build='draft'] { --scene-light: 199 170 124; }
+.home-scene-art, .home-scene-poster, .home-scene-video, .home-scene-shade { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.home-scene-art { animation: home-reveal 1100ms cubic-bezier(.2,.65,.25,1) both; }
+.home-scene-shade { pointer-events: none; background: linear-gradient(180deg, #0d101bb3, transparent 34%, #0d0b161a 52%, #0d0b16ed), linear-gradient(90deg, #10101b50, transparent 60%), radial-gradient(ellipse at 0 100%, rgb(var(--scene-light) / .2), transparent 58%); }
+.home-scene::after { content: ''; position: absolute; inset: 16px; border: 1px solid #ffffff1c; border-radius: 22px; pointer-events: none; }
+.home-build, .home-clock { position: absolute; top: 38px; color: #fff; }
+.home-build { left: 38px; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid #ffffff26; border-radius: 30px; background: #10121c70; backdrop-filter: blur(12px); animation: home-detail-enter 600ms 120ms both; }
+.home-build-mark { width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--scene-light)); box-shadow: 0 0 12px rgb(var(--scene-light) / .35); }
+.home-build strong { font: 500 12px var(--font-body); letter-spacing: .02em; }
+.home-build > span:last-child { border-left: 1px solid #ffffff28; padding-left: 10px; font: 10px var(--font-mono); color: #dedee7; }
+.home-clock { top: 35px; right: 40px; font: 400 32px var(--font-body); letter-spacing: -.055em; font-variant-numeric: tabular-nums; text-shadow: 0 2px 18px #0008; animation: home-detail-enter 600ms 180ms both; }
+.home-season-logo { position: absolute; width: clamp(210px, 29vw, 330px); left: 36px; bottom: 38px; filter: drop-shadow(0 8px 26px #09061590); animation: home-detail-enter 700ms 220ms both; }
+.launcher-dock.home-launch-dock { position: fixed; inset: auto 40px 42px auto; height: auto; width: auto; padding: 0; border: 0; background: none; box-shadow: none; backdrop-filter: none; z-index: 30; animation: home-detail-enter 700ms 260ms both; }
+.home-launch-dock .launcher-primary-button { gap: 13px; min-width: 174px; min-height: 54px; padding: 8px 22px 8px 9px; border: 1px solid #ffffff65; border-radius: 40px; background: #f3effb; color: #21192c; box-shadow: 0 4px 24px #0003; font-size: 12px; transition: transform 200ms ease, background 200ms ease, box-shadow 200ms ease; }
+.home-launch-dock .launcher-primary-button > svg { box-sizing: content-box; width: 14px; height: 14px; padding: 11px; border-radius: 50%; background: #e1d6f1; color: #49345f; transition: background 200ms ease; }
+.home-launch-dock .launcher-primary-button:hover:not(:disabled) { background: #fff; transform: translateY(-2px); box-shadow: 0 8px 32px #b18bdb25; }
+.home-launch-dock .launcher-primary-button:hover:not(:disabled) > svg { background: #d5b7ef; }
+.home-launch-dock .launcher-primary-button:active:not(:disabled) { transform: translateY(0) scale(.98); }
+@keyframes home-reveal { from { opacity: .4; transform: scale(1.035); } to { opacity: 1; transform: scale(1); } }
+@keyframes home-detail-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .inbox-drawer { background: var(--color-paper-2); padding: 18px 12px 12px; }
-.inbox-drawer > div:first-child { padding: 0 7px 16px; border-color: var(--color-rule); }
+.inbox-drawer .inbox-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 49px; flex-shrink: 0; padding: 0 7px 12px; border-bottom: 1px solid var(--color-rule); }
+.inbox-heading { display: flex; align-items: center; gap: 9px; }
+.inbox-heading h1 { margin: 0; font: 600 26px / 1.2 var(--font-body); letter-spacing: -.045em; color: var(--color-ink); }
+.inbox-heading h1 > span { color: var(--color-accent); }
+.inbox-count { font: 10px var(--font-mono); color: var(--color-ink-2); padding: 2px 5px; border: 1px solid var(--color-rule); border-radius: 5px; }
+.message-hub .message-top-tabs { min-height: 49px; flex-shrink: 0; margin: 0; padding: 0 0 12px; align-items: center; }
+.message-hub .message-top-tabs button { padding-block: 8px; }
+.message-hub { padding-top: 18px; }
+
 .inbox-list { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 0; scrollbar-gutter: stable; }
 .inbox-letter { position: relative; display: flex; flex-direction: column; gap: 7px; width: 100%; padding: 14px 12px; text-align: left; border: 1px solid transparent; border-radius: 9px; cursor: pointer; transition: background 180ms ease, border-color 180ms ease; }
 .inbox-letter:hover { background: #ffffff05; }
