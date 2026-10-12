@@ -730,7 +730,7 @@ export const App: React.FC = () => {
                     onClearLogs={clearLogs}
                   />
                 ) : (
-                  <CharacterStage manifest={manifest} buildId={selectedBuild(settings).id}/>
+                  <CharacterStage manifest={manifest} buildId={selectedBuild(settings).id} totalPlaytimeSeconds={totalPlaytimeSeconds}/>
                 )
               )}
 

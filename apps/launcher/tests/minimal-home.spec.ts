@@ -1,10 +1,15 @@
-import { test, expect, boot, content } from './fixtures';
+import { test, expect, boot, content, emit } from './fixtures';
 
 test('minimal home uses build footage and corner information without a character canvas', async ({ page }, info) => {
+  await page.addInitScript(() => { if (!localStorage.getItem('quiby_total_playtime')) localStorage.setItem('quiby_total_playtime', '89940'); });
   await page.setViewportSize({ width: 980, height: 620 }); await boot(page);
   await expect(page.locator('.home-build')).toContainText('Standard');
   await expect(page.locator('.home-build')).toContainText('6.0.0');
-  await expect(page.getByLabel('Местное время')).toHaveText(/\d{2}:\d{2}/);
+  await expect(page.getByLabel('Время в игре')).toContainText('24 ч 59 мин');
+  await emit(page, 'onPlaytimeTick', 60);
+  await expect(page.getByLabel('Время в игре')).toContainText('25 ч 0 мин');
+  await page.reload();
+  await expect(page.getByLabel('Время в игре')).toContainText('25 ч 0 мин');
   await expect(page.locator('.home-scene canvas')).toHaveCount(0);
   await expect(page.locator('.home-scene-video')).toHaveAttribute('src', /standard/);
   expect(await page.locator('.home-scene-video').evaluate((video: HTMLVideoElement) => video.paused)).toBe(true);

@@ -1,29 +1,14 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import type { ModpackManifest } from '@quiby/shared';
 import quibySeasonLogo from '../assets/quiby_season6_logo.png';
 import { BUILD_PROFILES, type BuildId } from '../utils/buildProfiles';
 import { buildVideo, buildPoster } from '../utils/buildScreenshots';
 import { useMotion } from '../components/MotionProvider';
 
-function HomeClock() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    const update = () => {
-      clearTimeout(timer);
-      if (document.hidden) return;
-      setNow(new Date());
-      timer = setTimeout(update, 60000 - Date.now() % 60000);
-    };
-    update();
-    document.addEventListener('visibilitychange', update);
-    return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', update); };
-  }, []);
-  return <time className="home-clock" aria-label="Местное время" dateTime={now.toISOString()}>{now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</time>;
-}
-
-export const CharacterStage = memo(function CharacterStage({ manifest, buildId }: { manifest: ModpackManifest | null; buildId: BuildId }) {
+export const CharacterStage = memo(function CharacterStage({ manifest, buildId, totalPlaytimeSeconds }: { manifest: ModpackManifest | null; buildId: BuildId; totalPlaytimeSeconds: number }) {
   const { active } = useMotion();
+  const minutes = Math.floor(Math.max(0, Number.isFinite(totalPlaytimeSeconds) ? totalPlaytimeSeconds : 0) / 60);
+  const playtime = minutes >= 60 ? `${Math.floor(minutes / 60)} ч ${minutes % 60} мин` : `${minutes} мин`;
   const video = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     if (active) void video.current?.play().catch(() => {});
@@ -36,7 +21,7 @@ export const CharacterStage = memo(function CharacterStage({ manifest, buildId }
     </div>
     <div className="home-scene-shade" aria-hidden="true"/>
     <div className="home-build"><span className="home-build-mark" aria-hidden="true"/><strong>{BUILD_PROFILES.find(build => build.id === buildId)?.name}</strong><span>{manifest?.version || '—'}</span></div>
-    <HomeClock/>
+    <div className="home-playtime" aria-label="Время в игре"><small>В игре</small><span>{playtime}</span></div>
     <img className="home-season-logo" src={quibySeasonLogo} alt="quiby Season 6"/>
   </section>;
 });
