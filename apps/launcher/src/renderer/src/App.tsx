@@ -32,7 +32,6 @@ import {
   LogEntry, 
   ModpackManifest, 
   NewsArticle,
-  ServerStatus 
 } from '@quiby/shared';
 
 const SERVER_URL = (import.meta.env.VITE_QUIBY_API_URL || 'https://api.quiby.me').replace(/\/$/, '');
@@ -74,8 +73,6 @@ export const App: React.FC = () => {
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [newsAvailable, setNewsAvailable] = useState(false);
   const [newsLoading, setNewsLoading] = useState(true);
-  const [serverLoading, setServerLoading] = useState(true);
-  const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const pendingLogs = useRef<LogEntry[]>([]);
   const clearLogs = () => { pendingLogs.current = []; setLogs([]); };
@@ -514,8 +511,7 @@ export const App: React.FC = () => {
     const refresh = async () => {
       if (!document.hidden) {
         const refreshContent = Date.now() >= nextContentRefresh;
-        const [, , content] = await Promise.all([
-          getJson('/api/status').then(status => { if (!stopped) { setServerStatus(status); setServerLoading(false); } }),
+        const [, content] = await Promise.all([
           getJson('/api/news').then(articles => {
             if (stopped) return;
             if (Array.isArray(articles)) setNews(articles);
@@ -734,22 +730,7 @@ export const App: React.FC = () => {
                     onClearLogs={clearLogs}
                   />
                 ) : (
-                  <CharacterStage
-                    session={session}
-                    manifest={manifest}
-                    serverStatus={serverStatus}
-                    serverLoading={serverLoading}
-                    totalPlaytimeSeconds={totalPlaytimeSeconds}
-                    customSkinImg={customSkinImg}
-                    customSkinName={skinDisplayName}
-                    activeDefaultSkinIdx={activeDefaultSkinIdx}
-                    selectedCape={selectedCape}
-                    isInGame={false}
-                    buildId={selectedBuild(settings).id}
-                    onOpenWardrobe={() => handleSelectTab('wardrobe')}
-                    onOpenLogin={() => setIsAuthModalOpen(true)}
-                    onOpenNews={() => setIsNotificationsOpen(true)}
-                  />
+                  <CharacterStage manifest={manifest} buildId={selectedBuild(settings).id}/>
                 )
               )}
 
@@ -803,22 +784,10 @@ export const App: React.FC = () => {
           <FloatingActionDeck
             activeTab={activeTab}
             session={session}
-            serverStatus={serverStatus}
-            hasServerAddress={Boolean(manifest?.serverAddress)}
             launchState={launchState}
             launchPending={launchPending || settingsStatus === 'loading' || settingsStatus === 'saving'}
             launchBlocked={launcherUpdate?.required ? 'Обновите лаунчер' : settingsStatus === 'error' ? 'Проверьте настройки' : undefined}
-            downloadProgress={downloadProgress}
-            autoConnect={autoConnect}
-            onToggleAutoConnect={(val) => {
-              setAutoConnect(val);
-              localStorage.setItem('quiby_auto_connect', String(val));
-              handleUpdateSettings({ ...settings, autoJoinServer: val });
-            }}
-            logs={logs}
-            onClearLogs={clearLogs}
             onLaunch={handleLaunchGame}
-            onKill={handleKillGame}
             onOpenLogin={() => setIsAuthModalOpen(true)}
           />
         )}

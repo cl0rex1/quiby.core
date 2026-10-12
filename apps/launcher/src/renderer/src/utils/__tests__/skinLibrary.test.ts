@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { getSavedSkinLibrary, removeSkinFromLibrary, renameSavedSkin, getSkinDisplayName, getDefaultSkinCaption, renameDefaultSkin, type SavedSkinItem } from '../skinLibrary';
+import { getSavedSkinLibrary, removeSkinFromLibrary, renameSavedSkin, getSkinDisplayName, getDefaultSkinCaption, type SavedSkinItem } from '../skinLibrary';
 
 test('corrupt skin storage cannot crash the wardrobe or produce duplicate cards', () => {
   let raw = '';
@@ -35,10 +35,9 @@ test('skin captions persist without changing the source name or texture', () => 
   } });
   try {
     assert.equal(getDefaultSkinCaption('Steve'), 'Steve');
-    renameDefaultSkin('Steve', '  Мой   персонаж ');
-    assert.equal(getDefaultSkinCaption('Steve'), 'Мой персонаж');
+    entries.set('quiby_default_skin_captions', JSON.stringify({ Steve: 'Changed', Alex: 'Changed' }));
+    assert.equal(getDefaultSkinCaption('Steve'), 'Steve');
     assert.equal(getDefaultSkinCaption('Alex'), 'Alex');
-    assert.throws(() => renameDefaultSkin('Other', 'Имя'));
     renameSavedSkin('skin1', '  Мой   скин  ');
     assert.deepEqual(getSavedSkinLibrary()[0], { ...original, caption: 'Мой скин' });
     assert.equal(getSkinDisplayName(getSavedSkinLibrary(), 'source.png', 'texture'), 'Мой скин');

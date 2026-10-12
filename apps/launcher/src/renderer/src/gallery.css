@@ -1,7 +1,7 @@
 .game-content-lock { position: relative; display: flex; flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
 .game-content-lock-body { display: flex; flex: 1; min-height: 0; min-width: 0; }
 .game-content-lock.is-locked .game-content-lock-body { pointer-events: none; user-select: none; }
-.game-content-lock-notice { position: absolute; inset: 0; z-index: 45; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 28px; text-align: center; background: rgb(12 12 14 / 66%); backdrop-filter: blur(8px); border: 1px solid var(--color-rule); border-radius: 12px; animation: content-arrive 180ms ease; }
+.game-content-lock-notice { position: absolute; inset: 0; z-index: 45; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 28px; text-align: center; background: rgb(12 12 14 / 58%); backdrop-filter: blur(22px) saturate(.45); border: 1px solid var(--color-rule); border-radius: 12px; animation: content-arrive 180ms ease; }
 .game-lock-icon { display: grid; place-items: center; width: 54px; height: 54px; border: 1px solid #605368; border-radius: 16px; background: #252029; color: #d4b5ef; }
 .game-content-lock-notice h2 { color: var(--color-ink); font: 600 19px / 1.4 var(--font-body); }
 .game-content-lock-notice p { max-width: 340px; color: #b5afbf; font-size: 12px; line-height: 1.6; }
@@ -71,25 +71,28 @@
 .photo-grid.is-list .photo-card-caption { position: static; background: none; padding: 0; min-width: 0; flex: 1; }
 .photo-grid.is-list .photo-card-check { top: 27px; }
 .photo-grid.is-list .photo-card-open-hint { top: 25px; }
-dialog.photo-viewer { position: fixed; inset: 32px 0 0; width: 100vw; height: calc(100dvh - 32px); max-width: none; max-height: none; margin: 0; padding: 18px 24px; border: 0; background: #0b0b0ef5; color: var(--color-ink); display: flex; flex-direction: column; gap: 16px; animation: content-arrive 180ms ease-out; }
+dialog.photo-viewer { position: fixed; inset: 32px 0 0; width: 100vw; height: calc(100dvh - 32px); max-width: none; max-height: none; margin: 0; padding: 18px 24px; border: 0; background: #09090bf5; color: var(--color-ink); display: flex; flex-direction: column; gap: 16px; animation: photo-viewer-enter 240ms var(--ease-out); }
 .photo-viewer::backdrop { background: #070709e8; }
 .photo-viewer-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: none; }
 .photo-viewer-toolbar > div:first-child { min-width: 0; }
 .photo-viewer-toolbar strong { display: block; max-width: 45vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .photo-viewer-toolbar small { display: block; font: 10px var(--font-mono); color: var(--color-ink-2); margin-top: 4px; }
 .photo-viewer-actions { display: flex; gap: 6px; }
-.photo-viewer-actions .ui-button { min-height: 32px; background: #1b1b20; }
+.photo-viewer-actions .ui-button { min-height: 34px; width: 34px; padding: 0; border-color: transparent; background: transparent; color: #aaa7b1; }
+.photo-viewer-actions .ui-button:hover { color: #f4f1f8; background: #ffffff10; }
 .photo-viewer-stage { position: relative; display: flex; flex: 1; min-height: 0; align-items: center; gap: 16px; }
-.photo-viewer-image { display: flex; align-items: center; justify-content: center; flex: 1; min-height: 0; min-width: 0; height: 100%; overflow: auto; }
+.photo-viewer-image { position: relative; display: flex; align-items: center; justify-content: center; flex: 1; min-height: 0; min-width: 0; height: 100%; overflow: auto; }
 .photo-viewer-image img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
 .photo-viewer-stage.is-zoomed .photo-viewer-image { display: block; }
 .photo-viewer-stage.is-zoomed img { width: 150%; max-width: none; max-height: none; }
-.photo-viewer-stage[aria-busy='true'] img { opacity: .5; }
-.photo-viewer-nav { display: grid; flex: none; place-items: center; width: 36px; height: 48px; border: 1px solid var(--color-rule); border-radius: 10px; background: #1b1b20; color: var(--color-ink); cursor: pointer; }
+.photo-viewer-stage[aria-busy='true'] { cursor: progress; }
+.photo-viewer-nav { display: grid; flex: none; place-items: center; width: 36px; height: 48px; border: 0; border-radius: 50%; background: transparent; color: var(--color-ink); cursor: pointer; transition: background 180ms ease, opacity 180ms ease; }
+.photo-viewer-nav:hover { background: #ffffff10; }
 .photo-viewer-nav:disabled { opacity: .25; }
 .photo-filmstrip { display: flex; align-items: center; justify-content: center; gap: 8px; flex: none; }
-.photo-filmstrip button { width: 72px; height: 44px; overflow: hidden; border-radius: 6px; border: 1px solid var(--color-rule); opacity: .5; cursor: pointer; }
-.photo-filmstrip button[aria-current] { border-color: #c298eb; opacity: 1; }
+.photo-filmstrip button { width: 52px; height: 32px; transition: opacity 200ms ease, transform 200ms ease; overflow: hidden; border-radius: 6px; border: 1px solid var(--color-rule); opacity: .5; cursor: pointer; }
+.photo-filmstrip button[aria-current] { border-color: #ded5e8; opacity: 1; transform: translateY(-3px); }
+.photo-filmstrip button:hover { opacity: 1; }
 .photo-filmstrip img { width: 100%; height: 100%; object-fit: cover; }
 
 .message-hub .message-detail { border-top: 2px solid #725686; }
@@ -120,3 +123,44 @@ dialog.photo-viewer { position: fixed; inset: 32px 0 0; width: 100vw; height: ca
 @media (max-width: 1050px) { .photo-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } .skin-collection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (hover: none) { .photo-card-check { opacity: 1; } }
 @media (max-width: 800px) { .settings-body :is(.java-settings, .game-directory-settings) { display: flex; flex-direction: column; } }
+
+/* Minimal home: existing build footage, with only corner information. */
+.home-scene { position: relative; width: 100%; height: 100%; min-height: 0; overflow: hidden; background: #101012; isolation: isolate; }
+.home-scene-poster, .home-scene-video, .home-scene-shade { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.home-scene-video { animation: photo-viewer-enter 600ms ease; }
+.home-scene-shade { background: linear-gradient(180deg, #0009, transparent 32%, transparent 58%, #0009); }
+.home-build, .home-clock { position: absolute; top: 30px; color: #fff; text-shadow: 0 2px 12px #000; }
+.home-build { left: 32px; display: flex; align-items: baseline; gap: 12px; }
+.home-build strong { font: 500 17px var(--font-body); }
+.home-build span { font: 11px var(--font-mono); color: #e6e3ec; }
+.home-clock { right: 32px; font: 400 23px var(--font-mono); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.home-season-logo { position: absolute; width: clamp(150px, 23vw, 255px); left: 30px; bottom: 28px; filter: drop-shadow(0 4px 16px #0008); }
+.launcher-dock.home-launch-dock { position: fixed; inset: auto 30px 30px auto; height: auto; width: auto; padding: 0; border: 0; background: none; box-shadow: none; backdrop-filter: none; z-index: 30; }
+.home-launch-dock .launcher-primary-button { min-width: 165px; border-radius: 10px; padding: 14px 22px; box-shadow: 0 4px 24px #0003; }
+.inbox-drawer { background: var(--color-paper-2); padding: 18px 12px 12px; }
+.inbox-drawer > div:first-child { padding: 0 7px 16px; border-color: var(--color-rule); }
+.inbox-list { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 0; scrollbar-gutter: stable; }
+.inbox-letter { position: relative; display: flex; flex-direction: column; gap: 7px; width: 100%; padding: 14px 12px; text-align: left; border: 1px solid transparent; border-radius: 9px; cursor: pointer; transition: background 180ms ease, border-color 180ms ease; }
+.inbox-letter:hover { background: #ffffff05; }
+.inbox-letter[aria-current] { background: var(--color-paper-selected); border-color: var(--color-rule); }
+.inbox-letter[aria-current]::before { content: ''; position: absolute; left: 0; top: 18px; bottom: 18px; width: 2px; border-radius: 3px; background: #c9a4e7; }
+.inbox-letter-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--color-ink-2); font: 9px var(--font-mono); }
+.inbox-letter-status::before { content: ''; display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #93b7ca; margin-right: 6px; vertical-align: middle; }
+.inbox-letter.is-error .inbox-letter-status::before { background: #f18a9d; }
+.inbox-letter.is-success .inbox-letter-status::before { background: #77c7ab; }
+.inbox-letter.is-warning .inbox-letter-status::before { background: #d6b278; }
+.inbox-letter strong { font-size: 12px; line-height: 1.5; font-weight: 500; color: var(--color-ink-2); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.inbox-letter.is-unread strong, .inbox-letter[aria-current] strong { color: var(--color-ink); }
+.inbox-letter-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-ink-2); font-size: 10px; width: 100%; }
+.inbox-unread-dot { position: absolute; top: 44px; right: 4px; width: 4px; height: 4px; border-radius: 50%; background: #c9a4e7; }
+.message-hub .message-detail { border-top: 1px solid var(--color-rule); }
+.pack-logo { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 11px; background: linear-gradient(145deg, #354541, #172725); color: #a1d6bb; overflow: hidden; }
+.pack-logo.is-shaderpacks { background: linear-gradient(145deg, #534633, #2d2538); color: #f1d29a; }
+.pack-logo img { width: 100%; height: 100%; object-fit: contain; }
+.library-file-icon:has(.pack-logo) { background: none; border: 0; overflow: hidden; }
+.photo-viewer-current { animation: photo-image-enter 260ms ease both; }
+.photo-viewer-image .photo-viewer-previous { position: absolute; inset: 0; margin: auto; animation: photo-image-exit 260ms ease both; pointer-events: none; }
+.photo-viewer-stage.is-zoomed .photo-viewer-current { animation: none; }
+@keyframes photo-image-enter { from { opacity: 0; transform: translateY(5px) scale(.99); } to { opacity: 1; transform: none; } }
+@keyframes photo-image-exit { from { opacity: 1; } to { opacity: 0; } }
+@keyframes photo-viewer-enter { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: none; } }

@@ -6,6 +6,7 @@ import {
   Upload,
 } from 'lucide-react';
 
+import { PackLogo } from './PackLogo';
 import { ContentSelectionDock } from './ContentSelectionDock';
 import { useFileDrop } from '../utils/useFileDrop';
 import { ContentToolbar, ContentSearch, useContentView } from './ContentToolbar';
@@ -15,6 +16,7 @@ import { allVisibleSelected, toggleVisibleSelection } from '../utils/contentSele
 
 type Kind = 'shaderpacks' | 'schematics';
 interface LocalFile {
+  iconUrl?: string;
   name: string;
   filename: string;
   size: number;
@@ -185,7 +187,7 @@ export function LocalContentLibrary({ kind, gameDir, onNotify }: LibraryProps & 
           <div className={`library-grid is-${viewMode}`}>
             {filtered.map((file) => (
               <ContentFileCard key={file.filename} fileId={file.filename} name={file.name} filename={file.filename}
-                icon={<Icon size={22}/>} description={`${shader ? 'Шейдерпак' : 'Схематика'} · ${new Date(file.updatedAt).toLocaleDateString('ru-RU')}`}
+                icon={shader ? <PackLogo src={file.iconUrl} kind="shaderpacks"/> : <Icon size={22}/>} description={`${shader ? 'Шейдерпак' : 'Схематика'} · ${new Date(file.updatedAt).toLocaleDateString('ru-RU')}`}
                 size={sizeLabel(file)} busy={busy} selected={selectedFiles.includes(file.filename)}
                 onSelect={() => setSelectedFiles(previous => previous.includes(file.filename) ? previous.filter(name => name !== file.filename) : [...previous, file.filename])}
                 onDelete={() => void remove(file.filename)}/>

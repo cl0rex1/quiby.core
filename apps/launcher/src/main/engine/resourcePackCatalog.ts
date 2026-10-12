@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { readPackIcon } from './packIcon';
 import path from 'node:path';
 import { createReadStream } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -6,7 +7,7 @@ import { checkContentLinks } from './contentIntegrity';
 import { packDecision } from './resourcePackAdmission';
 
 export type ResourcePackItem = {
-  filename: string; size: number; updatedAt: number; hashSha1?: string;
+  iconUrl?: string; filename: string; size: number; updatedAt: number; hashSha1?: string;
   official: boolean; status: string; isAllowed: boolean; reason: string;
 };
 type Digests = { stamp: string; sha1: string; sha256: string };
@@ -25,7 +26,11 @@ export async function resourcePackInventory(gameDir: string): Promise<ResourcePa
     if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 512 * 1024 * 1024) return null;
     return { filename: entry.name, size: stat.size, updatedAt: stat.mtimeMs, official: false, status: 'checking', isAllowed: false, reason: 'Проверяем файл и допуск…' };
   }));
-  return items.filter((item): item is ResourcePackItem => item !== null).sort((a, b) => a.filename.localeCompare(b.filename, 'ru'));
+  const result = items.filter((item): item is ResourcePackItem => item !== null).sort((a, b) => a.filename.localeCompare(b.filename, 'ru'));
+  for (let start = 0; start < result.length; start += 4) {
+    await Promise.all(result.slice(start, start + 4).map(async item => { item.iconUrl = await readPackIcon(path.join(root, item.filename)); }));
+  }
+  return result;
 }
 
 async function catalogHashes(filename: string): Promise<Digests> {

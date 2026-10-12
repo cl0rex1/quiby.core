@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Copy, Image as ImageIcon, Trash2, X, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
 
+import { useMotion } from './MotionProvider';
 import { SelectMenu } from './SelectMenu';
 import { useFileRemoval } from '../utils/useFileRemoval';
 import { ContentToolbar, ContentSearch, useContentView } from './ContentToolbar';
@@ -18,6 +19,10 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('newest');
+  const { active: motionActive } = useMotion();
+  const fullImages = useRef(new Map<string, string>());
+  const closing = useRef(false);
+  const [previousImage, setPreviousImage] = useState<string | null>(null);
   const [zoomed, setZoomed] = useState(false);
   const [viewerBusy, setViewerBusy] = useState(false);
   const [mode, setMode] = useContentView('screenshots');
@@ -28,7 +33,17 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
   const [busy, setBusy] = useState(false);
   const viewer = useRef<HTMLDialogElement>(null);
   const imageRequest = useRef(0);
-  const closeViewer = () => { imageRequest.current++; setSelected(null); setZoomed(false); setViewerBusy(false); };
+  const closeViewer = async () => {
+    if (closing.current) return;
+    closing.current = true;
+    const request = ++imageRequest.current;
+    if (motionActive && viewer.current) await viewer.current.animate(
+      [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(.985)' }],
+      { duration: 180, easing: 'ease-in', fill: 'forwards' },
+    ).finished.catch(() => {});
+    if (request === imageRequest.current) { setSelected(null); setPreviousImage(null); setZoomed(false); setViewerBusy(false); }
+    closing.current = false;
+  };
   useEffect(() => {
     if (!selected) return;
     const element = viewer.current;
@@ -51,15 +66,18 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
       setScreenshots(files.map(file => ({ ...file, thumbnail: cached(file) })));
       setSelectedNames(previous => previous.filter(name => valid.has(name)));
       // Bound IPC/image decoding work instead of opening every PNG simultaneously.
-      for (let start = 0; start < files.length; start += 4) {
-        const batch: Screenshot[] = await Promise.all(files.slice(start, start + 4).map(async file => {
+      const missing = files.filter(file => !cached(file));
+      for (let start = 0; start < missing.length; start += 4) {
+        if (current !== generation.current) return;
+        const batch: Screenshot[] = await Promise.all(missing.slice(start, start + 4).map(async file => {
           if (cached(file)) return { ...file, thumbnail: cached(file) };
           try { return { ...file, thumbnail: await window.quibyApi.getScreenshotImage(gameDir, file.name, true) }; }
           catch { return file; }
         }));
         if (current !== generation.current) return;
         for (const file of batch) if (file.thumbnail) thumbnails.current.set(file.name, { stamp: stamp(file), image: file.thumbnail });
-        setScreenshots(previous => previous.map(file => batch.find(item => item.name === file.name) || file));
+        const updates = new Map(batch.map(file => [file.name, file]));
+        setScreenshots(previous => previous.map(file => updates.get(file.name) || file));
       }
     } catch (error) {
       if (current === generation.current) onNotify?.('Не удалось загрузить скриншоты', error instanceof Error ? error.message : undefined, 'error');
@@ -68,17 +86,32 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
   const refreshRef = useRef(refresh);
   refreshRef.current = refresh;
   useEffect(() => {
-    thumbnails.current.clear(); setScreenshots([]); setSelected(null); setSelectedNames([]);
+    thumbnails.current.clear(); fullImages.current.clear(); setPreviousImage(null); setScreenshots([]); setSelected(null); setSelectedNames([]);
     void refreshRef.current();
     return () => { generation.current++; imageRequest.current++; };
   }, [gameDir]);
 
   const open = async (name: string) => {
+    if (closing.current) return;
     const request = ++imageRequest.current;
     setViewerBusy(true); setZoomed(false);
     try {
-      const image = await window.quibyApi.getScreenshotImage(gameDir, name, false);
-      if (request === imageRequest.current) setSelected({ name, image });
+      const file = screenshots.find(item => item.name === name);
+      const key = `${name}:${file?.modifiedAt}:${file?.size}`;
+      const image = fullImages.current.get(key) || await window.quibyApi.getScreenshotImage(gameDir, name, false);
+      if (request !== imageRequest.current) return;
+      const decoded = new Image(); decoded.src = image;
+      await decoded.decode();
+      if (request !== imageRequest.current) return;
+      fullImages.current.delete(key); fullImages.current.set(key, image);
+      // Keep decoded-source reuse bounded, including unusually large captures.
+      let bytes = Array.from(fullImages.current.values()).reduce((sum, value) => sum + value.length * 2, 0);
+      while (fullImages.current.size > 3 || bytes > 24 * 1024 * 1024) {
+        const oldest = fullImages.current.keys().next().value!;
+        bytes -= fullImages.current.get(oldest)!.length * 2; fullImages.current.delete(oldest);
+      }
+      setPreviousImage(motionActive && selected?.name !== name ? selected?.image || null : null);
+      setSelected({ name, image });
     } catch (error) {
       if (request === imageRequest.current) onNotify?.('Не удалось открыть скриншот', error instanceof Error ? error.message : undefined, 'error');
     } finally { if (request === imageRequest.current) setViewerBusy(false); }
@@ -93,7 +126,8 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
     setBusy(true);
     try {
       await window.quibyApi.trashScreenshots(gameDir, names);
-      setSelected(current => current && names.includes(current.name) ? null : current);
+      if (selected && names.includes(selected.name)) await closeViewer();
+      fullImages.current.clear();
       await animateRemoval(names);
       setScreenshots(previous => previous.filter(file => !names.includes(file.name)));
       setSelectedNames([]);
@@ -102,17 +136,20 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
     } catch (error) { onNotify?.('Не удалось удалить скриншоты', error instanceof Error ? error.message : undefined, 'error'); }
     finally { setBusy(false); }
   };
-  const filtered = screenshots.filter(file => file.name.toLowerCase().includes(search.trim().toLowerCase()))
-    .sort((a, b) => sort === 'oldest' ? a.modifiedAt - b.modifiedAt : b.modifiedAt - a.modifiedAt);
+  const filtered = useMemo(() => screenshots.filter(file => file.name.toLowerCase().includes(search.trim().toLowerCase()))
+    .sort((a, b) => sort === 'oldest' ? a.modifiedAt - b.modifiedAt : b.modifiedAt - a.modifiedAt), [screenshots, search, sort]);
   const selectedIndex = selected ? filtered.findIndex(file => file.name === selected.name) : -1;
   const visibleNames = filtered.map(file => file.name);
   const selectAll = () => setSelectedNames(previous => toggleVisibleSelection(previous, visibleNames));
-  const groups = new Map<string, Screenshot[]>();
+  const groups = useMemo(() => {
+  const result = new Map<string, Screenshot[]>();
   for (const file of filtered) {
     const date = new Date(file.modifiedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-    const group = groups.get(date);
-    if (group) group.push(file); else groups.set(date, [file]);
+    const group = result.get(date);
+    if (group) group.push(file); else result.set(date, [file]);
   }
+  return result;
+  }, [filtered]);
   const sizeLabel = (size: number) => size >= 1048576 ? `${(size / 1048576).toFixed(1)} МБ` : `${Math.max(1, Math.round(size / 1024))} КБ`;
   const selectOrOpen = (event: React.MouseEvent, file: Screenshot) => {
     if (busy) return;
@@ -159,13 +196,16 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
       }}>
       <header className="photo-viewer-toolbar"><div><strong>{selected.name}</strong><small>{selectedIndex + 1} / {filtered.length}</small></div>
         <div className="photo-viewer-actions"><button type="button" className="ui-button" aria-pressed={zoomed} aria-label="Масштаб изображения" onClick={() => setZoomed(!zoomed)}>{zoomed ? <Minimize2 size={16}/> : <Maximize2 size={16}/>}</button>
-          <button type="button" className="ui-button" onClick={() => void copy(selected.name)}><Copy size={15}/>Копировать</button>
-          <button type="button" className="ui-button delete-action" disabled={busy} onClick={() => void trash([selected.name])}><Trash2 size={15}/>Удалить</button>
-          <button type="button" className="ui-button" onClick={closeViewer} aria-label="Закрыть"><X size={17}/></button></div>
+          <button type="button" className="ui-button" aria-label="Копировать" title="Копировать" onClick={() => void copy(selected.name)}><Copy size={17}/></button>
+          <button type="button" className="ui-button delete-action" aria-label="Удалить" title="Удалить" disabled={busy} onClick={() => void trash([selected.name])}><Trash2 size={17}/></button>
+          <button type="button" className="ui-button" onClick={() => void closeViewer()} aria-label="Закрыть"><X size={17}/></button></div>
       </header>
       <div className={`photo-viewer-stage ${zoomed ? 'is-zoomed' : ''}`} aria-busy={viewerBusy}>
         <button type="button" className="photo-viewer-nav is-prev" disabled={selectedIndex <= 0 || viewerBusy} onClick={() => void open(filtered[selectedIndex - 1].name)} aria-label="Предыдущий"><ChevronLeft/></button>
-        <div className="photo-viewer-image"><img src={selected.image} alt={selected.name} onDoubleClick={() => setZoomed(!zoomed)}/></div>
+        <div className="photo-viewer-image">
+          {previousImage && !zoomed && <img className="photo-viewer-previous" src={previousImage} alt="" onAnimationEnd={() => setPreviousImage(null)}/>}
+          <img key={selected.name} className="photo-viewer-current" src={selected.image} alt={selected.name} onDoubleClick={() => setZoomed(!zoomed)}/>
+        </div>
         <button type="button" className="photo-viewer-nav is-next" disabled={selectedIndex >= filtered.length - 1 || viewerBusy} onClick={() => void open(filtered[selectedIndex + 1].name)} aria-label="Следующий"><ChevronRight/></button>
       </div>
       <nav className="photo-filmstrip" aria-label="Кадры рядом">{filtered.slice(Math.max(0, selectedIndex - 3), selectedIndex + 4).map(file => <button type="button" key={file.name}

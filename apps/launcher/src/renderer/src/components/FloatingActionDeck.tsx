@@ -4,26 +4,17 @@ import {
   User, 
   Save, 
   X, 
-  Check, 
 } from 'lucide-react';
-import { AuthSession, DownloadProgress, LaunchState, LogEntry, ServerStatus } from '@quiby/shared';
+import { AuthSession, LaunchState } from '@quiby/shared';
 import { ActiveTab } from './MinimalSidebar';
 
 interface FloatingActionDeckProps {
   activeTab: ActiveTab;
   session: AuthSession | null;
-  serverStatus: ServerStatus | null;
-  hasServerAddress: boolean;
   launchState: LaunchState;
   launchPending?: boolean;
   launchBlocked?: string;
-  downloadProgress: DownloadProgress | null;
-  logs?: LogEntry[];
-  onClearLogs?: () => void;
-  autoConnect?: boolean;
-  onToggleAutoConnect?: (val: boolean) => void;
   onLaunch: () => void;
-  onKill: () => void;
   onOpenLogin: () => void;
   hasUnsavedChanges?: boolean;
   onSave?: () => void | Promise<void>;
@@ -33,13 +24,9 @@ interface FloatingActionDeckProps {
 export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   activeTab,
   session,
-  serverStatus,
-  hasServerAddress,
   launchState,
   launchPending = false,
   launchBlocked,
-  autoConnect = true,
-  onToggleAutoConnect,
   onLaunch,
   onOpenLogin,
   hasUnsavedChanges = false,
@@ -55,42 +42,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
     }
 
     return (
-      <div className="launcher-dock fixed bottom-0 left-44 right-0 h-20 border-t px-6 sm:px-8 flex items-center justify-between z-30 select-none surface-dock">
-        {/* Left Side: Server Status & Quick Ping */}
-        <div className="flex items-center gap-3">
-          <span className={serverStatus?.online ? 'status-dot is-online' : 'status-dot'} />
-          <span className="dock-address">QUIBY / СЕРВЕР</span>
-          <span className="dock-status">{serverStatus?.online ? 'Сервер доступен' : !hasServerAddress ? 'Сервер готовится' : serverStatus ? 'Сервер выключен' : 'Нет данных'}</span>
-        </div>
-
-        {/* Center / Controls: Fast-Connect Toggle */}
-        <div className="flex items-center gap-3">
-          {session && hasServerAddress && (
-            <button
-              type="button"
-              aria-pressed={autoConnect}
-              onClick={() => onToggleAutoConnect?.(!autoConnect)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors cursor-pointer press-feedback text-xs font-semibold select-none ${
-                autoConnect
-                  ? 'bg-surface-850 border-[#bb74ff]/40 text-[#d7b6ff]'
-                  : 'bg-surface-900 border-surface-border text-zinc-400 hover:text-zinc-200'
-              }`}
-              title="Автоматический вход сразу на сервер без перехода в главное меню"
-            >
-              <div
-                className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-all ${
-                  autoConnect
-                    ? 'bg-[#bb74ff] border-[#bb74ff] text-[#0c0c0d]'
-                    : 'border-zinc-600 bg-surface-800'
-                }`}
-              >
-                {autoConnect && <Check size={10} className="stroke-[3.5]" />}
-              </div>
-              <span>Сразу на сервер</span>
-            </button>
-          )}
-        </div>
-
+      <div className="launcher-dock home-launch-dock">
         {/* Right Side: Primary Play Button */}
         <div className="relative flex items-center gap-3">
           {!session ? (

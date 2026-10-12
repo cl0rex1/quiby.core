@@ -52,6 +52,11 @@ test('profile draft survives background parent renders and Escape restores focus
 });
 
 test('skin caption dialog traps focus and closes with Escape from any control', async ({ page }) => {
+  await page.addInitScript(() => {
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 64;
+    localStorage.setItem('quiby_custom_skin_data', canvas.toDataURL());
+    localStorage.setItem('quiby_custom_skin_name', 'custom.png');
+  });
   await boot(page);
   await page.getByLabel('Гардероб', { exact: true }).click();
   await page.getByTitle('Изменить название скина').click();
@@ -185,9 +190,10 @@ test('required update blocks launch and shows download progress', async ({ page 
 
 test('minimum-size navigation preserves visible home actions', async ({ page }) => {
   await page.setViewportSize({ width: 980, height: 620 }); await boot(page);
-  const footer = await page.locator('.season-panel-footer').boundingBox();
+  const logo = await page.locator('.home-season-logo').boundingBox();
   const dock = await page.locator('.launcher-dock').boundingBox();
-  expect(footer!.y + footer!.height).toBeLessThanOrEqual(dock!.y);
+  expect(logo!.x + logo!.width).toBeLessThan(dock!.x);
+  expect(dock!.y + dock!.height).toBeLessThanOrEqual(620);
   for (const name of ['Контент', 'Гардероб', 'Настройки', 'Главная']) {
     await page.getByLabel(name, { exact: true }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

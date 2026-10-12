@@ -51,7 +51,7 @@ html[data-motion='reduced'] .auth-column {
   padding-left: var(--sidebar-width);
   transition: padding-left 260ms var(--ease-settle);
 }
-.launcher-dock {
+.launcher-dock:not(.home-launch-dock) {
   left: var(--sidebar-width) !important;
   transition: left 260ms var(--ease-settle);
 }

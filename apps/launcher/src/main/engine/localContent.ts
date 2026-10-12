@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { readPackIcon } from './packIcon';
 import path from 'path';
 
 export type ContentKind = 'shaderpacks' | 'schematics';
@@ -48,7 +49,13 @@ export async function listLocalContent(gameDir: string, kind: ContentKind) {
       };
     }),
   );
-  return items.filter((item): item is NonNullable<typeof item> => item !== null);
+  const result = items.filter((item): item is NonNullable<typeof item> => item !== null);
+  if (kind !== 'shaderpacks') return result;
+  const decorated: (typeof result[number] & { iconUrl?: string })[] = [];
+  for (let start = 0; start < result.length; start += 4) {
+    decorated.push(...await Promise.all(result.slice(start, start + 4).map(async item => ({ ...item, iconUrl: await readPackIcon(path.join(dir, item.filename)) }))));
+  }
+  return decorated;
 }
 export async function installLocalContent(
   gameDir: string,

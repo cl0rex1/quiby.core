@@ -1,121 +1,40 @@
-import React, { useEffect, useRef } from 'react';
-import { ArrowUpRight, Loader2, Shirt } from 'lucide-react';
-import { AuthSession, ModpackManifest, ServerStatus } from '@quiby/shared';
-import { DEFAULT_SKINS, CapePreset } from '../utils/chibiRenderer';
-import { getDefaultSkinCaption } from '../utils/skinLibrary';
-import { ChibiCharacterDisplay } from '../components/ChibiCharacterDisplay';
-import { usePointerDepth } from '../hooks/usePointerDepth';
+import { memo, useEffect, useRef, useState } from 'react';
+import type { ModpackManifest } from '@quiby/shared';
 import quibySeasonLogo from '../assets/quiby_season6_logo.png';
-import { BuildId } from '../utils/buildProfiles';
+import { BUILD_PROFILES, type BuildId } from '../utils/buildProfiles';
 import { buildVideo, buildPoster } from '../utils/buildScreenshots';
 import { useMotion } from '../components/MotionProvider';
 
-interface CharacterStageProps {
-  session: AuthSession | null;
-  manifest: ModpackManifest | null;
-  serverStatus: ServerStatus | null;
-  serverLoading?: boolean;
-  totalPlaytimeSeconds?: number;
-  customSkinImg: HTMLImageElement | null;
-  customSkinName: string | null;
-  activeDefaultSkinIdx: number;
-  selectedCape: CapePreset;
-  isInGame?: boolean;
-  buildId: BuildId;
-  onOpenWardrobe: () => void;
-  onOpenLogin: () => void;
-  onOpenNews?: () => void;
+function HomeClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const update = () => {
+      clearTimeout(timer);
+      if (document.hidden) return;
+      setNow(new Date());
+      timer = setTimeout(update, 60000 - Date.now() % 60000);
+    };
+    update();
+    document.addEventListener('visibilitychange', update);
+    return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', update); };
+  }, []);
+  return <time className="home-clock" aria-label="Местное время" dateTime={now.toISOString()}>{now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</time>;
 }
 
-export const CharacterStage: React.FC<CharacterStageProps> = ({
-  session,
-  manifest,
-  serverStatus,
-  serverLoading,
-  totalPlaytimeSeconds = 0,
-  customSkinImg,
-  customSkinName,
-  activeDefaultSkinIdx,
-  selectedCape,
-  isInGame = false,
-  buildId,
-  onOpenWardrobe,
-  onOpenLogin,
-  onOpenNews,
-}) => {
-  const depth = usePointerDepth<HTMLDivElement>();
-  const { active: motionActive } = useMotion();
-  const bannerVideo = useRef<HTMLVideoElement>(null);
+export const CharacterStage = memo(function CharacterStage({ manifest, buildId }: { manifest: ModpackManifest | null; buildId: BuildId }) {
+  const { active } = useMotion();
+  const video = useRef<HTMLVideoElement>(null);
   useEffect(() => {
-    if (!bannerVideo.current) return;
-    if (motionActive) void bannerVideo.current.play().catch(() => {});
-    else bannerVideo.current.pause();
-  }, [buildId, motionActive]);
-  const skinName = customSkinName || getDefaultSkinCaption(DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve');
-  const hours = Math.floor(totalPlaytimeSeconds / 3600);
-  const minutes = Math.floor((totalPlaytimeSeconds % 3600) / 60);
-  const playtime = hours ? `${hours} ч ${minutes} мин` : `${minutes} мин`;
-  const statusText = serverStatus?.online
-    ? `${serverStatus.players.online} / ${serverStatus.players.max} игроков`
-    : serverStatus && !serverStatus.ip
-      ? 'Сервер готовится'
-      : serverStatus ? 'Сервер недоступен' : 'Статус неизвестен';
-
-  return (
-    <div {...depth} className="launcher-home view-enter">
-      <header className="page-titlebar"><h1>Главная<span>.</span></h1><span className="page-caption">Сезон 06</span></header>
-
-      <div className="home-content">
-        <section className="pilot-panel" aria-label="Персонаж">
-          <div className="pilot-panel-top">
-            <span>ПЕРСОНАЖ</span>
-            <span>{session ? 'АККАУНТ ПОДКЛЮЧЁН' : 'ГОСТЬ'}</span>
-          </div>
-          <button type="button" className="pilot-figure" onClick={onOpenWardrobe} title="Открыть гардероб">
-            <span className="pilot-plinth" aria-hidden="true" />
-            <ChibiCharacterDisplay
-              customSkinImg={customSkinImg}
-              activeDefaultSkinIdx={activeDefaultSkinIdx}
-              selectedCape={selectedCape}
-              animation={isInGame ? 'walk' : 'idle'}
-              showShadow={false}
-            />
-          </button>
-          <div className="pilot-panel-bottom">
-            <div className="pilot-identity">
-              <div><small>ИГРОК</small><strong>{session?.user.mcUsername || 'Не выполнен вход'}</strong></div>
-              <div><small>СКИН</small><strong title={skinName}>{skinName}</strong></div>
-            </div>
-            <button type="button" className="quiet-action" onClick={onOpenWardrobe}>
-              <Shirt size={15} /> Гардероб <ArrowUpRight size={15} />
-            </button>
-          </div>
-        </section>
-
-        <section className="season-panel" aria-label="Сборка и сервер">
-          <video key={buildId} ref={bannerVideo} className="season-panel-video" src={buildVideo(buildId)} poster={buildPoster(buildId)} autoPlay={motionActive} muted loop playsInline preload="metadata" aria-hidden="true" />
-          <div className="season-panel-intro">
-            <div className="season-label"><span>МИР 06</span><span>CREATE / AERONAUTICS</span></div>
-            <img src={quibySeasonLogo} alt="quiby Season 6" className="season-mark" />
-            <p>Minecraft 1.21.1 · NeoForge. Сборка проверяется и обновляется перед каждым запуском.</p>
-          </div>
-
-          <dl className="season-facts">
-            <div><dt>СЕРВЕР</dt><dd className={serverStatus?.online ? 'fact-online' : ''}>{serverLoading ? <span className="server-loading" role="status"><Loader2 size={13} className="loading-spinner"/>Подключаемся…</span> : statusText}</dd></div>
-            <div><dt>СБОРКА</dt><dd>{manifest ? `Версия ${manifest.version}` : 'Версия недоступна'}</dd></div>
-            <div><dt>ВРЕМЯ В ИГРЕ</dt><dd>{playtime}</dd></div>
-          </dl>
-
-          <div className="season-panel-footer">
-            {!session ? (
-              <button type="button" onClick={onOpenLogin} className="season-link">Войти через Discord <ArrowUpRight size={16} /></button>
-            ) : (
-              <span>Вы вошли как {session.user.mcUsername}</span>
-            )}
-            {onOpenNews && <button type="button" onClick={onOpenNews} className="season-link">Уведомления <ArrowUpRight size={16} /></button>}
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-};
+    if (active) void video.current?.play().catch(() => {});
+    else video.current?.pause();
+  }, [buildId, active]);
+  return <section className="home-scene view-enter" aria-label="Мир Quiby">
+    <img className="home-scene-poster" src={buildPoster(buildId)} alt=""/>
+    <video key={buildId} ref={video} className="home-scene-video" src={buildVideo(buildId)} poster={buildPoster(buildId)} autoPlay={active} muted loop playsInline preload="none" aria-hidden="true"/>
+    <div className="home-scene-shade"/>
+    <div className="home-build"><strong>{BUILD_PROFILES.find(build => build.id === buildId)?.name}</strong><span>{manifest?.version || '—'}</span></div>
+    <HomeClock/>
+    <img className="home-season-logo" src={quibySeasonLogo} alt="quiby Season 6"/>
+  </section>;
+});

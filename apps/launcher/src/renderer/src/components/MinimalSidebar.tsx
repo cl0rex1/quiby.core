@@ -283,7 +283,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
       {/* ========================================================================= */}
       <div
         aria-hidden={!isNotificationsOpen}
-        className={`absolute inset-0 z-30 flex flex-col bg-[#141415] p-4 transition-all duration-200 ease-out overflow-hidden ${
+        className={`inbox-drawer absolute inset-0 z-30 flex flex-col bg-[#141415] p-4 transition-all duration-200 ease-out overflow-hidden ${
           isNotificationsOpen
             ? 'visible opacity-100 translate-x-0 pointer-events-auto'
             : 'invisible opacity-0 -translate-x-6 pointer-events-none'
@@ -333,7 +333,7 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
         </div>
 
         {/* Scrollable Notification Item List */}
-        <div className="flex-1 overflow-y-auto space-y-1.5 py-3 pr-1">
+        <div className="inbox-list" role="list" aria-label="Письма">
           {notifications.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center p-6 text-center text-zinc-500">
               <Mail size={24} className="opacity-30 mb-2 text-[#bb74ff]" />
@@ -343,57 +343,16 @@ export const MinimalSidebar: React.FC<MinimalSidebarProps> = ({
           ) : (
             notifications.map((n) => {
               const isSelected = selectedNotificationId === n.id;
-              const isSuccess = n.type === 'success';
-              const isError = n.type === 'error';
-              const isWarning = n.type === 'warning';
-
-              return (
-                <button
-                  key={n.id}
-                  type="button"
-                  onClick={() => onSelectNotification?.(n.id)}
-                  className={`w-full p-2.5 rounded-xl border text-left cursor-pointer relative group flex flex-col gap-1 press-feedback transition-colors ${
-                    isSelected
-                      ? 'bg-surface-800 border-[#bb74ff]/40 shadow-sm text-white'
-                      : n.read
-                      ? 'bg-surface-900 hover:bg-surface-850 border-surface-border text-zinc-400 hover:text-zinc-200'
-                      : 'bg-surface-850 hover:bg-surface-800 border-surface-borderLight text-zinc-200'
-                  }`}
-                >
-                  {/* Unread indicator dot */}
-                  {!n.read && (
-                    <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#bb74ff] ring-2 ring-[#141415]" />
-                  )}
-
-                  {/* Top status row */}
-                  <div className="flex items-center justify-between gap-1 w-full pr-3">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                          isSuccess
-                            ? 'bg-emerald-400'
-                            : isError
-                            ? 'bg-rose-500'
-                            : isWarning
-                            ? 'bg-amber-400'
-                            : 'bg-sky-400'
-                        }`}
-                      />
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 truncate">
-                        {n.modInfo ? (isSuccess ? 'Одобрено' : isError ? 'Отклонено' : isWarning ? 'На рассмотрении' : 'Инфо') : (isError ? 'Ошибка' : isWarning ? 'Внимание' : isSuccess ? 'Готово' : 'Инфо')}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-mono text-zinc-400 shrink-0">
-                      {formatShortTime(n.timestamp)}
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <p className="text-xs font-semibold leading-snug line-clamp-2">
-                    {n.title}
-                  </p>
+              return <div role="listitem" key={n.id}>
+                <button type="button" onClick={() => onSelectNotification?.(n.id)} aria-current={isSelected ? 'true' : undefined}
+                  className={`inbox-letter is-${n.type} ${n.read ? '' : 'is-unread'}`}>
+                  <span className="inbox-letter-meta"><span className="inbox-letter-status">{n.modInfo ? (n.type === 'success' ? 'Одобрено' : n.type === 'error' ? 'Отклонено' : 'Заявка') : (n.type === 'error' ? 'Ошибка' : n.type === 'warning' ? 'Внимание' : n.type === 'success' ? 'Готово' : 'Инфо')}</span>
+                    <time dateTime={new Date(n.timestamp).toISOString()}>{formatShortTime(n.timestamp)}</time></span>
+                  <strong>{n.title}</strong>
+                  {n.message && <span className="inbox-letter-preview">{n.message}</span>}
+                  {!n.read && <span className="inbox-unread-dot" aria-label="Не прочитано"/>}
                 </button>
-              );
+              </div>;
             })
           )}
         </div>

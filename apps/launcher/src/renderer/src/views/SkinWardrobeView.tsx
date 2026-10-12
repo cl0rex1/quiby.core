@@ -10,7 +10,6 @@ import {
   SavedSkinItem,
   renameSavedSkin,
   renameActiveSkin,
-  renameDefaultSkin,
   getDefaultSkinCaption,
   getSavedSkinLibrary,
   getSkinDisplayName,
@@ -56,7 +55,6 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
 
   const [editingSkin, setEditingSkin] = useState<SavedSkinItem | null>(null);
   const [editingActive, setEditingActive] = useState(false);
-  const [editingDefault, setEditingDefault] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
   const [captionError, setCaptionError] = useState('');
 
@@ -158,12 +156,11 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   const currentDisplayName = customSkinImg
     ? getSkinDisplayName(library, customSkinName, customSkinImg.src) || 'Пользовательский скин'
     : getDefaultSkinCaption(DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve');
-  const closeCaption = () => { setEditingSkin(null); setEditingDefault(null); setEditingActive(false); };
+  const closeCaption = () => { setEditingSkin(null); setEditingActive(false); };
   const editActiveCaption = () => {
-    if (gameActive) return;
+    if (gameActive || !customSkinImg) return;
     setEditingActive(Boolean(customSkinImg && !activeLibraryItem));
     setEditingSkin(activeLibraryItem || null);
-    setEditingDefault(customSkinImg ? null : DEFAULT_SKINS[activeDefaultSkinIdx % DEFAULT_SKINS.length]?.name || 'Steve');
     setCaption(currentDisplayName); setCaptionError('');
   };
 
@@ -172,9 +169,9 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
   return (
     <div className="wardrobe-page view-enter">
       <header className="page-titlebar"><h1>Гардероб<span>.</span></h1><span className="page-caption">Твой персонаж</span></header>
-      {(editingSkin || editingDefault || editingActive) && <ModalDialog label="Название скина" onClose={closeCaption}>
-        <form className="surface-panel rounded-3xl p-6 w-full max-w-sm space-y-4" onSubmit={event => { event.preventDefault(); try { const name = caption.trim() || editingSkin?.name || editingDefault || customSkinName || 'Пользовательский скин'; if (editingSkin) setLibrary(renameSavedSkin(editingSkin.id, name)); else if (editingActive && customSkinImg) renameActiveSkin(customSkinImg.src, name); else renameDefaultSkin(editingDefault!, name); onLibraryChange?.(); closeCaption(); } catch (error) { setCaptionError(error instanceof Error ? error.message : 'Не удалось сохранить подпись'); } }}>
-          <label className="skin-caption-field">Название скина<input autoFocus value={caption} placeholder={editingSkin?.name || editingDefault || customSkinName || 'Пользовательский скин'} maxLength={24} onChange={event => setCaption(event.target.value)} onKeyDown={event => { if (event.key === 'Escape') closeCaption(); }} /></label>
+      {(editingSkin || editingActive) && <ModalDialog label="Название скина" onClose={closeCaption}>
+        <form className="surface-panel rounded-3xl p-6 w-full max-w-sm space-y-4" onSubmit={event => { event.preventDefault(); try { const name = caption.trim() || editingSkin?.name || customSkinName || 'Пользовательский скин'; if (editingSkin) setLibrary(renameSavedSkin(editingSkin.id, name)); else if (editingActive && customSkinImg) renameActiveSkin(customSkinImg.src, name); onLibraryChange?.(); closeCaption(); } catch (error) { setCaptionError(error instanceof Error ? error.message : 'Не удалось сохранить подпись'); } }}>
+          <label className="skin-caption-field">Название скина<input autoFocus value={caption} placeholder={editingSkin?.name || customSkinName || 'Пользовательский скин'} maxLength={24} onChange={event => setCaption(event.target.value)} onKeyDown={event => { if (event.key === 'Escape') closeCaption(); }} /></label>
           <p className="text-xs text-zinc-400">До 24 символов. Пустое поле вернёт исходное название.</p>
           {captionError && <p role="alert" className="text-rose-400 text-xs">{captionError}</p>}
           <div className="flex justify-end gap-2"><button type="button" className="ui-button" onClick={closeCaption}>Отмена</button><button type="submit" className="ui-button is-primary">Сохранить</button></div>
@@ -283,7 +280,7 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
           />
 
           {/* Minimal Floating Name Badge */}
-          <button type="button" disabled={gameActive} onClick={editActiveCaption} title="Изменить название скина" className="skin-caption-badge mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full surface-panel text-xs font-medium text-zinc-200 shadow-sm">
+          <button type="button" disabled={gameActive || !customSkinImg} onClick={editActiveCaption} title={customSkinImg ? "Изменить название скина" : "Базовый скин"} className="skin-caption-badge mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full surface-panel text-xs font-medium text-zinc-200 shadow-sm">
             <User size={12} className="text-zinc-400" />
             <span className="truncate max-w-[200px] apple-subheading">{currentDisplayName}</span>
           </button>

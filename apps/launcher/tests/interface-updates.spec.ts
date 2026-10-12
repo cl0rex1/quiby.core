@@ -57,6 +57,11 @@ test('review uploads in background and a decision updates the same timeline card
 });
 
 test('game startup locks skin editing and ignores dropped skins until the game stops', async ({ page }) => {
+  await page.addInitScript(() => {
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 64;
+    localStorage.setItem('quiby_custom_skin_data', canvas.toDataURL());
+    localStorage.setItem('quiby_custom_skin_name', 'custom.png');
+  });
   await boot(page); await page.getByLabel('Гардероб', { exact: true }).click();
   await page.getByTitle('Изменить название скина').click();
   await emit(page, 'onLaunchStateChange', { status: 'starting' });
@@ -79,16 +84,15 @@ test('interrupted review upload restores an actionable error instead of an endle
   }])));
   await boot(page); await page.getByRole('button', { name: /^Почта/ }).click();
   await expect(page.getByRole('list', { name: 'Статус заявки' })).toHaveClass(/is-error/);
-  await expect(page.getByText(/Отправка прервана закрытием лаунчера/)).toBeVisible();
+  await expect(page.getByRole('article').getByText(/Отправка прервана закрытием лаунчера/)).toBeVisible();
 });
 
-test('server and news waiting states are visible; broadcasts create one notification', async ({ page }) => {
+test('news waiting state is visible; broadcasts create one notification', async ({ page }) => {
   let releaseNews!: () => void;
   const pending = new Promise<void>(resolve => { releaseNews = resolve; });
   const article = { id: 'test-news', title: 'Новая встреча', excerpt: 'Краткое описание', content: 'Полное описание встречи на сервере', author: 'quiby', date: '2026-10-10T00:00:00Z', tag: 'event', broadcastRevision: 'revision-1' };
   await page.route('**/api/news', async route => { await pending; await route.fulfill({ json: [article] }); });
-  await page.route('**/api/status', async route => { await pending; await route.fulfill({ json: { online: false } }); });
-  await boot(page); await expect(page.getByText('Подключаемся…', { exact: true })).toBeVisible();
+  await boot(page);
   await page.getByRole('button', { name: /^Почта/ }).click();
   await expect(page.getByRole('status')).toContainText('Загружаем новости');
   releaseNews();
@@ -97,7 +101,7 @@ test('server and news waiting states are visible; broadcasts create one notifica
   const trigger = page.getByRole('button', { name: /Читать полностью/ });
   await expect(trigger).toHaveAttribute('aria-expanded', 'false'); await trigger.click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.getByText(article.content, { exact: true })).toBeVisible();
+  await expect(page.getByRole('article').getByText(article.content, { exact: true })).toBeVisible();
 });
 
 test('a queued file that was not delivered exposes a retry without reimporting it', async ({ page }) => {

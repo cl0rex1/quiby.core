@@ -1,3 +1,4 @@
+import { PackLogo } from './PackLogo';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AuthSession } from '@quiby/shared';
 import { Palette, Upload } from 'lucide-react';
@@ -137,7 +138,7 @@ export function ResourcePacksExplorer({ gameDir, files, session, onNotify, gameA
     <ContentSelectionDock count={selected.length} total={packs.filter(pack => !pack.official).length} allSelected={allVisibleSelected(selected, selectable)} busy={busy || gameActive} onSelectAll={selectAll} onClear={() => setSelected([])} onDelete={() => void remove(selected)}/>
     <div ref={container} className="library-scroll">
       {filtered.length ? <div className={`library-grid is-${mode}`}>{filtered.map(pack => <ContentFileCard key={pack.filename}
-        fileId={pack.filename} name={pack.filename.replace(/\.zip$/i, '')} filename={pack.filename} icon={<Palette size={22}/>}
+        fileId={pack.filename} name={pack.filename.replace(/\.zip$/i, '')} filename={pack.filename} icon={<PackLogo src={pack.iconUrl} kind="resourcepacks"/>}
         description={pack.official ? 'Ресурспак сборки' : 'Ресурспак'} size={`${(pack.size / 1048576).toFixed(1)} МБ`}
         notice={!pack.isAllowed && !pack.official ? labels[pack.status] || 'Нет допуска' : undefined} reason={pack.reason}
         tone={pack.status === 'rejected' ? 'danger' : 'warning'} busy={busy || gameActive || pack.status === 'checking'}
