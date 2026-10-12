@@ -33,6 +33,7 @@ for (const tab of ['Интерфейс', 'Файлы и Java']) {
 test('profile and build picker have accessible dialogs', async ({ page }, testInfo) => {
   await boot(page);
   await page.getByLabel('Профиль: QuibyPlayer', { exact: true }).click();
+  await page.screenshot({ path: testInfo.outputPath('profile.png') });
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
   await page.keyboard.press('Escape');
   await page.getByLabel('Настройки', { exact: true }).click();

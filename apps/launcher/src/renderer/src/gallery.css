@@ -188,3 +188,36 @@ dialog.photo-viewer { position: fixed; inset: 32px 0 0; width: 100vw; height: ca
 @keyframes photo-image-enter { from { opacity: 0; transform: translateY(5px) scale(.99); } to { opacity: 1; transform: none; } }
 @keyframes photo-image-exit { from { opacity: 1; } to { opacity: 0; } }
 @keyframes photo-viewer-enter { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: none; } }
+
+.profile-dialog { width: min(410px, calc(100vw - 32px)); border-radius: 16px; background: var(--color-paper-2); }
+.profile-dialog .profile-body { padding: 22px; display: flex; flex-direction: column; gap: 18px; }
+.profile-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.profile-header h2 { font: 700 22px / 1.3 var(--font-display); letter-spacing: -.04em; }
+.profile-header h2 span { color: var(--color-accent); }
+.profile-header .icon-button { width: 30px; height: 30px; border-radius: 8px; color: var(--color-ink-2); }
+.profile-header .icon-button:hover { color: var(--color-ink); background: var(--color-paper-3); }
+.profile-account { display: flex; align-items: center; gap: 15px; padding: 16px; border: 1px solid var(--color-rule); border-radius: 12px; background: linear-gradient(115deg, #bb74ff08, transparent 75%), var(--color-paper); }
+.profile-avatar { width: 56px; height: 56px; flex: none; object-fit: cover; border: 1px solid #ffffff10; border-radius: 11px; background: var(--color-paper-3); }
+.profile-identity { min-width: 0; }
+.profile-identity small { display: block; margin-bottom: 4px; font: 9px var(--font-mono); letter-spacing: .05em; color: var(--color-ink-2); }
+.profile-identity strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 16px / 1.5 var(--font-body); color: var(--color-ink); }
+.profile-identity p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; font-size: 11px; color: var(--color-ink-2); }
+.profile-rename { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--color-rule); border-radius: 10px; background: var(--color-paper-3); color: var(--color-ink); font-size: 12px; cursor: pointer; transition: background 160ms ease, border-color 160ms ease; }
+.profile-rename > svg { margin-left: auto; color: var(--color-ink-2); transition: transform 160ms ease; }
+.profile-action-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; color: #d4b5ef; background: #bb74ff10; }
+.profile-rename:hover { border-color: #655172; background: var(--color-paper-selected); }
+.profile-rename:hover > svg { transform: translate(1px, -1px); }
+.profile-footer { padding-top: 14px; border-top: 1px solid var(--color-rule); }
+.profile-signout { display: flex; align-items: center; gap: 8px; padding: 6px 0; color: var(--color-ink-2); font-size: 11px; cursor: pointer; transition: color 160ms ease; }
+.profile-signout:hover:not(:disabled) { color: #f1a1b1; }
+.profile-form { display: flex; flex-direction: column; gap: 14px; animation: content-arrive 180ms ease; }
+.profile-form label { display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: var(--color-ink-2); }
+.profile-form :is(input, textarea) { width: 100%; border: 1px solid var(--color-rule); border-radius: 8px; padding: 10px 12px; background: var(--color-paper); color: var(--color-ink); font: 12px / 1.5 var(--font-body); user-select: text; }
+.profile-form textarea { resize: vertical; min-height: 70px; max-height: 160px; }
+.profile-form-hint { font-size: 10px; color: var(--color-ink-2); line-height: 1.6; }
+.profile-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.profile-form-actions .ui-button { min-height: 34px; font-size: 11px; }
+.profile-feedback { display: flex; align-items: flex-start; gap: 9px; padding: 11px; border: 1px solid var(--color-rule); border-radius: 9px; background: var(--color-paper); font-size: 11px; line-height: 1.6; }
+.profile-feedback svg { flex: none; margin-top: 1px; }
+.profile-feedback.is-success { color: #a3d8c3; }
+.profile-feedback.is-error { color: #f1a1b1; }
