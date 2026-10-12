@@ -16,11 +16,11 @@ export const CharacterStage = memo(function CharacterStage({ manifest, buildId, 
   }, [buildId, active]);
   return <section className="home-scene view-enter" data-build={buildId} aria-label="Мир Quiby">
     <div className="home-scene-art" key={buildId}>
-    <img className="home-scene-poster" src={buildPoster(buildId)} alt=""/>
-    <video key={buildId} ref={video} className="home-scene-video" src={buildVideo(buildId)} poster={buildPoster(buildId)} autoPlay={active} muted loop playsInline preload="none" aria-hidden="true"/>
+      <img className="home-scene-poster" src={buildPoster(buildId)} alt=""/>
+      <video key={buildId} ref={video} className="home-scene-video" src={buildVideo(buildId)} poster={buildPoster(buildId)} autoPlay={active} muted loop playsInline preload="none" aria-hidden="true"/>
     </div>
     <div className="home-scene-shade" aria-hidden="true"/>
-    <div className="home-build"><span className="home-build-mark" aria-hidden="true"/><strong>{BUILD_PROFILES.find(build => build.id === buildId)?.name}</strong><span>{manifest?.version || '—'}</span></div>
+    <div className="home-build"><strong>{BUILD_PROFILES.find(build => build.id === buildId)?.name}</strong><span>{manifest?.version || '—'}</span></div>
     <div className="home-playtime" aria-label="Время в игре"><small>В игре</small><span>{playtime}</span></div>
     <img className="home-season-logo" src={quibySeasonLogo} alt="quiby Season 6"/>
   </section>;
