@@ -59,7 +59,7 @@ test('photo gallery groups, sorts, navigates, zooms and deletes screenshots', as
   await expect(page.locator('.photo-card-open').first()).toHaveAttribute('aria-label', 'Открыть old.png');
   await page.getByRole('button', { name: 'Открыть old.png', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'old.png' })).toBeVisible();
-  await page.getByRole('button', { name: 'Масштаб изображения' }).click();
+  await page.getByRole('button', { name: 'Увеличить', exact: true }).click();
   await expect(page.locator('.photo-viewer-stage')).toHaveClass(/is-zoomed/);
   await page.getByRole('button', { name: 'Показать new.png' }).click();
   await expect(page.getByRole('dialog', { name: 'new.png' })).toBeVisible();

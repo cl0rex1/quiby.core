@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Copy, Image as ImageIcon, Trash2, X, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
+import { Copy, Image as ImageIcon, Trash2, X, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
+import { PhotoViewport } from './PhotoViewport';
 
 import { useMotion } from './MotionProvider';
 import { SelectMenu } from './SelectMenu';
@@ -195,17 +196,15 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
         if (next) { event.preventDefault(); void open(next.name); }
       }}>
       <header className="photo-viewer-toolbar"><div><strong>{selected.name}</strong><small>{selectedIndex + 1} / {filtered.length}</small></div>
-        <div className="photo-viewer-actions"><button type="button" className="ui-button" aria-pressed={zoomed} aria-label="Масштаб изображения" onClick={() => setZoomed(!zoomed)}>{zoomed ? <Minimize2 size={16}/> : <Maximize2 size={16}/>}</button>
+        <div className="photo-viewer-actions">
           <button type="button" className="ui-button" aria-label="Копировать" title="Копировать" onClick={() => void copy(selected.name)}><Copy size={17}/></button>
           <button type="button" className="ui-button delete-action" aria-label="Удалить" title="Удалить" disabled={busy} onClick={() => void trash([selected.name])}><Trash2 size={17}/></button>
           <button type="button" className="ui-button" onClick={() => void closeViewer()} aria-label="Закрыть"><X size={17}/></button></div>
       </header>
       <div className={`photo-viewer-stage ${zoomed ? 'is-zoomed' : ''}`} aria-busy={viewerBusy}>
         <button type="button" className="photo-viewer-nav is-prev" disabled={selectedIndex <= 0 || viewerBusy} onClick={() => void open(filtered[selectedIndex - 1].name)} aria-label="Предыдущий"><ChevronLeft/></button>
-        <div className="photo-viewer-image">
-          {previousImage && !zoomed && <img className="photo-viewer-previous" src={previousImage} alt="" onAnimationEnd={() => setPreviousImage(null)}/>}
-          <img key={selected.name} className="photo-viewer-current" src={selected.image} alt={selected.name} onDoubleClick={() => setZoomed(!zoomed)}/>
-        </div>
+        <PhotoViewport key={selected.name} src={selected.image} name={selected.name} previousImage={previousImage}
+          onTransitionEnd={() => setPreviousImage(null)} onZoomChange={setZoomed}/>
         <button type="button" className="photo-viewer-nav is-next" disabled={selectedIndex >= filtered.length - 1 || viewerBusy} onClick={() => void open(filtered[selectedIndex + 1].name)} aria-label="Следующий"><ChevronRight/></button>
       </div>
       <nav className="photo-filmstrip" aria-label="Кадры рядом">{filtered.slice(Math.max(0, selectedIndex - 3), selectedIndex + 4).map(file => <button type="button" key={file.name}

@@ -1,8 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { upsertNotification, type NotificationItem } from '../notifications';
+import { notificationRevision, upsertNotification, type NotificationItem } from '../notifications';
 
 const card: NotificationItem = { id: 'review-a', title: 'Заявка', message: 'Ожидаем решения', timestamp: 1, read: true, modInfo: { hashSha1: 'a', reviewStage: 'pending' } };
+test('dismissal receipts ignore time and wording but distinguish a new review decision', () => {
+  assert.equal(notificationRevision(card), notificationRevision({ ...card, message: 'Файл доставлен. Ожидаем решения.', timestamp: 2, read: false }));
+  assert.notEqual(notificationRevision(card), notificationRevision({ ...card, modInfo: { ...card.modInfo, reviewStage: 'approved' } }));
+});
 test('unchanged polling preserves read state and order; decisions bump one card', () => {
   const previous = [{ ...card, id: 'other' }, card];
   assert.equal(upsertNotification(previous, { ...card, timestamp: 2, read: false }), previous);

@@ -81,10 +81,19 @@ dialog.photo-viewer { position: fixed; inset: 32px 0 0; width: 100vw; height: ca
 .photo-viewer-actions .ui-button { min-height: 34px; width: 34px; padding: 0; border-color: transparent; background: transparent; color: #aaa7b1; }
 .photo-viewer-actions .ui-button:hover { color: #f4f1f8; background: #ffffff10; }
 .photo-viewer-stage { position: relative; display: flex; flex: 1; min-height: 0; align-items: center; gap: 16px; }
-.photo-viewer-image { position: relative; display: flex; align-items: center; justify-content: center; flex: 1; min-height: 0; min-width: 0; height: 100%; overflow: auto; }
-.photo-viewer-image img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
-.photo-viewer-stage.is-zoomed .photo-viewer-image { display: block; }
-.photo-viewer-stage.is-zoomed img { width: 150%; max-width: none; max-height: none; }
+.photo-viewer-image { position: relative; display: flex; flex-direction: column; align-items: center; flex: 1; min-height: 0; min-width: 0; height: 100%; overflow: hidden; gap: 12px; }
+.photo-canvas { position: relative; flex: 1; width: 100%; min-height: 0; overflow: hidden; touch-action: none; user-select: none; outline-offset: -3px; border-radius: 10px; }
+.photo-canvas.is-zoomed { cursor: grab; }
+.photo-canvas.is-dragging { cursor: grabbing; }
+.photo-image-transform { position: absolute; left: 50%; top: 50%; transition: transform 160ms var(--ease-out); }
+.photo-canvas.is-dragging .photo-image-transform { transition: none; }
+.photo-image-transform img { display: block; width: 100%; height: 100%; max-width: none; object-fit: contain; border-radius: 4px; }
+.photo-zoom-controls { display: flex; align-items: center; flex: none; gap: 2px; padding: 3px; border: 1px solid #ffffff12; border-radius: 12px; background: #17171bf2; }
+.photo-zoom-controls button { display: grid; place-items: center; min-width: 32px; height: 30px; padding: 0 7px; border-radius: 8px; color: #d7d4de; transition: background 140ms ease; cursor: pointer; }
+.photo-zoom-controls button:hover { background: #ffffff12; color: white; }
+.photo-zoom-controls button:disabled { opacity: .3; cursor: default; }
+.photo-zoom-controls .photo-zoom-value { min-width: 58px; font: 11px var(--font-mono); }
+.photo-zoom-controls > span { height: 15px; width: 1px; margin: 0 4px; background: #ffffff18; }
 .photo-viewer-stage[aria-busy='true'] { cursor: progress; }
 .photo-viewer-nav { display: grid; flex: none; place-items: center; width: 36px; height: 48px; border: 0; border-radius: 50%; background: transparent; color: var(--color-ink); cursor: pointer; transition: background 180ms ease, opacity 180ms ease; }
 .photo-viewer-nav:hover { background: #ffffff10; }
@@ -178,14 +187,13 @@ dialog.photo-viewer { position: fixed; inset: 32px 0 0; width: 100vw; height: ca
 .inbox-letter-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-ink-2); font-size: 10px; width: 100%; }
 .inbox-unread-dot { position: absolute; top: 44px; right: 4px; width: 4px; height: 4px; border-radius: 50%; background: #c9a4e7; }
 .message-hub .message-detail { border-top: 1px solid var(--color-rule); }
-.pack-logo { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 11px; background: linear-gradient(145deg, #354541, #172725); color: #a1d6bb; overflow: hidden; }
+.pack-logo { display: grid; place-items: center; width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(145deg, #354541, #172725); color: #a1d6bb; overflow: hidden; }
 .pack-logo.is-shaderpacks { background: linear-gradient(145deg, #534633, #2d2538); color: #f1d29a; }
-.pack-logo img { width: 100%; height: 100%; object-fit: contain; }
+.pack-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .library-file-icon:has(.pack-logo) { background: none; border: 0; overflow: hidden; }
 .photo-viewer-current { animation: photo-image-enter 260ms ease both; }
-.photo-viewer-image .photo-viewer-previous { position: absolute; inset: 0; margin: auto; animation: photo-image-exit 260ms ease both; pointer-events: none; }
-.photo-viewer-stage.is-zoomed .photo-viewer-current { animation: none; }
-@keyframes photo-image-enter { from { opacity: 0; transform: translateY(5px) scale(.99); } to { opacity: 1; transform: none; } }
+.photo-canvas .photo-viewer-previous { position: absolute; inset: 0; margin: auto; width: 100%; height: 100%; object-fit: contain; animation: photo-image-exit 260ms ease both; pointer-events: none; }
+@keyframes photo-image-enter { from { opacity: 0; } to { opacity: 1; } }
 @keyframes photo-image-exit { from { opacity: 1; } to { opacity: 0; } }
 @keyframes photo-viewer-enter { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: none; } }
 

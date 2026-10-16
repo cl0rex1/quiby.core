@@ -1,6 +1,6 @@
 import { useMotion } from './components/MotionProvider';
 import { ReviewContext } from './components/ReviewContext';
-import { upsertNotification } from './utils/notifications';
+import { notificationRevision, upsertNotification } from './utils/notifications';
 import { createSkinSynchronizer } from './utils/skinSync';
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { normalizeSettings } from '../../shared/launcherSettings';
@@ -96,6 +96,7 @@ export const App: React.FC = () => {
   // Notifications State
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notificationsLoaded, setNotificationsLoaded] = useState(false);
+  const dismissedNotifications = useRef<Record<string, string>>({});
   const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>(null);
   const [activeToast, setActiveToast] = useState<ToastData | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -127,6 +128,10 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     let active = true;
+    try {
+      const saved = JSON.parse(localStorage.getItem('quiby_notification_dismissals') || '{}');
+      if (saved && typeof saved === 'object' && !Array.isArray(saved)) dismissedNotifications.current = saved;
+    } catch { /* Recover corrupt dismissal receipts. */ }
     void window.quibyApi.loadNotifications().then(saved => {
       if (!active) return;
       setNotifications(current => {
@@ -146,6 +151,13 @@ export const App: React.FC = () => {
     if (!notificationsLoaded) return;
     void window.quibyApi.saveNotifications(notifications).catch(error => console.error('Notifications save failed:', error));
   }, [notifications, notificationsLoaded]);
+
+  const dismissNotifications = (items: NotificationItem[]) => {
+    for (const item of items) dismissedNotifications.current[item.id] = notificationRevision(item);
+    try { localStorage.setItem('quiby_notification_dismissals', JSON.stringify(dismissedNotifications.current)); }
+    catch { /* Keep receipts for this session if storage is unavailable. */ }
+    setActiveToast(previous => previous && items.some(item => item.id === previous.id) ? null : previous);
+  };
 
   // 1. Settings State (Auto-saving)
   const [settings, setSettings] = useState<LauncherSettings>(defaultSettings);
@@ -220,6 +232,8 @@ export const App: React.FC = () => {
 
   // 3. Custom Mods State (Auto-saving)
   const [customMods, setCustomMods] = useState<CustomModItem[]>(initialCustomMods);
+  const modsForRefresh = useRef(customMods);
+  modsForRefresh.current = customMods;
 
   const handleUpdateCustomMods = (update: React.SetStateAction<CustomModItem[]>) => {
     setCustomMods((previous) => {
@@ -231,11 +245,14 @@ export const App: React.FC = () => {
 
   const reviewsInFlight = useRef(new Set<string>());
   const publishReview = useCallback((info: NonNullable<NotificationItem['modInfo']>, message: string) => {
+    if (/\.jar$/i.test(info.filename || '') && !modsForRefresh.current.some(mod => mod.hashSha1 === info.hashSha1)) return;
     const stage = info.reviewStage!;
     const item: NotificationItem = { id: 'review-' + info.hashSha1, title: `Заявка: ${info.name}`, message,
       type: stage === 'approved' ? 'success' : ['error', 'rejected'].includes(stage) ? 'error' : 'info',
       timestamp: Date.now(), read: false, modInfo: info };
-    setNotifications(previous => upsertNotification(previous, item));
+    if (dismissedNotifications.current[item.id] !== notificationRevision(item)) {
+      setNotifications(previous => upsertNotification(previous, item));
+    }
     setCustomMods(previous => {
       const failed = stage === 'error';
       if (!previous.some(mod => mod.hashSha1 === info.hashSha1 && Boolean(mod.reviewDeliveryFailed) !== failed)) return previous;
@@ -251,6 +268,9 @@ export const App: React.FC = () => {
     if (reviewsInFlight.current.has(mod.hashSha1)) throw new Error('Заявка уже отправляется. Статус — в уведомлениях.');
     const hash = mod.hashSha1;
     const info = { name: mod.name, filename: mod.filename, hashSha1: hash };
+    // An explicit retry starts a new lifecycle, even if an earlier one was cleared.
+    delete dismissedNotifications.current['review-' + hash];
+    try { localStorage.setItem('quiby_notification_dismissals', JSON.stringify(dismissedNotifications.current)); } catch { /* Retain the in-memory reset. */ }
     reviewsInFlight.current.add(hash);
     setSelectedNotificationId('review-' + hash);
     publishReview({ ...info, reviewStage: 'uploading' }, 'Файл отправляется в фоне…');
@@ -264,7 +284,7 @@ export const App: React.FC = () => {
       .finally(() => reviewsInFlight.current.delete(hash));
   };
   useEffect(() => {
-    if (!session?.token || !notificationsLoaded) return;
+    if (!session?.token || !notificationsLoaded || settingsStatus === 'loading') return;
     const controller = new AbortController();
     let busy = false;
     const refresh = async () => {
@@ -275,8 +295,14 @@ export const App: React.FC = () => {
         if (!response.ok) return;
         const items = await response.json();
         if (controller.signal.aborted || !Array.isArray(items)) return;
+        // The endpoint includes historical requests, including deleted files.
+        const packs = items.some(item => typeof item.filename === 'string' && /\.zip$/i.test(item.filename))
+          ? await window.quibyApi.getResourcePackInventory(settings.gameDir) : [];
+        if (controller.signal.aborted) return;
         for (const item of items) {
+          if (typeof item.filename !== 'string' || typeof item.hashSha1 !== 'string') continue;
           if (reviewsInFlight.current.has(item.hashSha1)) continue;
+          if (/\.zip$/i.test(item.filename) && !packs.some(pack => pack.filename === item.filename)) continue;
           publishReview({ name: item.name, filename: item.filename, hashSha1: item.hashSha1, reviewStage: item.stage }, item.message);
         }
       } catch { /* Keep the last confirmed status while offline. */ }
@@ -286,10 +312,7 @@ export const App: React.FC = () => {
     const timer = setInterval(refresh, 20000);
     window.addEventListener('focus', refresh);
     return () => { controller.abort(); clearInterval(timer); window.removeEventListener('focus', refresh); };
-  }, [session?.token, publishReview, notificationsLoaded]);
-
-  const modsForRefresh = useRef(customMods);
-  modsForRefresh.current = customMods;
+  }, [session?.token, publishReview, notificationsLoaded, settings.gameDir, settingsStatus === 'loading']);
   useEffect(() => {
     let cancelled = false, busy = false;
     const refresh = async () => {
@@ -687,6 +710,7 @@ export const App: React.FC = () => {
             setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
           }
           onClearAllNotifications={() => {
+            dismissNotifications(notifications);
             setNotifications([]);
             setSelectedNotificationId(null);
           }}
@@ -714,6 +738,7 @@ export const App: React.FC = () => {
                 notifications.find((n) => n.id === selectedNotificationId) || null
               }
               onDeleteNotification={(id) => {
+                dismissNotifications(notifications.filter(n => n.id === id));
                 const remaining = notifications.filter((n) => n.id !== id);
                 setNotifications(remaining);
                 if (selectedNotificationId === id) {
