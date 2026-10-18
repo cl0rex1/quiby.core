@@ -9,7 +9,7 @@ const require = createRequire(path.join(root, 'packages/pack-builder/package.jso
 const Zip = require('adm-zip');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'modpacks/quiby-s6/manifest.json'), 'utf8'));
 const zip = new Zip();
-for (const id of ['quiby', 'offbalance', 'create_radar']) {
+for (const id of ['quiby', 'offbalance', 'create_radar', 'createnuclear']) {
   const file = manifest.files.find(file => file.modId === id);
   if (!file?.downloadUrl.startsWith('/api/modpack/files/')) throw new Error(`Missing local artifact: ${id}`);
   const bytes = fs.readFileSync(path.join(root, 'apps/server/storage/files', decodeURIComponent(file.downloadUrl.slice('/api/modpack/files/'.length))));

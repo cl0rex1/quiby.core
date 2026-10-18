@@ -94,10 +94,11 @@ def build(source, output, quiby_jar):
 
 
 if __name__ == "__main__":
+    version = json.loads((ROOT / "modpacks/quiby-s6/manifest.json").read_text(encoding="utf-8"))["version"]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=pathlib.Path,
                         default=pathlib.Path(os.environ.get("APPDATA", pathlib.Path.home())) / ".quiby-launcher")
-    parser.add_argument("--output", type=pathlib.Path, default=ROOT / "temp/quiby-server-6.1.21.zip")
+    parser.add_argument("--output", type=pathlib.Path, default=ROOT / f"temp/quiby-server-{version}.zip")
     parser.add_argument("--quiby-jar", type=pathlib.Path, default=ROOT.parent / "quiby.mod/build/libs/quiby-1.21.1-1.1.16.jar")
     args = parser.parse_args()
     build(args.source, args.output, args.quiby_jar)

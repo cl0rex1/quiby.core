@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.21",
+  "version": "6.1.22",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 274228948,
+  "totalSize": 284059942,
   "files": [
     {
       "path": "config/DistantHorizons.toml",
@@ -1217,19 +1217,19 @@
       "modIconUrl": "/api/modpack/files/imported/icons/684364f563e853d56604f76706edafd5576a8779d821f64f1e59efb3aa2c72c3.png"
     },
     {
-      "path": "mods/create_radar-5.0-EA-3.0.0-1.21.1.jar",
-      "sha256": "773e0d3bf396d071753de76313dd05ac76be4be0e350255db89e15dfdd7c1b9a",
-      "size": 4562372,
+      "path": "mods/create_radar-5.0-EA-3.1.4-1.21.1.jar",
+      "sha256": "6e91a59d9ee4f2a82ded31833334a06bd238e9b2943709e90dd518443c310bda",
+      "size": 5560200,
       "profiles": [
         "full",
         "optimal",
         "clean"
       ],
-      "downloadUrl": "/api/modpack/files/imported/773e0d3bf396d071753de76313dd05ac76be4be0e350255db89e15dfdd7c1b9a/create_radar-5.0-EA-3.0.0-1.21.1.jar",
+      "downloadUrl": "/api/modpack/files/imported/6e91a59d9ee4f2a82ded31833334a06bd238e9b2943709e90dd518443c310bda/create_radar-5.0-EA-3.1.4-1.21.1.jar",
       "action": "sync",
       "modId": "create_radar",
       "modName": "Create: Radars",
-      "modVersion": "5.0-EA-3.0.0-1.21.1",
+      "modVersion": "5.0-EA-3.1.4-1.21.1",
       "modDescription": "Welcome to Create Radars, a mod offering a variety of tools and blocks for Surveillance, Detection, and Controlling Weapons."
     },
     {
@@ -1295,6 +1295,23 @@
       "modName": "Create Diesel Generators",
       "modVersion": "1.21.1-1.3.15",
       "modDescription": "Diesel Generators, Oil processing."
+    },
+    {
+      "path": "mods/createnuclear-2.0.0-neoforge.jar",
+      "sha256": "d613a8e575d654fa9fbc14b4f5c0655dd1f89851c5bbdbc0ca95925252d70233",
+      "size": 8833166,
+      "profiles": [
+        "full",
+        "optimal",
+        "clean"
+      ],
+      "downloadUrl": "/api/modpack/files/imported/d613a8e575d654fa9fbc14b4f5c0655dd1f89851c5bbdbc0ca95925252d70233/createnuclear-2.0.0-neoforge.jar",
+      "action": "sync",
+      "modId": "createnuclear",
+      "modName": "Create Nuclear",
+      "modVersion": "2.0.0",
+      "modDescription": "Create nuclear is a mod that adds a whole nuclear system to the create mod. An optimized reactor produces over two millions SU.",
+      "modIconUrl": "/api/modpack/files/imported/icons/2eb271b89fb7a7888ac0263226e7583d6faa967da7dfb273eb4bb4d215c5adde.png"
     },
     {
       "path": "mods/curios-neoforge-9.5.1+1.21.1.jar",
@@ -1843,7 +1860,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Quiby 1.1.16: зенитные снаряды со взрывателями CBC и Create: Radars распознают и перехватывают разрывные пушечные снаряды. Исправлена повторная детонация штатного flak. Требуется обновить игровой мод также на Minecraft-сервере.",
+  "changelog": "Create: Radars обновлён до 5.0-EA-3.1.4; добавлен Create Nuclear 2.0.0 во все профили. Требуется обновление модов на Minecraft-сервере.",
   "serverAddress": "",
-  "updatedAt": "2026-10-09T21:52:15.504Z"
+  "updatedAt": "2026-10-18T17:51:12.368Z"
 }
