@@ -20,6 +20,7 @@ import { readCrashDetails } from './crashDetails';
 import { prepareResourcePackAdmission } from './resourcePackAdmission';
 import { guardModDirectory } from './modDirectoryGuard';
 import { prepareGameAdmission } from './gameAdmission';
+import { prepareDirectRoute } from './directRoute';
 
 let runningGameProcess: ChildProcess | null = null;
 let gameStartTime: number | null = null;
@@ -30,6 +31,7 @@ let stopRequested = false;
 let currentLaunchState: LaunchState = { status: 'idle' };
 export const isGameActive = () => launchInProgress || Boolean(runningGameProcess);
 export const getLaunchState = (): LaunchState => ({ ...currentLaunchState });
+const quitIfNoWindows = () => { if (process.platform !== 'darwin' && BrowserWindow.getAllWindows().length === 0) app.quit(); };
 
 export async function launchMinecraft(
   session: AuthSession,
@@ -47,6 +49,7 @@ export async function launchMinecraft(
   const recentGameOutput: string[] = [];
   let modGuard: ReturnType<typeof guardModDirectory> | undefined;
   let integrityFailure: string | undefined;
+  let directRoute: Awaited<ReturnType<typeof prepareDirectRoute>> | undefined;
   const sendLog = (level: LogEntry['level'], message: string, source: LogEntry['source'] = 'launcher') => {
     if (source !== 'launcher') {
       recentGameOutput.push(message);
@@ -235,10 +238,13 @@ export async function launchMinecraft(
       gameArgs.push('--fullscreen');
     }
 
+    directRoute = await prepareDirectRoute(serverBaseUrl, session.token, app.getVersion(), app.getPath('userData'),
+      manifest.serverAddress || '', message => sendLog('info', message));
+    if (stopRequested) throw new Error('Запуск отменён');
     // Fast-Connect Auto-Join flag
     if (settings.autoJoinServer !== false && manifest.serverAddress) {
       sendLog('info', '⚡ Быстрый вход на сервер');
-      gameArgs.push('--quickPlayMultiplayer', manifest.serverAddress);
+      gameArgs.push('--quickPlayMultiplayer', directRoute.address);
     }
 
     const fullArgs = [...jvmArgs, ...gameArgs];
@@ -260,9 +266,10 @@ export async function launchMinecraft(
     await modGuard.check();
     if (integrityFailure) throw new Error(integrityFailure);
     const gameAdmission = await prepareGameAdmission(serverBaseUrl, session.token, app.getVersion());
+    if (stopRequested) throw new Error('Запуск отменён');
     const gameProcess = spawn(javaBin, fullArgs, {
       cwd: gameDir,
-      env: { ...process.env, ...gameAdmission },
+      env: { ...process.env, ...gameAdmission, QUIBY_SERVER_ADDRESS: directRoute.address },
       windowsHide: true,
     });
 
@@ -323,17 +330,20 @@ export async function launchMinecraft(
     gameProcess.on('error', (err) => {
       if (finished) return;
       finished = true;
+      directRoute?.close();
       modGuard?.close();
       stopPlaytimeTracking();
       sendLog('error', `Ошибка процесса Java: ${err.message}`);
       setLaunchState({ status: 'crashed', error: err.message });
       updateDiscordRpcStatus({ details: 'В главном меню лаунчера', state: 'quiby. Season 6 · Minecraft 1.21.1' });
       runningGameProcess = null;
+      quitIfNoWindows();
     });
 
     gameProcess.on('exit', (code) => {
       if (finished) return;
       finished = true;
+      directRoute?.close();
       modGuard?.close();
       const startedAt = gameStartTime || Date.now();
       stopPlaytimeTracking();
@@ -345,6 +355,7 @@ export async function launchMinecraft(
         error: crashed ? integrityFailure || readCrashDetails(gameDir, startedAt, code, recentGameOutput) : undefined,
       });
       runningGameProcess = null;
+      quitIfNoWindows();
 
       updateDiscordRpcStatus({
         details: 'В главном меню лаунчера',
@@ -353,12 +364,17 @@ export async function launchMinecraft(
     });
 
   } catch (error: any) {
+    directRoute?.close();
     modGuard?.close();
     launchInProgress = false;
     stopPlaytimeTracking();
     updateDiscordRpcStatus({ details: 'В главном меню лаунчера', state: 'quiby. Season 6 · Minecraft 1.21.1' });
+    if (stopRequested && !integrityFailure) {
+      sendLog('info', 'Запуск отменён'); setLaunchState({ status: 'stopped' }); quitIfNoWindows(); return;
+    }
     sendLog('error', `Критическая ошибка запуска: ${error.message}`);
     setLaunchState({ status: 'crashed', error: error.message });
+    quitIfNoWindows();
     throw error;
   }
 }

@@ -22,6 +22,12 @@ export const config = {
   
   modReviewBotApiKey: process.env.MOD_REVIEW_BOT_API_KEY || '',
   gameBridgeApiKey: process.env.GAME_BRIDGE_API_KEY || '',
+  direct: {
+    server: process.env.DIRECT_SERVER || '',
+    port: Number(process.env.DIRECT_PORT || '443'),
+    ca: (process.env.DIRECT_CA || '').replace(/\\n/g, '\n'),
+    providerKey: process.env.DIRECT_PROVIDER_KEY || '',
+  },
 
   // Discord OAuth2 Configuration
   discord: {

@@ -32,7 +32,7 @@ const hasSingleInstanceLock = app.requestSingleInstanceLock();
 if (!hasSingleInstanceLock) app.quit();
 else app.on('second-instance', () => {
   const window = mainWindow && !mainWindow.isDestroyed() ? mainWindow : splashWindow;
-  if (!window || window.isDestroyed()) return;
+  if (!window || window.isDestroyed()) { if (app.isReady()) createMainWindow(); return; }
   if (window.isMinimized()) window.restore();
   window.show();
   window.focus();
@@ -540,7 +540,8 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  // Keep the game transport and file guard alive when only the launcher window closes.
+  if (process.platform !== 'darwin' && !isGameActive()) {
     app.quit();
   }
 });

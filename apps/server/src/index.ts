@@ -7,6 +7,7 @@ import { config } from './config';
 import { initDatabase } from './models/db';
 import authRoutes from './routes/auth';
 import gameRoutes from './routes/game';
+import directRoutes from './routes/direct';
 import { gameBridgeRoutes, botChatRoutes } from './routes/gameBridge';
 import modpackRoutes from './routes/modpack';
 import newsRoutes from './routes/news';
@@ -81,6 +82,7 @@ async function bootstrap() {
   app.use('/api/auth', authRoutes);
   app.use('/api/game/bridge', gameBridgeRoutes);
   app.use('/api/game', gameRoutes);
+  app.use('/api/direct', directRoutes);
   app.use('/api/modpack', modpackRoutes);
   app.use('/api/news', newsRoutes);
   app.use('/api/status', statusRoutes);
