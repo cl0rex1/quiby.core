@@ -1,3 +1,4 @@
+import { renderNewsContent } from '../services/newsMarkup';
 import { listNews, newsSchema, saveNews } from '../services/newsService';
 import { Router, Request, Response, NextFunction } from 'express';
 import { createHash, timingSafeEqual } from 'crypto';
@@ -112,6 +113,11 @@ router.patch('/players/:id', wrap(async (req, res) => {
   if (!result.changes) return res.status(404).json({ error: 'Игрок не найден' });
   await audit(body.data.allowed ? 'players:allow' : 'players:block', req.params.id, 'Доступ через лаунчер и проверку сессии');
   res.json({ success: true });
+}));
+router.post('/news/preview', wrap(async (req, res) => {
+  const input = z.object({ content: z.string().max(20000) }).safeParse(req.body);
+  if (!input.success) return res.status(400).json({ error: 'Текст слишком длинный' });
+  res.json({ html: renderNewsContent(input.data.content) });
 }));
 router.get('/news', wrap(async (req, res) => {
   const query = querySchema.safeParse(req.query);

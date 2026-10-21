@@ -98,9 +98,6 @@ test('news waiting state is visible; broadcasts create one notification', async 
   releaseNews();
   await expect(page.getByRole('button', { name: /Новая встреча/ })).toHaveCount(1);
   await page.getByRole('tab', { name: 'Новости', exact: true }).click();
-  const trigger = page.getByRole('button', { name: /Читать полностью/ });
-  await expect(trigger).toHaveAttribute('aria-expanded', 'false'); await trigger.click();
-  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   await expect(page.getByRole('article').getByText(article.content, { exact: true })).toBeVisible();
 });
 

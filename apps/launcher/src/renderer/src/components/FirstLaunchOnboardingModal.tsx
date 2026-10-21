@@ -8,7 +8,7 @@ import {
   PencilRuler,
 } from 'lucide-react';
 import { LauncherSettings } from '@quiby/shared';
-import { BUILD_PROFILES, BuildId, selectedBuild } from '../utils/buildProfiles';
+import { AVAILABLE_BUILD_PROFILES as BUILD_PROFILES, BuildId, selectedBuild } from '../utils/buildProfiles';
 import { buildVideo, buildPoster } from '../utils/buildScreenshots';
 import { MotionToggle, useMotion } from './MotionProvider';
 
@@ -34,6 +34,7 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
   const build = BUILD_PROFILES.find((item) => item.id === buildId)!;
   const { active: motionActive } = useMotion();
   const firstRun = !localStorage.getItem('quiby_onboarded');
+  const mustChoose = firstRun || settings.modpackProfile === 'full';
   useEffect(() => {
     if (!isOpen) {
       dialog.current?.close();
@@ -84,7 +85,7 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
       className="build-dialog"
       aria-labelledby="build-title"
       onCancel={(event) => {
-        if (saving) event.preventDefault();
+        if (saving || mustChoose) event.preventDefault();
         else onClose();
       }}
     >
@@ -94,14 +95,14 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
           <div>
             <p className="page-kicker">{firstRun ? 'ПЕРВЫЙ ЗАПУСК / QUIBY' : 'ТВОЯ СБОРКА / QUIBY'}</p>
             <h1 id="build-title">Начни по-своему.</h1>
-            <p>Один сервер. Три способа настроить игру.</p>
+            <p>{settings.modpackProfile === 'full' ? 'Visual временно недоступна. Выберите Standard или Draft.' : 'Один сервер. Два способа настроить игру.'}</p>
           </div>
           <div className="build-header-actions">
             <MotionToggle compact />
             <button
               className="icon-button"
               onClick={onClose}
-              disabled={saving}
+              disabled={saving || mustChoose}
               aria-label="Закрыть выбор сборки"
             >
               <X size={19} />
@@ -127,8 +128,8 @@ export function FirstLaunchOnboardingModal({ isOpen, settings, onClose, onApplyP
                       event.key === 'Home'
                         ? 0
                         : event.key === 'End'
-                          ? 2
-                          : (index + (event.key === 'ArrowRight' ? 1 : 2)) % 3;
+                          ? BUILD_PROFILES.length - 1
+                          : (index + (event.key === 'ArrowRight' ? 1 : BUILD_PROFILES.length - 1)) % BUILD_PROFILES.length;
                     setBuildId(BUILD_PROFILES[next].id);
                     document.getElementById('build-tab-' + BUILD_PROFILES[next].id)?.focus();
                   }

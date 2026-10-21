@@ -34,8 +34,8 @@ export function registerUpdates(getWindow: () => BrowserWindow | null): void {
   };
   if (app.isPackaged && process.platform === 'win32') {
     publishState = setState;
-    autoUpdater.allowPrerelease = true;
-    autoUpdater.channel = 'beta';
+    autoUpdater.allowPrerelease = false;
+    autoUpdater.channel = 'latest';
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = false;
     autoUpdater.on('checking-for-update', () => setState({ status: 'checking', message: undefined, percent: undefined }));

@@ -1,5 +1,5 @@
+import { NewsContent } from '../components/NewsContent';
 import { ReviewTimeline } from '../components/ReviewTimeline';
-import { Disclosure } from '../components/Disclosure';
 import React, { useEffect, useState } from 'react';
 import { ArrowUpRight, Copy, Download, Loader2, Mail, Newspaper, Trash2 } from 'lucide-react';
 import { NewsArticle } from '@quiby/shared';
@@ -58,7 +58,8 @@ export const NotificationDetailView: React.FC<NotificationDetailViewProps> = ({ 
               <div className="message-meta"><span>{article.tag}</span><time dateTime={article.date}>{dateLabel(article.date)}</time><span>{article.author}</span></div>
               <h2>{article.title}</h2>
               <p>{article.excerpt}</p>
-              {article.content && article.content !== article.excerpt && <Disclosure title="Читать полностью"><p>{article.content}</p></Disclosure>}
+              {article.bannerUrl && <img className="news-banner" src={article.bannerUrl} alt="" loading="lazy"/>}
+              {article.content && <NewsContent html={article.contentHtml} text={article.content}/>}
             </article>
           ))}
         </div>

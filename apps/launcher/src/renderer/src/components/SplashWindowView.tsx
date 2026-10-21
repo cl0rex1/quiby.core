@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { MotionToggle } from './MotionProvider';
 
 export function SplashWindowView() {
   useEffect(() => {
@@ -41,7 +40,6 @@ export function SplashWindowView() {
         </div>
         <div className="splash-bottom">
           <span>MINECRAFT 1.21.1</span>
-          <MotionToggle compact />
         </div>
       </footer>
     </main>

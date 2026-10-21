@@ -15,7 +15,14 @@ export function normalizeSettings(value: unknown, defaults: LauncherSettings): L
   const boolean = (key: keyof LauncherSettings) => typeof input[key] === 'boolean'
     ? input[key] as boolean : defaults[key] as boolean;
   const ramMaxMb = Math.round(number('ramMaxMb', 4096, 65536) / 1024) * 1024;
+  const background = (key: 'homeBackground' | 'wardrobeBackground'): LauncherSettings[typeof key] => {
+    const value = input[key] as Record<string, unknown> | undefined;
+    if (value?.mode === 'none') return { mode: 'none' };
+    if (value?.mode === 'custom' && typeof value.imageId === 'string' && /^[a-f0-9-]{36}\.(gif|png|jpe?g|webp)$/.test(value.imageId)) return { mode: 'custom', imageId: value.imageId };
+    return { mode: 'default' };
+  };
   return {
+    homeBackground: background('homeBackground'), wardrobeBackground: background('wardrobeBackground'),
     ramMaxMb,
     ramMinMb: Math.min(ramMaxMb, number('ramMinMb', 1024, 65536)),
     windowWidth: number('windowWidth', windowLimits.width.min, windowLimits.width.max),

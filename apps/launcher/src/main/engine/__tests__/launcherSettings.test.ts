@@ -29,9 +29,17 @@ test('valid custom settings and paths survive normalization', () => {
   const value = { ...defaults, javaPath: 'C:\\Java 21\\bin\\javaw.exe', customJvmArgs: '-Dname="a b"',
     autoJoinServer: false, modpackProfile: 'full' as const, graphicsPreset: 'ultra' as const,
     disabledBundledMods: ['iris'], totalPlaytimeSeconds: 3600 };
-  assert.deepEqual(normalizeSettings(value, defaults), value);
+  assert.deepEqual(normalizeSettings(value, defaults), { ...value, homeBackground: { mode: 'default' }, wardrobeBackground: { mode: 'default' } });
   const result = normalizeSettings({ windowWidth: 90000, windowHeight: 800.8, ramMaxMb: NaN }, defaults);
   assert.equal(result.windowWidth, 7680);
   assert.equal(result.windowHeight, 801);
   assert.equal(result.ramMaxMb, 8192);
+});
+
+test('background settings retain local media ids and reject paths or invalid modes', () => {
+  const id = '12345678-1234-1234-1234-123456789abc.gif';
+  assert.deepEqual(normalizeSettings({ homeBackground: { mode: 'custom', imageId: id }, wardrobeBackground: { mode: 'none' } }, defaults).homeBackground, { mode: 'custom', imageId: id });
+  for (const value of [{ mode: 'custom', imageId: '../../private.png' }, { mode: 'evil' }, null]) {
+    assert.deepEqual(normalizeSettings({ homeBackground: value }, defaults).homeBackground, { mode: 'default' });
+  }
 });

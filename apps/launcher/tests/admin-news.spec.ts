@@ -14,6 +14,7 @@ test('admin news editor submits broadcasts and preserves drafts while polling', 
     const request = route.request(), pathname = new URL(request.url()).pathname;
     if (pathname.endsWith('/overview')) return route.fulfill({ json: { users: { total: 1, allowed: 1 }, mods: { pending: 0 }, names: { pending: 0 }, pack: '6.1' } });
     if (pathname.endsWith('/session')) return route.fulfill({ json: { authenticated: true } });
+    if (pathname.endsWith('/news/preview')) return route.fulfill({ json: { html: '<h2>Встреча</h2><p><strong>Сегодня</strong></p>' } });
     if (request.method() !== 'GET') {
       expect(request.headers()['x-quiby-control']).toBe('1');
       const input = request.postDataJSON(); submissions.push(input);
@@ -27,6 +28,8 @@ test('admin news editor submits broadcasts and preserves drafts while polling', 
   await page.locator('#add-news').click();
   await page.getByLabel('Заголовок', { exact: true }).fill('Объявление для всех');
   await page.getByLabel('Текст', { exact: true }).fill('Сервер открыт. Добро пожаловать!');
+  await page.getByRole('button', { name: 'Предпросмотр', exact: true }).click();
+  await expect(page.frameLocator('#news-preview').getByRole('heading', { name: 'Встреча' })).toBeVisible();
   await page.getByLabel('Уведомить всех в лаунчере').check();
   await page.screenshot({ path: info.outputPath('news-editor.png') });
   await page.getByRole('button', { name: 'Опубликовать', exact: true }).click();

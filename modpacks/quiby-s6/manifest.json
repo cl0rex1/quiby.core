@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.22",
+  "version": "6.1.23",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -1860,7 +1860,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Create: Radars обновлён до 5.0-EA-3.1.4; добавлен Create Nuclear 2.0.0 во все профили. Требуется обновление модов на Minecraft-сервере.",
-  "serverAddress": "",
-  "updatedAt": "2026-10-18T17:51:12.368Z"
+  "changelog": "Подключение к публичному серверу play.quiby.me:25565. Состав модов соответствует 6.1.22; серверную сборку обновлять не требуется. Visual временно недоступна в релизном лаунчере: доступны Standard и Draft.",
+  "serverAddress": "play.quiby.me:25565",
+  "updatedAt": "2026-10-21T11:56:32.556Z"
 }

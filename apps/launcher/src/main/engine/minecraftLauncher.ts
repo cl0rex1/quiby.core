@@ -89,7 +89,8 @@ export async function launchMinecraft(
   try {
     const customJavaArgs = parseCustomJvmArgs(settings.customJvmArgs || '');
     setLaunchState({ status: 'updating' });
-    const profileName = settings.modpackProfile === 'full' ? 'Visual' : settings.modpackProfile === 'clean' ? 'Draft' : 'Standard';
+    if (settings.modpackProfile === 'full') throw new Error('Visual временно недоступна. Выберите Standard или Draft в настройках.');
+    const profileName = settings.modpackProfile === 'clean' ? 'Draft' : 'Standard';
     updateDiscordRpcStatus({ details: 'Готовится к игре', state: `Сборка ${profileName} · quiby. S6` });
     sendLog('info', `🚀 Инициализация запуска quiby. Season 6 (Minecraft 1.21.1 NeoForge)...`);
     sendLog('info', `👤 Игрок: ${session.user.mcUsername} (Discord: ${session.user.username})`);

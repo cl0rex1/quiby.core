@@ -1,3 +1,4 @@
+import { renderNewsContent } from './newsMarkup';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { dbAll, dbGet, dbRun } from '../models/db';
@@ -23,7 +24,7 @@ export async function saveNews(input: z.infer<typeof newsSchema>, existingId?: s
 
 export async function listNews() {
   const rows = await dbAll<any>('SELECT * FROM news ORDER BY pin DESC, created_at DESC, id DESC LIMIT 100');
-  return rows.map(row => ({ id: row.id, title: row.title, excerpt: row.excerpt, content: row.content, author: row.author,
+  return rows.map(row => ({ id: row.id, title: row.title, excerpt: row.excerpt, content: row.content, contentHtml: renderNewsContent(row.content), author: row.author,
     authorAvatar: row.author_avatar || undefined, tag: row.tag, bannerUrl: row.banner_url || undefined,
     pin: Boolean(row.pin), date: row.created_at.replace(' ', 'T') + (row.created_at.includes('T') ? '' : 'Z'),
     broadcastRevision: row.broadcast_revision || undefined }));

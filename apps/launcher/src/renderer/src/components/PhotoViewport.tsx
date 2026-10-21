@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Maximize2, Minus, Plus } from 'lucide-react';
+import { RotateCcw, Minus, Plus } from 'lucide-react';
 
 type View = { zoom: number; x: number; y: number };
 const fitted: View = { zoom: 1, x: 0, y: 0 };
@@ -92,7 +92,7 @@ export function PhotoViewport({ src, name, previousImage, onTransitionEnd, onZoo
       <button type="button" className="photo-zoom-value" aria-label="Масштаб изображения" title="Исходный размер" onClick={() => zoomTo(1 / fit)}>{Math.round(view.zoom * fit * 100)}%</button>
       <button type="button" aria-label="Увеличить" title="Увеличить (+)" disabled={view.zoom >= maxZoom} onClick={() => zoomTo(current.current.zoom * 1.25)}><Plus size={16}/></button>
       <span/>
-      <button type="button" aria-label="Вписать в окно" title="Вписать в окно (0)" onClick={() => update(fitted)}><Maximize2 size={16}/></button>
+      <button type="button" aria-label="Вписать в окно" title="Сбросить масштаб (0)" onClick={() => update(fitted)}><RotateCcw size={16}/></button>
     </div>
   </div>;
 }

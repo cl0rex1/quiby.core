@@ -26,7 +26,7 @@ export const WindowHeader: React.FC = () => {
       {/* Left: small clean brand mark `quiby.` + version `Season VI: Aeronautics` with subtle monospace tag */}
       <div className="flex items-center gap-2.5">
         <span className="text-xs font-black text-white tracking-tight">quiby.</span>
-        <span className="header-edition">S6 / ТЕСТОВЫЙ</span>
+        <span className="header-edition">S6 / RELEASE</span>
       </div>
 
       {/* Right: Window control buttons with `-webkit-app-region: no-drag` (class `app-no-drag`) */}

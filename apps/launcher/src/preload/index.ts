@@ -6,6 +6,7 @@ import type { NotificationItem } from '../renderer/src/utils/notifications';
 import type { ResourcePackItem } from '../main/engine/resourcePackCatalog';
 
 export const quibyApi = {
+  selectBackground: (): Promise<string | null> => ipcRenderer.invoke('background:select'),
   openResourcePacksFolder: (gameDir: string) => ipcRenderer.invoke('resourcepacks:open-folder', gameDir),
   getResourcePackInventory: (gameDir: string): Promise<ResourcePackItem[]> => ipcRenderer.invoke('resourcepacks:inventory', gameDir),
   trashResourcePack: (gameDir: string, filename: string) => ipcRenderer.invoke('resourcepacks:trash', gameDir, filename),

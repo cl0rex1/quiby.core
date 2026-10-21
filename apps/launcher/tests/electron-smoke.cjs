@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session } = require('electron');
+const { app, BrowserWindow, dialog, session } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
@@ -11,6 +11,9 @@ process.env.QUIBY_API_URL = 'http://127.0.0.1:1';
 app.setPath('userData', path.join(root, 'user-data'));
 app.disableHardwareAcceleration();
 fs.writeFileSync(path.join(root, '.quiby-launcher', 'launcher-settings.json'), JSON.stringify({ enableDiscordRpc: false }));
+const gifFile = path.join(root, 'background.gif');
+fs.writeFileSync(gifFile, Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'));
+dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [gifFile] });
 // Exercise the built main/preload/renderer in isolation without showing test windows.
 BrowserWindow.prototype.show = function () {};
 BrowserWindow.prototype.focus = function () {};
@@ -23,7 +26,7 @@ app.whenReady().then(() => {
 app.on('browser-window-created', (_event, win) => {
   win.webContents.on('console-message', details => { if (details.level === 'error' && !/ERR_BLOCKED_BY_CLIENT/.test(details.message)) failures.push(details.message); });
   win.webContents.on('did-finish-load', async () => {
-    if (win.webContents.getURL().includes('view=splash')) return;
+    if (!win.webContents.getURL().startsWith('file:') || win.webContents.getURL().includes('view=splash')) return;
     try {
       const result = await win.webContents.executeJavaScript(`(async () => {
         const api = window.quibyApi;
@@ -33,7 +36,11 @@ app.on('browser-window-created', (_event, win) => {
         await api.saveNotifications([{ id: 'test', title: 'Smoke test', read: false, timestamp: Date.now() }]);
         const notifications = await api.loadNotifications();
         const state = await api.getLaunchState();
-        return { saved, after, notifications: notifications.length, state, maximized: await api.isMaximized(), authVisible: !!document.querySelector('.auth-page') };
+        const backgroundId = await api.selectBackground();
+        const loadImage = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image.naturalWidth); image.onerror = () => reject(Error('Background failed to load')); image.src = src; });
+        const imageWidth = await loadImage('quiby-media://background/' + backgroundId);
+        const posterWidth = await loadImage('quiby-media://background/' + backgroundId + '.poster.png');
+        return { saved, after, notifications: notifications.length, state, background: { id: backgroundId, imageWidth, posterWidth }, maximized: await api.isMaximized(), authVisible: !!document.querySelector('.auth-page') };
       })()`);
       assert.equal(result.saved, true);
       assert.equal(result.after.windowWidth, 7680);
@@ -43,6 +50,10 @@ app.on('browser-window-created', (_event, win) => {
       assert.equal(result.state.status, 'idle');
       assert.equal(result.authVisible, true);
       assert.equal(typeof result.maximized, 'boolean');
+      assert.match(result.background.id, /^[a-f0-9-]{36}\.gif$/);
+      assert.equal(result.background.imageWidth, 1);
+      assert.equal(result.background.posterWidth, 1);
+      assert.deepEqual(fs.readFileSync(path.join(root, 'user-data', 'backgrounds', result.background.id)), fs.readFileSync(gifFile));
       const settingsFile = path.join(root, '.quiby-launcher', 'launcher-settings.json');
       assert.equal(fs.existsSync(settingsFile + '.tmp'), false);
       assert.equal(JSON.parse(fs.readFileSync(settingsFile)).windowWidth, 7680);

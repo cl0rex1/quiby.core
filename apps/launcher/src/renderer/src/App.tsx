@@ -453,6 +453,7 @@ export const App: React.FC = () => {
       window.quibyApi.getSettings().then((s) => {
         if (active && s && initialRevision === settingsRevision.current) {
           setSettings(normalizeSettings(s, defaultSettings));
+          if (s.modpackProfile === 'full') setIsOnboardingOpen(true);
           setSettingsStatus('saved');
           if (s.autoJoinServer !== undefined) {
             setAutoConnect(s.autoJoinServer);
@@ -595,6 +596,7 @@ export const App: React.FC = () => {
   };
 
   const handleLaunchGame = async () => {
+    if (settings.modpackProfile === 'full') { setIsOnboardingOpen(true); return; }
     if (launchRequested.current || ['updating', 'starting', 'running'].includes(latestLaunchState.current.status)) return;
     if (settingsStatus !== 'saved') {
       handleNotify('Настройки ещё не сохранены', 'Дождитесь сохранения или повторите его в настройках.', 'warning');
@@ -768,12 +770,13 @@ export const App: React.FC = () => {
                     onClearLogs={clearLogs}
                   />
                 ) : (
-                  <CharacterStage manifest={manifest} buildId={selectedBuild(settings).id} totalPlaytimeSeconds={totalPlaytimeSeconds} launching={launchTransition}/>
+                  <CharacterStage background={settings.homeBackground} manifest={manifest} buildId={selectedBuild(settings).id} totalPlaytimeSeconds={totalPlaytimeSeconds} launching={launchTransition}/>
                 )
               )}
 
               {activeTab === 'wardrobe' && (
                 <SkinWardrobeView
+                  background={settings.wardrobeBackground}
                   gameActive={launchPending || ['updating', 'starting', 'running'].includes(launchState.status)}
                   onLibraryChange={() => setSkinLibrary(getSavedSkinLibrary())}
                   customSkinImg={customSkinImg}

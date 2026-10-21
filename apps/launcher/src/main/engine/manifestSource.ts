@@ -13,7 +13,7 @@ export async function getLatestModpackManifest(serverBaseUrl: string): Promise<M
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const manifest = await response.json() as ModpackManifest;
       if (!manifest?.version || !Array.isArray(manifest.files) || manifest.loader?.type !== 'neoforge') throw new Error('Некорректный манифест сборки');
-      return manifest;
+      return { ...manifest, serverAddress: manifest.serverAddress || 'play.quiby.me:25565' };
     } catch (error) { lastError = error; }
   }
   throw new Error(`Не удалось загрузить сборку из GitHub Releases или API: ${String(lastError)}`);

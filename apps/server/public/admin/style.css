@@ -3,3 +3,5 @@
 .check-row { display:flex; align-items:center; gap:10px; }
 .check-row input { width:18px; height:18px; }
 #news-editor { width:min(680px,calc(100vw - 32px)); max-height:90vh; overflow:auto; }
+
+.news-format-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}.news-format-toolbar button{padding:7px 10px}#news-preview{width:100%;height:360px;border:1px solid #39313f;border-radius:10px;background:#141417;margin:10px 0}

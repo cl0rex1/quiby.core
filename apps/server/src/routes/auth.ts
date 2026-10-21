@@ -53,7 +53,7 @@ router.post('/mc-username-change-request', requireAuth, async (req: Authenticate
 });
 
 // 1. Get Discord OAuth2 Login URL
-router.get('/discord/url', (req: Request, res: Response) => {
+router.get('/discord/url', requireSupportedLauncher, (req: Request, res: Response) => {
   if (!config.discord.clientId || !config.discord.clientSecret || !config.discord.botToken || !config.discord.guildId) {
     return res.status(503).json({
       error: 'Discord OAuth2 is not configured on this server yet.',
@@ -73,7 +73,7 @@ router.get('/discord/url', (req: Request, res: Response) => {
 });
 
 // 2. Discord Callback
-router.post('/discord/callback', async (req: Request, res: Response) => {
+router.post('/discord/callback', requireSupportedLauncher, async (req: Request, res: Response) => {
   const { code, redirectUri } = req.body;
   if (!code) {
     return res.status(400).json({ error: 'Missing authorization code' });

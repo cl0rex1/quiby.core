@@ -126,7 +126,7 @@ if (kind === 'pack') {
     console.log(`Validated ${source.files.length} manifest files and ${payloads.size} unique release assets`);
     process.exit(0);
   }
-  const value = await release(tag, `quiby. Season 6 ${source.version} (Тестовая)`, `Тестовая сборка для тестеров. Visual, Standard, Draft — Minecraft 1.21.1 / NeoForge 21.1.250.\n\n${source.changelog || ''}\n\n${serverPack ? 'Полная серверная сборка: ' + path.basename(serverPack) + ' (инструкция внутри). ' : ''}${serverUpdate ? 'Minecraft-сервер также нужно обновить: архив quiby-server-update-' + source.version + '.zip содержит моды, конфиг и инструкцию. ' : ''}Файлы клиента выбираются по SHA-256 манифесту.`, false);
+  const value = await release(tag, `quiby. Season 6 ${source.version}`, `Сборка Quiby Season VI. Standard и Draft — Minecraft 1.21.1 / NeoForge 21.1.250.\n\n${source.changelog || ''}\n\n${serverPack ? 'Полная серверная сборка: ' + path.basename(serverPack) + ' (инструкция внутри). ' : ''}${serverUpdate ? 'Minecraft-сервер также нужно обновить: архив quiby-server-update-' + source.version + '.zip содержит моды, конфиг и инструкцию. ' : ''}Файлы клиента выбираются по SHA-256 манифесту.`, false);
   const existing = new Map((await listedAssets(value)).map(asset => [asset.name, asset]));
   let uploaded = 0;
   for (const [filename, sourcePath] of payloads) {
@@ -150,12 +150,13 @@ if (kind === 'pack') {
     if (error.code !== 'ENOENT') throw error;
     return 'Тестовая сборка лаунчера для Windows. Вход через Discord OAuth и подключение к https://api.quiby.me. Установщик пока не подписан.';
   });
-  const value = await release(`v${version}`, `quiby.core Тестовый ${version}`, notes, version.includes('-'));
+  const value = await release(`v${version}`, `quiby.core ${version.includes('-') ? 'Тестовый ' : ''}${version}`, notes, version.includes('-'));
   const releaseDir = path.join(root, 'apps/launcher/release');
   const names = [
     [`quiby.core-Setup-${version}.exe`, `quiby.core-Setup-${version}.exe`],
     [`quiby.core-Setup-${version}.exe.blockmap`, `quiby.core-Setup-${version}.exe.blockmap`],
-    ['beta.yml', 'beta.yml'],
+    [version.includes('-') ? 'beta.yml' : 'latest.yml', version.includes('-') ? 'beta.yml' : 'latest.yml'],
+    ...(!version.includes('-') ? [['latest.yml', 'beta.yml']] : []),
   ];
   const existing = new Map((await listedAssets(value)).map(asset => [asset.name, asset]));
   for (const [sourceName, assetName] of names) {

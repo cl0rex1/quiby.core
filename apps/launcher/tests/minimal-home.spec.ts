@@ -11,8 +11,7 @@ test('minimal home uses build footage and corner information without a character
   await page.reload();
   await expect(page.getByLabel('Время в игре')).toContainText('25 ч 0 мин');
   await expect(page.locator('.home-scene canvas')).toHaveCount(0);
-  await expect(page.locator('.home-scene-video')).toHaveAttribute('src', /standard/);
-  expect(await page.locator('.home-scene-video').evaluate((video: HTMLVideoElement) => video.paused)).toBe(true);
+  await expect(page.locator('.home-scene-art img')).toHaveAttribute('src', /standard/);
   await page.screenshot({ path: info.outputPath('minimal-home.png') });
 });
 

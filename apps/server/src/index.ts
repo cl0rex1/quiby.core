@@ -48,7 +48,7 @@ async function bootstrap() {
   const app = express();
 
   // Security & Middleware
-  app.use(helmet({ crossOriginResourcePolicy: false }));
+  app.use(helmet({ crossOriginResourcePolicy: false, contentSecurityPolicy: { directives: { imgSrc: ["'self'", 'data:', 'https:', 'http:'], mediaSrc: ["'self'", 'https:', 'http:'], frameSrc: ["'self'", 'https://www.youtube-nocookie.com', 'https://www.youtube.com', 'https://player.vimeo.com'] } } }));
   app.use(cors({ origin: true, credentials: true }));
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));

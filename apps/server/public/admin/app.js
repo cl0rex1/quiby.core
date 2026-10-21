@@ -63,7 +63,7 @@ let editedNewsId = null;
 function editNews(item = {}) {
   editedNewsId = item.id || null;
   $('news-title').value=item.title || ''; $('news-excerpt').value=item.excerpt || '';
-  $('news-content').value=item.content || ''; $('news-author').value=item.author || 'quiby';
+  $('news-content').value=item.content || ''; $('news-banner').value=item.bannerUrl || ''; $('news-preview').hidden=true; $('news-author').value=item.author || 'quiby';
   $('news-tag').value=item.tag || 'announcement'; $('news-pin').checked=Boolean(item.pin);
   $('news-broadcast').checked=false; $('news-error').textContent='';
   $('news-editor-title').textContent=item.id?'Редактировать новость':'Новая новость';
@@ -74,8 +74,15 @@ $('close-news').onclick=()=>$('news-editor').close();
 $('news-form').onsubmit=async event=>{
   event.preventDefault(); const submit=event.submitter; submit.disabled=true;
   try {
-    await api('/news'+(editedNewsId?'/'+encodeURIComponent(editedNewsId):''),{method:editedNewsId?'PUT':'POST',body:JSON.stringify({title:$('news-title').value,excerpt:$('news-excerpt').value,content:$('news-content').value,author:$('news-author').value,tag:$('news-tag').value,pin:$('news-pin').checked,broadcast:$('news-broadcast').checked})});
+    await api('/news'+(editedNewsId?'/'+encodeURIComponent(editedNewsId):''),{method:editedNewsId?'PUT':'POST',body:JSON.stringify({title:$('news-title').value,excerpt:$('news-excerpt').value,content:$('news-content').value,bannerUrl:$('news-banner').value,author:$('news-author').value,tag:$('news-tag').value,pin:$('news-pin').checked,broadcast:$('news-broadcast').checked})});
     $('news-editor').close(); toast('Новость опубликована'); await load();
   } catch(error) { $('news-error').textContent=error.message; }
   finally { submit.disabled=false; }
 };
+
+for (const button of document.querySelectorAll('[data-format]')) button.onclick = () => {
+  const field=$('news-content'), start=field.selectionStart, end=field.selectionEnd, selected=field.value.slice(start,end);
+  const sample={bold:'**'+(selected||'Текст')+'**',heading:'\n## '+(selected||'Заголовок')+'\n',list:'\n- '+(selected||'Пункт списка')+'\n',image:'\n![Описание](https://example.com/image.png)\n',video:'\n![Видео](https://example.com/video.mp4)\n',link:'['+(selected||'Ссылка')+'](https://example.com)'}[button.dataset.format];
+  field.setRangeText(sample,start,end,'select');field.focus();
+};
+$('preview-news').onclick=async()=>{try{const result=await api('/news/preview',{method:'POST',body:JSON.stringify({content:$('news-content').value})});$('news-preview').srcdoc='<meta charset="utf-8"><style>body{background:#141417;color:#eee;font:15px/1.7 system-ui;padding:20px}img,video,iframe{max-width:100%;border-radius:10px}a{color:#c8a6ef}blockquote{border-left:2px solid #a775da;padding-left:14px}table{border-collapse:collapse}td,th{border:1px solid #444;padding:8px}pre{overflow:auto;background:#222;padding:12px}</style>'+result.html;$('news-preview').hidden=false;}catch(error){$('news-error').textContent=error.message;}};

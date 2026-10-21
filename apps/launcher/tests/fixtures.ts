@@ -16,6 +16,7 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
       await route.fulfill({ json: body });
     });
     await page.addInitScript(() => {
+      if (window.top !== window) return;
       const user = { discordId: 'fixture', username: 'Fixture', mcUsername: 'QuibyPlayer', uuid: 'fixture', roles: [], isWhitelisted: true };
       localStorage.setItem('quiby_session', JSON.stringify({ token: 'local-fixture', expiresAt: Date.now() + 86400000, user }));
       localStorage.setItem('quiby_onboarded', 'true');
@@ -27,17 +28,18 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
         emit(name: string, value: unknown) { for (const listener of listeners[name] || []) listener(value); },
       };
       (window as any).__test = control;
-      let settings = { ramMinMb: 4096, ramMaxMb: 8192, javaPath: 'java', customJvmArgs: '', windowWidth: 1280, windowHeight: 720, fullscreen: false, autoCloseLauncher: false, enableDiscordRpc: true, gameDir: 'fixture-game', autoJoinServer: true };
+      let settings = { ramMinMb: 4096, ramMaxMb: 8192, javaPath: 'java', customJvmArgs: '', windowWidth: 1280, windowHeight: 720, fullscreen: false, autoCloseLauncher: false, enableDiscordRpc: true, gameDir: 'fixture-game', autoJoinServer: true, ...JSON.parse(localStorage.getItem('fixture-settings') || '{}') };
       let notifications: unknown[] = JSON.parse(localStorage.getItem('fixture-notifications') || '[]');
       const image = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#392744"/></svg>');
       const manifest = { id: 'fixture', name: 'quiby. S6', version: '6.0.0', gameVersion: '1.21.1', loader: { type: 'neoforge', version: '21.1.65' }, javaVersion: 21, recommendedRamMb: 8192, minRamMb: 4096, files: [], totalSize: 0, serverAddress: 'localhost', updatedAt: new Date().toISOString(), changelog: '' };
       const methods: Record<string, (...args: any[]) => any> = {
-        getSettings: () => ({ ...settings }), saveSettings: value => { settings = value; return true; },
+        getSettings: () => ({ ...settings }), saveSettings: value => { settings = value; localStorage.setItem('fixture-settings', JSON.stringify(value)); return true; },
+        selectBackground: () => '12345678-1234-1234-1234-123456789abc.gif',
         loadNotifications: () => JSON.parse(localStorage.getItem('fixture-notifications') || JSON.stringify(notifications)), saveNotifications: value => { notifications = value; localStorage.setItem('fixture-notifications', JSON.stringify(value)); },
         getLaunchState: () => ({ status: localStorage.getItem('fixture-running') ? 'running' : 'idle' }),
         isMaximized: () => false, getTotalRamMb: () => 16384,
         detectJava: () => ({ installations: [], recommended: null, totalRamMb: 16384 }),
-        getUpdateState: () => ({ status: 'current', currentVersion: '1.0.1-beta.22' }), getLatestModpackManifest: () => ({ ...manifest, files: JSON.parse(localStorage.getItem('fixture-bundled-mods') || '[]') }),
+        getUpdateState: () => ({ status: 'current', currentVersion: '1.0.1' }), getLatestModpackManifest: () => ({ ...manifest, files: JSON.parse(localStorage.getItem('fixture-bundled-mods') || '[]') }),
         getShaderpacks: dir => [...(control.files[`shaderpacks:${dir}`] || [])],
         getSchematics: dir => [...(control.files[`schematics:${dir}`] || [])],
         getResourcePackInventory: dir => [...(control.files[`resourcepacks:${dir}`] || [])], getResourcePacks: dir => [...(control.files[`resourcepacks:${dir}`] || [])],

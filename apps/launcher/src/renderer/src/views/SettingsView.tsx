@@ -1,3 +1,4 @@
+import { BackgroundPicker } from '../components/BackgroundPicker';
 import { Disclosure } from '../components/Disclosure';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -229,6 +230,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus
           )}
           {section === 'appearance' && (
             <>
+              <section className="settings-group"><BackgroundPicker label="Фон главной страницы" value={settings.homeBackground} onChange={homeBackground => update({ homeBackground })}/><BackgroundPicker label="Фон гардероба" value={settings.wardrobeBackground} onChange={wardrobeBackground => update({ wardrobeBackground })}/></section>
               <section className="motion-showcase">
                 <div className="motion-sample" aria-hidden="true">
                   <i />

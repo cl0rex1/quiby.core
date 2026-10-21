@@ -1,3 +1,4 @@
+import { registerBackgrounds } from './backgrounds';
 import { reviewDelivery } from './engine/reviewDelivery';
 import { resourcePackCatalog, resourcePackInventory } from './engine/resourcePackCatalog';
 import { checkContentLinks } from './engine/contentIntegrity';
@@ -24,7 +25,8 @@ let notificationWrite = Promise.resolve();
 const appIcon = app.isPackaged
   ? path.join(process.resourcesPath, 'icon.png')
   : path.join(__dirname, '../../src/renderer/src/assets/quiby_q_logo.png');
-app.setName('quiby.core Тестовый');
+if (app.isPackaged) app.setPath('userData', path.join(app.getPath('appData'), 'quiby.core Тестовый'));
+app.setName('quiby.core');
 if (process.platform === 'win32') app.setAppUserModelId('fun.quiby.launcher');
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 if (!hasSingleInstanceLock) app.quit();
@@ -185,6 +187,7 @@ function createMainWindow(): void {
 }
 
 if (hasSingleInstanceLock) app.whenReady().then(async () => {
+  registerBackgrounds();
 
   // 1. Splash Window Transition
   ipcMain.handle('splash:ready', (event) => {

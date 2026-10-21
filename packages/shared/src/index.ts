@@ -79,6 +79,7 @@ export interface NewsArticle {
   title: string;
   excerpt: string;
   content: string;
+  contentHtml?: string;
   author: string;
   authorAvatar?: string;
   tag: 'update' | 'event' | 'season' | 'announcement';
@@ -89,6 +90,8 @@ export interface NewsArticle {
 }
 
 export interface LauncherSettings {
+  homeBackground?: BackgroundSetting;
+  wardrobeBackground?: BackgroundSetting;
   ramMinMb: number;
   ramMaxMb: number;
   javaPath: string;
@@ -104,6 +107,11 @@ export interface LauncherSettings {
   graphicsPreset?: 'potato' | 'optimal' | 'ultra';
   modpackProfile?: 'clean' | 'optimal' | 'full';
   disabledBundledMods?: string[];
+}
+
+export interface BackgroundSetting {
+  mode: 'default' | 'custom' | 'none';
+  imageId?: string;
 }
 
 export interface DownloadProgress {

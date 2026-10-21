@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Copy, Image as ImageIcon, Trash2, X, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
+import { Check, Loader2, Copy, Image as ImageIcon, Trash2, X, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
 import { PhotoViewport } from './PhotoViewport';
 
 import { useMotion } from './MotionProvider';
@@ -26,6 +26,8 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
   const [previousImage, setPreviousImage] = useState<string | null>(null);
   const [zoomed, setZoomed] = useState(false);
   const [viewerBusy, setViewerBusy] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<{ name: string; status: 'copying' | 'copied' | 'error' } | null>(null);
+  useEffect(() => { if (!copyFeedback || copyFeedback.status === 'copying') return; const timer = setTimeout(() => setCopyFeedback(null), 2500); return () => clearTimeout(timer); }, [copyFeedback]);
   const [mode, setMode] = useContentView('screenshots');
   const generation = useRef(0);
   const thumbnails = useRef(new Map<string, { stamp: string; image: string }>());
@@ -119,8 +121,16 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
   };
   const toggle = (name: string) => setSelectedNames(previous => previous.includes(name) ? previous.filter(item => item !== name) : [...previous, name]);
   const copy = async (name: string) => {
-    try { await window.quibyApi.copyScreenshot(gameDir, name); onNotify?.('Скриншот скопирован', name, 'success'); }
-    catch (error) { onNotify?.('Не удалось скопировать скриншот', error instanceof Error ? error.message : undefined, 'error'); }
+    const inViewer = selected?.name === name;
+    if (inViewer) setCopyFeedback({ name, status: 'copying' });
+    try {
+      await window.quibyApi.copyScreenshot(gameDir, name);
+      if (inViewer) setCopyFeedback({ name, status: 'copied' });
+      else onNotify?.('Скриншот скопирован', name, 'success');
+    } catch (error) {
+      if (inViewer) setCopyFeedback({ name, status: 'error' });
+      else onNotify?.('Не удалось скопировать скриншот', error instanceof Error ? error.message : undefined, 'error');
+    }
   };
   const trash = async (names: string[]) => {
     if (!names.length || busy) return;
@@ -197,7 +207,8 @@ export function ScreenshotGallery({ gameDir, onNotify }: {
       }}>
       <header className="photo-viewer-toolbar"><div><strong>{selected.name}</strong><small>{selectedIndex + 1} / {filtered.length}</small></div>
         <div className="photo-viewer-actions">
-          <button type="button" className="ui-button" aria-label="Копировать" title="Копировать" onClick={() => void copy(selected.name)}><Copy size={17}/></button>
+          <span className="photo-copy-feedback" role="status">{copyFeedback?.name === selected.name ? { copying: 'Копируем…', copied: 'Скопировано', error: 'Не удалось скопировать. Повторите.' }[copyFeedback.status] : ''}</span>
+          <button type="button" className="ui-button" aria-label="Копировать" title="Копировать" disabled={copyFeedback?.name === selected.name && copyFeedback.status === 'copying'} onClick={() => void copy(selected.name)}>{copyFeedback?.name === selected.name && copyFeedback.status === 'copied' ? <Check size={17}/> : copyFeedback?.name === selected.name && copyFeedback.status === 'copying' ? <Loader2 size={17} className="loading-spinner"/> : <Copy size={17}/>}</button>
           <button type="button" className="ui-button delete-action" aria-label="Удалить" title="Удалить" disabled={busy} onClick={() => void trash([selected.name])}><Trash2 size={17}/></button>
           <button type="button" className="ui-button" onClick={() => void closeViewer()} aria-label="Закрыть"><X size={17}/></button></div>
       </header>

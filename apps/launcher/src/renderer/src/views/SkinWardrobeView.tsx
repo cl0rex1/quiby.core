@@ -1,3 +1,5 @@
+import { SceneBackground } from '../components/SceneBackground';
+import type { BackgroundSetting } from '@quiby/shared';
 import { GameContentLock } from '../components/GameContentLock';
 import { ModalDialog } from '../components/ModalDialog';
 import { useFileDrop } from '../utils/useFileDrop';
@@ -19,6 +21,7 @@ import {
 } from '../utils/skinLibrary';
 
 interface SkinWardrobeViewProps {
+  background?: BackgroundSetting;
   gameActive?: boolean;
   customSkinImg: HTMLImageElement | null;
   customSkinName: string | null;
@@ -38,6 +41,7 @@ interface PendingSkinData {
 }
 
 export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
+  background,
   gameActive = false,
   customSkinImg,
   customSkinName,
@@ -269,7 +273,8 @@ export const SkinWardrobeView: React.FC<SkinWardrobeViewProps> = ({
       {/* Left Column: Character Stage Preview with Glass Depth */}
       <div className="flex-[1.1] flex flex-col items-center justify-center surface-panel rounded-3xl p-6 relative overflow-hidden">
         {/* Luminous stage light bloom */}
-        <div className="absolute inset-0 pointer-events-none wardrobe-stage-grid" />
+        <SceneBackground setting={background}/>
+        {(!background || background.mode === 'default') && <div className="absolute inset-0 pointer-events-none wardrobe-stage-grid" />}
 
         {/* Live Chibi Character */}
         <div className="relative z-10 flex flex-col items-center">

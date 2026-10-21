@@ -37,8 +37,9 @@ export const BUILD_PROFILES = [
   },
 ] as const;
 export type BuildId = (typeof BUILD_PROFILES)[number]['id'];
+export const AVAILABLE_BUILD_PROFILES = BUILD_PROFILES.filter(build => build.id !== 'visual');
 export const selectedBuild = (settings: Pick<LauncherSettings, 'modpackProfile'>) =>
-  BUILD_PROFILES.find((build) => build.profile === settings.modpackProfile) || BUILD_PROFILES[1];
+  AVAILABLE_BUILD_PROFILES.find((build) => build.profile === settings.modpackProfile) || BUILD_PROFILES[1];
 
 export function applyBuildToMods<
   T extends { safetyStatus?: string; categories?: string[]; enabled: boolean },

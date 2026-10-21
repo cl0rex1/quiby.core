@@ -1,6 +1,6 @@
 import http from 'http';
 import crypto from 'crypto';
-import { shell } from 'electron';
+import { shell, app } from 'electron';
 import { AuthSession } from '@quiby/shared';
 
 const LOCAL_PORT = 45678;
@@ -60,7 +60,7 @@ export function startDiscordOAuthFlow(serverBaseUrl: string, port = LOCAL_PORT):
           const redirectUri = `http://localhost:${port}/callback`;
           const response = await fetch(`${serverBaseUrl}/api/auth/discord/callback`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-quiby-launcher-version': app.getVersion() },
             body: JSON.stringify({ code, redirectUri }),
             signal: AbortSignal.timeout(15000),
           });
@@ -96,7 +96,7 @@ export function startDiscordOAuthFlow(serverBaseUrl: string, port = LOCAL_PORT):
     });
     server.listen(port, '127.0.0.1', async () => {
       try {
-        const res = await fetch(`${serverBaseUrl}/api/auth/discord/url`, { signal: AbortSignal.timeout(15000) });
+        const res = await fetch(`${serverBaseUrl}/api/auth/discord/url`, { headers: { 'x-quiby-launcher-version': app.getVersion() }, signal: AbortSignal.timeout(15000) });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         
