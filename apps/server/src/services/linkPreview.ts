@@ -20,10 +20,11 @@ async function readPage(url: URL, redirects = 0): Promise<{ html: string; url: U
   const addresses = isIP(hostname) ? [{ address: hostname, family: isIP(hostname) }] : await lookup(hostname, { all: true });
   if (!addresses.length || addresses.some(item => !publicAddress(item.address))) throw new Error('Private network addresses are unavailable');
   // Pin the checked address to the connection; DNS cannot switch to a private host.
-  const selected = addresses[0];
+  const selected = addresses.find(item => item.family === 4) || addresses[0];
   const result = await new Promise<{ body: string; location?: string }>((resolve, reject) => {
     const request = (url.protocol === 'https:' ? https : http).get(url, {
       headers: { 'User-Agent': 'Quiby-News-Preview/1.0', Accept: 'text/html' },
+      family: selected.family,
       lookup: (_hostname, _options, callback) => callback(null, selected.address, selected.family),
     }, response => {
       if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400) { response.resume(); resolve({ body: '', location: response.headers.location }); return; }
