@@ -1,5 +1,8 @@
 {
   "toml": {
+    "quiby-community-server.toml": {
+      "": { "scheduledRestarts": true, "localChatRadius": 100, "impactDamageThreshold": 8.0 }
+    },
     "quiby-access-server.toml": {
       "": { "enabled": true, "apiUrl": "https://api.quiby.me" }
     },

@@ -40,6 +40,15 @@ export const dbAll = <T = any>(sql: string, params: any[] = []): Promise<T[]> =>
 };
 
 export async function initDatabase(): Promise<void> {
+  await dbRun(`CREATE TABLE IF NOT EXISTS game_chat_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, event_id TEXT NOT NULL UNIQUE,
+    direction TEXT NOT NULL CHECK(direction IN ('minecraft','discord')),
+    scope TEXT NOT NULL CHECK(scope IN ('local','global','join','leave')),
+    uuid TEXT, username TEXT NOT NULL, message TEXT NOT NULL,
+    mentions_json TEXT NOT NULL DEFAULT '[]', images_json TEXT NOT NULL DEFAULT '[]',
+    discord_id TEXT, created_at INTEGER NOT NULL, acked INTEGER NOT NULL DEFAULT 0
+  )`);
+  await dbRun('CREATE INDEX IF NOT EXISTS game_chat_delivery ON game_chat_events(direction,acked,id)');
   await dbRun(`CREATE TABLE IF NOT EXISTS launcher_access (
     id INTEGER PRIMARY KEY CHECK(id = 1), closed INTEGER NOT NULL DEFAULT 0,
     message TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -80,6 +89,7 @@ export async function initDatabase(): Promise<void> {
 
   // Account playtime and idempotent per-device counters.
   const userColumns = await dbAll<{ name: string }>('PRAGMA table_info(users)');
+  if (!userColumns.some(item => item.name === 'launcher_access_exempt')) await dbRun('ALTER TABLE users ADD COLUMN launcher_access_exempt INTEGER NOT NULL DEFAULT 0');
   for (const column of ['playtime_seconds', 'playtime_legacy_seconds']) {
     if (!userColumns.some(item => item.name === column)) await dbRun(`ALTER TABLE users ADD COLUMN ${column} INTEGER NOT NULL DEFAULT 0`);
   }

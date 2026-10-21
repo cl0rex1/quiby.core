@@ -17,7 +17,20 @@ dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [gifFile] });
 // Exercise the built main/preload/renderer in isolation without showing test windows.
 BrowserWindow.prototype.show = function () {};
 BrowserWindow.prototype.focus = function () {};
-globalThis.fetch = async () => { throw Error('Network disabled in Electron smoke test'); };
+const reviewUploads = [];
+globalThis.fetch = async (url, options) => {
+  if (String(url).endsWith('/api/mods/whitelist-request-file')) {
+    reviewUploads.push(options.body.length);
+    return Response.json({ success: true });
+  }
+  if (String(url).includes('/api/mods/review-delivery/')) return Response.json({ delivered: true });
+  throw Error('Network disabled in Electron smoke test');
+};
+const packDirectory = path.join(root, '.quiby-launcher', 'resourcepacks');
+fs.mkdirSync(packDirectory, { recursive: true });
+for (const [name, size] of [['above-eight.zip', 8 * 1024 * 1024 + 1], ['twenty.zip', 20 * 1024 * 1024], ['too-large.zip', 20 * 1024 * 1024 + 1], ['empty.zip', 0]]) {
+  fs.writeFileSync(path.join(packDirectory, name), Buffer.alloc(size, 7));
+}
 const failures = [];
 const watchdog = setTimeout(() => { fs.writeFileSync(report, JSON.stringify({ passed: false, error: 'Electron startup timed out', failures })); console.error('Electron startup timed out', failures); app.exit(1); }, 30000);
 app.whenReady().then(() => {
@@ -40,7 +53,15 @@ app.on('browser-window-created', (_event, win) => {
         const loadImage = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image.naturalWidth); image.onerror = () => reject(Error('Background failed to load')); image.src = src; });
         const imageWidth = await loadImage('quiby-media://background/' + backgroundId);
         const posterWidth = await loadImage('quiby-media://background/' + backgroundId + '.poster.png');
-        return { saved, after, notifications: notifications.length, state, background: { id: backgroundId, imageWidth, posterWidth }, maximized: await api.isMaximized(), authVisible: !!document.querySelector('.auth-page'), accessVisible: !!document.querySelector('.launcher-access-screen') };
+        const packReviews = [];
+        for (const filename of ['above-eight.zip', 'twenty.zip', 'too-large.zip', 'empty.zip']) {
+          try {
+            const hash = await api.stageResourcePackReview('', filename);
+            const upload = await api.uploadModReview(hash, 'isolated-test-token', { mod_name: filename, filename, reason: 'Resource pack size boundary test' });
+            packReviews.push({ filename, hash, delivered: upload.delivered });
+          } catch (error) { packReviews.push({ filename, error: error.message }); }
+        }
+        return { saved, after, notifications: notifications.length, state, packReviews, background: { id: backgroundId, imageWidth, posterWidth }, maximized: await api.isMaximized(), authVisible: !!document.querySelector('.auth-page'), accessVisible: !!document.querySelector('.launcher-access-screen') };
       })()`);
       assert.equal(result.saved, true);
       assert.equal(result.after.windowWidth, 7680);
@@ -54,6 +75,9 @@ app.on('browser-window-created', (_event, win) => {
       assert.match(result.background.id, /^[a-f0-9-]{36}\.gif$/);
       assert.equal(result.background.imageWidth, 1);
       assert.equal(result.background.posterWidth, 1);
+      assert.deepEqual(reviewUploads, [8 * 1024 * 1024 + 1, 20 * 1024 * 1024]);
+      for (const item of result.packReviews.slice(0, 2)) { assert.equal(item.delivered, true); assert.match(item.hash, /^[a-f0-9]{40}$/); }
+      for (const item of result.packReviews.slice(2)) assert.match(item.error, /20 МиБ/);
       assert.deepEqual(fs.readFileSync(path.join(root, 'user-data', 'backgrounds', result.background.id)), fs.readFileSync(gifFile));
       const settingsFile = path.join(root, '.quiby-launcher', 'launcher-settings.json');
       assert.equal(fs.existsSync(settingsFile + '.tmp'), false);

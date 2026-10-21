@@ -7,6 +7,7 @@ import { config } from './config';
 import { initDatabase } from './models/db';
 import authRoutes from './routes/auth';
 import gameRoutes from './routes/game';
+import { gameBridgeRoutes, botChatRoutes } from './routes/gameBridge';
 import modpackRoutes from './routes/modpack';
 import newsRoutes from './routes/news';
 import statusRoutes from './routes/status';
@@ -16,7 +17,8 @@ import botRoutes from './routes/bot';
 import skinsRoutes from './routes/skins';
 import { getLatestManifest, publishModpackVersion } from './services/modpackService';
 import { ModpackManifest, MINIMUM_LAUNCHER_VERSION } from '@quiby/shared';
-import { getLauncherAccess } from './services/launcherAccess';
+import { getPlayerLauncherAccess } from './services/launcherAccess';
+import { sessionDiscordId } from './middleware/auth';
 
 async function refreshReleasedModpack(): Promise<void> {
   try {
@@ -65,7 +67,7 @@ async function bootstrap() {
     res.json({
       status: 'ok',
       service: 'quiby.core backend server',
-      version: '1.0.0',
+      version: '1.1.0',
       minimumLauncherVersion: MINIMUM_LAUNCHER_VERSION,
       time: new Date().toISOString(),
     });
@@ -74,9 +76,10 @@ async function bootstrap() {
   // API Routes
   app.get('/api/launcher/access', (_req, res, next) => {
     res.set('Cache-Control', 'no-store');
-    void getLauncherAccess().then(access => res.json(access)).catch(next);
+    void getPlayerLauncherAccess(sessionDiscordId(_req)).then(access => res.json(access)).catch(next);
   });
   app.use('/api/auth', authRoutes);
+  app.use('/api/game/bridge', gameBridgeRoutes);
   app.use('/api/game', gameRoutes);
   app.use('/api/modpack', modpackRoutes);
   app.use('/api/news', newsRoutes);
@@ -88,6 +91,7 @@ async function bootstrap() {
     setHeaders: res => { res.setHeader('Cache-Control', 'no-store'); },
   }));
   app.use('/api/mods', modsRoutes);
+  app.use('/api/bot/chat', botChatRoutes);
   app.use('/api/bot', botRoutes);
   app.use('/api/skins', skinsRoutes);
 

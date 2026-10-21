@@ -95,7 +95,7 @@ export const ModWhitelistModal: React.FC<ModWhitelistModalProps> = ({
         </div>
 
         {!session?.token && <p className="inline-error">Войдите в аккаунт, чтобы отправить заявку.</p>}
-        <p className="text-xs text-zinc-400">Статус появится в уведомлениях. Можно продолжать пользоваться лаунчером.</p>
+        <p className="text-xs text-zinc-400">Вложение — до 20 МиБ. Статус появится в уведомлениях. Можно продолжать пользоваться лаунчером.</p>
         {/* Minimal Form: 2 Inputs Only */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (

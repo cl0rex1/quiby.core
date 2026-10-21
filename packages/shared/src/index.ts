@@ -145,3 +145,6 @@ export interface LogEntry {
 
 export { lightingOverrideSignature, hasGammaMixinEvidence } from './lightingDetection';
 export { MINIMUM_LAUNCHER_VERSION, LAUNCHER_DOWNLOAD_URL, supportsLauncher } from './launcherPolicy';
+
+// Discord's default per-file limit; shared by review staging, upload and API parsing.
+export const REVIEW_FILE_LIMIT_BYTES = 20 * 1024 * 1024;

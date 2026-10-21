@@ -14,10 +14,9 @@ import { AuthenticatedRequest, requireAuth } from '../middleware/auth';
 import { AuthSession, UserProfile } from '@quiby/shared';
 import { requireSupportedLauncher } from '../middleware/launcherVersion';
 import { submitUsernameChangeRequest } from '../services/usernameChangeService';
-import { requireLauncherAccess } from '../middleware/launcherAccess';
+import { requireLauncherAccess, rejectClosedLauncher } from '../middleware/launcherAccess';
 
 const router = Router();
-router.use((req, res, next) => req.path === '/verify-session' ? next() : requireLauncherAccess(req, res, next));
 
 const mcUsernameSchema = z
   .string()
@@ -55,7 +54,7 @@ router.post('/mc-username-change-request', requireAuth, async (req: Authenticate
 });
 
 // 1. Get Discord OAuth2 Login URL
-router.get('/discord/url', requireSupportedLauncher, (req: Request, res: Response) => {
+router.get('/discord/url', requireSupportedLauncher, requireLauncherAccess, (req: Request, res: Response) => {
   if (!config.discord.clientId || !config.discord.clientSecret || !config.discord.botToken || !config.discord.guildId) {
     return res.status(503).json({
       error: 'Discord OAuth2 is not configured on this server yet.',
@@ -75,7 +74,7 @@ router.get('/discord/url', requireSupportedLauncher, (req: Request, res: Respons
 });
 
 // 2. Discord Callback
-router.post('/discord/callback', requireSupportedLauncher, async (req: Request, res: Response) => {
+router.post('/discord/callback', requireSupportedLauncher, requireLauncherAccess, async (req: Request, res: Response) => {
   const { code, redirectUri } = req.body;
   if (!code) {
     return res.status(400).json({ error: 'Missing authorization code' });
@@ -84,6 +83,7 @@ router.post('/discord/callback', requireSupportedLauncher, async (req: Request, 
   try {
     const tokenData = await exchangeDiscordCode(code, redirectUri);
     const discordUser = await fetchDiscordUser(tokenData.access_token);
+    if (await rejectClosedLauncher(res, discordUser.id)) return;
     const guildStatus = await checkGuildMembership(discordUser.id);
 
     if (!guildStatus.isMember) {
@@ -208,6 +208,7 @@ router.post('/bind-mc', async (req: Request, res: Response) => {
   }
 
   // Check if Discord ID is already bound
+  if (await rejectClosedLauncher(res, discordId)) return;
   const existingDiscord = await dbGet<any>('SELECT * FROM users WHERE discord_id = ?', [discordId]);
   if (existingDiscord) {
     return res.status(400).json({ error: `This Discord account is already bound to Minecraft username "${existingDiscord.mc_username}"` });

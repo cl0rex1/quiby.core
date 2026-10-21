@@ -13,9 +13,10 @@ interface DiscordAuthModalProps {
   onClose: () => void;
   onSuccess: (session: AuthSession) => void;
   serverUrl: string;
+  onBack?:()=>void;
 }
 
-export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onClose, onSuccess, serverUrl }) => {
+export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onClose, onSuccess, serverUrl, onBack }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -110,6 +111,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({ isOpen, onCl
 
       <header className="auth-topbar">
         <img src={quibyLogo} alt="quiby." className="auth-brand" />
+        {onBack && <button className="ui-button" onClick={onBack}>← К статусу доступа</button>}
       </header>
 
       <div className="auth-content">

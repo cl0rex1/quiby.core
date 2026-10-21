@@ -1,4 +1,15 @@
 // Inspect locally: neither the archive nor its contents are uploaded or executed.
+export async function readResourcePackZip(file) {
+  if(!/\.zip$/i.test(file.name)||!file.size||file.size>100*1024*1024)throw Error('Выберите ZIP размером до 100 МиБ');
+  const bytes=await file.arrayBuffer(),view=new DataView(bytes);
+  if(bytes.byteLength<22)throw Error('Некорректный ZIP-архив');
+  let end=bytes.byteLength-22;
+  for(;end>=Math.max(0,bytes.byteLength-65557);end--){if(view.getUint32(end,true)===0x06054b50&&end+22+view.getUint16(end+20,true)===bytes.byteLength)break;}
+  if(end<Math.max(0,bytes.byteLength-65557))throw Error('Некорректный ZIP-архив');
+  const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-1',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('');
+  return {name:file.name.replace(/\.zip$/i,'').slice(0,100),filename:file.name,hash,version:''};
+}
+
 export async function readModJar(file) {
   if (!/\.jar$/i.test(file.name) || !file.size || file.size > 512 * 1024 * 1024) throw Error('Выберите JAR размером до 512 МБ');
   const bytes = new Uint8Array(await file.arrayBuffer()), view = new DataView(bytes.buffer);

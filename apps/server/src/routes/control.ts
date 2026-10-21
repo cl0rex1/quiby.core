@@ -55,7 +55,7 @@ router.use((req, res, next) => {
 });
 router.get('/session', (_req, res) => res.json({ authenticated: true }));
 router.post('/logout', (_req, res) => { res.clearCookie(cookieName, cookieOptions); res.json({ success: true }); });
-const querySchema = z.object({ page: z.coerce.number().int().min(1).max(100000).default(1), search: z.string().max(100).default(''), status: z.enum(['all','pending','approved','rejected']).default('all') });
+const querySchema = z.object({ page: z.coerce.number().int().min(1).max(100000).default(1), search: z.string().max(100).default(''), status: z.enum(['all','pending','approved','rejected']).default('all'), category:z.enum(['all','mods','resourcepacks','other']).default('all'), access:z.enum(['all','allowed','blocked','exempt']).default('all') });
 const decisionSchema = z.object({ decision: z.enum(['approved','rejected']), reason: z.string().trim().min(3).max(1000) });
 const idSchema = z.coerce.number().int().positive();
 async function audit(action: string, target: string, details: string) {
@@ -89,11 +89,24 @@ for (const [route, table, searchColumns] of [
     const clauses = [`(${searchColumns.map(c => c + ' LIKE ?').join(' OR ')})`];
     const values: any[] = searchColumns.map(() => '%' + q.search + '%');
     if ((route === 'mods' || route === 'names') && q.status !== 'all') { clauses.push('status=?'); values.push(q.status); }
+    const categories:Record<string,number>={all:0,mods:0,resourcepacks:0,other:0};
+    if(route==='mods') {
+      const groups=await dbAll<{category:string;total:number}>(`SELECT CASE WHEN lower(filename) LIKE '%.jar' THEN 'mods' WHEN lower(filename) LIKE '%.zip' THEN 'resourcepacks' ELSE 'other' END category,COUNT(*) total FROM ${table} WHERE ${clauses.join(' AND ')} GROUP BY category`,values);
+      for(const group of groups){categories[group.category]=group.total;categories.all+=group.total;}
+      if(q.category==='mods')clauses.push("lower(filename) LIKE '%.jar'");
+      if(q.category==='resourcepacks')clauses.push("lower(filename) LIKE '%.zip'");
+      if(q.category==='other')clauses.push("lower(filename) NOT LIKE '%.jar' AND lower(filename) NOT LIKE '%.zip'");
+    }
+    if(route==='players') {
+      if(q.access==='allowed')clauses.push('is_whitelisted=1');
+      if(q.access==='blocked')clauses.push('is_whitelisted=0');
+      if(q.access==='exempt')clauses.push('is_whitelisted=1 AND launcher_access_exempt=1');
+    }
     const where = clauses.join(' AND ');
     const count = await dbGet(`SELECT COUNT(*) total FROM ${table} WHERE ${where}`, values);
-    const columns = route === 'players' ? 'id,discord_id,discord_username,mc_username,uuid,is_whitelisted,created_at,last_login_at' : '*';
+    const columns = route === 'players' ? 'id,discord_id,discord_username,mc_username,uuid,is_whitelisted,launcher_access_exempt,playtime_seconds,created_at,last_login_at' : '*';
     const items = await dbAll(`SELECT ${columns} FROM ${table} WHERE ${where} ORDER BY id DESC LIMIT 30 OFFSET ?`, [...values, (q.page - 1) * 30]);
-    res.json({ items, total: count?.total || 0, page: q.page, pageSize: 30 });
+    res.json({ items, total: count?.total || 0, page: q.page, pageSize: 30, ...(route==='mods'?{categories}:{}) });
   }));
 }
 for (const kind of ['mods','names'] as const) {
@@ -102,25 +115,31 @@ for (const kind of ['mods','names'] as const) {
     if (!id.success || !body.success) return res.status(400).json({ error: 'Укажите решение и причину (3–1000 символов)' });
     const fn = kind === 'mods' ? reviewWhitelistRequest : reviewUsernameChangeRequest;
     const { code, ...result } = await fn(id.data, body.data.decision, 'web-admin', body.data.reason);
-    if (code === 200) await audit(kind + ':' + body.data.decision, String(id.data), body.data.reason);
+    const category = kind==='mods' && 'request' in result && /\.zip$/i.test(result.request.filename) ? 'resourcepacks' : kind;
+    if (code === 200) await audit(category + ':' + body.data.decision, String(id.data), body.data.reason);
     return res.status(code).json(result);
   }));
 }
 router.post('/mods', wrap(async (req, res) => {
-  const parsed = decisionSchema.extend({ name: z.string().trim().min(1).max(100), filename: z.string().regex(/^[^/\\]+\.jar$/i).max(255), hash: z.string().regex(/^[a-f0-9]{40}$/i) }).safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: 'Проверьте имя, JAR, SHA-1 и причину' });
+  const parsed = decisionSchema.extend({ name: z.string().trim().min(1).max(100), filename: z.string().regex(/^[^/\\]+\.(jar|zip)$/i).max(255), hash: z.string().regex(/^[a-f0-9]{40}$/i) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Проверьте имя, JAR / ZIP, SHA-1 и причину' });
   const b = parsed.data;
   const item = await submitWhitelistRequest({ mod_name: b.name, filename: b.filename, hash_sha1: b.hash, reason: b.reason, user_discord_id: 'web-admin', mc_username: 'web-admin' });
   const { code, ...result } = await reviewWhitelistRequest(item.id, b.decision, 'web-admin', b.reason);
-  if (code === 200) await audit('mods:' + b.decision, b.hash, b.reason);
+  if (code === 200) await audit((/\.zip$/i.test(b.filename)?'resourcepacks':'mods')+':' + b.decision, b.hash, b.reason);
   return res.status(code).json(result);
 }));
 router.patch('/players/:id', wrap(async (req, res) => {
-  const body = z.object({ allowed: z.boolean() }).safeParse(req.body);
+  const body = z.object({ allowed: z.boolean().optional(), launcherExempt:z.boolean().optional() }).strict().refine(b=>b.allowed!==undefined||b.launcherExempt!==undefined).safeParse(req.body);
   if (!/^\d{17,20}$/.test(req.params.id) || !body.success) return res.status(400).json({ error: 'Некорректные данные' });
-  const result = await dbRun('UPDATE users SET is_whitelisted=? WHERE discord_id=?', [body.data.allowed ? 1 : 0, req.params.id]);
+  const player=await dbGet<{is_whitelisted:number}>('SELECT is_whitelisted FROM users WHERE discord_id=?',[req.params.id]);
+  if(!player)return res.status(404).json({error:'Игрок не найден'});
+  if(body.data.launcherExempt && !(body.data.allowed??Boolean(player.is_whitelisted)))return res.status(400).json({error:'Сначала разрешите личный доступ игроку.'});
+  const allowed=body.data.allowed===undefined?null:Number(body.data.allowed), exempt=body.data.launcherExempt===undefined?null:Number(body.data.launcherExempt);
+  const result = await dbRun('UPDATE users SET is_whitelisted=COALESCE(?,is_whitelisted), launcher_access_exempt=CASE WHEN COALESCE(?,is_whitelisted)=0 THEN 0 ELSE COALESCE(?,launcher_access_exempt) END WHERE discord_id=?', [allowed,allowed,exempt,req.params.id]);
   if (!result.changes) return res.status(404).json({ error: 'Игрок не найден' });
-  await audit(body.data.allowed ? 'players:allow' : 'players:block', req.params.id, 'Доступ через лаунчер и проверку сессии');
+  if(body.data.allowed!==undefined)await audit(body.data.allowed ? 'players:allow' : 'players:block', req.params.id, 'Личный доступ к лаунчеру и игре; личный запрет отменяет исключение.');
+  if(body.data.launcherExempt!==undefined)await audit(body.data.launcherExempt?'players:exempt':'players:unexempt',req.params.id,'Исключение из общей блокировки лаунчера');
   res.json({ success: true });
 }));
 router.post('/news/preview', wrap(async (req, res) => {

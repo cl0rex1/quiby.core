@@ -69,10 +69,11 @@ const defaultSettings: LauncherSettings = {
 const initialCustomMods: CustomModItem[] = [];
 
 export const App: React.FC = () => {
-  const launcherAccess = useLauncherAccess(SERVER_URL);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('quiby_sidebar_collapsed') === 'true');
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [session, setSession] = useState<AuthSession | null>(storedSession);
+  const launcherAccess = useLauncherAccess(SERVER_URL,session?.token);
+  const [accessLoginOpen,setAccessLoginOpen]=useState(false);
   const [remoteManifest, setManifest] = useState<ModpackManifest | null>(null);
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [newsAvailable, setNewsAvailable] = useState(false);
@@ -660,8 +661,9 @@ export const App: React.FC = () => {
   // Otherwise, render the Main Launcher Window:
   if (!launcherAccess.access || launcherAccess.access.closed) return <div className="launcher-app flex flex-col h-screen bg-[#0c0c0d] text-zinc-100">
     <WindowHeader/><LauncherUpdateBanner state={launcherUpdate}/>
+    {launcherAccess.access?.canLogin && accessLoginOpen ? <DiscordAuthModal isOpen onClose={()=>setAccessLoginOpen(false)} onBack={()=>setAccessLoginOpen(false)} onSuccess={handleLoginSuccess} serverUrl={SERVER_URL}/> :
     <LauncherAccessScreen checking={launcherAccess.checking} loading={!launcherAccess.access && !launcherAccess.error} unavailable={!launcherAccess.access && Boolean(launcherAccess.error)}
-      message={launcherAccess.access?.message || launcherAccess.error || 'Соединяемся с Quiby…'} onRetry={launcherAccess.retry}/>
+      message={launcherAccess.access?.message || launcherAccess.error || 'Соединяемся с Quiby…'} onRetry={launcherAccess.retry} onLogin={launcherAccess.access?.canLogin&&!launchPending&&!['updating','starting','running'].includes(launchState.status)?()=>setAccessLoginOpen(true):undefined}/>}
   </div>;
   return (
     <ReviewContext.Provider value={submitReview}><div style={{ '--sidebar-width': isNotificationsOpen ? '310px' : sidebarCollapsed ? '72px' : '192px' } as React.CSSProperties} className="launcher-app flex flex-col h-screen w-screen bg-[#0c0c0d] text-zinc-100 overflow-hidden select-none font-sans relative">

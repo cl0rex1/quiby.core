@@ -1,10 +1,10 @@
-import { readModJar } from './jar.mjs';
+import { readModJar, readResourcePackZip } from './jar.mjs?v=20261021-3';
 const $ = id => document.getElementById(id);
-let tab = 'mods', page = 1, selection = null, generation = 0;
+let tab = 'mods', page = 1, selection = null, generation = 0, category='all';
 let requestController, busy = false, renderedKey = '', renderedData = '', toastTimer;
 let accessState = null, accessSaving = false;
 const filters = new Map();
-const names = { access: ['Доступ к лаунчеру','Общий переключатель доступа для всех игроков.'], news: ['Новости и рассылки','Публикуйте новости и отправляйте уведомления в лаунчер.'], mods: ['Моды и вайтлист','Рассматривайте заявки и управляйте допуском конкретных файлов.'], players: ['Игроки','Аккаунты Discord, игровые имена и доступ к серверу.'], names: ['Смена ников','Проверяйте заявки перед изменением игрового имени и UUID.'], audit: ['Журнал действий','История решений, принятых через веб-панель.'] };
+const names = { access: ['Доступ к лаунчеру','Общая блокировка и исключения для игроков.'], news: ['Новости и рассылки','Публикуйте новости и отправляйте уведомления в лаунчер.'], mods: ['Вайтлист контента','Моды, ресурспаки и решения по конкретным файлам.'], players: ['Игроки','Личный доступ, исключения из общей блокировки и время в игре.'], names: ['Смена ников','Проверяйте заявки перед изменением игрового имени и UUID.'], audit: ['Журнал действий','История решений, принятых через веб-панель.'] };
 async function api(path, options = {}) {
   try {
     const r = await fetch('/api/control' + path, { ...options, cache: 'no-store', credentials: 'same-origin',
@@ -25,7 +25,14 @@ function showLogin() { generation++; requestController?.abort(); busy=false; acc
 function toast(text) { clearTimeout(toastTimer); $('toast').textContent = text; $('toast').hidden = false; toastTimer=setTimeout(() => { $('toast').hidden = true; }, 5000); }
 function date(value) { if (!value) return '—'; const d = new Date(value.includes('T') ? value : value.replace(' ','T') + 'Z'); return isNaN(d) ? value : d.toLocaleString('ru-RU'); }
 function button(label, action, danger = false) { const b = el('button',label,danger ? 'danger' : ''); b.type='button'; b.onclick=action; return b; }
-async function enter() { $('login').hidden=true; $('app').hidden=false; navigate(location.hash.slice(1)||tab); }
+function copyButton(value,label) { return button(label,async()=>{try{await navigator.clipboard.writeText(value);toast('Скопировано');}catch{toast('Не удалось скопировать. Выделите текст вручную.');}}); }
+function timePlayed(seconds=0){const minutes=Math.floor(seconds/60);return Math.floor(minutes/60)+' ч '+minutes%60+' мин';}
+async function changePlayer(item,body) {
+  const message=body.launcherExempt===undefined?(body.allowed?'Разрешить личный доступ':'Закрыть личный доступ и убрать исключение'):body.launcherExempt?'Разрешить вход при общей блокировке':'Убрать исключение из общей блокировки';
+  if(!confirm(message+' игроку '+item.mc_username+'?'))return;
+  try{await api('/players/'+item.discord_id,{method:'PATCH',body:JSON.stringify(body)});toast('Доступ игрока обновлён');await load();}catch(error){toast(error.message);}
+}
+async function enter() { $('login').hidden=true; $('app').hidden=false; navigate(location.hash.slice(1)||tab,undefined,true); }
 $('login-form').onsubmit = async e => { e.preventDefault(); const b=e.submitter; b.disabled=true; $('login-error').textContent=''; try { await api('/login',{method:'POST',body:JSON.stringify({key:$('key').value})}); $('key').value=''; await enter(); } catch(error) { $('login-error').textContent=error.message; } finally { b.disabled=false; } };
 $('logout').onclick=async()=>{try { await api('/logout',{method:'POST',body:'{}'});showLogin(); } catch(e) { toast(e.message); }};
 function decide(item, decision) { selection={id:item.id,decision}; $('mod-fields').hidden=true; $('decision-title').textContent=decision==='approved'?'Разрешить':'Отклонить'; $('decision-context').textContent=tab==='mods'?item.mod_name+' · '+item.filename+(item.size_bytes>100*1024*1024?' · Одобрение разрешит этот JAR без полной автоматической распаковки (размер больше 100 МБ).':''):item.current_username+' → '+item.requested_username+' · Изменится UUID; данные Minecraft по старому UUID не переносятся автоматически.'; $('reason').value=''; $('decision-error').textContent=''; $('decision').showModal(); }
@@ -35,10 +42,18 @@ $('decision-form').onsubmit=async e=>{e.preventDefault();e.submitter.disabled=tr
 function renderRows(data, reviewed) {
     const rows=data.items.map(item=>{
       const row=el('article',undefined,'row'), info=el('div',undefined,'info'), actions=el('div',undefined,'actions');
-      if(reviewed){info.append(el('span',({pending:'Ожидает',approved:'Одобрено',rejected:'Отклонено'})[item.status], 'badge '+item.status));info.append(el('h3',tab==='mods'?item.mod_name:item.current_username+' → '+item.requested_username));info.append(el('p',item.reason||'Причина не указана'));if(item.auto_detected)info.append(el('p','Автоматически обнаружен у игрока · '+(item.size_bytes/1024/1024).toFixed(1)+' МБ','details'));if(item.size_bytes>100*1024*1024)info.append(el('p','Одобрение создаст исключение по SHA-1 для файла больше 100 МБ.','details'));if(tab==='mods'){info.append(el('p',item.filename,'details'),el('p','SHA-1: '+item.hash_sha1,'details'));}info.append(el('p','#'+item.id+' · '+(item.mc_username||item.discord_id||'')+' · '+date(item.created_at),'details'));if(item.decision_reason)info.append(el('p','Решение: '+item.decision_reason,'details'));if(tab==='mods'||item.status==='pending'){actions.append(button(item.status==='rejected'?'Разрешить повторно':'Одобрить',()=>decide(item,'approved')),button(item.status==='approved'?'Отозвать допуск':'Отклонить',()=>decide(item,'rejected'),true));}}
-      else if(tab==='players'){info.append(el('span',item.is_whitelisted?'Доступ разрешён':'Доступ закрыт','badge '+(item.is_whitelisted?'approved':'rejected')),el('h3',item.mc_username),el('p',item.discord_username+' · '+item.discord_id,'details'),el('p','UUID: '+item.uuid,'details'),el('p','Последний вход: '+date(item.last_login_at),'details'));actions.append(button(item.is_whitelisted?'Закрыть доступ':'Разрешить доступ',async()=>{if(!confirm((item.is_whitelisted?'Закрыть':'Разрешить')+' доступ игроку '+item.mc_username+'?'))return;try{await api('/players/'+item.discord_id,{method:'PATCH',body:JSON.stringify({allowed:!item.is_whitelisted})});toast('Доступ обновлён');await load();}catch(e){toast(e.message);}},!!item.is_whitelisted));}
+      if(reviewed){info.append(el('span',(tab==='mods'?(/\.zip$/i.test(item.filename)?'Ресурспак · ':/\.jar$/i.test(item.filename)?'Мод · ':'Другое · '):'')+({pending:'Ожидает',approved:'Одобрено',rejected:'Отклонено'})[item.status], 'badge '+item.status));info.append(el('h3',tab==='mods'?item.mod_name:item.current_username+' → '+item.requested_username));info.append(el('p',item.reason||'Причина не указана'));if(item.auto_detected)info.append(el('p','Автоматически обнаружен у игрока · '+(item.size_bytes/1024/1024).toFixed(1)+' МБ','details'));if(item.size_bytes>100*1024*1024)info.append(el('p','Одобрение создаст исключение по SHA-1 для файла больше 100 МБ.','details'));if(tab==='mods'){info.append(el('p',item.filename,'details'),el('p','SHA-1: '+item.hash_sha1,'details'));}info.append(el('p','#'+item.id+' · '+(item.mc_username||item.discord_id||'')+' · '+date(item.created_at),'details'));if(item.decision_reason)info.append(el('p','Решение: '+item.decision_reason,'details'));if(tab==='mods'||item.status==='pending'){actions.append(button(item.status==='rejected'?'Разрешить повторно':'Одобрить',()=>decide(item,'approved')),button(item.status==='approved'?'Отозвать допуск':'Отклонить',()=>decide(item,'rejected'),true));}}
+      else if(tab==='players') {
+        info.append(el('span',item.is_whitelisted?'Личный доступ открыт':'Личный доступ закрыт','badge '+(item.is_whitelisted?'approved':'rejected')),el('h3',item.mc_username));
+        if(item.launcher_access_exempt && item.is_whitelisted)info.append(el('span','Вход при общей блокировке','badge exempt'));
+        info.append(el('p',item.discord_username+' · '+item.discord_id,'details'),el('p','UUID: '+item.uuid,'details'),el('p','Наиграно: '+timePlayed(item.playtime_seconds)+' · Последний вход: '+date(item.last_login_at),'details'));
+        const exemption=button(item.launcher_access_exempt?'Убрать исключение':'Разрешить при блокировке',()=>changePlayer(item,{launcherExempt:!item.launcher_access_exempt}));
+        exemption.disabled=!item.is_whitelisted;exemption.title=!item.is_whitelisted?'Сначала разрешите личный доступ':'';
+        actions.append(button(item.is_whitelisted?'Закрыть доступ':'Разрешить доступ',()=>changePlayer(item,{allowed:!item.is_whitelisted}),!!item.is_whitelisted),exemption,copyButton(item.discord_id,'Копировать Discord ID'));
+      }
       else if(tab==='news'){info.append(el('span',item.broadcastRevision?'С уведомлением':'В ленте','badge'),el('h3',item.title),el('p',item.excerpt),el('p',item.author+' · '+date(item.date),'details'));actions.append(button('Изменить',()=>editNews(item)),button('Удалить',async()=>{if(!confirm('Удалить новость из ленты? Уже доставленное уведомление останется у читателей.'))return;try{await api('/news/'+encodeURIComponent(item.id),{method:'DELETE'});await load();}catch(e){toast(e.message);}},true));}
-      else {const labels={'mods:approved':'Мод разрешён','mods:rejected':'Мод отклонён','names:approved':'Смена ника одобрена','names:rejected':'Смена ника отклонена','players:allow':'Доступ игроку открыт','players:block':'Доступ игроку закрыт','news:save':'Новость сохранена','news:broadcast':'Новость с уведомлением','news:delete':'Новость удалена','launcher:close':'Доступ к лаунчеру закрыт','launcher:open':'Доступ к лаунчеру открыт'};info.append(el('h3',labels[item.action]||item.action),el('p',item.details),el('p',(item.target==='all'?'Все игроки':item.target)+' · '+date(item.created_at),'details'));}
+      else {const labels={'resourcepacks:approved':'Ресурспак разрешён','resourcepacks:rejected':'Ресурспак отклонён','players:exempt':'Добавлено исключение доступа','players:unexempt':'Убрано исключение доступа','mods:approved':'Мод разрешён','mods:rejected':'Мод отклонён','names:approved':'Смена ника одобрена','names:rejected':'Смена ника отклонена','players:allow':'Доступ игроку открыт','players:block':'Доступ игроку закрыт','news:save':'Новость сохранена','news:broadcast':'Новость с уведомлением','news:delete':'Новость удалена','launcher:close':'Доступ к лаунчеру закрыт','launcher:open':'Доступ к лаунчеру открыт'};info.append(el('h3',labels[item.action]||item.action),el('p',item.details),el('p',(item.target==='all'?'Все игроки':item.target)+' · '+date(item.created_at),'details'));}
+      if(tab==='mods')actions.append(copyButton(item.hash_sha1,'Копировать SHA-1'));
       row.append(info,actions);return row;
     });
   return rows;
@@ -63,7 +78,7 @@ function showAccess(state) {
   accessState = state;
   $('access-closed').checked = state.closed;
   $('access-message').value = state.message;
-  $('access-status').textContent = state.closed ? 'Доступ закрыт для всех' : 'Доступ открыт';
+  $('access-status').textContent = state.closed ? 'Общий доступ закрыт' : 'Доступ открыт';
   $('access-state-badge').textContent = state.closed ? 'Закрыт' : 'Открыт';
   $('access-state-badge').className = 'badge ' + (state.closed ? 'rejected' : 'approved');
   $('access-updated').textContent = state.updatedAt ? 'Последнее изменение: ' + date(state.updatedAt) : 'Игроки могут войти и запустить игру.';
@@ -74,7 +89,7 @@ function emptyList(filtered) {
   const empty = el('div', undefined, 'empty');
   empty.append(el('strong', filtered ? 'Ничего не найдено' : ({mods:'Новых заявок нет',names:'Заявок на смену ника нет',news:'Пока нет новостей',players:'Игроки ещё не заходили',audit:'Здесь появится история действий'})[tab]),
     el('p', filtered ? 'Попробуйте другое название или измените фильтр.' : 'Записи появятся здесь, когда будут доступны.'));
-  if (filtered) empty.append(button('Сбросить фильтры', () => { $('search').value='';$('status').value='all';page=1;void load(); }));
+  if (filtered) empty.append(button('Сбросить фильтры', () => { $('search').value='';$('status').value='all';$('player-filter').value='all';if(tab==='mods')category='all';page=1;history.replaceState(null,'','#'+tab);void load(); }));
   if (tab==='news' && !filtered) empty.append(button('Написать первую новость', () => editNews()));
   return empty;
 }
@@ -84,11 +99,11 @@ function updateStats(stats) {
   $('stats').dataset.signature = signature;
   $('stats').replaceChildren(...[
     ['Игроков',stats.users.total,stats.users.allowed+' с доступом','players'],
-    ['Заявки на моды',stats.mods.pending,'ожидают решения','mods'],
+    ['Заявки контента',stats.mods.pending,'ожидают решения','mods'],
     ['Смена ников',stats.names.pending,'ожидают решения','names'],
-    ['Сборка',stats.pack,'посмотреть историю','audit'],
+    ['Сборка',stats.pack,'активная версия',null],
   ].map(([label,value,hint,target]) => {
-    const box=button('',()=>navigate(target, target==='mods'||target==='names' ? 'pending' : undefined));
+    const box=target?button('',()=>navigate(target==='mods'?'mods/all':target, target==='mods'||target==='names' ? 'pending' : undefined)):el('div');
     box.className='stat';box.append(el('span',label),el('strong',String(value)),el('span',hint));return box;
   }));
   for (const kind of ['mods','names']) { $(kind+'-count').textContent=String(stats[kind].pending);$(kind+'-count').hidden=!stats[kind].pending; }
@@ -101,11 +116,15 @@ async function load({ silent = false } = {}) {
   const reviewed = tab==='mods'||tab==='names', isAccess=tab==='access';
   document.querySelector('.footnote').hidden=isAccess;
   $('records-panel').hidden=isAccess;$('access-panel').hidden=!isAccess;$('stats').hidden=isAccess;
+  $('players-tabs').hidden=tab!=='players'&&!isAccess;$('content-categories').hidden=tab!=='mods';$('player-filter').hidden=tab!=='players';
+  for(const b of document.querySelectorAll('[data-player-tab]'))b.setAttribute('aria-pressed',String(b.dataset.playerTab===tab));
+  for(const b of document.querySelectorAll('[data-category]'))b.setAttribute('aria-pressed',String(b.dataset.category===category));
   $('status').hidden=!reviewed;$('add-news').hidden=tab!=='news';$('add-mod').hidden=tab!=='mods';$('upload-jar').hidden=tab!=='mods';
   $('title').textContent=names[tab][0];$('subtitle').textContent=names[tab][1];document.title=names[tab][0]+' · quiby';
-  if (isAccess && accessDirty()) { updateAccessDraft();return; }
+  $('load-error').hidden=true;
+  if (isAccess && accessDirty()) { updateAccessDraft();connection('Есть несохранённые изменения');return; }
   busy=true;$('refresh').disabled=true;$('load-error').hidden=true;connection('Обновляем…','loading');
-  const key = [tab,page,$('search').value,reviewed?$('status').value:'all'].join('|');
+  const key = [tab,category,page,$('search').value,reviewed?$('status').value:'all',$('player-filter').value].join('|');
   if (isAccess) { $('access-fields').disabled=true;$('access-save').disabled=true;$('access-loading').hidden=false; }
   else if (renderedKey!==key) {
     const placeholder=el('div',undefined,'loading-placeholder');placeholder.setAttribute('aria-label','Загрузка записей');
@@ -119,13 +138,17 @@ async function load({ silent = false } = {}) {
       if(typeof state.closed!=='boolean'||typeof state.message!=='string')throw Error('Не удалось прочитать настройки доступа. Повторите запрос.');
       showAccess(state);$('access-fields').disabled=false;updateAccessDraft();
     } else {
-      const [stats,data]=await Promise.all([api('/overview',{signal:controller.signal}),api('/'+currentTab+'?'+new URLSearchParams({page:String(page),search:$('search').value,status:reviewed?$('status').value:'all'}),{signal:controller.signal})]);
+      const [stats,data]=await Promise.all([api('/overview',{signal:controller.signal}),api('/'+currentTab+'?'+new URLSearchParams({page:String(page),search:$('search').value,status:reviewed?$('status').value:'all',category:tab==='mods'?category:'all',access:tab==='players'?$('player-filter').value:'all'}),{signal:controller.signal})]);
       if(mine!==generation)return;
       updateStats(stats);
+      if(tab==='mods')for(const kind of ['all','mods','resourcepacks','other']){
+        $('category-'+kind).textContent=String(data.categories?.[kind]||0);
+        if(kind==='other')$('category-other').parentElement.hidden=!data.categories?.other&&category!=='other';
+      }
       const signature=JSON.stringify(data);
       if (renderedKey!==key || renderedData!==signature) {
         const rows = renderRows(data, reviewed);
-        $('list').replaceChildren(...(rows.length?rows:[emptyList(!!$('search').value || (reviewed && $('status').value!=='pending'))]));
+        $('list').replaceChildren(...(rows.length?rows:[emptyList(!!$('search').value || (reviewed && $('status').value!=='pending') || (tab==='mods'&&category!=='all') || (tab==='players'&&$('player-filter').value!=='all'))]));
         renderedKey=key;renderedData=signature;
       }
       const start=data.total?(page-1)*data.pageSize+1:0,end=Math.min(page*data.pageSize,data.total);
@@ -142,26 +165,35 @@ async function load({ silent = false } = {}) {
     if (mine===generation) { busy=false;$('refresh').disabled=false;$('list').setAttribute('aria-busy','false');$('access-loading').hidden=true; }
   }
 }
-function navigate(nextTab, status) {
+function navigate(nextTab, status, fromHistory=false) {
+  const [section,subsection]=nextTab.split('/');
+  nextTab=section==='players'&&subsection==='access'?'access':section;
   if (!names[nextTab])nextTab='mods';
   clearTimeout(debounce);
-  filters.set(tab,{search:$('search').value,status:$('status').value,page});
+  filters.set(tab==='mods'?tab+':'+category:tab,{search:$('search').value,status:$('status').value,access:$('player-filter').value,page});
+  if(nextTab==='mods'&&!subsection&&fromHistory)category='all';
+  if(nextTab==='mods'&&['all','mods','resourcepacks','other'].includes(subsection))category=subsection;
   tab=nextTab;
-  const saved=filters.get(tab);
+  const saved=filters.get(tab==='mods'?tab+':'+category:tab);
   page=status?1:saved?.page||1;$('search').value=saved?.search||'';$('status').value=status||saved?.status||'pending';
+  $('player-filter').value=saved?.access||'all';
   for(const button of document.querySelectorAll('[data-tab]')){
-    const active=button.dataset.tab===tab;button.classList.toggle('active',active);
+    const active=button.dataset.tab===(tab==='access'?'players':tab);button.classList.toggle('active',active);
     if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
   }
   document.querySelector('[aria-current="page"]')?.scrollIntoView({block:'nearest',inline:'nearest'});
   window.scrollTo({top:0});
-  if(location.hash.slice(1)!==tab)history.pushState(null,'','#'+tab);
+  const route=tab==='access'?'players/access':tab==='mods'&&category!=='all'?'mods/'+category:tab;
+  if(location.hash.slice(1)!==route)history[fromHistory?'replaceState':'pushState'](null,'','#'+route);
   void load();
 }
 for (const button of document.querySelectorAll('[data-tab]')) button.onclick=()=>navigate(button.dataset.tab);
+for(const b of document.querySelectorAll('[data-player-tab]'))b.onclick=()=>navigate(b.dataset.playerTab);
+for(const b of document.querySelectorAll('[data-category]'))b.onclick=()=>navigate('mods/'+b.dataset.category);
 let debounce;
 $('search').oninput=()=>{clearTimeout(debounce);debounce=setTimeout(()=>{page=1;void load();},250);};
 $('status').onchange=()=>{clearTimeout(debounce);page=1;void load();};
+$('player-filter').onchange=()=>{page=1;void load();};
 $('prev').onclick=()=>{page--;void load();};$('next').onclick=()=>{page++;void load();};
 async function refresh() {
   if(tab==='access'&&accessDirty()) {
@@ -172,7 +204,7 @@ async function refresh() {
 }
 $('refresh').onclick=refresh;$('retry').onclick=refresh;
 $('access-closed').onchange=updateAccessDraft;$('access-message').oninput=updateAccessDraft;
-window.addEventListener('popstate',()=>navigate(location.hash.slice(1)));
+window.addEventListener('popstate',()=>navigate(location.hash.slice(1),undefined,true));
 window.addEventListener('beforeunload',event=>{if(accessDirty()){event.preventDefault();event.returnValue='';}});
 document.addEventListener('keydown',event=>{
   if(event.key==='/'&&!event.ctrlKey&&!event.metaKey&&!$('app').hidden&&tab!=='access'&&!document.querySelector('dialog[open]')&&!event.target.closest('input,textarea,select,[contenteditable]')){event.preventDefault();$('search').focus();}
@@ -187,10 +219,10 @@ $('jar-file').onchange=async()=>{
   const file=$('jar-file').files[0]; if(!file)return;
   $('upload-jar').disabled=true;
   try {
-    const mod=await readModJar(file);
+    const pack=/\.zip$/i.test(file.name),mod=await (pack?readResourcePackZip(file):readModJar(file));
     $('add-mod').click();
     $('mod-name').value=mod.name; $('mod-filename').value=mod.filename; $('mod-hash').value=mod.hash;
-    $('decision-title').textContent='Добавить мод';
+    $('decision-title').textContent=pack?'Добавить ресурспак':'Добавить мод';
     $('decision-context').textContent=mod.name+(mod.version?' · '+mod.version:'')+' — файл обработан в браузере и не отправляется на сервер.'+(file.size>100*1024*1024?' Одобрение создаст исключение размера для этого JAR.':'');
   } catch(e){toast(e.message||'Не удалось прочитать JAR');}
   finally{$('upload-jar').disabled=false;$('jar-file').value='';}

@@ -11,9 +11,25 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("prepare", ROOT / "deploy/minecraft/prepare.py")
 prepare = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(prepare)
+restart_spec = importlib.util.spec_from_file_location("restart_wait", ROOT / "deploy/minecraft/restart_wait.py")
+restart_wait = importlib.util.module_from_spec(restart_spec)
+restart_spec.loader.exec_module(restart_wait)
 
 
 class ServerPackTests(unittest.TestCase):
+    def test_restart_window_survives_relaunch_and_rejects_invalid_clock(self):
+        with tempfile.TemporaryDirectory() as directory:
+            marker = pathlib.Path(directory) / 'quiby-restart-not-before'
+            self.assertEqual(restart_wait.seconds_left(marker, 1000), 0)
+            marker.write_text('1120000')
+            self.assertEqual(restart_wait.seconds_left(marker, 1000), 120)
+            self.assertEqual(restart_wait.seconds_left(marker, 1100), 20)
+            self.assertEqual(restart_wait.seconds_left(marker, 1200), 0)
+            for invalid in ['broken', '2000000']:
+                marker.write_text(invalid)
+                with self.assertRaises(ValueError):
+                    restart_wait.seconds_left(marker, 1000)
+
     def test_merge_preserves_other_keys_and_tables(self):
         text = '# comment\nroot = 123\n[ragdoll]\nminDamage = 2 # old\nextra = true\n[next]\nminDamage = 3\n'
         result = prepare.merge_toml(text, {"ragdoll": {"minDamage": 9.0, "onDamage": True}})

@@ -5,10 +5,20 @@ import { config } from '../config';
 import { dbGet } from '../models/db';
 import { AuthenticatedRequest, requireAuth } from '../middleware/auth';
 import { PNG } from 'pngjs';
+import { renderSkinHead } from '../services/skinHead';
 
 const router = Router();
 const skinDir = path.join(config.storagePath, 'skins');
 const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+
+router.get('/head/:uuid.png', async (req,res) => {
+  const id=req.params.uuid.replace(/-/g,'').toLowerCase();
+  if(!/^[0-9a-f]{32}$/.test(id))return res.sendStatus(404);
+  let bytes:Buffer|undefined;
+  try{bytes=await fs.readFile(path.join(skinDir,id+'.png'));}catch{}
+  try { res.set('Cache-Control','public, max-age=60').type('png').send(renderSkinHead(bytes)); }
+  catch { res.status(500).json({error:'Не удалось создать миниатюру скина'}); }
+});
 
 router.put('/me', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const dataUri = req.body?.dataUri;

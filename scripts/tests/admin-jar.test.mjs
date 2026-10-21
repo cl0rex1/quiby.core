@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { deflateRawSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
-import { readModJar } from '../../apps/server/public/admin/jar.mjs';
+import { readModJar, readResourcePackZip } from '../../apps/server/public/admin/jar.mjs';
 
 function jar(name, content) {
   const filename = Buffer.from(name), source = Buffer.from(content), packed = deflateRawSync(source);
@@ -24,4 +24,12 @@ test('rejects non-mod archives, malformed inputs and oversized metadata', async 
   await assert.rejects(readModJar(jar('other.txt','hello')),/Метаданные/);
   await assert.rejects(readModJar(new File(['bad'],'bad.jar')));
   await assert.rejects(readModJar(jar('fabric.mod.json','a'.repeat(1024*1024+1))),/метаданные/i);
+});
+test('resource pack ZIP imports its real filename and SHA-1 without requiring mod metadata',async()=>{
+  const source=jar('pack.mcmeta','{"pack":{"pack_format":34,"description":"Textures"}}');
+  const bytes=await source.arrayBuffer(),file=new File([bytes],'My Textures.ZIP');
+  const result=await readResourcePackZip(file);
+  assert.equal(result.name,'My Textures');assert.equal(result.filename,'My Textures.ZIP');
+  assert.equal(result.hash,createHash('sha1').update(Buffer.from(bytes)).digest('hex'));
+  await assert.rejects(readResourcePackZip(new File(['bad'],'broken.zip')),/ZIP/);
 });

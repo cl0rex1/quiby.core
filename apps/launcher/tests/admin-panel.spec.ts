@@ -30,10 +30,10 @@ test('background refresh keeps unchanged rows, focus and filters; navigation res
   await expect(page.locator('#list')).toContainText('Create Radar');
   await page.clock.fastForward(61000);await expect(page.getByLabel('Поиск',{exact:true})).toBeFocused();
   await page.getByRole('button',{name:'Игроки',exact:true}).click();
-  await page.getByRole('button',{name:'Моды и вайтлист',exact:true}).click();
+  await page.getByRole('button',{name:'Вайтлист контента',exact:true}).click();
   await expect(page.getByLabel('Поиск',{exact:true})).toHaveValue('Create');
   await expect(page).toHaveURL(/#mods$/);
-  await page.reload();await expect(page.getByRole('heading',{name:'Моды и вайтлист',exact:true})).toBeVisible();
+  await page.reload();await expect(page.getByRole('heading',{name:'Вайтлист контента',exact:true})).toBeVisible();
 });
 
 test('access fetch failure is retryable, cannot overwrite settings, and keeps drafts across navigation',async({page},info)=>{
@@ -53,7 +53,7 @@ test('access fetch failure is retryable, cannot overwrite settings, and keeps dr
   await expect(page.locator('#access-status')).toHaveText('Доступ открыт');
   await page.getByRole('button',{name:'Игроки',exact:true}).click();await page.getByRole('button',{name:'Доступ к лаунчеру',exact:true}).click();
   await expect(page.getByLabel('Сообщение игрокам')).toHaveValue('Обновляем сервер. Скоро вернёмся.');
-  await page.getByRole('button',{name:'Сохранить доступ'}).click();await expect(page.locator('#access-status')).toHaveText('Доступ закрыт для всех');
+  await page.getByRole('button',{name:'Сохранить доступ'}).click();await expect(page.locator('#access-status')).toHaveText('Общий доступ закрыт');
   await expect(page.locator('#access-draft')).toHaveText('Все изменения сохранены');expect(saves).toBe(1);
   await page.screenshot({path:info.outputPath('admin-access-desktop.png'),fullPage:true});
   expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa']).analyze()).violations).toEqual([]);
@@ -72,4 +72,65 @@ test('late list response cannot replace launcher access view',async({page})=>{
   await expect(page.locator('#access-status')).toHaveText('Доступ открыт');release();
   await expect(page.locator('#records-panel')).toBeHidden();
   await expect(page.getByRole('heading',{name:'Доступ к лаунчеру',exact:true})).toBeVisible();
+});
+
+test('whitelist categories filter before pagination, restore their state and accept a local ZIP for manual review',async({page},info)=>{
+  await admin(page);
+  const records=[{id:1,mod_name:'Create Radar',filename:'radar.jar'},{id:2,mod_name:'Fresh Animations',filename:'fresh.zip'},{id:3,mod_name:'Low Shield',filename:'shield.ZIP'}].map(item=>({...item,status:'pending',hash_sha1:String(item.id).repeat(40),reason:'Тестовая заявка',mc_username:'Tester',created_at:'2026-10-21 10:00:00'}));
+  await page.route('**/api/control/mods?*',async route=>{
+    const q=new URL(route.request().url()).searchParams,category=q.get('category'),current=Number(q.get('page'));
+    const filtered=records.filter(item=>category==='mods'?/\.jar$/i.test(item.filename):category==='resourcepacks'?/\.zip$/i.test(item.filename):true);
+    await route.fulfill({json:{items:filtered.slice(current-1,current),total:filtered.length,pageSize:1,categories:{all:3,mods:1,resourcepacks:2,other:0}}});
+  });
+  await page.goto('/admin/');await expect(page.getByRole('button',{name:'Другое',exact:true})).toBeHidden();
+  await page.getByRole('button',{name:'Ресурспаки',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Fresh Animations',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Следующая страница'}).click();await expect(page.getByRole('heading',{name:'Low Shield',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Моды',exact:true}).click();await expect(page.getByRole('heading',{name:'Create Radar',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Ресурспаки',exact:true}).click();await expect(page.getByRole('heading',{name:'Low Shield',exact:true})).toBeVisible();
+  await expect(page).toHaveURL(/#mods\/resourcepacks$/);
+  await page.screenshot({path:info.outputPath('whitelist-categories.png')});
+  await page.goBack();await expect(page.getByRole('button',{name:'Моды',exact:true})).toHaveAttribute('aria-pressed','true');
+  await page.goBack();await expect(page.getByRole('button',{name:'Ресурспаки',exact:true})).toHaveAttribute('aria-pressed','true');
+  await page.goBack();await expect(page.getByRole('button',{name:'Все',exact:true})).toHaveAttribute('aria-pressed','true');
+  const zip=Buffer.alloc(22);zip.writeUInt32LE(0x06054b50);
+  await page.locator('#jar-file').setInputFiles({name:'Textures.zip',mimeType:'application/zip',buffer:zip});
+  await expect(page.getByRole('heading',{name:'Добавить ресурспак'})).toBeVisible();
+  await expect(page.getByLabel('Имя файла',{exact:true})).toHaveValue('Textures.zip');
+  await expect(page.getByLabel('SHA-1',{exact:true})).toHaveValue(/^[a-f0-9]{40}$/);
+});
+
+test('players own global settings, personal access, exceptions and filters',async({page},info)=>{
+  await admin(page);
+  const users=[{id:1,discord_id:'123456789012345678',discord_username:'Tester',mc_username:'Tester',uuid:'test-uuid',is_whitelisted:1,launcher_access_exempt:0,playtime_seconds:7230,last_login_at:'2026-10-21 10:00:00'},{id:2,discord_id:'223456789012345678',discord_username:'Blocked',mc_username:'Blocked',uuid:'blocked-uuid',is_whitelisted:0,launcher_access_exempt:0}];
+  await page.route('**/api/control/players**',async route=>{
+    const q=new URL(route.request().url());
+    if(route.request().method()==='PATCH'){
+      const user=users.find(item=>q.pathname.endsWith(item.discord_id))!,body=route.request().postDataJSON();
+      if(body.allowed!==undefined)user.is_whitelisted=Number(body.allowed);
+      if(body.launcherExempt!==undefined)user.launcher_access_exempt=Number(body.launcherExempt);
+      if(!user.is_whitelisted)user.launcher_access_exempt=0;
+      return route.fulfill({json:{success:true}});
+    }
+    const filter=q.searchParams.get('access'),items=users.filter(user=>filter==='exempt'?user.launcher_access_exempt&&user.is_whitelisted:filter==='blocked'?!user.is_whitelisted:filter==='allowed'?user.is_whitelisted:true);
+    await route.fulfill({json:{items,total:items.length,pageSize:30}});
+  });
+  page.on('dialog',dialog=>dialog.accept());
+  await page.goto('/admin/');await expect(page.getByRole('button',{name:'Доступ к лаунчеру',exact:true})).toBeHidden();
+  await page.getByRole('button',{name:'Игроки',exact:true}).click();
+  const tester=page.locator('.row').filter({has:page.getByRole('heading',{name:'Tester',exact:true})});
+  await expect(tester).toContainText('2 ч 0 мин');
+  await tester.getByRole('button',{name:'Разрешить при блокировке'}).click();
+  await expect(tester).toContainText('Вход при общей блокировке');
+  await page.getByLabel('Доступ игроков').selectOption('exempt');await expect(page.locator('.row')).toHaveCount(1);
+  await page.getByRole('button',{name:'Доступ к лаунчеру',exact:true}).click();await expect(page.locator('#access-status')).toHaveText('Доступ открыт');
+  await page.getByRole('button',{name:'Аккаунты',exact:true}).click();await expect(page.getByLabel('Доступ игроков')).toHaveValue('exempt');
+  await tester.getByRole('button',{name:'Закрыть доступ',exact:true}).click();await expect(page.locator('.row')).toHaveCount(0);
+  await page.getByRole('button',{name:'Сбросить фильтры'}).click();await expect(page.locator('.row')).toHaveCount(2);
+  expect(users[0].launcher_access_exempt).toBe(0);
+  await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:info.outputPath('players-access.png')});
+  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa']).analyze()).violations).toEqual([]);
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:info.outputPath('players-mobile.png'),fullPage:true});
 });

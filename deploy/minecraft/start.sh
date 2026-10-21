@@ -4,6 +4,7 @@ PACK_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DATA_DIR="${SERVER_DIR:-$PACK_DIR}"
 mkdir -p -- "$DATA_DIR"
 cd -- "$DATA_DIR"
+python3 "$PACK_DIR/restart_wait.py"
 JAVA="${JAVA_HOME:+$JAVA_HOME/bin/}java"
 java_version="$("$JAVA" -version 2>&1 | head -n 1)"
 if [[ ! "$java_version" =~ \"21[\.\"] ]]; then

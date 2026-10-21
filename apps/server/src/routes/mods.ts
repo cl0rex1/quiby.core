@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { dbAll, dbGet, dbRun } from '../models/db';
-import { getReviewFile, putReviewFile, validReviewLink } from '../services/modReviewFiles';
-import { Router, Request, Response, raw } from 'express';
+import { getReviewFile, putReviewFile, validReviewLink, REVIEW_FILE_LIMIT } from '../services/modReviewFiles';
+import { Router, Request, Response, NextFunction, raw } from 'express';
 import { z } from 'zod';
 import { requireAuth, requireAdmin, AuthenticatedRequest } from '../middleware/auth';
 import {
@@ -56,7 +56,7 @@ router.put('/review-file/:hash', requireAuth, async (req: AuthenticatedRequest, 
     if (!owner) return res.sendStatus(403);
     next();
   } catch { res.sendStatus(500); }
-}, raw({ type: 'application/octet-stream', limit: '8mb' }), (req, res) => {
+}, raw({ type: 'application/octet-stream', limit: REVIEW_FILE_LIMIT }), (req, res) => {
   if (!Buffer.isBuffer(req.body) || !req.body.length || createHash('sha1').update(req.body).digest('hex') !== req.params.hash) return res.status(400).json({ error: 'Hash mismatch' });
   try { putReviewFile(req.params.hash, req.body); }
   catch (error) { return res.status(413).json({ error: String(error) }); }
@@ -92,7 +92,7 @@ router.get('/review-delivery/:hash', requireAuth, async (req: AuthenticatedReque
 });
 
 // One request carries both metadata and bytes; no JSON-only orphan is created.
-router.post('/whitelist-request-file', requireAuth, raw({ type: 'application/octet-stream', limit: '8mb' }), async (req: AuthenticatedRequest, res) => {
+router.post('/whitelist-request-file', requireAuth, raw({ type: 'application/octet-stream', limit: REVIEW_FILE_LIMIT }), async (req: AuthenticatedRequest, res) => {
   try {
     const payload = whitelistRequestSchema.safeParse(JSON.parse(decodeURIComponent(req.get('x-mod-request') || '')));
     if (!payload.success || !Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ error: 'Некорректная заявка или файл' });
@@ -197,6 +197,11 @@ router.get('/whitelist-requests', requireAdmin, async (req: Request, res: Respon
   } catch (error: any) {
     return res.status(500).json({ error: error.message || 'Ошибка получения запросов' });
   }
+});
+
+router.use((error: any, _req: Request, res: Response, next: NextFunction) => {
+  if (error.type === 'entity.too.large') return res.status(413).json({ error: 'Файл больше 20 МиБ. Уменьшите размер вложения для заявки.' });
+  next(error);
 });
 
 export default router;

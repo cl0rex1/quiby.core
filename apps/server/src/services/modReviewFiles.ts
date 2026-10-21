@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { config } from '../config';
+import { REVIEW_FILE_LIMIT_BYTES } from '@quiby/shared';
 
 export function reviewFilePath(hash: string): string {
   if (!/^[a-f0-9]{40}$/.test(hash)) throw new Error('Invalid SHA-1');
@@ -18,7 +19,7 @@ if (fs.existsSync(legacyDirectory) && !fs.lstatSync(legacyDirectory).isSymbolicL
 }
 const signature = (hash: string, expires: number) => createHmac('sha256', config.jwtSecret)
   .update(`mod-review:${hash}:${expires}`).digest('hex');
-export const REVIEW_FILE_LIMIT = 8 * 1024 * 1024;
+export const REVIEW_FILE_LIMIT = REVIEW_FILE_LIMIT_BYTES;
 const pending = new Map<string, { bytes: Buffer; expires: number }>();
 function prune() {
   for (const [hash, item] of pending) if (item.expires <= Date.now()) pending.delete(hash);
@@ -27,7 +28,7 @@ setInterval(prune, 30000).unref();
 export function putReviewFile(hash: string, bytes: Buffer) {
   reviewFilePath(hash); // Validate identifier, never write the new upload to disk.
   prune();
-  if (!bytes.length || bytes.length > REVIEW_FILE_LIMIT) throw new Error('JAR должен быть не больше 8 МиБ для вложения Discord');
+  if (!bytes.length || bytes.length > REVIEW_FILE_LIMIT) throw new Error('Для заявки нужен JAR или ZIP размером до 20 МиБ');
   const total = [...pending.entries()].reduce((sum, [key, value]) => sum + (key === hash ? 0 : value.bytes.length), 0);
   if (total + bytes.length > 64 * 1024 * 1024) throw new Error('Очередь отправки заполнена. Повторите позже.');
   pending.set(hash, { bytes, expires: Date.now() + 10 * 60 * 1000 });

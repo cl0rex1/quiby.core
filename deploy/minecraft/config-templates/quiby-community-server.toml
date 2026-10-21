@@ -1,0 +1,4 @@
+# All times use Asia/Almaty (Astana). Requires restart_wait.py in the start script.
+scheduledRestarts = true
+localChatRadius = 100
+impactDamageThreshold = 8.0

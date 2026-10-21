@@ -6,6 +6,7 @@ import path from 'node:path';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { createHash } from 'crypto';
+import { REVIEW_FILE_LIMIT_BYTES } from '@quiby/shared';
 
 // Dedicated database: these checks never mutate the developer's player/mod tables.
 test('bot API authenticates, attributes requests and atomically applies idempotent decisions', async () => {
@@ -52,7 +53,7 @@ test('bot API authenticates, attributes requests and atomically applies idempote
     mc_username: 'Spoofed',
   };
   try {
-    const packBytes = Buffer.from('test-resourcepack');
+    const packBytes = Buffer.alloc(REVIEW_FILE_LIMIT_BYTES, 7); // Inclusive 20 MiB boundary, previously rejected at 8 MiB.
     const packHash = createHash('sha1').update(packBytes).digest('hex');
     const packBody = { ...payload, filename: 'textures.zip', hash_sha1: packHash };
     const uploadPack = await request('/api/mods/whitelist-request-file', { method: 'POST', headers: {
@@ -66,6 +67,23 @@ test('bot API authenticates, attributes requests and atomically applies idempote
     assert.equal((await request('/api/mods/resourcepacks/verify', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ hash_sha1: packHash }) })).status, 401);
     const packQueue = await (await request('/api/bot/mod-whitelist-requests', { headers: botHeaders })).json();
     assert.ok(packQueue.requests.some((item: any) => item.id === packId && item.filename === 'textures.zip' && item.file));
+    const queuedPack = packQueue.requests.find((item: any) => item.id === packId);
+    assert.equal(queuedPack.file.size, REVIEW_FILE_LIMIT_BYTES);
+    const downloadedPack = await request(queuedPack.file.path);
+    assert.equal(downloadedPack.headers.get('content-disposition')?.includes('textures.zip'), true);
+    assert.deepEqual(Buffer.from(await downloadedPack.arrayBuffer()), packBytes);
+    const oversizedPack = Buffer.alloc(REVIEW_FILE_LIMIT_BYTES + 1);
+    const rejectedUpload = await request('/api/mods/whitelist-request-file', { method: 'POST', headers: {
+      Authorization: 'Bearer ' + token, 'Content-Type': 'application/octet-stream',
+      'X-Mod-Request': encodeURIComponent(JSON.stringify({ ...packBody, hash_sha1: createHash('sha1').update(oversizedPack).digest('hex') })),
+    }, body: oversizedPack });
+    assert.equal(rejectedUpload.status, 413);
+    assert.match((await rejectedUpload.json()).error, /20 МиБ/);
+    const replaceHeaders = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/octet-stream' };
+    assert.equal((await request('/api/mods/review-file/' + packHash, { method: 'PUT', headers: replaceHeaders, body: packBytes })).status, 200);
+    const oversizedReplacement = await request('/api/mods/review-file/' + packHash, { method: 'PUT', headers: replaceHeaders, body: oversizedPack });
+    assert.equal(oversizedReplacement.status, 413);
+    assert.match((await oversizedReplacement.json()).error, /20 МиБ/);
     for (const [decision, allowed] of [['approved', true], ['rejected', false]] as const) {
       assert.equal((await request('/api/bot/mod-whitelist-requests/' + packId, { method: 'PATCH', headers: botHeaders,
         body: JSON.stringify({ decision, reviewer_discord_id: '234567890123456789', reason: 'Reviewed resource pack' }) })).status, 200);
@@ -73,8 +91,8 @@ test('bot API authenticates, attributes requests and atomically applies idempote
     }
     await dbRun('DELETE FROM mod_whitelist_requests WHERE id=?', [packId]);
     assert.equal((await request('/api/auth/dev-login', { method: 'POST' })).status, 404);
-    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${oldDevToken}`, 'x-quiby-launcher-version': '1.0.0' } })).status, 401);
-    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${legacyToken}`, 'x-quiby-launcher-version': '1.0.0' } })).status, 401);
+    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${oldDevToken}`, 'x-quiby-launcher-version': '1.1.0' } })).status, 401);
+    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${legacyToken}`, 'x-quiby-launcher-version': '1.1.0' } })).status, 401);
     assert.equal((await request('/api/auth/bind-mc', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -128,6 +146,7 @@ test('bot API authenticates, attributes requests and atomically applies idempote
     const uploadHeaders = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/octet-stream' };
     assert.equal((await request(uploadRoute, { method: 'PUT', headers: uploadHeaders, body: Buffer.from('wrong') })).status, 400);
     assert.equal((await request(uploadRoute, { method: 'PUT', headers: uploadHeaders, body: jar })).status, 200);
+    assert.equal((await request('/api/mods/review-file/' + packHash, { method: 'PUT', headers: uploadHeaders, body: packBytes })).status, 403, 'A completed request cannot receive more uploads');
     const fileRequest = await submit({ ...payload, hash_sha1: fileHash });
     const fileInfo = await (await request(`/api/bot/mod-whitelist-requests/${fileRequest.id}/file`, { headers: botHeaders })).json();
     assert.equal((await request(uploadRoute)).status, 403);

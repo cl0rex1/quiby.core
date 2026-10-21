@@ -6,7 +6,7 @@ import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, Cli
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { AuthSession, LauncherSettings } from '@quiby/shared';
+import { AuthSession, LauncherSettings, REVIEW_FILE_LIMIT_BYTES } from '@quiby/shared';
 import { startDiscordOAuthFlow } from './auth/discordAuth';
 import { detectInstalledJava, getRecommendedJava } from './engine/javaDetector';
 import { launchMinecraft, killGameProcess, getLaunchState, isGameActive } from './engine/minecraftLauncher';
@@ -389,7 +389,8 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     const root = gameDir || getDefaultGameDir();
     await checkContentLinks(root);
     const file = path.join(root, 'resourcepacks', filename);
-    if (!fs.statSync(file).isFile() || fs.statSync(file).size > 8 * 1024 * 1024) throw new Error('Для вложения Discord нужен ZIP до 8 МиБ');
+    const stat = fs.lstatSync(file);
+    if (!stat.isFile() || stat.isSymbolicLink() || !stat.size || stat.size > REVIEW_FILE_LIMIT_BYTES) throw new Error('Для заявки нужен ZIP размером до 20 МиБ');
     const bytes = fs.readFileSync(file), hash = hashCustomModBytes(bytes), target = stagedModPath(hash);
     fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target, bytes);
     return hash;
@@ -436,7 +437,7 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
   });
   ipcMain.handle('mods:upload-review', async (_, hash: string, token: string, metadata: { mod_name: string; filename: string; reason: string; project_url?: string }) => {
     const bytes = fs.readFileSync(stagedModPath(hash));
-    if (bytes.length > 8 * 1024 * 1024) throw new Error('Файл больше 8 МиБ: файл нельзя отправить вложением Discord.');
+    if (!bytes.length || bytes.length > REVIEW_FILE_LIMIT_BYTES) throw new Error('Для заявки нужен файл размером до 20 МиБ.');
     const response = await fetch(DEFAULT_SERVER_URL + '/api/mods/whitelist-request-file', {
       method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/octet-stream',
         'X-Mod-Request': encodeURIComponent(JSON.stringify({ ...metadata, hash_sha1: hash, file_required: true })) },

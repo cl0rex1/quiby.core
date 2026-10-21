@@ -10,9 +10,20 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export async function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  try { if (await rejectClosedLauncher(res)) return; }
-  catch { return res.status(503).json({ error: 'Не удалось проверить доступ к лаунчеру. Попробуйте позже.' }); }
-  return requireSession(req, res, next);
+  return requireSession(req, res, () => {
+    void rejectClosedLauncher(res,req.user!.discordId).then(closed=>{if(!closed)next();})
+      .catch(()=>res.status(503).json({error:'Не удалось проверить доступ к лаунчеру. Попробуйте позже.'}));
+  });
+}
+
+// Optional identity for the public access check. Never trust a client-supplied ID.
+export function sessionDiscordId(req: Request): string | undefined {
+  try {
+    const token=req.get('authorization')?.match(/^Bearer (.+)$/)?.[1];
+    if(!token)return;
+    const payload=jwt.verify(token,config.jwtSecret) as jwt.JwtPayload;
+    if(!payload.purpose && payload.authMethod==='discord' && typeof payload.discordId==='string' && typeof payload.mcUsername==='string')return payload.discordId;
+  } catch { /* Anonymous checks still receive the global closure. */ }
 }
 
 export async function requireSession(req: AuthenticatedRequest, res: Response, next: NextFunction) {

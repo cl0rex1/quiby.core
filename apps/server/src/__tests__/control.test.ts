@@ -45,6 +45,8 @@ test('admin panel protects sessions, validates mutations and applies audited dec
     assert.equal((await (await request('/players?search=missing',{headers:auth})).json()).total,0);
     const observation={filename:'renamed.jar',hash_sha1:'d'.repeat(40),size:110*1024*1024,reason:'Файл больше лимита автоматической проверки'};
     const report=()=>fetch(base+'/api/mods/detected',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+userToken},body:JSON.stringify(observation)});
+    assert.equal((await report()).status,403,'Personal bans apply to authenticated launcher APIs');
+    assert.equal((await request('/players/123456789012345678',{method:'PATCH',headers:auth,body:JSON.stringify({allowed:true})})).status,200);
     assert.equal((await fetch(base+'/api/mods/detected',{method:'POST',headers,body:JSON.stringify(observation)})).status,401);
     assert.equal((await report()).status,200);assert.equal((await report()).status,200);
     const detected=await dbGet<any>('SELECT * FROM mod_whitelist_requests WHERE hash_sha1=?',[observation.hash_sha1]);
@@ -55,6 +57,16 @@ test('admin panel protects sessions, validates mutations and applies audited dec
     const {submitWhitelistRequest}=await import('../services/modSafetyService');
     const explicit=await submitWhitelistRequest({user_discord_id:'123456789012345678',mc_username:'Tester',mod_name:'Large',filename:'renamed.jar',hash_sha1:observation.hash_sha1});
     assert.notEqual(explicit.id,detected.id);
+    for(let i=0;i<38;i++)await dbRun('INSERT INTO mod_whitelist_requests(mod_name,filename,hash_sha1,reason,status) VALUES(?,?,?,?,?)',['CategoryFixture '+i,i<35?'fixture-'+i+'.jar':i<37?'fixture-'+i+'.ZIP':'fixture.txt',i.toString(16).padStart(40,'0'),'Fixture review','pending']);
+    const query=(extra:string)=>request('/mods?search=CategoryFixture&'+extra,{headers:auth}).then(r=>r.json());
+    const packs=await query('category=resourcepacks');assert.equal(packs.total,2);assert.ok(packs.items.every((item:any)=>/\.zip$/i.test(item.filename)));
+    assert.deepEqual(packs.categories,{all:38,mods:35,resourcepacks:2,other:1});
+    const second=await query('category=mods&page=2');assert.equal(second.total,35);assert.equal(second.items.length,5);
+    assert.equal((await query('category=other')).items[0].filename,'fixture.txt');
+    assert.equal((await request('/mods?category=invalid',{headers:auth})).status,400);
+    const packHash='e'.repeat(40);
+    assert.equal((await request('/mods',{method:'POST',headers:auth,body:JSON.stringify({...mod,name:'Manual textures',filename:'textures.zip',hash:packHash})})).status,200);
+    const packDecision=await fetch(base+'/api/mods/resourcepacks/verify',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+userToken},body:JSON.stringify({hash_sha1:packHash})});assert.equal((await packDecision.json()).isAllowed,true);
     config.adminApiKey='rotated-test-key';assert.equal((await request('/session',{headers:auth})).status,401);
   } finally {
     await new Promise<void>(resolve=>server.close(()=>resolve()));await closeDatabase();await fs.rm(dir,{recursive:true,force:true});

@@ -11,6 +11,7 @@ if (process.env.NODE_ENV === 'production' && ((process.env.JWT_SECRET?.length ||
 if (process.env.MOD_REVIEW_BOT_API_KEY && process.env.MOD_REVIEW_BOT_API_KEY.length < 32) {
   throw new Error('MOD_REVIEW_BOT_API_KEY must contain at least 32 characters');
 }
+if (process.env.GAME_BRIDGE_API_KEY && process.env.GAME_BRIDGE_API_KEY.length < 32) throw new Error('GAME_BRIDGE_API_KEY must contain at least 32 characters');
 
 export const config = {
   port: parseInt(process.env.PORT || '3001', 10),
@@ -20,6 +21,7 @@ export const config = {
   adminApiKey: process.env.ADMIN_API_KEY || crypto.randomBytes(32).toString('hex'),
   
   modReviewBotApiKey: process.env.MOD_REVIEW_BOT_API_KEY || '',
+  gameBridgeApiKey: process.env.GAME_BRIDGE_API_KEY || '',
 
   // Discord OAuth2 Configuration
   discord: {
