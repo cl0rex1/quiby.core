@@ -91,8 +91,8 @@ test('bot API authenticates, attributes requests and atomically applies idempote
     }
     await dbRun('DELETE FROM mod_whitelist_requests WHERE id=?', [packId]);
     assert.equal((await request('/api/auth/dev-login', { method: 'POST' })).status, 404);
-    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${oldDevToken}`, 'x-quiby-launcher-version': '1.1.0' } })).status, 401);
-    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${legacyToken}`, 'x-quiby-launcher-version': '1.1.0' } })).status, 401);
+    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${oldDevToken}`, 'x-quiby-launcher-version': '1.1.1' } })).status, 401);
+    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${legacyToken}`, 'x-quiby-launcher-version': '1.1.1' } })).status, 401);
     assert.equal((await request('/api/auth/bind-mc', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

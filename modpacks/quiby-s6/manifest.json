@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.24",
+  "version": "6.1.25",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 285441044,
+  "totalSize": 285453240,
   "files": [
     {
       "path": "config/DistantHorizons.toml",
@@ -1597,10 +1597,10 @@
       "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
-      "path": "mods/quiby-1.21.1-1.1.17.jar",
-      "sha256": "6ea3ccc8381f51421fe4d737769f0c93cf32c2a483bfd63df867af770cbde991",
-      "size": 4945060,
-      "downloadUrl": "/api/modpack/files/imported/6ea3ccc8381f51421fe4d737769f0c93cf32c2a483bfd63df867af770cbde991/quiby-1.21.1-1.1.17.jar",
+      "path": "mods/quiby-1.21.1-1.1.18.jar",
+      "sha256": "c41053133c86f344753ce6f063096581ffcd47e2369a15c2f0186c595cfadacc",
+      "size": 4957256,
+      "downloadUrl": "/api/modpack/files/imported/c41053133c86f344753ce6f063096581ffcd47e2369a15c2f0186c595cfadacc/quiby-1.21.1-1.1.18.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1609,15 +1609,15 @@
       ],
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.1.17",
+      "modVersion": "1.1.18",
       "modDescription": "Локализация, скины, проверка входа, рецепты Create Radars и цепная детонация снарядов Create Big Cannons.",
       "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },
     {
-      "path": "mods/quiby-early-loading-1.21.1-1.1.17.jar",
+      "path": "mods/quiby-early-loading-1.21.1-1.1.18.jar",
       "sha256": "1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99",
       "size": 3036102,
-      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.17.jar",
+      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.18.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1626,7 +1626,7 @@
       ],
       "modId": "quiby_early_loading",
       "modName": "Quiby Early Loading",
-      "modVersion": "1.1.17",
+      "modVersion": "1.1.18",
       "modDescription": "Фирменная анимация на раннем экране NeoForge."
     },
     {
@@ -1874,7 +1874,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Quiby 1.1.17: живой /ping в onbar, исправления ragdoll и скинов, меню и размытая пауза, onbar перезапусков и офлайн-игроков, локальный/глобальный чат с Discord, переводы. Нужны лаунчер/API 1.1.0 и согласованное обновление сервера.",
+  "changelog": "- Свой экран перезапуска: ожидание возвращения сервера и автоматическое подключение.\n- Убрана чёрная вспышка перед паузой; фон мира остаётся размытым.\n- Исправлено зависание ПКМ, когда переносимый игрок выходит из рэгдолла.\n- Enter отправляет сообщение, не переключая локальный и глобальный каналы.\n- Сообщения Discord отмечены ярко-синим «Д», а «Фото ↗» открывается внутри игры.\n- «Моды» доступны в главном меню и меню паузы.\n- Автоматический direct: лаунчер сравнивает задержку и разброс пяти замеров,\n  выбирает более стабильный быстрый маршрут и сохраняет обычное подключение\n  при отсутствии выигрыша. Закрытие окна лаунчера не обрывает туннель игры.\n\nMinecraft **1.21.1**, NeoForge **21.1.250**. Голосовой UDP не менялся.\nРезультат direct зависит от сети игрока; снижение пинга не гарантируется.\nУстановщик Windows пока без цифровой подписи.\n",
   "serverAddress": "play.quiby.me:25565",
   "updatedAt": "2026-10-21T11:56:32.556Z"
 }

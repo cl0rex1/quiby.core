@@ -1,5 +1,5 @@
 {
-  "packVersion": "6.1.24",
+  "packVersion": "6.1.25",
   "minecraft": "1.21.1",
   "neoforge": "21.1.250",
   "java": 21,
@@ -308,13 +308,13 @@
       }
     },
     {
-      "file": "quiby-1.21.1-1.1.17.jar",
+      "file": "quiby-1.21.1-1.1.18.jar",
       "modIds": [
         "quiby"
       ],
-      "sha256": "6ea3ccc8381f51421fe4d737769f0c93cf32c2a483bfd63df867af770cbde991",
+      "sha256": "c41053133c86f344753ce6f063096581ffcd47e2369a15c2f0186c595cfadacc",
       "versions": {
-        "quiby": "1.1.17"
+        "quiby": "1.1.18"
       },
       "sourceFile": "quiby-1.21.1-1.1.15.jar",
       "builtQuiby": true
@@ -488,7 +488,7 @@
       "reason": "Client inventory controls"
     },
     {
-      "file": "quiby-early-loading-1.21.1-1.1.17.jar",
+      "file": "quiby-early-loading-1.21.1-1.1.18.jar",
       "modIds": [],
       "sha256": "1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99",
       "reason": "Client NeoForge early loading provider"
