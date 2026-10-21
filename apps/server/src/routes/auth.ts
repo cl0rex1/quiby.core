@@ -14,8 +14,10 @@ import { AuthenticatedRequest, requireAuth } from '../middleware/auth';
 import { AuthSession, UserProfile } from '@quiby/shared';
 import { requireSupportedLauncher } from '../middleware/launcherVersion';
 import { submitUsernameChangeRequest } from '../services/usernameChangeService';
+import { requireLauncherAccess } from '../middleware/launcherAccess';
 
 const router = Router();
+router.use('/discord', requireLauncherAccess);
 
 const mcUsernameSchema = z
   .string()

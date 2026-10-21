@@ -507,6 +507,10 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
         throw new Error('Обновление лаунчера обязательно. Скачайте и установите обновление из верхней плашки.');
       }
       if (!authResponse.ok) {
+        if (authResponse.status === 503) {
+          const error = await authResponse.json().catch(() => ({})) as { error?: string };
+          throw new Error(error.error || 'Доступ к лаунчеру временно закрыт.');
+        }
         throw new Error('Сессия Discord недействительна. Войдите заново.');
       }
       const { user } = await authResponse.json() as { user: AuthSession['user'] };

@@ -1,7 +1,7 @@
 import { readModJar } from './jar.mjs';
 const $ = id => document.getElementById(id);
 let tab = 'mods', page = 1, selection = null, generation = 0;
-const names = { news: ['Новости и рассылки','Публикуйте новости и отправляйте уведомления в лаунчер.'], mods: ['Моды и вайтлист','Рассматривайте заявки и управляйте допуском конкретных файлов.'], players: ['Игроки','Аккаунты Discord, игровые имена и доступ к серверу.'], names: ['Смена ников','Проверяйте заявки перед изменением игрового имени и UUID.'], audit: ['Журнал действий','История решений, принятых через веб-панель.'] };
+const names = { access: ['Доступ к лаунчеру','Общий переключатель доступа для всех игроков.'], news: ['Новости и рассылки','Публикуйте новости и отправляйте уведомления в лаунчер.'], mods: ['Моды и вайтлист','Рассматривайте заявки и управляйте допуском конкретных файлов.'], players: ['Игроки','Аккаунты Discord, игровые имена и доступ к серверу.'], names: ['Смена ников','Проверяйте заявки перед изменением игрового имени и UUID.'], audit: ['Журнал действий','История решений, принятых через веб-панель.'] };
 async function api(path, options = {}) {
   const r = await fetch('/api/control' + path, { ...options, headers: { 'Content-Type': 'application/json', 'X-Quiby-Control': '1', ...options.headers } });
   const body = await r.json().catch(() => ({}));
@@ -23,6 +23,9 @@ $('add-mod').onclick=()=>{selection={create:true};$('mod-fields').hidden=false;$
 $('decision-form').onsubmit=async e=>{e.preventDefault();e.submitter.disabled=true;try{const body={decision:selection.create?$('mod-decision').value:selection.decision,reason:$('reason').value};if(selection.create)Object.assign(body,{name:$('mod-name').value,filename:$('mod-filename').value,hash:$('mod-hash').value.trim()});await api(selection.create?'/mods':'/'+tab+'/'+selection.id,{method:selection.create?'POST':'PATCH',body:JSON.stringify(body)});$('decision').close();toast('Решение сохранено');await load();}catch(error){$('decision-error').textContent=error.message;}finally{e.submitter.disabled=false;}};
 async function load() {
   const mine=++generation; $('list').replaceChildren(el('div','Загрузка…','empty'));
+  document.querySelector('.footnote').hidden=tab==='access';
+  $('records-panel').hidden=tab==='access';$('access-panel').hidden=tab!=='access';$('stats').hidden=tab==='access';
+  if(tab==='access') { $('title').textContent=names.access[0];$('subtitle').textContent=names.access[1];try { const state=await api('/launcher-access'); if(mine!==generation)return;$('access-closed').checked=state.closed;$('access-message').value=state.message;$('access-status').textContent=state.closed?'Доступ закрыт для всех':'Доступ открыт';$('access-error').textContent=''; }catch(error){$('access-error').textContent=error.message;}return; }
   const reviewed = tab==='mods'||tab==='names'; $('status').hidden=!reviewed; $('add-news').hidden=tab!=='news'; $('add-mod').hidden=tab!=='mods'; $('upload-jar').hidden=tab!=='mods';
   $('title').textContent=names[tab][0];$('subtitle').textContent=names[tab][1];
   try {
@@ -42,7 +45,7 @@ async function load() {
 }
 for(const b of document.querySelectorAll('[data-tab]'))b.onclick=()=>{tab=b.dataset.tab;page=1;$('search').value='';for(const n of document.querySelectorAll('[data-tab]'))n.classList.toggle('active',n===b);void load();};
 let debounce;$('search').oninput=()=>{clearTimeout(debounce);debounce=setTimeout(()=>{page=1;void load();},250);};$('status').onchange=()=>{page=1;void load();};$('prev').onclick=()=>{page--;void load();};$('next').onclick=()=>{page++;void load();};$('refresh').onclick=()=>void load();
-setInterval(()=>{if(!$('app').hidden&&!$('decision').open&&!$('news-editor').open&&document.visibilityState==='visible')void load();},30000);
+setInterval(()=>{if(tab!=='access'&&!$('app').hidden&&!$('decision').open&&!$('news-editor').open&&document.visibilityState==='visible')void load();},30000);
 api('/session').then(enter).catch(showLogin);
 
 $('upload-jar').onclick=()=>$('jar-file').click();
@@ -86,3 +89,5 @@ for (const button of document.querySelectorAll('[data-format]')) button.onclick 
   field.setRangeText(sample,start,end,'select');field.focus();
 };
 $('preview-news').onclick=async()=>{try{const result=await api('/news/preview',{method:'POST',body:JSON.stringify({content:$('news-content').value})});$('news-preview').srcdoc='<meta charset="utf-8"><style>body{background:#141417;color:#eee;font:15px/1.7 system-ui;padding:20px}img,video,iframe{max-width:100%;border-radius:10px}a{color:#c8a6ef}blockquote{border-left:2px solid #a775da;padding-left:14px}table{border-collapse:collapse}td,th{border:1px solid #444;padding:8px}pre{overflow:auto;background:#222;padding:12px}</style>'+result.html;$('news-preview').hidden=false;}catch(error){$('news-error').textContent=error.message;}};
+
+$('access-form').onsubmit=async event=>{event.preventDefault();const submit=event.submitter;submit.disabled=true;$('access-error').textContent='';try{const state=await api('/launcher-access',{method:'PUT',body:JSON.stringify({closed:$('access-closed').checked,message:$('access-message').value})});$('access-status').textContent=state.closed?'Доступ закрыт для всех':'Доступ открыт';toast('Доступ обновлён');}catch(error){$('access-error').textContent=error.message;}finally{submit.disabled=false;}};

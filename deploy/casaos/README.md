@@ -19,12 +19,12 @@ For Discord OAuth, register `http://localhost:45678/callback` in the Discord Dev
 
 ## Clean rebuild after pulling changes
 
-For the first stable release, publish the launcher 1.0.1 installer first, then
+For the current release, publish the launcher 1.0.2 installer first, then
 pull the source and run `bash deploy/casaos/upgrade-release.sh` from the repository
 root. It builds while the old API stays online, retains a rollback image, saves
 the existing environment and a consistent online SQLite backup, sets the public
 Minecraft endpoint, and replaces only the API container. The API then requires
-stable launcher versions from 1.0.1 for OAuth, session validation and game tickets.
+stable launcher versions from 1.0.2 for OAuth, session validation and game tickets.
 The installer also publishes `beta.yml` so existing beta clients can update.
 
 From `deploy/casaos` on Ubuntu Server:

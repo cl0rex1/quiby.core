@@ -16,6 +16,7 @@ import botRoutes from './routes/bot';
 import skinsRoutes from './routes/skins';
 import { getLatestManifest, publishModpackVersion } from './services/modpackService';
 import { ModpackManifest, MINIMUM_LAUNCHER_VERSION } from '@quiby/shared';
+import { getLauncherAccess } from './services/launcherAccess';
 
 async function refreshReleasedModpack(): Promise<void> {
   try {
@@ -71,6 +72,10 @@ async function bootstrap() {
   });
 
   // API Routes
+  app.get('/api/launcher/access', (_req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    void getLauncherAccess().then(access => res.json(access)).catch(next);
+  });
   app.use('/api/auth', authRoutes);
   app.use('/api/game', gameRoutes);
   app.use('/api/modpack', modpackRoutes);

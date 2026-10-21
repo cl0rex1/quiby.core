@@ -1,4 +1,4 @@
-export const MINIMUM_LAUNCHER_VERSION = '1.0.1';
+export const MINIMUM_LAUNCHER_VERSION = '1.0.2';
 export const LAUNCHER_DOWNLOAD_URL = 'https://github.com/cl0rex1/quiby-launcher-releases/releases';
 
 /** API access requires a stable x.y.z release at or above the minimum. */

@@ -1,4 +1,5 @@
 import { renderNewsContent } from '../services/newsMarkup';
+import { defaultAccessMessage, getLauncherAccess, setLauncherAccess } from '../services/launcherAccess';
 import { listNews, newsSchema, saveNews } from '../services/newsService';
 import { Router, Request, Response, NextFunction } from 'express';
 import { createHash, timingSafeEqual } from 'crypto';
@@ -60,6 +61,14 @@ const idSchema = z.coerce.number().int().positive();
 async function audit(action: string, target: string, details: string) {
   await dbRun('INSERT INTO admin_audit(action,target,details) VALUES (?,?,?)', [action, target, details]);
 }
+router.get('/launcher-access', wrap(async (_req, res) => res.json(await getLauncherAccess())));
+router.put('/launcher-access', wrap(async (req, res) => {
+  const input = z.object({ closed: z.boolean(), message: z.string().trim().max(500).default(defaultAccessMessage) }).strict().safeParse(req.body);
+  if (!input.success) return res.status(400).json({ error: 'Укажите состояние доступа и сообщение до 500 символов.' });
+  const access = await setLauncherAccess(input.data.closed, input.data.message);
+  await audit(access.closed ? 'launcher:close' : 'launcher:open', 'all', access.message);
+  return res.json(access);
+}));
 router.get('/overview', wrap(async (_req, res) => {
   const users = await dbGet('SELECT COUNT(*) total, COALESCE(SUM(is_whitelisted),0) allowed FROM users');
   const mods = await dbGet("SELECT COUNT(*) total, COALESCE(SUM(status='pending'),0) pending FROM mod_whitelist_requests");

@@ -97,8 +97,8 @@ export function startDiscordOAuthFlow(serverBaseUrl: string, port = LOCAL_PORT):
     server.listen(port, '127.0.0.1', async () => {
       try {
         const res = await fetch(`${serverBaseUrl}/api/auth/discord/url`, { headers: { 'x-quiby-launcher-version': app.getVersion() }, signal: AbortSignal.timeout(15000) });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
         
         if (data.url) {
           const discordAuthUrl = new URL(data.url);

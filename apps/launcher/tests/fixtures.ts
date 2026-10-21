@@ -11,6 +11,7 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
     await page.route('**/api/**', async route => {
       const pathname = new URL(route.request().url()).pathname;
       const body = pathname === '/api/auth/me' ? { user: { discordId: 'fixture', username: 'Fixture', mcUsername: 'QuibyPlayer', uuid: 'fixture', roles: [], isWhitelisted: true } }
+        : pathname === '/api/launcher/access' ? { closed: false, message: '' }
         : pathname === '/api/status' ? { online: true, ip: 'localhost', port: 25565, players: { online: 12, max: 50 } }
         : pathname === '/api/news' ? [] : {};
       await route.fulfill({ json: body });
@@ -39,7 +40,7 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
         getLaunchState: () => ({ status: localStorage.getItem('fixture-running') ? 'running' : 'idle' }),
         isMaximized: () => false, getTotalRamMb: () => 16384,
         detectJava: () => ({ installations: [], recommended: null, totalRamMb: 16384 }),
-        getUpdateState: () => ({ status: 'current', currentVersion: '1.0.1' }), getLatestModpackManifest: () => ({ ...manifest, files: JSON.parse(localStorage.getItem('fixture-bundled-mods') || '[]') }),
+        getUpdateState: () => ({ status: 'current', currentVersion: '1.0.2' }), getLatestModpackManifest: () => ({ ...manifest, files: JSON.parse(localStorage.getItem('fixture-bundled-mods') || '[]') }),
         getShaderpacks: dir => [...(control.files[`shaderpacks:${dir}`] || [])],
         getSchematics: dir => [...(control.files[`schematics:${dir}`] || [])],
         getResourcePackInventory: dir => [...(control.files[`resourcepacks:${dir}`] || [])], getResourcePacks: dir => [...(control.files[`resourcepacks:${dir}`] || [])],

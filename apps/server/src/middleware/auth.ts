@@ -3,12 +3,15 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { dbGet } from '../models/db';
 import { UserProfile } from '@quiby/shared';
+import { rejectClosedLauncher } from './launcherAccess';
 
 export interface AuthenticatedRequest extends Request {
   user?: UserProfile;
 }
 
 export async function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try { if (await rejectClosedLauncher(res)) return; }
+  catch { return res.status(503).json({ error: 'Не удалось проверить доступ к лаунчеру. Попробуйте позже.' }); }
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
