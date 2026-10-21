@@ -1,52 +1,186 @@
 import { readModJar } from './jar.mjs';
 const $ = id => document.getElementById(id);
 let tab = 'mods', page = 1, selection = null, generation = 0;
+let requestController, busy = false, renderedKey = '', renderedData = '', toastTimer;
+let accessState = null, accessSaving = false;
+const filters = new Map();
 const names = { access: ['Доступ к лаунчеру','Общий переключатель доступа для всех игроков.'], news: ['Новости и рассылки','Публикуйте новости и отправляйте уведомления в лаунчер.'], mods: ['Моды и вайтлист','Рассматривайте заявки и управляйте допуском конкретных файлов.'], players: ['Игроки','Аккаунты Discord, игровые имена и доступ к серверу.'], names: ['Смена ников','Проверяйте заявки перед изменением игрового имени и UUID.'], audit: ['Журнал действий','История решений, принятых через веб-панель.'] };
 async function api(path, options = {}) {
-  const r = await fetch('/api/control' + path, { ...options, headers: { 'Content-Type': 'application/json', 'X-Quiby-Control': '1', ...options.headers } });
-  const body = await r.json().catch(() => ({}));
-  if (r.status === 401 && path !== '/login') showLogin();
-  if (!r.ok) throw Error(body.error || 'Ошибка сервера: ' + r.status);
-  return body;
+  try {
+    const r = await fetch('/api/control' + path, { ...options, cache: 'no-store', credentials: 'same-origin',
+      signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
+      headers: { 'Content-Type': 'application/json', 'X-Quiby-Control': '1', ...options.headers } });
+    const body = await r.json().catch(() => { throw Error('Сервер вернул неожиданный ответ. Повторите запрос.'); });
+    if (r.status === 401 && path !== '/login') { const expired=!$('app').hidden;showLogin();if(expired)$('login-error').textContent='Сессия завершилась. Войдите снова.'; }
+    if (!r.ok) { const error=Error(body.error || 'Ошибка сервера: ' + r.status);error.status=r.status;throw error; }
+    return body;
+  } catch (error) {
+    if (error.name === 'TimeoutError') throw Error('Сервер не ответил вовремя. Попробуйте ещё раз.');
+    if (error instanceof TypeError) throw Error('Нет связи с сервером. Проверьте подключение и повторите запрос.');
+    throw error;
+  }
 }
 function el(tag, text, className) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; return e; }
-function showLogin() { $('login').hidden = false; $('app').hidden = true; $('decision').close(); $('news-editor').close(); }
-function toast(text) { $('toast').textContent = text; $('toast').hidden = false; setTimeout(() => { $('toast').hidden = true; }, 5000); }
+function showLogin() { generation++; requestController?.abort(); busy=false; accessState=null;renderedKey='';renderedData='';$('login').hidden = false; $('app').hidden = true; $('decision').close(); $('news-editor').close(); }
+function toast(text) { clearTimeout(toastTimer); $('toast').textContent = text; $('toast').hidden = false; toastTimer=setTimeout(() => { $('toast').hidden = true; }, 5000); }
 function date(value) { if (!value) return '—'; const d = new Date(value.includes('T') ? value : value.replace(' ','T') + 'Z'); return isNaN(d) ? value : d.toLocaleString('ru-RU'); }
 function button(label, action, danger = false) { const b = el('button',label,danger ? 'danger' : ''); b.type='button'; b.onclick=action; return b; }
-async function enter() { $('login').hidden=true; $('app').hidden=false; await load(); }
+async function enter() { $('login').hidden=true; $('app').hidden=false; navigate(location.hash.slice(1)||tab); }
 $('login-form').onsubmit = async e => { e.preventDefault(); const b=e.submitter; b.disabled=true; $('login-error').textContent=''; try { await api('/login',{method:'POST',body:JSON.stringify({key:$('key').value})}); $('key').value=''; await enter(); } catch(error) { $('login-error').textContent=error.message; } finally { b.disabled=false; } };
 $('logout').onclick=async()=>{try { await api('/logout',{method:'POST',body:'{}'});showLogin(); } catch(e) { toast(e.message); }};
 function decide(item, decision) { selection={id:item.id,decision}; $('mod-fields').hidden=true; $('decision-title').textContent=decision==='approved'?'Разрешить':'Отклонить'; $('decision-context').textContent=tab==='mods'?item.mod_name+' · '+item.filename+(item.size_bytes>100*1024*1024?' · Одобрение разрешит этот JAR без полной автоматической распаковки (размер больше 100 МБ).':''):item.current_username+' → '+item.requested_username+' · Изменится UUID; данные Minecraft по старому UUID не переносятся автоматически.'; $('reason').value=''; $('decision-error').textContent=''; $('decision').showModal(); }
 $('close-dialog').onclick=()=>$('decision').close();
 $('add-mod').onclick=()=>{selection={create:true};$('mod-fields').hidden=false;$('decision-title').textContent='Допуск по SHA-1';$('decision-context').textContent='Решение применяется только к указанному хешу файла.';$('reason').value='';$('decision-error').textContent='';$('decision').showModal();};
 $('decision-form').onsubmit=async e=>{e.preventDefault();e.submitter.disabled=true;try{const body={decision:selection.create?$('mod-decision').value:selection.decision,reason:$('reason').value};if(selection.create)Object.assign(body,{name:$('mod-name').value,filename:$('mod-filename').value,hash:$('mod-hash').value.trim()});await api(selection.create?'/mods':'/'+tab+'/'+selection.id,{method:selection.create?'POST':'PATCH',body:JSON.stringify(body)});$('decision').close();toast('Решение сохранено');await load();}catch(error){$('decision-error').textContent=error.message;}finally{e.submitter.disabled=false;}};
-async function load() {
-  const mine=++generation; $('list').replaceChildren(el('div','Загрузка…','empty'));
-  document.querySelector('.footnote').hidden=tab==='access';
-  $('records-panel').hidden=tab==='access';$('access-panel').hidden=tab!=='access';$('stats').hidden=tab==='access';
-  if(tab==='access') { $('title').textContent=names.access[0];$('subtitle').textContent=names.access[1];try { const state=await api('/launcher-access'); if(mine!==generation)return;$('access-closed').checked=state.closed;$('access-message').value=state.message;$('access-status').textContent=state.closed?'Доступ закрыт для всех':'Доступ открыт';$('access-error').textContent=''; }catch(error){$('access-error').textContent=error.message;}return; }
-  const reviewed = tab==='mods'||tab==='names'; $('status').hidden=!reviewed; $('add-news').hidden=tab!=='news'; $('add-mod').hidden=tab!=='mods'; $('upload-jar').hidden=tab!=='mods';
-  $('title').textContent=names[tab][0];$('subtitle').textContent=names[tab][1];
-  try {
-    const [stats,data]=await Promise.all([api('/overview'),api('/'+tab+'?'+new URLSearchParams({page:String(page),search:$('search').value,status:reviewed?$('status').value:'all'}))]);
-    if(mine!==generation)return;
-    $('stats').replaceChildren(...[['Игроков',stats.users.total,stats.users.allowed+' с доступом'],['Заявки на моды',stats.mods.pending,'ожидают решения'],['Смена ников',stats.names.pending,'ожидают решения'],['Сборка',stats.pack,'активная версия']].map(([label,value,hint])=>{const box=el('div',undefined,'stat');box.append(el('span',label),el('strong',String(value)),el('span',hint));return box;}));
+function renderRows(data, reviewed) {
     const rows=data.items.map(item=>{
       const row=el('article',undefined,'row'), info=el('div',undefined,'info'), actions=el('div',undefined,'actions');
       if(reviewed){info.append(el('span',({pending:'Ожидает',approved:'Одобрено',rejected:'Отклонено'})[item.status], 'badge '+item.status));info.append(el('h3',tab==='mods'?item.mod_name:item.current_username+' → '+item.requested_username));info.append(el('p',item.reason||'Причина не указана'));if(item.auto_detected)info.append(el('p','Автоматически обнаружен у игрока · '+(item.size_bytes/1024/1024).toFixed(1)+' МБ','details'));if(item.size_bytes>100*1024*1024)info.append(el('p','Одобрение создаст исключение по SHA-1 для файла больше 100 МБ.','details'));if(tab==='mods'){info.append(el('p',item.filename,'details'),el('p','SHA-1: '+item.hash_sha1,'details'));}info.append(el('p','#'+item.id+' · '+(item.mc_username||item.discord_id||'')+' · '+date(item.created_at),'details'));if(item.decision_reason)info.append(el('p','Решение: '+item.decision_reason,'details'));if(tab==='mods'||item.status==='pending'){actions.append(button(item.status==='rejected'?'Разрешить повторно':'Одобрить',()=>decide(item,'approved')),button(item.status==='approved'?'Отозвать допуск':'Отклонить',()=>decide(item,'rejected'),true));}}
       else if(tab==='players'){info.append(el('span',item.is_whitelisted?'Доступ разрешён':'Доступ закрыт','badge '+(item.is_whitelisted?'approved':'rejected')),el('h3',item.mc_username),el('p',item.discord_username+' · '+item.discord_id,'details'),el('p','UUID: '+item.uuid,'details'),el('p','Последний вход: '+date(item.last_login_at),'details'));actions.append(button(item.is_whitelisted?'Закрыть доступ':'Разрешить доступ',async()=>{if(!confirm((item.is_whitelisted?'Закрыть':'Разрешить')+' доступ игроку '+item.mc_username+'?'))return;try{await api('/players/'+item.discord_id,{method:'PATCH',body:JSON.stringify({allowed:!item.is_whitelisted})});toast('Доступ обновлён');await load();}catch(e){toast(e.message);}},!!item.is_whitelisted));}
       else if(tab==='news'){info.append(el('span',item.broadcastRevision?'С уведомлением':'В ленте','badge'),el('h3',item.title),el('p',item.excerpt),el('p',item.author+' · '+date(item.date),'details'));actions.append(button('Изменить',()=>editNews(item)),button('Удалить',async()=>{if(!confirm('Удалить новость из ленты? Уже доставленное уведомление останется у читателей.'))return;try{await api('/news/'+encodeURIComponent(item.id),{method:'DELETE'});await load();}catch(e){toast(e.message);}},true));}
-      else {info.append(el('h3',item.action+' · '+item.target),el('p',item.details),el('p',date(item.created_at),'details'));}
+      else {const labels={'mods:approved':'Мод разрешён','mods:rejected':'Мод отклонён','names:approved':'Смена ника одобрена','names:rejected':'Смена ника отклонена','players:allow':'Доступ игроку открыт','players:block':'Доступ игроку закрыт','news:save':'Новость сохранена','news:broadcast':'Новость с уведомлением','news:delete':'Новость удалена','launcher:close':'Доступ к лаунчеру закрыт','launcher:open':'Доступ к лаунчеру открыт'};info.append(el('h3',labels[item.action]||item.action),el('p',item.details),el('p',(item.target==='all'?'Все игроки':item.target)+' · '+date(item.created_at),'details'));}
       row.append(info,actions);return row;
     });
-    $('list').replaceChildren(...(rows.length?rows:[el('div','Записей не найдено','empty')]));$('total').textContent='Всего: '+data.total;$('page').textContent=String(page);$('prev').disabled=page===1;$('next').disabled=page*data.pageSize>=data.total;
-  } catch(e) {if(mine===generation)$('list').replaceChildren(el('p',e.message,'error'));}
+  return rows;
 }
-for(const b of document.querySelectorAll('[data-tab]'))b.onclick=()=>{tab=b.dataset.tab;page=1;$('search').value='';for(const n of document.querySelectorAll('[data-tab]'))n.classList.toggle('active',n===b);void load();};
-let debounce;$('search').oninput=()=>{clearTimeout(debounce);debounce=setTimeout(()=>{page=1;void load();},250);};$('status').onchange=()=>{page=1;void load();};$('prev').onclick=()=>{page--;void load();};$('next').onclick=()=>{page++;void load();};$('refresh').onclick=()=>void load();
-setInterval(()=>{if(tab!=='access'&&!$('app').hidden&&!$('decision').open&&!$('news-editor').open&&document.visibilityState==='visible')void load();},30000);
-api('/session').then(enter).catch(showLogin);
+function connection(text, state = '') {
+  $('connection-status').textContent = text;
+  $('connection-status').dataset.state = state;
+}
+function accessDirty() {
+  return !!accessState && (accessState.closed !== $('access-closed').checked || accessState.message !== $('access-message').value);
+}
+function updateAccessDraft() {
+  const dirty = accessDirty(), closed = $('access-closed').checked;
+  $('access-counter').textContent = $('access-message').value.length + ' / 500';
+  $('access-draft').textContent = dirty ? 'Есть несохранённые изменения' : 'Все изменения сохранены';
+  $('access-draft').dataset.dirty = String(dirty);
+  $('access-save').disabled = !dirty || accessSaving || $('access-fields').disabled;
+  $('access-preview-title').textContent = closed ? 'Доступ временно закрыт' : 'Лаунчер доступен';
+  $('access-preview-message').textContent = closed ? ($('access-message').value.trim() || 'Доступ к лаунчеру временно закрыт. Попробуйте позже.') : 'Игроки могут войти и запустить игру.';
+}
+function showAccess(state) {
+  accessState = state;
+  $('access-closed').checked = state.closed;
+  $('access-message').value = state.message;
+  $('access-status').textContent = state.closed ? 'Доступ закрыт для всех' : 'Доступ открыт';
+  $('access-state-badge').textContent = state.closed ? 'Закрыт' : 'Открыт';
+  $('access-state-badge').className = 'badge ' + (state.closed ? 'rejected' : 'approved');
+  $('access-updated').textContent = state.updatedAt ? 'Последнее изменение: ' + date(state.updatedAt) : 'Игроки могут войти и запустить игру.';
+  $('access-error').textContent = '';
+  updateAccessDraft();
+}
+function emptyList(filtered) {
+  const empty = el('div', undefined, 'empty');
+  empty.append(el('strong', filtered ? 'Ничего не найдено' : ({mods:'Новых заявок нет',names:'Заявок на смену ника нет',news:'Пока нет новостей',players:'Игроки ещё не заходили',audit:'Здесь появится история действий'})[tab]),
+    el('p', filtered ? 'Попробуйте другое название или измените фильтр.' : 'Записи появятся здесь, когда будут доступны.'));
+  if (filtered) empty.append(button('Сбросить фильтры', () => { $('search').value='';$('status').value='all';page=1;void load(); }));
+  if (tab==='news' && !filtered) empty.append(button('Написать первую новость', () => editNews()));
+  return empty;
+}
+function updateStats(stats) {
+  const signature = JSON.stringify(stats);
+  if ($('stats').dataset.signature === signature) return;
+  $('stats').dataset.signature = signature;
+  $('stats').replaceChildren(...[
+    ['Игроков',stats.users.total,stats.users.allowed+' с доступом','players'],
+    ['Заявки на моды',stats.mods.pending,'ожидают решения','mods'],
+    ['Смена ников',stats.names.pending,'ожидают решения','names'],
+    ['Сборка',stats.pack,'посмотреть историю','audit'],
+  ].map(([label,value,hint,target]) => {
+    const box=button('',()=>navigate(target, target==='mods'||target==='names' ? 'pending' : undefined));
+    box.className='stat';box.append(el('span',label),el('strong',String(value)),el('span',hint));return box;
+  }));
+  for (const kind of ['mods','names']) { $(kind+'-count').textContent=String(stats[kind].pending);$(kind+'-count').hidden=!stats[kind].pending; }
+}
+async function load({ silent = false } = {}) {
+  if (silent && busy) return;
+  requestController?.abort();
+  busy=false;$('refresh').disabled=false;
+  const controller = requestController = new AbortController(), mine = ++generation, currentTab=tab;
+  const reviewed = tab==='mods'||tab==='names', isAccess=tab==='access';
+  document.querySelector('.footnote').hidden=isAccess;
+  $('records-panel').hidden=isAccess;$('access-panel').hidden=!isAccess;$('stats').hidden=isAccess;
+  $('status').hidden=!reviewed;$('add-news').hidden=tab!=='news';$('add-mod').hidden=tab!=='mods';$('upload-jar').hidden=tab!=='mods';
+  $('title').textContent=names[tab][0];$('subtitle').textContent=names[tab][1];document.title=names[tab][0]+' · quiby';
+  if (isAccess && accessDirty()) { updateAccessDraft();return; }
+  busy=true;$('refresh').disabled=true;$('load-error').hidden=true;connection('Обновляем…','loading');
+  const key = [tab,page,$('search').value,reviewed?$('status').value:'all'].join('|');
+  if (isAccess) { $('access-fields').disabled=true;$('access-save').disabled=true;$('access-loading').hidden=false; }
+  else if (renderedKey!==key) {
+    const placeholder=el('div',undefined,'loading-placeholder');placeholder.setAttribute('aria-label','Загрузка записей');
+    placeholder.append(...Array.from({length:3},()=>el('div',undefined,'skeleton')));$('list').replaceChildren(placeholder);$('list').setAttribute('aria-busy','true');
+    $('prev').disabled=true;$('next').disabled=true;
+  }
+  try {
+    if (isAccess) {
+      const state=await api('/launcher-access',{signal:controller.signal});
+      if (mine!==generation)return;
+      if(typeof state.closed!=='boolean'||typeof state.message!=='string')throw Error('Не удалось прочитать настройки доступа. Повторите запрос.');
+      showAccess(state);$('access-fields').disabled=false;updateAccessDraft();
+    } else {
+      const [stats,data]=await Promise.all([api('/overview',{signal:controller.signal}),api('/'+currentTab+'?'+new URLSearchParams({page:String(page),search:$('search').value,status:reviewed?$('status').value:'all'}),{signal:controller.signal})]);
+      if(mine!==generation)return;
+      updateStats(stats);
+      const signature=JSON.stringify(data);
+      if (renderedKey!==key || renderedData!==signature) {
+        const rows = renderRows(data, reviewed);
+        $('list').replaceChildren(...(rows.length?rows:[emptyList(!!$('search').value || (reviewed && $('status').value!=='pending'))]));
+        renderedKey=key;renderedData=signature;
+      }
+      const start=data.total?(page-1)*data.pageSize+1:0,end=Math.min(page*data.pageSize,data.total);
+      $('total').textContent=data.total?`${start}–${end} из ${data.total}`:'Всего: 0';
+      $('page').textContent=`${page} / ${Math.max(1,Math.ceil(data.total/data.pageSize))}`;
+      $('prev').disabled=page===1;$('next').disabled=page*data.pageSize>=data.total;
+    }
+    connection('Обновлено '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}));
+  } catch (error) {
+    if (mine!==generation || controller.signal.aborted) return;
+    $('load-error-text').textContent=error.message;$('load-error').hidden=false;connection('Ошибка подключения','error');
+    if (!isAccess && renderedKey!==key) { $('list').replaceChildren(el('div','Не удалось загрузить записи. Нажмите «Повторить» выше.','empty'));renderedKey='';renderedData=''; }
+  } finally {
+    if (mine===generation) { busy=false;$('refresh').disabled=false;$('list').setAttribute('aria-busy','false');$('access-loading').hidden=true; }
+  }
+}
+function navigate(nextTab, status) {
+  if (!names[nextTab])nextTab='mods';
+  clearTimeout(debounce);
+  filters.set(tab,{search:$('search').value,status:$('status').value,page});
+  tab=nextTab;
+  const saved=filters.get(tab);
+  page=status?1:saved?.page||1;$('search').value=saved?.search||'';$('status').value=status||saved?.status||'pending';
+  for(const button of document.querySelectorAll('[data-tab]')){
+    const active=button.dataset.tab===tab;button.classList.toggle('active',active);
+    if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+  }
+  document.querySelector('[aria-current="page"]')?.scrollIntoView({block:'nearest',inline:'nearest'});
+  window.scrollTo({top:0});
+  if(location.hash.slice(1)!==tab)history.pushState(null,'','#'+tab);
+  void load();
+}
+for (const button of document.querySelectorAll('[data-tab]')) button.onclick=()=>navigate(button.dataset.tab);
+let debounce;
+$('search').oninput=()=>{clearTimeout(debounce);debounce=setTimeout(()=>{page=1;void load();},250);};
+$('status').onchange=()=>{clearTimeout(debounce);page=1;void load();};
+$('prev').onclick=()=>{page--;void load();};$('next').onclick=()=>{page++;void load();};
+async function refresh() {
+  if(tab==='access'&&accessDirty()) {
+    if(!confirm('Обновить настройки с сервера? Несохранённые изменения будут потеряны.'))return;
+    showAccess(accessState);
+  }
+  await load();
+}
+$('refresh').onclick=refresh;$('retry').onclick=refresh;
+$('access-closed').onchange=updateAccessDraft;$('access-message').oninput=updateAccessDraft;
+window.addEventListener('popstate',()=>navigate(location.hash.slice(1)));
+window.addEventListener('beforeunload',event=>{if(accessDirty()){event.preventDefault();event.returnValue='';}});
+document.addEventListener('keydown',event=>{
+  if(event.key==='/'&&!event.ctrlKey&&!event.metaKey&&!$('app').hidden&&tab!=='access'&&!document.querySelector('dialog[open]')&&!event.target.closest('input,textarea,select,[contenteditable]')){event.preventDefault();$('search').focus();}
+});
+// Polling never clears a list or touches an editor, and unchanged data keeps its DOM.
+setInterval(()=>{
+  if(tab!=='access'&&!$('app').hidden&&!document.querySelector('dialog[open]')&&document.visibilityState==='visible'&&!document.activeElement.closest('input,textarea,select,[contenteditable]'))void load({silent:true});
+},60000);
 
 $('upload-jar').onclick=()=>$('jar-file').click();
 $('jar-file').onchange=async()=>{
@@ -90,4 +224,14 @@ for (const button of document.querySelectorAll('[data-format]')) button.onclick 
 };
 $('preview-news').onclick=async()=>{try{const result=await api('/news/preview',{method:'POST',body:JSON.stringify({content:$('news-content').value})});$('news-preview').srcdoc='<meta charset="utf-8"><style>body{background:#141417;color:#eee;font:15px/1.7 system-ui;padding:20px}img,video,iframe{max-width:100%;border-radius:10px}a{color:#c8a6ef}blockquote{border-left:2px solid #a775da;padding-left:14px}table{border-collapse:collapse}td,th{border:1px solid #444;padding:8px}pre{overflow:auto;background:#222;padding:12px}</style>'+result.html;$('news-preview').hidden=false;}catch(error){$('news-error').textContent=error.message;}};
 
-$('access-form').onsubmit=async event=>{event.preventDefault();const submit=event.submitter;submit.disabled=true;$('access-error').textContent='';try{const state=await api('/launcher-access',{method:'PUT',body:JSON.stringify({closed:$('access-closed').checked,message:$('access-message').value})});$('access-status').textContent=state.closed?'Доступ закрыт для всех':'Доступ открыт';toast('Доступ обновлён');}catch(error){$('access-error').textContent=error.message;}finally{submit.disabled=false;}};
+$('access-form').onsubmit=async event=>{
+  event.preventDefault();if(!accessDirty()||accessSaving||$('access-fields').disabled)return;
+  accessSaving=true;$('access-save').disabled=true;$('access-save').textContent='Сохраняем…';$('access-fields').disabled=true;$('refresh').disabled=true;$('access-error').textContent='';
+  try {
+    const state=await api('/launcher-access',{method:'PUT',body:JSON.stringify({closed:$('access-closed').checked,message:$('access-message').value})});
+    showAccess(state);toast('Доступ обновлён');
+  } catch(error) { $('access-error').textContent=error.message; }
+  finally { accessSaving=false;$('access-fields').disabled=!accessState;$('refresh').disabled=false;$('access-save').textContent='Сохранить доступ';updateAccessDraft(); }
+};
+
+api('/session').then(enter).catch(error=>{showLogin();if(error.status!==401)$('login-error').textContent=error.message;});
