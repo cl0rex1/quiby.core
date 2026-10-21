@@ -1,4 +1,5 @@
 import { useMotion } from './components/MotionProvider';
+import { useCloudPlaytime } from './utils/useCloudPlaytime';
 import { ReviewContext } from './components/ReviewContext';
 import { notificationRevision, upsertNotification } from './utils/notifications';
 import { createSkinSynchronizer } from './utils/skinSync';
@@ -348,7 +349,7 @@ export const App: React.FC = () => {
   }, [settings.gameDir, session?.token]);
 
   // 4. Playtime & Fast-Connect States
-  const [totalPlaytimeSeconds, setTotalPlaytimeSeconds] = useState<number>(0);
+  const { total: totalPlaytimeSeconds, add: addPlaytime } = useCloudPlaytime(session, SERVER_URL);
   const [autoConnect, setAutoConnect] = useState<boolean>(true);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(() => !storedSession());
@@ -401,12 +402,6 @@ export const App: React.FC = () => {
     const onboarded = localStorage.getItem('quiby_onboarded');
     if (!onboarded) {
       setIsOnboardingOpen(true);
-    }
-
-    // Restore Playtime
-    const savedPlaytime = localStorage.getItem('quiby_total_playtime');
-    if (savedPlaytime) {
-      setTotalPlaytimeSeconds(parseInt(savedPlaytime, 10) || 0);
     }
 
     // Restore Auto-Connect Preference
@@ -500,19 +495,11 @@ export const App: React.FC = () => {
       }).catch(() => {});
 
       const unsubscribePlaytime = window.quibyApi.onPlaytimeTick?.((sec) => {
-        setTotalPlaytimeSeconds((prev) => {
-          const next = prev + sec;
-          localStorage.setItem('quiby_total_playtime', String(next));
-          return next;
-        });
+        addPlaytime(sec);
       });
 
       const unsubscribePlaytimeEnd = window.quibyApi.onPlaytimeSessionEnd?.((sec) => {
-        setTotalPlaytimeSeconds((prev) => {
-          const next = prev + sec;
-          localStorage.setItem('quiby_total_playtime', String(next));
-          return next;
-        });
+        addPlaytime(sec);
       });
 
       const showAvailableUpdate = (state: UpdateState) => {
@@ -859,6 +846,7 @@ export const App: React.FC = () => {
       />
 
       <ProfileDialog
+        gameActive={launchPending || ['updating', 'starting', 'running'].includes(launchState.status)}
         session={isProfileOpen ? session : null}
         serverUrl={SERVER_URL}
         onClose={() => setIsProfileOpen(false)}

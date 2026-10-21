@@ -47,6 +47,7 @@ export interface UserProfile {
   isWhitelisted: boolean;
   roles: string[];
   joinedAt?: string;
+  totalPlaytimeSeconds?: number;
 }
 
 export interface AuthSession {

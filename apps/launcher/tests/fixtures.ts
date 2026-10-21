@@ -8,8 +8,16 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
     expect(errors, 'No uncaught renderer errors').toEqual([]);
   }, { auto: true }],
   page: async ({ page }, use) => {
+    let cloudSeconds = 0, legacySeconds = 0;
+    const devices = new Map<string, number>();
     await page.route('**/api/**', async route => {
       const pathname = new URL(route.request().url()).pathname;
+      if (pathname === '/api/game/playtime') {
+        const value = route.request().postDataJSON();
+        cloudSeconds += Math.max(0, value.legacySeconds - legacySeconds) + Math.max(0, value.totalSeconds - (devices.get(value.deviceId) || 0));
+        legacySeconds = Math.max(legacySeconds, value.legacySeconds); devices.set(value.deviceId, Math.max(devices.get(value.deviceId) || 0, value.totalSeconds));
+        await route.fulfill({ json: { totalSeconds: cloudSeconds } }); return;
+      }
       const body = pathname === '/api/auth/me' ? { user: { discordId: 'fixture', username: 'Fixture', mcUsername: 'QuibyPlayer', uuid: 'fixture', roles: [], isWhitelisted: true } }
         : pathname === '/api/launcher/access' ? { closed: false, message: '' }
         : pathname === '/api/status' ? { online: true, ip: 'localhost', port: 25565, players: { online: 12, max: 50 } }
@@ -40,7 +48,7 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
         getLaunchState: () => ({ status: localStorage.getItem('fixture-running') ? 'running' : 'idle' }),
         isMaximized: () => false, getTotalRamMb: () => 16384,
         detectJava: () => ({ installations: [], recommended: null, totalRamMb: 16384 }),
-        getUpdateState: () => ({ status: 'current', currentVersion: '1.0.2' }), getLatestModpackManifest: () => ({ ...manifest, files: JSON.parse(localStorage.getItem('fixture-bundled-mods') || '[]') }),
+        getUpdateState: () => ({ status: 'current', currentVersion: '1.0.0' }), getLatestModpackManifest: () => ({ ...manifest, files: JSON.parse(localStorage.getItem('fixture-bundled-mods') || '[]') }),
         getShaderpacks: dir => [...(control.files[`shaderpacks:${dir}`] || [])],
         getSchematics: dir => [...(control.files[`schematics:${dir}`] || [])],
         getResourcePackInventory: dir => [...(control.files[`resourcepacks:${dir}`] || [])], getResourcePacks: dir => [...(control.files[`resourcepacks:${dir}`] || [])],

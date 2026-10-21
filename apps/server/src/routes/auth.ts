@@ -17,7 +17,7 @@ import { submitUsernameChangeRequest } from '../services/usernameChangeService';
 import { requireLauncherAccess } from '../middleware/launcherAccess';
 
 const router = Router();
-router.use('/discord', requireLauncherAccess);
+router.use((req, res, next) => req.path === '/verify-session' ? next() : requireLauncherAccess(req, res, next));
 
 const mcUsernameSchema = z
   .string()

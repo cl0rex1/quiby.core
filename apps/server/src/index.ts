@@ -65,7 +65,7 @@ async function bootstrap() {
     res.json({
       status: 'ok',
       service: 'quiby.core backend server',
-      version: '6.0.0-neoforge-1.21.1',
+      version: '1.0.0',
       minimumLauncherVersion: MINIMUM_LAUNCHER_VERSION,
       time: new Date().toISOString(),
     });

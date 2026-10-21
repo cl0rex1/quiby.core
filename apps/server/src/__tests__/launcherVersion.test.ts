@@ -4,9 +4,9 @@ import express from 'express';
 import { supportsLauncher, MINIMUM_LAUNCHER_VERSION } from '@quiby/shared';
 import { requireSupportedLauncher } from '../middleware/launcherVersion';
 
-test('API admits supported stable releases and rejects every prerelease', () => {
-  for (const version of [undefined, '', 'fake', '01.0.1', '9007199254740992.0.0', '1.0.1-beta.9', '1.0.1-beta.25', '1.0.2-beta.1', '2.0.0-rc.1', '1.0.0', '1.0.1']) assert.equal(supportsLauncher(version), false);
-  for (const version of ['1.0.2', '1.0.3', '1.0.10', '2.0.0']) assert.equal(supportsLauncher(version), true);
+test('API admits only the current published release', () => {
+  for (const version of [undefined, '', 'fake', '01.0.1', '9007199254740992.0.0', '1.0.1-beta.9', '1.0.1-beta.25', '1.0.2-beta.1', '2.0.0-rc.1', '0.9.9', '1.0.1', '1.0.2', '2.0.0']) assert.equal(supportsLauncher(version), false);
+  for (const version of ['1.0.0']) assert.equal(supportsLauncher(version), true);
 });
 
 test('launch preflight rejects older launchers even without a version header', async () => {

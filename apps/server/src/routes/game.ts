@@ -3,15 +3,33 @@ import { createPublicKey } from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { config } from '../config';
-import { AuthenticatedRequest, requireAuth } from '../middleware/auth';
+import { AuthenticatedRequest, requireAuth, requireSession } from '../middleware/auth';
 import { requireSupportedLauncher } from '../middleware/launcherVersion';
-import { dbGet } from '../models/db';
+import { dbGet, dbRun } from '../models/db';
 
 const router = Router();
 const audience = 'quiby-s6-game';
 const issuer = 'quiby-core';
 const issueSchema = z.object({ publicKey: z.string().regex(/^[A-Za-z0-9+/]+={0,2}$/).max(128) });
 const verifySchema = z.object({ ticket: z.string().min(1).max(4096), username: z.string().regex(/^[a-zA-Z0-9_]{3,16}$/), uuid: z.string().uuid() });
+const playtimeSchema = z.object({ deviceId: z.string().uuid(), totalSeconds: z.number().int().min(0).max(315360000), legacySeconds: z.number().int().min(0).max(315360000).default(0) }).strict();
+
+// Keep saving an already running game during a launcher closure. Device counters
+// make retries and out-of-order requests idempotent, including after reinstall.
+router.put('/playtime', requireSupportedLauncher, requireSession, async (req: AuthenticatedRequest, res) => {
+  res.set('Cache-Control', 'no-store');
+  const input = playtimeSchema.safeParse(req.body);
+  if (!input.success) return res.status(400).json({ error: 'Некорректное время игры.' });
+  const { deviceId, totalSeconds, legacySeconds } = input.data;
+  try {
+    await dbRun(`UPDATE users SET playtime_seconds=playtime_seconds+MAX(0,?-playtime_legacy_seconds),
+      playtime_legacy_seconds=MAX(playtime_legacy_seconds,?) WHERE discord_id=?`, [legacySeconds, legacySeconds, req.user!.discordId]);
+    await dbRun(`INSERT INTO playtime_devices(discord_id,device_id,total_seconds) VALUES(?,?,?)
+      ON CONFLICT(discord_id,device_id) DO UPDATE SET total_seconds=MAX(total_seconds,excluded.total_seconds)`, [req.user!.discordId, deviceId, totalSeconds]);
+    const row = await dbGet<{ playtime_seconds: number }>('SELECT playtime_seconds FROM users WHERE discord_id=?', [req.user!.discordId]);
+    return res.json({ totalSeconds: row!.playtime_seconds });
+  } catch { return res.status(500).json({ error: 'Не удалось сохранить время игры.' }); }
+});
 
 // A game-only ticket is not an API/Discord session. The private signing key
 // stays in the launched JVM; captured tickets cannot authenticate another client.

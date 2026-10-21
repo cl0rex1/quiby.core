@@ -12,6 +12,10 @@ export interface AuthenticatedRequest extends Request {
 export async function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try { if (await rejectClosedLauncher(res)) return; }
   catch { return res.status(503).json({ error: 'Не удалось проверить доступ к лаунчеру. Попробуйте позже.' }); }
+  return requireSession(req, res, next);
+}
+
+export async function requireSession(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
@@ -36,6 +40,7 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
       isWhitelisted: Boolean(row.is_whitelisted),
       roles: JSON.parse(row.roles_json || '[]'),
       joinedAt: row.created_at,
+      totalPlaytimeSeconds: row.playtime_seconds || 0,
     };
 
     next();

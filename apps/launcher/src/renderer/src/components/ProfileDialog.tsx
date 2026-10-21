@@ -8,9 +8,10 @@ interface Props {
   serverUrl: string;
   onClose: () => void;
   onSignOut: () => void;
+  gameActive?: boolean;
 }
 
-export function ProfileDialog({ session, serverUrl, onClose, onSignOut }: Props) {
+export function ProfileDialog({ session, serverUrl, onClose, onSignOut, gameActive }: Props) {
   const [changingUsername, setChangingUsername] = useState(false);
   const [requestedUsername, setRequestedUsername] = useState('');
   const [reason, setReason] = useState('');
@@ -109,7 +110,7 @@ export function ProfileDialog({ session, serverUrl, onClose, onSignOut }: Props)
             </button>
           )}
           <footer className="profile-footer">
-            <button type="button" onClick={onSignOut} disabled={submitting} className="profile-signout"><LogOut size={15}/>Выйти из аккаунта</button>
+            <button type="button" onClick={onSignOut} disabled={submitting || gameActive} title={gameActive ? 'Сначала закройте игру' : undefined} className="profile-signout"><LogOut size={15}/>Выйти из аккаунта</button>
           </footer>
         </div>
       </dialog>

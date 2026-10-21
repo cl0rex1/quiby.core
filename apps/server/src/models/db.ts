@@ -78,6 +78,23 @@ export async function initDatabase(): Promise<void> {
     )
   `);
 
+  // Account playtime and idempotent per-device counters.
+  const userColumns = await dbAll<{ name: string }>('PRAGMA table_info(users)');
+  for (const column of ['playtime_seconds', 'playtime_legacy_seconds']) {
+    if (!userColumns.some(item => item.name === column)) await dbRun(`ALTER TABLE users ADD COLUMN ${column} INTEGER NOT NULL DEFAULT 0`);
+  }
+  await dbRun(`CREATE TABLE IF NOT EXISTS playtime_devices (
+    discord_id TEXT NOT NULL, device_id TEXT NOT NULL, total_seconds INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY(discord_id,device_id)
+  )`);
+  await dbRun(`CREATE TRIGGER IF NOT EXISTS playtime_device_insert AFTER INSERT ON playtime_devices BEGIN
+    UPDATE users SET playtime_seconds=playtime_seconds+NEW.total_seconds WHERE discord_id=NEW.discord_id;
+  END`);
+  await dbRun(`CREATE TRIGGER IF NOT EXISTS playtime_device_update AFTER UPDATE OF total_seconds ON playtime_devices
+    WHEN NEW.total_seconds>OLD.total_seconds BEGIN
+    UPDATE users SET playtime_seconds=playtime_seconds+NEW.total_seconds-OLD.total_seconds WHERE discord_id=NEW.discord_id;
+  END`);
+
   // News Table
   await dbRun(`
     CREATE TABLE IF NOT EXISTS news (
