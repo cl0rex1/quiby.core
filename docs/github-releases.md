@@ -1,13 +1,15 @@
+Актуальный выпуск **22.10.2026**: лаунчер **1.1.0**, сборка **6.1.24**, Quiby **1.1.17**. [Развёртывание и откат](releases/deployment-1.1.0.md), [серверное обновление](server-update-6.1.24.md).
+
 # GitHub Releases: сборка и обновления
 
 Публичные файлы лежат отдельно от приватного исходного репозитория:
 
-- [Сборка Season 6](https://github.com/cl0rex1/quiby-modpacks/releases) — манифест, игровые файлы и иконки. Версия этого выпуска: `v6.1.6`.
-- [Windows-лаунчер](https://github.com/cl0rex1/quiby-launcher-releases/releases) — NSIS-установщик, blockmap и `beta.yml`. Версия этого выпуска: `v1.0.1-beta.11`.
+- [Сборка Season 6](https://github.com/cl0rex1/quiby-modpacks/releases) — манифест, игровые файлы и иконки. Версия этого выпуска: `v6.1.24`.
+- [Windows-лаунчер](https://github.com/cl0rex1/quiby-launcher-releases/releases) — NSIS-установщик, blockmap и `beta.yml`. Версия этого выпуска: `v1.1.0`.
 
 Лаунчер загружает `https://github.com/cl0rex1/quiby-modpacks/releases/latest/download/manifest.json`, проверяет SHA-256 каждого изменённого файла и сохраняет файлы с политикой `keep_local`. Если GitHub временно недоступен, использует API. Для локальной проверки неопубликованной сборки можно запустить процесс лаунчера с `QUIBY_PACK_SOURCE=local`.
 
-При запуске установленный Windows-лаунчер проверяет GitHub Releases. В **Настройки → Файлы и Java** можно повторить проверку, скачать обновление и перезапустить приложение для установки. Сейчас канал `beta`. Новую версию нужно выпустить с увеличенным номером `apps/launcher/package.json`.
+При запуске установленный Windows-лаунчер проверяет GitHub Releases. В **Настройки → Файлы и Java** можно повторить проверку, скачать обновление и перезапустить приложение для установки. Основной канал — `latest`; `beta.yml` также указывает на тот же стабильный установщик. Новую версию нужно выпустить с увеличенным номером `apps/launcher/package.json`.
 
 Вход в лаунчер выполняется через Discord OAuth. Лаунчер по умолчанию использует `https://api.quiby.me`; для локальной разработки адрес API задаётся через `VITE_QUIBY_API_URL` при сборке. В Discord Developer Portal должен быть зарегистрирован redirect `http://localhost:45678/callback`.
 
