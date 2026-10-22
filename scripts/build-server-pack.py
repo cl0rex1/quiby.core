@@ -99,6 +99,6 @@ if __name__ == "__main__":
     parser.add_argument("--source", type=pathlib.Path,
                         default=pathlib.Path(os.environ.get("APPDATA", pathlib.Path.home())) / ".quiby-launcher")
     parser.add_argument("--output", type=pathlib.Path, default=ROOT / f"temp/quiby-server-{version}.zip")
-    parser.add_argument("--quiby-jar", type=pathlib.Path, default=ROOT.parent / "quiby.mod/build/libs/quiby-1.21.1-1.1.19.jar")
+    parser.add_argument("--quiby-jar", type=pathlib.Path, default=ROOT.parent / "quiby.mod/build/libs/quiby-1.21.1-1.1.20.jar")
     args = parser.parse_args()
     build(args.source, args.output, args.quiby_jar)
