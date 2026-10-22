@@ -32,6 +32,7 @@ StartupWMClass=quiby.core
 def add_bytes(archive, name, data, mode=0o644):
     info = tarfile.TarInfo(name)
     info.size, info.mode, info.mtime = len(data), mode, int(time.time())
+    info.uname = info.gname = "root"
     archive.addfile(info, io.BytesIO(data))
 
 
