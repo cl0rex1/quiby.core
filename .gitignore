@@ -21,3 +21,5 @@ deploy/casaos/data/
 .agents/
 __pycache__/
 apps/server/storage/files/imported/
+
+apps/launcher/direct/

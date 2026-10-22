@@ -1,10 +1,51 @@
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import net from 'node:net';
 import fs from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { minecraftPing, preferDirect, prepareDirectRoute } from '../directRoute';
+import { EventEmitter } from 'node:events';
+import { minecraftPing, preferDirect, prepareDirectRoute, directExecutable, directError } from '../directRoute';
+
+test('bundled direct works offline with an empty or corrupted cache and reports useful errors', { skip: !existsSync(path.resolve('apps/launcher/direct/frpc-0.71.1.exe')) && 'run npm run prepare:direct --workspace=apps/launcher for the packaging fixture' }, async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'quiby-проверка direct-'));
+  const binary = path.resolve('apps/launcher/direct/frpc-0.71.1.exe');
+  try {
+    await fs.access(binary); // npm run prepare:direct --workspace=apps/launcher
+    assert.equal(await directExecutable(directory, binary), binary);
+    assert.deepEqual(await fs.readdir(directory), []);
+    await fs.writeFile(path.join(directory, path.basename(binary)), 'corrupted');
+    assert.equal(await directExecutable(directory, binary), binary);
+    await assert.rejects(directExecutable(directory, path.join(directory, 'missing.exe')), /повреждён/);
+    await fs.copyFile(binary, path.join(directory, path.basename(binary)));
+    assert.equal(await directExecutable(directory, path.join(directory, 'missing.exe')), path.join(directory, path.basename(binary)));
+    const failure = new Error('write failed eyJsecret.jwt.signature', { cause: Object.assign(new Error('access denied'), { code: 'EACCES' }) });
+    assert.deepEqual(directError(failure), { code: 'EACCES', message: 'write failed [redacted]: access denied' });
+  } finally { await fs.rm(directory, { recursive: true, force: true }); }
+});
+
+test('port and process failures preserve their exact stage without reaching NAT', { skip: process.platform !== 'win32' || !existsSync(path.resolve('apps/launcher/direct/frpc-0.71.1.exe')) }, async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'quiby-direct ошибки-'));
+  await fs.mkdir(path.join(directory, 'direct'));
+  await fs.copyFile(path.resolve('apps/launcher/direct/frpc-0.71.1.exe'), path.join(directory, 'direct/frpc-0.71.1.exe'));
+  const api = mock.method(globalThis, 'fetch', async () => Response.json({ enabled: true, server: '127.0.0.1', port: 1,
+    ca: '-----BEGIN CERTIFICATE-----invalid', user: 'quiby-player', ticket: 'eyJsecret.jwt.signature' }));
+  const listener = mock.method(net, 'createServer', () => new class extends EventEmitter {
+    listen() { queueMicrotask(() => this.emit('error', Object.assign(new Error('port access denied'), { code: 'EACCES' }))); }
+  }() as unknown as net.Server);
+  const address = 'play.quiby.me:25565';
+  try {
+    assert.equal((await prepareDirectRoute('http://unused.invalid', 'fake', 'test', directory, address, () => {})).address, address);
+    let report = JSON.parse(await fs.readFile(path.join(directory, 'direct/latest-route.json'), 'utf8'));
+    assert.equal(report.stage, 'port'); assert.equal(report.error.code, 'EACCES');
+    listener.mock.restore();
+    assert.equal((await prepareDirectRoute('http://unused.invalid', 'fake', 'test', directory, address, () => {})).address, address);
+    report = JSON.parse(await fs.readFile(path.join(directory, 'direct/latest-route.json'), 'utf8'));
+    assert.equal(report.stage, 'startup'); assert.match(report.error.message, /frpc завершился/);
+    assert.equal(JSON.stringify(report).includes('eyJsecret'), false);
+  } finally { listener.mock.restore(); api.mock.restore(); await fs.rm(directory, { recursive: true, force: true }); }
+});
 
 test('route selection rejects jitter, failed probes and marginal improvements', () => {
   assert.equal(preferDirect([90, 91, 93, 90, 95], [30, 31, 30, 32, 31]), true);

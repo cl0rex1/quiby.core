@@ -1,0 +1,7 @@
+{
+  "version": "0.71.1",
+  "filename": "frpc-0.71.1.exe",
+  "archiveUrl": "https://github.com/fatedier/frp/releases/download/v0.71.1/frp_0.71.1_windows_amd64.zip",
+  "archiveSha256": "b90074b2b6a1d792a7a40f085ac6d276bcab2d1bc60201f8a86ca53ce65ce821",
+  "executableSha256": "23d11640bee87207c7a99d006b84c554df997feeba7ac7243db20a88a9cb5e01"
+}
