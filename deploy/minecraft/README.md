@@ -1,4 +1,4 @@
-# Quiby: серверная сборка 6.1.32
+# Quiby: серверная сборка 6.1.33
 
 Minecraft **1.21.1**, NeoForge **21.1.250**, Java **21**. 37 основных JAR,
 включая Create, Aeronautics, Sable, Off Balance, Explosion Overhaul, дополнения
@@ -12,9 +12,9 @@ Create, Create Nuclear 2.0.0, Quiby и Simple Voice Chat. Вложенные з�
 В этой сборке включена проверка аккаунта **до появления игрока в мире**.
 Нужны обновлённый API с `/api/game/join-ticket` и
 `/api/game/verify-join-ticket`, лаунчер с `prepareGameAdmission` и клиентский
-**quiby.mod 1.1.25** и Create Radars **5.0-EA-3.1.4-1.21.1**. Новая клиентская сборка **6.1.32** и лаунчер 1.1.3 содержат нужный протокол входа.
+**quiby.mod 1.1.26** и Create Radars **5.0-EA-3.1.4-1.21.1**. Новая клиентская сборка **6.1.33** и лаунчер 1.1.3 содержат нужный протокол входа.
 Старый лаунчер и старый клиентский Quiby будут отклонены. Серверный мод сам не обновляет клиент.
-До обновления Minecraft-сервера доставьте клиентам сборку 6.1.32.
+До обновления Minecraft-сервера доставьте клиентам сборку 6.1.33.
 
 Лаунчер получает после Discord-входа билет только для Minecraft и создаёт
 временную пару Ed25519. Перед входом сервер проверяет билет, ник, UUID,
@@ -39,7 +39,7 @@ Discord/API токен не передаётся в игру; закрытый �
 
 ```bash
 mkdir -p ~/quiby-minecraft
-unzip quiby-server-6.1.32.zip -d ~/quiby-minecraft
+unzip quiby-server-6.1.33.zip -d ~/quiby-minecraft
 cd ~/quiby-minecraft
 ```
 
@@ -122,7 +122,7 @@ Discord-мост включается только после согласова
 `https://api.quiby.me`). Docker Compose передаёт их в контейнер; без ключа мост
 выключен. У бота отдельно нужны `MINECRAFT_CHAT_ENABLED=true`, Message Content
 Intent и права вебхуков. Подробности: `quiby.mod/docs/community-update.md`.
-Церемония и меню описаны в docs/releases/6.1.32.md основного репозитория.
+Церемония и меню описаны в docs/releases/6.1.33.md основного репозитория.
 
 На каждом запуске `prepare.py` проверяет хэши JAR и применяет
 `config-policy.json`. Прочие настройки в существующих файлах сохраняются;
