@@ -132,6 +132,11 @@ async function checkFrp(directory: string, api: string, visitor: { user: string;
       try {
         assert.notEqual(route.address, '127.0.0.1:1', 'launcher did not start the authenticated tunnel');
         const routePort = Number(route.address.split(':')[1]); assert.ok(await minecraftPing('127.0.0.1', routePort, 6000) > 0);
+        const report=JSON.parse(await fs.readFile(path.join(launcher,'direct/latest-route.json'),'utf8'));
+        assert.ok(['relay','direct','direct-kcp'].includes(report.reason));
+        assert.equal(report.relay.length,5,'authenticated TCP relay must be measured even if NAT punching fails');
+        assert.ok(Array.isArray(report.kcp)&&Array.isArray(report.details));
+        assert.equal(JSON.stringify(report).includes(visitor.ticket),false,'route diagnostics leaked admission ticket');
       } finally { route.close(); }
       await new Promise(r => setTimeout(r, 500));
       assert.equal((await fs.readdir(path.join(launcher, 'direct'))).filter(name => name.startsWith('session-')).length, 0, 'private visitor config was retained');

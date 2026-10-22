@@ -39,12 +39,23 @@ test('chat scopes credentials and privacy, maps mentions, deduplicates and ackno
     assert.equal((await post('/game/events',{events:[event]},game)).status,200);
     const queue=await get('/bot/events',bot);assert.equal(queue.events.length,1);assert.equal(queue.events[0].scope,'local');assert.equal(queue.events[0].mentions[0].discordId,'223456789012345678');
     assert.equal((await get('/game/messages',game)).messages.length,0,'Minecraft events must not echo back');
+    const avatarBefore=queue.events[0].avatarUrl;
+    await fs.mkdir(path.join(dir,'skins'),{recursive:true});
+    await fs.writeFile(path.join(dir,'skins',uuid.replace(/-/g,'')+'.png'),Buffer.from('new skin content'));
+    const avatarAfter=(await get('/bot/events',bot)).events[0].avatarUrl;
+    assert.notEqual(avatarAfter,avatarBefore,'Discord must receive a new avatar URL when skin changes');
+    assert.equal((await get('/bot/events',bot)).events[0].avatarUrl,avatarAfter,'unchanged skins keep a stable cache key');
+    assert.equal((await post('/bot/emojis',{emojis:[{id:'423456789012345678',name:'quiby'}]},bot)).status,200);
+    assert.deepEqual((await get('/game/emojis',game)).emojis,[{id:'423456789012345678',name:'quiby'}]);
+    assert.equal((await post('/bot/emojis',{emojis:[{id:'../../private',name:'quiby'}]},bot)).status,400);
+    assert.equal((await fetch(base+'/game/emojis')).status,403);
+
     assert.equal((await post('/bot/events/'+queue.events[0].id+'/ack',{},bot)).status,200);assert.equal((await get('/bot/events',bot)).events.length,0);
     const stale={...event,eventId:'43333333-1234-4321-8765-123456789012',uuid:other,username:'PlayerOne'};
-    const valid={...event,eventId:'53333333-1234-4321-8765-123456789012',scope:'global'};
+    const valid={...event,eventId:'53333333-1234-4321-8765-123456789012',scope:'global',text:'@PlayerTwo, @Unlinked hello',mentions:[]};
     const batch=await post('/game/events',{events:[stale,valid]},game);
-    assert.equal(batch.status,200);assert.deepEqual((await batch.json()).rejected,[stale.eventId]);
-    const following=await get('/bot/events',bot);assert.equal(following.events.length,1);assert.equal(following.events[0].scope,'global');
+    assert.equal(batch.status,200);const reply=await batch.json();assert.deepEqual(reply.rejected,[stale.eventId]);assert.deepEqual(reply.unresolved,[{uuid,names:['Unlinked']}]);
+    const following=await get('/bot/events',bot);assert.equal(following.events.length,1);assert.equal(following.events[0].scope,'global');assert.deepEqual(following.events[0].mentions,[{uuid:other,name:'PlayerTwo',discordId:'223456789012345678'}]);
     await post('/bot/events/'+following.events[0].id+'/ack',{},bot);
     const discord={eventId:'323456789012345678',discordId:'123456789012345678',username:'Discord Name',text:'hello @PlayerTwo',mentions:['223456789012345678'],images:['https://cdn.discordapp.com/attachments/123/456/photo.png?ex=abc']};
     assert.equal((await post('/bot/messages',discord,bot)).status,200);assert.equal((await post('/bot/messages',discord,bot)).status,200);

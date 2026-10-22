@@ -5,6 +5,7 @@ import { app, BrowserWindow } from 'electron';
 import { AuthSession, LauncherSettings, LaunchState, LogEntry, ModpackManifest } from '@quiby/shared';
 import { syncModpackFiles } from './downloader';
 import { configureEarlyLoading } from './earlyLoading';
+import { repairVoiceChatDefaults } from './voiceChatDefaults';
 import { ensureMinecraftVanilla } from './mojang';
 import { ensureNeoForge } from './neoforge';
 import { hashCustomModFile, requireApprovedCustomMod } from './customModVerification';
@@ -158,6 +159,7 @@ export async function launchMinecraft(
     }
     await syncModpackFiles(manifest, gameDir, serverBaseUrl, win, protectedFilenames);
     configureEarlyLoading(gameDir, manifest.files.map(file => file.path));
+    await repairVoiceChatDefaults(gameDir);
     await applyResourcePackProfile(gameDir, settings.modpackProfile, manifest.files.map(file => file.path));
     const packAdmission = await prepareResourcePackAdmission(gameDir, manifest.files, session.token, serverBaseUrl);
 

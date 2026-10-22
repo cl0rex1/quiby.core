@@ -1,6 +1,6 @@
 {
   "name": "quiby-core-root",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "private": true,
   "description": "quiby.core - Minecraft 1.21.1 NeoForge Launcher & Modpack Management Ecosystem for Season 6",
   "workspaces": [

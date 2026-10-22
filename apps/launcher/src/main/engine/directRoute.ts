@@ -112,19 +112,28 @@ export async function prepareDirectRoute(base: string, token: string, version: s
     const run = await fs.mkdtemp(path.join(directory, 'direct/session-'));
     close = () => { void fs.rm(run, { recursive: true, force: true }).catch(() => {}); };
     stage = 'port';
-    const listener = net.createServer(); await new Promise<void>((resolve, reject) => { listener.once('error', reject); listener.listen(0, '127.0.0.1', resolve); });
-    const port = (listener.address() as net.AddressInfo).port;
-    await new Promise<void>(resolve => listener.close(() => resolve()));
+    const listeners: net.Server[] = [];
+    let ports: number[];
+    try {
+      for (let i=0;i<3;i++) {
+        const listener=net.createServer(); listeners.push(listener);
+        await new Promise<void>((resolve,reject)=>{listener.once('error',reject);listener.listen(0,'127.0.0.1',resolve);});
+      }
+      ports=listeners.map(listener=>(listener.address() as net.AddressInfo).port);
+    } finally { await Promise.all(listeners.filter(listener=>listener.listening).map(listener=>new Promise<void>(resolve=>listener.close(()=>resolve())))); }
+    const [port,kcpPort,relayPort]=ports!;
     stage = 'configuration';
     const caFile = path.join(run, 'ca.pem'); await fs.writeFile(caFile, c.ca, { mode: 0o600 });
     const visitor = { serverUser: 'quiby-host', secretKey: '', bindAddr: '127.0.0.1', transport: { useEncryption: true } };
     await fs.writeFile(path.join(run, 'frpc.json'), JSON.stringify({ serverAddr: c.server, serverPort: c.port, user: c.user,
       metadatas: { ticket: c.ticket }, natHoleStunServer: 'stun.easyvoip.com:3478', loginFailExit: true,
       transport: { tcpMux: false, tls: { enable: true, serverName: 'quiby-direct', trustedCaFile: caFile }, heartbeatInterval: 15, heartbeatTimeout: 45 },
-      log: { level: 'warn', to: path.join(run, 'frpc.log'), maxDays: 1 },
-      visitors: [{ ...visitor, name: 'relay', type: 'stcp', serverName: 'minecraft-relay', bindPort: -1 },
+      log: { level: 'info', to: path.join(run, 'frpc.log'), maxDays: 1 },
+      visitors: [{ ...visitor, name: 'relay', type: 'stcp', serverName: 'minecraft-relay', bindPort: relayPort },
         { ...visitor, name: 'direct', type: 'xtcp', serverName: 'minecraft-direct', bindPort: port,
-          fallbackTo: 'relay', fallbackTimeoutMs: 35000, keepTunnelOpen: true, minRetryInterval: 5, maxRetriesAnHour: 120 }],
+          protocol: 'quic', keepTunnelOpen: false },
+        { ...visitor, name: 'direct-kcp', type: 'xtcp', serverName: 'minecraft-direct', bindPort: kcpPort,
+          protocol: 'kcp', keepTunnelOpen: false }],
     }), { mode: 0o600 });
     stage = 'spawn';
     const child = spawn(binary, ['-c', path.join(run, 'frpc.json')], { cwd: run, windowsHide: true, stdio: 'ignore' });
@@ -145,24 +154,27 @@ export async function prepareDirectRoute(base: string, token: string, version: s
       return values;
     };
     stage = 'NAT';
-    log('Проверяем direct: создаём соединение между игроком и сервером (до 35 сек.)…');
-    // A 2.5-second STCP fallback used to finish the check before NAT punching
-    // could succeed. A probe shorter than fallback only accepts the direct path.
-    try { await minecraftPing('127.0.0.1', port, 34000); }
-    catch {
-      const details = await fs.readFile(path.join(run, 'frpc.log'), 'utf8').then(text => text.split('\n')
-        .filter(line => /stun|nathole|login.*fail|timeout|refused/i.test(line))
-        .slice(-3).map(line => line.replace(/eyJ[A-Za-z0-9_.-]+/g, '[redacted]'))).catch(() => []);
-      close(); await report({ reason: 'nat-timeout', details }); log('Direct не прошёл через NAT. Используем обычный маршрут.'); return fallback;
-    }
+    log('Сравниваем обычный маршрут, relay и direct (QUIC / KCP, до 35 сек.)…');
+    // Dedicated ports have no implicit fallback: a relay can never be reported as direct.
+    const natSamples=async(p:number)=>{
+      try{await minecraftPing('127.0.0.1',p,34000);return samples('127.0.0.1',p);}catch{return [];}
+    };
+    const [normal,relay,direct,kcp]=await Promise.all([
+      samples(host,Number(rawPort||25565)),samples('127.0.0.1',relayPort),natSamples(port),natSamples(kcpPort),
+    ]);
     stage = 'ping';
-    const [normal, direct] = await Promise.all([samples(host, Number(rawPort || 25565)), samples('127.0.0.1', port)]);
-    const selected = !stopped && preferDirect(normal, direct);
-    await report({ reason: selected ? 'direct' : 'quality', normal, direct });
+    let selected={name:'normal',port:0,values:normal};
+    for(const candidate of [{name:'relay',port:relayPort,values:relay},{name:'direct',port,values:direct},{name:'direct-kcp',port:kcpPort,values:kcp}])
+      if(!stopped&&preferDirect(selected.values,candidate.values))selected=candidate;
+    const details=await fs.readFile(path.join(run,'frpc.log'),'utf8').then(text=>text.split('\n')
+      .filter(line=>/stun|nat.?hole|make hole|login|timeout|refused|error/i.test(line)).slice(-12)
+      .map(line=>line.replace(/eyJ[A-Za-z0-9_.-]+/g,'[redacted]'))).catch(()=>[]);
+    await report({ reason: selected.name==='normal'?(!direct.length&&!kcp.length?'nat-timeout':'quality'):selected.name,
+      normal,relay,direct,kcp,details });
     const median = (values: number[]) => values.length === 5 ? `${Math.round([...values].sort((a, b) => a - b)[2])} мс` : 'нет ответа';
-    log(`Маршруты: обычный — ${median(normal)}, direct — ${median(direct)}.`);
-    if (!selected) { close(); log('Обычный маршрут стабильнее — подключаемся через него.'); return fallback; }
-    log('Туннель быстрее и стабилен — подключаемся автоматически.');
-    return { address: `127.0.0.1:${port}`, close };
+    log(`Маршруты: обычный — ${median(normal)}, relay — ${median(relay)}, direct QUIC — ${median(direct)}, direct KCP — ${median(kcp)}.`);
+    if(selected.name==='normal'){close();log('Обычный маршрут выбран по задержке и стабильности.');return fallback;}
+    log(`Выбран ${selected.name}: быстрее и стабилен. Relay проходит через VPS; direct соединяет игрока с сервером.`);
+    return { address: `127.0.0.1:${selected.port}`, close };
   } catch (error) { close(); const details = directError(error); await report({ reason: 'error', stage, error: details }).catch(() => {}); log(`Direct: ${stage} — ${details.message}. Используем обычное подключение.`); return fallback; }
 }

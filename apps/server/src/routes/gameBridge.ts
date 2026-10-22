@@ -1,5 +1,7 @@
 import { Router, RequestHandler, Request, Response } from 'express';
-import { timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual, createHash } from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { z } from 'zod';
 import { config } from '../config';
 import { dbAll, dbGet, dbRun } from '../models/db';
@@ -15,6 +17,19 @@ const authorize = (key: () => string, header: string): RequestHandler => (req, r
 };
 gameBridgeRoutes.use(authorize(() => config.gameBridgeApiKey, 'x-game-bridge-key'));
 botChatRoutes.use(authorize(() => config.modReviewBotApiKey, 'x-bot-key'));
+const emojiFile=()=>path.join(config.storagePath,'chat-emojis.json');
+const emojiSchema=z.array(z.object({id:z.string().regex(/^\d{17,20}$/),name:z.string().regex(/^[A-Za-z0-9_]{2,32}$/)}).strict()).max(128);
+botChatRoutes.post('/emojis',handle(async(req,res)=>{
+  const parsed=emojiSchema.safeParse(req.body?.emojis);
+  if(!parsed.success)return res.sendStatus(400);
+  await fs.mkdir(config.storagePath,{recursive:true});
+  const target=emojiFile();await fs.writeFile(target+'.tmp',JSON.stringify(parsed.data));await fs.rename(target+'.tmp',target);
+  return res.json({success:true});
+}));
+gameBridgeRoutes.get('/emojis',handle(async(_req,res)=>{
+  const emojis=await fs.readFile(emojiFile(),'utf8').then(text=>emojiSchema.parse(JSON.parse(text))).catch(()=>[]);
+  return res.json({emojis});
+}));
 const snowflake = z.string().regex(/^\d{17,20}$/);
 const image = z.string().max(2048).url().refine(value => {
   const url = new URL(value);
@@ -43,21 +58,31 @@ gameBridgeRoutes.post('/events', handle(async (req, res) => {
   const input = z.object({ events: z.array(eventSchema).min(1).max(50) }).strict().safeParse(req.body);
   if (!input.success) return res.status(400).json({ error: 'Invalid Minecraft chat events' });
   const rejected: string[] = [];
+  const unresolved: {uuid:string;names:string[]}[]=[];
   for (const event of input.data.events) {
     const owner = await dbGet<User>('SELECT uuid,mc_username,discord_id FROM users WHERE LOWER(uuid)=LOWER(?)', [event.uuid]);
     // A renamed/deleted account must not pin unrelated players behind its stale event.
     if (!owner || owner.mc_username.toLowerCase() !== event.username.toLowerCase()) { rejected.push(event.eventId); continue; }
-    const mentions = await mentionsByName(event.mentions);
+    const names=[...new Set([...event.mentions,...[...event.text.matchAll(/(?<![A-Za-z0-9_])@([A-Za-z0-9_]{3,16})(?![A-Za-z0-9_])/g)].map(m=>m[1])])].slice(0,10);
+    const mentions = await mentionsByName(names);
+    const missing=names.filter(name=>!mentions.some(u=>u.mc_username.toLowerCase()===name.toLowerCase()));
+    if(event.scope==='global'&&missing.length)unresolved.push({uuid:owner.uuid,names:missing});
     await dbRun(`INSERT OR IGNORE INTO game_chat_events(event_id,direction,scope,uuid,username,message,mentions_json,discord_id,created_at)
       VALUES(?,'minecraft',?,?,?,?,?,?,?)`, [event.eventId,event.scope,owner.uuid,owner.mc_username,clean(event.text),JSON.stringify(mentions.map(u => ({ uuid:u.uuid, name:u.mc_username, discordId:u.discord_id }))),owner.discord_id,Date.now()]);
   }
-  await prune(); return res.json({ success: true, rejected });
+  await prune(); return res.json({ success: true, rejected,unresolved });
 }));
 botChatRoutes.get('/events', handle(async (_req, res) => {
   await prune();
   const rows = await dbAll<any>("SELECT * FROM game_chat_events WHERE direction='minecraft' AND acked=0 ORDER BY id LIMIT 50");
-  return res.json({ events: rows.map(row => ({ id:row.id,scope:row.scope,uuid:row.uuid,username:row.username,text:row.message,
-    mentions:JSON.parse(row.mentions_json),avatarUrl:`https://api.quiby.me/api/skins/head/${row.uuid.replace(/-/g,'')}.png` })) });
+  const revisions=new Map<string,Promise<string>>();
+  return res.json({ events: await Promise.all(rows.map(async row => {
+    const id=row.uuid.replace(/-/g,'').toLowerCase();
+    if(!revisions.has(id))revisions.set(id,fs.readFile(path.join(config.storagePath,'skins',id+'.png'))
+      .then(bytes=>createHash('sha256').update(bytes).digest('hex')).catch(()=> 'default'));
+    return {id:row.id,scope:row.scope,uuid:row.uuid,username:row.username,text:row.message,
+      mentions:JSON.parse(row.mentions_json),avatarUrl:`https://api.quiby.me/api/skins/head/${id}.png?v=${await revisions.get(id)}`};
+  })) });
 }));
 botChatRoutes.post('/events/:id/ack', handle(async (req, res) => {
   if (!/^\d{1,15}$/.test(req.params.id)) return res.sendStatus(400);
