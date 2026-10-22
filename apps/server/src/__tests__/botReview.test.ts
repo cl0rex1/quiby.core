@@ -6,7 +6,7 @@ import path from 'node:path';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { createHash } from 'crypto';
-import { REVIEW_FILE_LIMIT_BYTES } from '@quiby/shared';
+import { REVIEW_FILE_LIMIT_BYTES, MINIMUM_LAUNCHER_VERSION } from '@quiby/shared';
 
 // Dedicated database: these checks never mutate the developer's player/mod tables.
 test('bot API authenticates, attributes requests and atomically applies idempotent decisions', async () => {
@@ -91,8 +91,8 @@ test('bot API authenticates, attributes requests and atomically applies idempote
     }
     await dbRun('DELETE FROM mod_whitelist_requests WHERE id=?', [packId]);
     assert.equal((await request('/api/auth/dev-login', { method: 'POST' })).status, 404);
-    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${oldDevToken}`, 'x-quiby-launcher-version': '1.1.1' } })).status, 401);
-    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${legacyToken}`, 'x-quiby-launcher-version': '1.1.1' } })).status, 401);
+    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${oldDevToken}`, 'x-quiby-launcher-version': MINIMUM_LAUNCHER_VERSION } })).status, 401);
+    assert.equal((await request('/api/auth/me', { headers: { Authorization: `Bearer ${legacyToken}`, 'x-quiby-launcher-version': MINIMUM_LAUNCHER_VERSION } })).status, 401);
     assert.equal((await request('/api/auth/bind-mc', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

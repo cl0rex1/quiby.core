@@ -122,6 +122,14 @@ def prepare(pack, data):
         value = json.loads(target.read_text(encoding="utf-8-sig")) if target.exists() else {}
         value.update(values)
         write(target.relative_to(data), (json.dumps(value, indent=2) + "\n").encode())
+    for filename, values in policy.get("properties", {}).items():
+        target = safe_path(data, pathlib.Path("config") / filename)
+        text = target.read_text(encoding="utf-8-sig") if target.exists() else ""
+        for key, value in values.items():
+            pattern = re.compile(r"^" + re.escape(key) + r"\s*[=:].*$", re.MULTILINE)
+            line = key + "=" + str(value)
+            text = pattern.sub(lambda _: line, text) if pattern.search(text) else text.rstrip() + "\n" + line + "\n"
+        write(target.relative_to(data), text.encode("utf-8"))
     if not (data / "eula.txt").exists():
         write(pathlib.Path("eula.txt"), b"# https://aka.ms/MinecraftEULA\neula=false\n")
     print("Quiby configuration: " + (", ".join(changed) if changed else "already up to date"))

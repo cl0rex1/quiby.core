@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import net from 'node:net';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { minecraftPing, preferDirect, prepareDirectRoute } from '../directRoute';
 
 test('route selection rejects jitter, failed probes and marginal improvements', () => {
@@ -28,7 +31,11 @@ test('Minecraft probes wait for a matching pong and bound stalled responses', as
     assert.ok(await minecraftPing('127.0.0.1', port) > 0);
     mode = 'bad'; await assert.rejects(minecraftPing('127.0.0.1', port), /Invalid pong/);
     mode = 'stall'; await assert.rejects(minecraftPing('127.0.0.1', port, 50), /timeout/);
-    const route = await prepareDirectRoute('http://127.0.0.1:1', 'fake', '1.1.0', '', 'play.quiby.me:25565', () => {});
-    assert.equal(route.address, 'play.quiby.me:25565'); route.close();
+    const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'quiby-route-test-'));
+    try {
+      const route = await prepareDirectRoute('http://127.0.0.1:1', 'fake', '1.1.0', directory, 'play.quiby.me:25565', () => {});
+      assert.equal(route.address, 'play.quiby.me:25565'); route.close();
+      if (process.platform === 'win32') assert.equal(JSON.parse(await fs.readFile(path.join(directory, 'direct/latest-route.json'), 'utf8')).stage, 'API');
+    } finally { await fs.rm(directory, { recursive: true, force: true }); }
   } finally { for (const peer of peers) peer.destroy(); await new Promise<void>(resolve => server.close(() => resolve())); }
 });

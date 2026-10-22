@@ -60,6 +60,8 @@ class ServerPackTests(unittest.TestCase):
             (world / 'quiby-server.toml').write_text('[ragdoll]\nminDamage = 1.0\ncustom = 42\n')
             (data / 'config/explosionoverhaul').mkdir(parents=True)
             (data / 'config/explosionoverhaul/ExplosionSourceBlacklist.json').write_text('{"other:source":"CUSTOM"}')
+            (data / 'config/voicechat').mkdir()
+            (data / 'config/voicechat/voicechat-server.properties').write_text('# voice\nvoice_host=\nmax_voice_distance=64.0\n')
             with contextlib.redirect_stdout(io.StringIO()):
                 prepare.prepare(pack, data)
             result = tomllib.loads((world / 'quiby-server.toml').read_text())
@@ -67,6 +69,7 @@ class ServerPackTests(unittest.TestCase):
             self.assertEqual(result['ragdoll']['custom'], 42)
             self.assertEqual(json.loads((data / 'config/explosionoverhaul/ExplosionSourceBlacklist.json').read_text())['other:source'], 'CUSTOM')
             self.assertIn('online-mode=true', (data / 'server.properties').read_text())
+            self.assertEqual((data / 'config/voicechat/voicechat-server.properties').read_text(), '# voice\nvoice_host=play.quiby.me:24454\nmax_voice_distance=64.0\n')
             self.assertEqual((data / 'eula.txt').read_text().splitlines()[-1], 'eula=false')
             backups = list((data / 'quiby-backups').iterdir())
             with contextlib.redirect_stdout(io.StringIO()):

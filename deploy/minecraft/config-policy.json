@@ -1,4 +1,7 @@
 {
+  "properties": {
+    "voicechat/voicechat-server.properties": { "voice_host": "play.quiby.me:24454" }
+  },
   "toml": {
     "quiby-community-server.toml": {
       "": { "scheduledRestarts": true, "localChatRadius": 100, "impactDamageThreshold": 8.0 }

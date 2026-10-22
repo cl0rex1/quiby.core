@@ -68,7 +68,7 @@ async function bootstrap() {
     res.json({
       status: 'ok',
       service: 'quiby.core backend server',
-      version: '1.1.1',
+      version: require('../package.json').version,
       minimumLauncherVersion: MINIMUM_LAUNCHER_VERSION,
       time: new Date().toISOString(),
     });

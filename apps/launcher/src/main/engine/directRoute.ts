@@ -100,16 +100,22 @@ export async function prepareDirectRoute(base: string, token: string, version: s
   const fallback = { address: normalAddress, close: () => {} };
   if (process.platform !== 'win32' || !normalAddress) return fallback;
   let close = () => {};
+  let stage = 'API';
+  const report = async (result: Record<string, unknown>) => {
+    const folder = path.join(directory, 'direct'); await fs.mkdir(folder, { recursive: true });
+    await fs.writeFile(path.join(folder, 'latest-route.json'), JSON.stringify({ at: new Date().toISOString(), ...result }, null, 2)).catch(() => {});
+  };
   try {
     const response = await fetch(`${base.replace(/\/$/, '')}/api/direct/config`, {
       headers: { Authorization: `Bearer ${token}`, 'x-quiby-launcher-version': version }, signal: AbortSignal.timeout(5000),
     });
-    if (!response.ok) return fallback;
+    if (!response.ok) { log(`Direct: API отклонил проверку (${response.status}). Используем обычный маршрут.`); await report({ reason: 'api', status: response.status }); return fallback; }
     const c = await response.json();
-    if (!c.enabled) return fallback;
+    if (!c.enabled) { log('Direct отключён на сервере. Используем обычный маршрут.'); await report({ reason: 'disabled' }); return fallback; }
     if (typeof c.server !== 'string' || !/^[a-zA-Z0-9.-]{1,253}$/.test(c.server) || !Number.isInteger(c.port) || c.port < 1 || c.port > 65535
       || typeof c.ca !== 'string' || c.ca.length > 8192 || !c.ca.startsWith('-----BEGIN CERTIFICATE-----')
       || c.user !== 'quiby-player' || typeof c.ticket !== 'string' || c.ticket.length > 4096) return fallback;
+    stage = 'frpc';
     const binary = await executable(path.join(directory, 'direct'));
     const run = await fs.mkdtemp(path.join(directory, 'direct/session-'));
     close = () => { void fs.rm(run, { recursive: true, force: true }).catch(() => {}); };
@@ -124,7 +130,7 @@ export async function prepareDirectRoute(base: string, token: string, version: s
       log: { level: 'error', to: path.join(run, 'frpc.log'), maxDays: 1 },
       visitors: [{ ...visitor, name: 'relay', type: 'stcp', serverName: 'minecraft-relay', bindPort: -1 },
         { ...visitor, name: 'direct', type: 'xtcp', serverName: 'minecraft-direct', bindPort: port,
-          fallbackTo: 'relay', fallbackTimeoutMs: 2500, keepTunnelOpen: true, minRetryInterval: 30, maxRetriesAnHour: 30 }],
+          fallbackTo: 'relay', fallbackTimeoutMs: 20000, keepTunnelOpen: true, minRetryInterval: 30, maxRetriesAnHour: 30 }],
     }), { mode: 0o600 });
     const child = spawn(binary, ['-c', path.join(run, 'frpc.json')], { cwd: run, windowsHide: true, stdio: 'ignore' });
     let stopped = false;
@@ -139,12 +145,20 @@ export async function prepareDirectRoute(base: string, token: string, version: s
       for (let i = 0; i < 5; i++) { try { values.push(await minecraftPing(h, p)); } catch { return []; } }
       return values;
     };
-    log('Проверяем прямой и обычный маршруты…');
-    // Warm NAT punching before collecting the five comparable samples.
-    await minecraftPing('127.0.0.1', port, 6000).catch(() => {});
+    stage = 'NAT';
+    log('Проверяем direct: создаём соединение между игроком и сервером (до 20 сек.)…');
+    // A 2.5-second STCP fallback used to finish the check before NAT punching
+    // could succeed. A probe shorter than fallback only accepts the direct path.
+    try { await minecraftPing('127.0.0.1', port, 19000); }
+    catch { close(); await report({ reason: 'nat-timeout' }); log('Direct не прошёл через NAT. Используем обычный маршрут.'); return fallback; }
+    stage = 'ping';
     const [normal, direct] = await Promise.all([samples(host, Number(rawPort || 25565)), samples('127.0.0.1', port)]);
-    if (stopped || !preferDirect(normal, direct)) { close(); log('Обычный маршрут стабильнее — подключаемся через него.'); return fallback; }
+    const selected = !stopped && preferDirect(normal, direct);
+    await report({ reason: selected ? 'direct' : 'quality', normal, direct });
+    const median = (values: number[]) => values.length === 5 ? `${Math.round([...values].sort((a, b) => a - b)[2])} мс` : 'нет ответа';
+    log(`Маршруты: обычный — ${median(normal)}, direct — ${median(direct)}.`);
+    if (!selected) { close(); log('Обычный маршрут стабильнее — подключаемся через него.'); return fallback; }
     log('Туннель быстрее и стабилен — подключаемся автоматически.');
     return { address: `127.0.0.1:${port}`, close };
-  } catch { close(); log('Прямой маршрут недоступен — используем обычное подключение.'); return fallback; }
+  } catch { close(); await report({ reason: 'error', stage }).catch(() => {}); log(`Direct: проверка ${stage} не завершена. Используем обычное подключение.`); return fallback; }
 }

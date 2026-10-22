@@ -150,7 +150,6 @@ if (kind === 'pack') {
     if (error.code !== 'ENOENT') throw error;
     return 'Тестовая сборка лаунчера для Windows. Вход через Discord OAuth и подключение к https://api.quiby.me. Установщик пока не подписан.';
   });
-  const value = await release(`v${version}`, `quiby.core ${version.includes('-') ? 'Тестовый ' : ''}${version}`, notes, version.includes('-'));
   const releaseDir = path.join(root, 'apps/launcher/release');
   const names = [
     [`quiby.core-Setup-${version}.exe`, `quiby.core-Setup-${version}.exe`],
@@ -158,6 +157,12 @@ if (kind === 'pack') {
     [version.includes('-') ? 'beta.yml' : 'latest.yml', version.includes('-') ? 'beta.yml' : 'latest.yml'],
     ...(!version.includes('-') ? [['latest.yml', 'beta.yml']] : []),
   ];
+  for (const [sourceName] of names) await fs.access(path.join(releaseDir, sourceName));
+  if (process.argv.includes('--check')) {
+    console.log(`Validated launcher ${version}: ${names.length} release assets`);
+    process.exit(0);
+  }
+  const value = await release(`v${version}`, `quiby.core ${version.includes('-') ? 'Тестовый ' : ''}${version}`, notes, version.includes('-'));
   const existing = new Map((await listedAssets(value)).map(asset => [asset.name, asset]));
   for (const [sourceName, assetName] of names) {
     const bytes = await fs.readFile(path.join(releaseDir, sourceName));
