@@ -227,7 +227,7 @@
 		#Cave: A loud, reverberating sound when both player and explosion are in a cave.
 		enableCaveSounds = true
 		#If enabled, an ambient cave explosion will cause a visual dust effect to fall from the ceiling.
-		enableAmbientCaveDust = true
+		enableAmbientCaveDust = false
 
 #Settings for chunk scanning and block indexing system.
 #System detected: 32 CPU threads available

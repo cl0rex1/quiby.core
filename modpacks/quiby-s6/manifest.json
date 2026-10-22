@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.33",
+  "version": "6.1.34",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 285773688,
+  "totalSize": 285779504,
   "files": [
     {
       "path": "config/DistantHorizons.toml",
@@ -308,16 +308,16 @@
     },
     {
       "path": "config/explosionoverhaul/explosionoverhaul-client.toml",
-      "sha256": "a32e9d82e53398df4085151a172ea0265f8d9504dfa402a2b639dad0df8dd0a2",
-      "size": 6461,
-      "downloadUrl": "/api/modpack/files/imported/a32e9d82e53398df4085151a172ea0265f8d9504dfa402a2b639dad0df8dd0a2/explosionoverhaul-client.toml",
+      "sha256": "9265f578fdb4d05414b8ccc5dda5845d638c39fd47fd09094db4fdc43074f547",
+      "size": 6462,
+      "downloadUrl": "/api/modpack/files/imported/9265f578fdb4d05414b8ccc5dda5845d638c39fd47fd09094db4fdc43074f547/explosionoverhaul-client.toml",
       "action": "sync"
     },
     {
       "path": "config/explosionoverhaul/explosionoverhaul-common.toml",
-      "sha256": "c698b719808e314196dde34f458264e5da659083979237f0a137725136734ade",
-      "size": 10095,
-      "downloadUrl": "/api/modpack/files/imported/c698b719808e314196dde34f458264e5da659083979237f0a137725136734ade/explosionoverhaul-common.toml",
+      "sha256": "aa66445850cce32389ca369ecdbae85676e72a99227ae217e678eb059eda8dcd",
+      "size": 10096,
+      "downloadUrl": "/api/modpack/files/imported/aa66445850cce32389ca369ecdbae85676e72a99227ae217e678eb059eda8dcd/explosionoverhaul-common.toml",
       "action": "sync"
     },
     {
@@ -1597,10 +1597,10 @@
       "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
-      "path": "mods/quiby-1.21.1-1.1.26.jar",
-      "sha256": "9fe5d31b54243303c7ef97656b5179ff42ea30992e73122b3e529702e97234a0",
-      "size": 5277704,
-      "downloadUrl": "/api/modpack/files/imported/9fe5d31b54243303c7ef97656b5179ff42ea30992e73122b3e529702e97234a0/quiby-1.21.1-1.1.26.jar",
+      "path": "mods/quiby-1.21.1-1.1.27.jar",
+      "sha256": "6a8626a11f38ac3b30eb333fe0b3f25af066aa2a0047963b3e1cda9828f15a8b",
+      "size": 5283518,
+      "downloadUrl": "/api/modpack/files/imported/6a8626a11f38ac3b30eb333fe0b3f25af066aa2a0047963b3e1cda9828f15a8b/quiby-1.21.1-1.1.27.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1609,15 +1609,15 @@
       ],
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.1.26",
+      "modVersion": "1.1.27",
       "modDescription": "Локализация, скины, проверка входа, рецепты Create Radars и цепная детонация снарядов Create Big Cannons.",
       "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },
     {
-      "path": "mods/quiby-early-loading-1.21.1-1.1.26.jar",
+      "path": "mods/quiby-early-loading-1.21.1-1.1.27.jar",
       "sha256": "1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99",
       "size": 3036102,
-      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.26.jar",
+      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.27.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1626,7 +1626,7 @@
       ],
       "modId": "quiby_early_loading",
       "modName": "Quiby Early Loading",
-      "modVersion": "1.1.26",
+      "modVersion": "1.1.27",
       "modDescription": "Фирменная анимация на раннем экране NeoForge."
     },
     {
@@ -1874,7 +1874,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Музыкальное открытие: 15 секунд отсчёта, трек на отметке 12, ясный полдень при prepare и утро с включёнными циклами после открытия. После кольца снарядов — цепные спирали до 40 блоков и финальная корона фейерверков. Отмена восстанавливает время/погоду и останавливает музыку.",
+  "changelog": "Исправлены обход границы рэгдоллом и вылет Sable при взрыве по удалённому телу. Музыка открытия независима от фоновой музыки. Список серверов и повторный вход используют выбранный лаунчером маршрут. Отключены фоновая пещерная пыль и ветер Explosion Overhaul.",
   "serverAddress": "play.quiby.me:25565",
-  "updatedAt": "2026-10-22T16:32:57.797786Z"
+  "updatedAt": "2026-10-22T18:42:45.966238Z"
 }

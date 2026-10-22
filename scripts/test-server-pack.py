@@ -60,6 +60,7 @@ class ServerPackTests(unittest.TestCase):
             (world / 'quiby-server.toml').write_text('[ragdoll]\nminDamage = 1.0\ncustom = 42\n')
             (data / 'config/explosionoverhaul').mkdir(parents=True)
             (data / 'config/explosionoverhaul/ExplosionSourceBlacklist.json').write_text('{"other:source":"CUSTOM"}')
+            (data / 'config/explosionoverhaul/explosionoverhaul-common.toml').write_text('[Ambient.Sound_Types]\nenableAmbientCaveDust = true\n')
             (data / 'config/voicechat').mkdir()
             (data / 'config/voicechat/voicechat-server.properties').write_text('# voice\nvoice_host=\nmax_voice_distance=64.0\n')
             with contextlib.redirect_stdout(io.StringIO()):
@@ -68,6 +69,7 @@ class ServerPackTests(unittest.TestCase):
             self.assertEqual(result['ragdoll']['minDamage'], 9.0)
             self.assertEqual(result['ragdoll']['custom'], 42)
             self.assertEqual(json.loads((data / 'config/explosionoverhaul/ExplosionSourceBlacklist.json').read_text())['other:source'], 'CUSTOM')
+            self.assertFalse(tomllib.loads((data / 'config/explosionoverhaul/explosionoverhaul-common.toml').read_text())['Ambient']['Sound_Types']['enableAmbientCaveDust'])
             self.assertIn('online-mode=true', (data / 'server.properties').read_text())
             self.assertEqual((data / 'config/voicechat/voicechat-server.properties').read_text(), '# voice\nvoice_host=play.quiby.me:24454\nmax_voice_distance=64.0\n')
             self.assertEqual((data / 'eula.txt').read_text().splitlines()[-1], 'eula=false')

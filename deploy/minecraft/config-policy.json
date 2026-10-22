@@ -23,7 +23,8 @@
       "debug": { "debugLogging": false }
     },
     "explosionoverhaul/explosionoverhaul-common.toml": {
-      "General": { "enableExplosionClustering": false }
+      "General": { "enableExplosionClustering": false },
+      "Ambient.Sound_Types": { "enableAmbientCaveDust": false }
     }
   },
   "json": {
