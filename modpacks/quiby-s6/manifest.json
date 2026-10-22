@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.30",
+  "version": "6.1.31",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 285488820,
+  "totalSize": 285489835,
   "files": [
     {
       "path": "config/DistantHorizons.toml",
@@ -1597,10 +1597,10 @@
       "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
-      "path": "mods/quiby-1.21.1-1.1.23.jar",
-      "sha256": "65ee489e85e6ef3e6dbbff3a8d2c848792d42c88647d395f3c686a9ad5cc7d36",
-      "size": 4992836,
-      "downloadUrl": "/api/modpack/files/imported/65ee489e85e6ef3e6dbbff3a8d2c848792d42c88647d395f3c686a9ad5cc7d36/quiby-1.21.1-1.1.23.jar",
+      "path": "mods/quiby-1.21.1-1.1.24.jar",
+      "sha256": "94bb236452371be54ad3c2286a5ea7efc2b8fc3b3502bae4aa672bcdb0cc0a5d",
+      "size": 4993851,
+      "downloadUrl": "/api/modpack/files/imported/94bb236452371be54ad3c2286a5ea7efc2b8fc3b3502bae4aa672bcdb0cc0a5d/quiby-1.21.1-1.1.24.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1609,15 +1609,15 @@
       ],
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.1.23",
+      "modVersion": "1.1.24",
       "modDescription": "Локализация, скины, проверка входа, рецепты Create Radars и цепная детонация снарядов Create Big Cannons.",
       "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },
     {
-      "path": "mods/quiby-early-loading-1.21.1-1.1.23.jar",
+      "path": "mods/quiby-early-loading-1.21.1-1.1.24.jar",
       "sha256": "1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99",
       "size": 3036102,
-      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.23.jar",
+      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.24.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1626,7 +1626,7 @@
       ],
       "modId": "quiby_early_loading",
       "modName": "Quiby Early Loading",
-      "modVersion": "1.1.23",
+      "modVersion": "1.1.24",
       "modDescription": "Фирменная анимация на раннем экране NeoForge."
     },
     {
@@ -1874,7 +1874,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Добавлена операторская команда /quiby opening reset для повторного открытия сезона. Сброс сохраняется, не меняет границу и состояние игроков; возвращение оффлайн-участников учитывает результат их церемонии.",
+  "changelog": "Исправлены воздушные взрывы церемонии: видимые частицы CBC и звук, разлёт снарядов по дугам. Фейерверки выше на четыре блока, отсчёт озвучен. Операторы сохраняют режим и собственные эффекты.",
   "serverAddress": "play.quiby.me:25565",
-  "updatedAt": "2026-10-22T11:08:47.639214Z"
+  "updatedAt": "2026-10-22T11:27:35.280181Z"
 }
