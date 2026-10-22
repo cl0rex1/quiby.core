@@ -127,10 +127,10 @@ export async function prepareDirectRoute(base: string, token: string, version: s
     await fs.writeFile(path.join(run, 'frpc.json'), JSON.stringify({ serverAddr: c.server, serverPort: c.port, user: c.user,
       metadatas: { ticket: c.ticket }, natHoleStunServer: 'stun.easyvoip.com:3478', loginFailExit: true,
       transport: { tcpMux: false, tls: { enable: true, serverName: 'quiby-direct', trustedCaFile: caFile }, heartbeatInterval: 15, heartbeatTimeout: 45 },
-      log: { level: 'error', to: path.join(run, 'frpc.log'), maxDays: 1 },
+      log: { level: 'warn', to: path.join(run, 'frpc.log'), maxDays: 1 },
       visitors: [{ ...visitor, name: 'relay', type: 'stcp', serverName: 'minecraft-relay', bindPort: -1 },
         { ...visitor, name: 'direct', type: 'xtcp', serverName: 'minecraft-direct', bindPort: port,
-          fallbackTo: 'relay', fallbackTimeoutMs: 20000, keepTunnelOpen: true, minRetryInterval: 30, maxRetriesAnHour: 30 }],
+          fallbackTo: 'relay', fallbackTimeoutMs: 35000, keepTunnelOpen: true, minRetryInterval: 5, maxRetriesAnHour: 120 }],
     }), { mode: 0o600 });
     const child = spawn(binary, ['-c', path.join(run, 'frpc.json')], { cwd: run, windowsHide: true, stdio: 'ignore' });
     let stopped = false;
@@ -146,11 +146,16 @@ export async function prepareDirectRoute(base: string, token: string, version: s
       return values;
     };
     stage = 'NAT';
-    log('Проверяем direct: создаём соединение между игроком и сервером (до 20 сек.)…');
+    log('Проверяем direct: создаём соединение между игроком и сервером (до 35 сек.)…');
     // A 2.5-second STCP fallback used to finish the check before NAT punching
     // could succeed. A probe shorter than fallback only accepts the direct path.
-    try { await minecraftPing('127.0.0.1', port, 19000); }
-    catch { close(); await report({ reason: 'nat-timeout' }); log('Direct не прошёл через NAT. Используем обычный маршрут.'); return fallback; }
+    try { await minecraftPing('127.0.0.1', port, 34000); }
+    catch {
+      const details = await fs.readFile(path.join(run, 'frpc.log'), 'utf8').then(text => text.split('\n')
+        .filter(line => /stun|nathole|login.*fail|timeout|refused/i.test(line))
+        .slice(-3).map(line => line.replace(/eyJ[A-Za-z0-9_.-]+/g, '[redacted]'))).catch(() => []);
+      close(); await report({ reason: 'nat-timeout', details }); log('Direct не прошёл через NAT. Используем обычный маршрут.'); return fallback;
+    }
     stage = 'ping';
     const [normal, direct] = await Promise.all([samples(host, Number(rawPort || 25565)), samples('127.0.0.1', port)]);
     const selected = !stopped && preferDirect(normal, direct);
