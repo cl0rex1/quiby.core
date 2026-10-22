@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "dist:win": "npm run build && electron-builder --win nsis --x64",
+    "dist:linux": "npm run build && electron-builder --linux dir --x64 --publish never -c.directories.output=release/linux && python ../../scripts/package-linux.py",
     "release:github": "npm run dist:win && node ../../scripts/publish-github-release.mjs launcher",
     "preview": "vite preview",
     "start": "electron .",
@@ -43,6 +44,11 @@
     "win": {
       "icon": "src/renderer/src/assets/quiby_q_logo.png",
       "target": "nsis"
+    },
+    "linux": {
+      "executableName": "quiby-core",
+      "category": "Game",
+      "icon": "src/renderer/src/assets/quiby_q_logo.png"
     },
     "nsis": {
       "oneClick": false,
