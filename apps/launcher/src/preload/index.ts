@@ -4,6 +4,7 @@ import type { ModpackManifest } from '@quiby/shared';
 import type { UpdateState } from '../main/updates';
 import type { NotificationItem } from '../renderer/src/utils/notifications';
 import type { ResourcePackItem } from '../main/engine/resourcePackCatalog';
+import type { DirectRouteReport } from '../shared/directDiagnostics';
 
 export const quibyApi = {
   selectBackground: (): Promise<string | null> => ipcRenderer.invoke('background:select'),
@@ -26,6 +27,8 @@ export const quibyApi = {
   close: () => ipcRenderer.invoke('window:close'),
 
   // Settings
+  getNetworkReport: (): Promise<DirectRouteReport | null> => ipcRenderer.invoke('network:report'),
+  checkNetwork: (token: string): Promise<DirectRouteReport | null> => ipcRenderer.invoke('network:check', token),
   getSettings: (): Promise<LauncherSettings> => ipcRenderer.invoke('settings:get'),
   saveSettings: (settings: LauncherSettings): Promise<boolean> => ipcRenderer.invoke('settings:save', settings),
   loadNotifications: (): Promise<NotificationItem[]> => ipcRenderer.invoke('notifications:load'),

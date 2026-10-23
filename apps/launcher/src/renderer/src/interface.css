@@ -141,3 +141,10 @@
   .settings-update-card > .ui-button { align-self: flex-start; }
   .page-caption { display: none; }
 }
+/* Network diagnostics share the settings card layout. */
+.network-results { margin: 20px 0; }
+.network-results > div { display: flex; justify-content: space-between; gap: 20px; padding: 12px 0; border-bottom: 1px solid var(--border, #29292d); }
+.network-results dt { font-weight: 600; }
+.network-results dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.network-results small { display: block; margin-top: 4px; color: var(--text-muted, #a1a1aa); font-size: 11px; overflow-wrap: anywhere; }
+.network-actions { display: flex; flex-wrap: wrap; gap: 8px; }

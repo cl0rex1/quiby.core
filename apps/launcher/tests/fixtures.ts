@@ -43,6 +43,8 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
       const manifest = { id: 'fixture', name: 'quiby. S6', version: '6.0.0', gameVersion: '1.21.1', loader: { type: 'neoforge', version: '21.1.65' }, javaVersion: 21, recommendedRamMb: 8192, minRamMb: 4096, files: [], totalSize: 0, serverAddress: 'localhost', updatedAt: new Date().toISOString(), changelog: '' };
       const methods: Record<string, (...args: any[]) => any> = {
         getSettings: () => ({ ...settings }), saveSettings: value => { settings = value; localStorage.setItem('fixture-settings', JSON.stringify(value)); return true; },
+        getNetworkReport: () => JSON.parse(localStorage.getItem('fixture-network-report') || 'null'),
+        checkNetwork: () => JSON.parse(localStorage.getItem('fixture-network-report') || 'null'),
         selectBackground: () => '12345678-1234-1234-1234-123456789abc.gif',
         loadNotifications: () => JSON.parse(localStorage.getItem('fixture-notifications') || JSON.stringify(notifications)), saveNotifications: value => { notifications = value; localStorage.setItem('fixture-notifications', JSON.stringify(value)); },
         getLaunchState: () => ({ status: localStorage.getItem('fixture-running') ? 'running' : 'idle' }),

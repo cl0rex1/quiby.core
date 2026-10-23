@@ -75,10 +75,25 @@ if (kind === 'pack') {
   }
   const assetBase = `https://github.com/${owner}/${repo}/releases/download/${tag}/`;
   const reuseTag = process.argv.find(arg => arg.startsWith('--reuse-assets-from='))?.split('=')[1];
-  const reusedAssets = reuseTag
-    ? new Set((await listedAssets(await publishedRelease(reuseTag))).map(asset => asset.name))
-    : new Set();
   const reusedBase = reuseTag ? `https://github.com/${owner}/${repo}/releases/download/${reuseTag}/` : '';
+  const reusedAssets = new Map();
+  if (reuseTag) {
+    const assets = await listedAssets(await publishedRelease(reuseTag));
+    for (const asset of assets) reusedAssets.set(asset.name, reusedBase + asset.name);
+    // The previous manifest may already reference unchanged assets from older releases.
+    // Preserve those exact public hash URLs instead of uploading the whole pack again.
+    if (assets.some(asset => asset.name === 'manifest.json')) {
+      const response = await fetch(reusedBase + 'manifest.json');
+      if (!response.ok) throw new Error(`Cannot read reused manifest: ${response.status}`);
+      const previous = await response.json();
+      if (previous.version !== reuseTag.replace(/^v/, '') || !Array.isArray(previous.files)) throw new Error('Invalid reused manifest');
+      for (const file of previous.files) for (const url of [file.downloadUrl, file.modIconUrl]) {
+        if (typeof url !== 'string' || !url.startsWith(`https://github.com/${owner}/${repo}/releases/download/`)) continue;
+        const filename = url.slice(url.lastIndexOf('/') + 1);
+        if (/^[a-f0-9]{64}\.[a-z0-9]+$/.test(filename)) reusedAssets.set(filename, url);
+      }
+    }
+  }
   const payloads = new Map();
   const addAsset = async (url, expectedHash) => {
     if (url.startsWith('https://cdn.modrinth.com/')) {
@@ -98,7 +113,7 @@ if (kind === 'pack') {
     if (expectedHash && expectedHash !== hash) throw new Error(`Hash mismatch: ${relative}`);
     const extension = path.extname(sourcePath).toLowerCase();
     const filename = `${hash}${extension}`;
-    if (reusedAssets.has(filename)) return reusedBase + filename;
+    if (reusedAssets.has(filename)) return reusedAssets.get(filename);
     payloads.set(filename, sourcePath);
     return assetBase + filename;
   };
@@ -113,6 +128,11 @@ if (kind === 'pack') {
     payloads.set(path.basename(archive), archive);
   }
   const serverPack = process.argv.find(arg => arg.startsWith('--server-pack='))?.slice('--server-pack='.length);
+  for (const argument of process.argv.filter(arg => arg.startsWith('--extra-file='))) {
+    const filename = path.resolve(argument.slice('--extra-file='.length));
+    await fs.access(filename);
+    payloads.set(path.basename(filename), filename);
+  }
   if (serverPack) {
     const archive = path.resolve(serverPack);
     const checksumPath = archive + '.sha256';

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import runtime from '../../../direct-runtime.json';
+import type { DirectRouteReport } from '../../shared/directDiagnostics';
 
 const hash = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 const integer = (n: number) => { const bytes: number[] = []; do { const b = n & 127; n >>>= 7; bytes.push(b | (n ? 128 : 0)); } while (n); return Buffer.from(bytes); };
@@ -19,10 +20,10 @@ function varint(bytes: Buffer, offset: number): [number, number] | undefined {
   throw new Error('Invalid VarInt');
 }
 
-/** Measures the actual Minecraft status ping/pong, including tunnel setup. */
+/** Measures Minecraft ping/pong RTT after the connection and status handshake. */
 export function minecraftPing(host: string, port: number, timeout = 4000): Promise<number> {
   return new Promise((resolve, reject) => {
-    const start = performance.now();
+    let start = 0;
     const socket = net.createConnection({ host, port });
     let buffer = Buffer.alloc(0), status = false, settled = false;
     const nonce = Buffer.alloc(8); nonce.writeBigInt64BE(BigInt(Date.now()));
@@ -46,7 +47,7 @@ export function minecraftPing(host: string, port: number, timeout = 4000): Promi
             const length = varint(data, 1);
             if (data[0] !== 0 || !length || length[0] !== data.length - length[1]
               || !JSON.parse(data.subarray(length[1]).toString()).version) throw new Error('Invalid status');
-            status = true; socket.write(packet(Buffer.concat([Buffer.from([1]), nonce])));
+            status = true; start = performance.now(); socket.write(packet(Buffer.concat([Buffer.from([1]), nonce])));
           } else {
             if (data.length !== 9 || data[0] !== 1 || !data.subarray(1).equals(nonce)) throw new Error('Invalid pong');
             finish(); return;
@@ -55,6 +56,20 @@ export function minecraftPing(host: string, port: number, timeout = 4000): Promi
       } catch (error) { finish(error as Error); }
     });
   });
+}
+
+/** A refused socket during frpc login is not a failed NAT traversal. */
+export async function waitForMinecraft(host: string, port: number, timeout: number, stopped = () => false): Promise<void> {
+  const deadline = performance.now() + timeout;
+  let failure = new Error('Minecraft readiness timeout');
+  while (performance.now() < deadline) {
+    if (stopped()) throw new Error('frpc stopped');
+    try { await minecraftPing(host, port, Math.max(1, deadline - performance.now())); return; }
+    catch (error) { failure = error as Error; }
+    const pause = Math.min(250, deadline - performance.now());
+    if (pause > 0) await new Promise(resolve => setTimeout(resolve, pause));
+  }
+  throw failure;
 }
 
 export function preferDirect(normal: number[], direct: number[]): boolean {
@@ -85,15 +100,30 @@ export function directError(error: unknown): { code?: string; message: string } 
   return { ...(code ? { code } : {}), message: (value.message + cause).replace(/eyJ[A-Za-z0-9_.-]+/g, '[redacted]').slice(0, 600) };
 }
 
+export async function readDirectReport(directory: string): Promise<DirectRouteReport | null> {
+  const file = path.join(directory, 'direct/latest-route.json');
+  try {
+    if ((await fs.stat(file)).size > 65536) throw new Error('Отчёт сети слишком большой.');
+    const report = JSON.parse(await fs.readFile(file, 'utf8'));
+    if (!report || typeof report.at !== 'string' || !Number.isFinite(Date.parse(report.at)) || typeof report.reason !== 'string'
+      || ['normal','relay','direct','kcp'].some(key => report[key] !== undefined && (!Array.isArray(report[key])
+        || report[key].length > 5 || report[key].some((n: unknown) => typeof n !== 'number' || !Number.isFinite(n) || n < 0)))) {
+      throw new Error('Отчёт сети повреждён. Запустите проверку ещё раз.');
+    }
+    return report;
+  } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null; throw error; }
+}
+
 export async function prepareDirectRoute(base: string, token: string, version: string, directory: string,
-  normalAddress: string, log: (message: string) => void): Promise<{ address: string; close: () => void }> {
+  normalAddress: string, log: (message: string) => void, source: 'launch' | 'diagnostic' = 'launch'): Promise<{ address: string; close: () => void }> {
   const fallback = { address: normalAddress, close: () => {} };
   if (process.platform !== 'win32' || !normalAddress) return fallback;
   let close = () => {};
   let stage = 'API';
   const report = async (result: Record<string, unknown>) => {
     const folder = path.join(directory, 'direct'); await fs.mkdir(folder, { recursive: true });
-    await fs.writeFile(path.join(folder, 'latest-route.json'), JSON.stringify({ at: new Date().toISOString(), ...result }, null, 2)).catch(() => {});
+    await fs.writeFile(path.join(folder, 'latest-route.json'), JSON.stringify({ at: new Date().toISOString(), schema: 2,
+      launcherVersion: version, measurement: 'minecraft-pong-rtt', source, ...result }, null, 2)).catch(() => {});
   };
   try {
     const response = await fetch(`${base.replace(/\/$/, '')}/api/direct/config`, {
@@ -148,19 +178,29 @@ export async function prepareDirectRoute(base: string, token: string, version: s
     await new Promise(resolve => setTimeout(resolve, 750));
     if (stopped) throw new Error(`frpc завершился при запуске: код ${child.exitCode}, сигнал ${child.signalCode || 'нет'}`);
     const [host, rawPort] = normalAddress.split(':');
-    const samples = async (h: string, p: number) => {
+    const samples = async (h: string, p: number, deadline = performance.now() + 20000) => {
       const values: number[] = [];
-      for (let i = 0; i < 5; i++) { try { values.push(await minecraftPing(h, p)); } catch { return []; } }
+      for (let i = 0; i < 5; i++) {
+        const remaining = deadline - performance.now();
+        if (remaining <= 0) throw new Error('Minecraft sampling timeout');
+        values.push(await minecraftPing(h, p, Math.min(4000, remaining)));
+      }
       return values;
     };
     stage = 'NAT';
     log('Сравниваем обычный маршрут, relay и direct (QUIC / KCP, до 35 сек.)…');
     // Dedicated ports have no implicit fallback: a relay can never be reported as direct.
-    const natSamples=async(p:number)=>{
-      try{await minecraftPing('127.0.0.1',p,34000);return samples('127.0.0.1',p);}catch{return [];}
+    const probeErrors: Record<string, ReturnType<typeof directError>> = {};
+    const tunnelSamples=async(name:string,p:number)=>{
+      const deadline=performance.now()+34000;
+      try {
+        await waitForMinecraft('127.0.0.1',p,deadline-performance.now(),()=>stopped);
+        return await samples('127.0.0.1',p,deadline);
+      } catch(error) { probeErrors[name]=directError(error); return []; }
     };
     const [normal,relay,direct,kcp]=await Promise.all([
-      samples(host,Number(rawPort||25565)),samples('127.0.0.1',relayPort),natSamples(port),natSamples(kcpPort),
+      samples(host,Number(rawPort||25565)).catch(error=>{probeErrors.normal=directError(error);return [];}),
+      tunnelSamples('relay',relayPort),tunnelSamples('direct',port),tunnelSamples('kcp',kcpPort),
     ]);
     stage = 'ping';
     let selected={name:'normal',port:0,values:normal};
@@ -169,11 +209,17 @@ export async function prepareDirectRoute(base: string, token: string, version: s
     const details=await fs.readFile(path.join(run,'frpc.log'),'utf8').then(text=>text.split('\n')
       .filter(line=>/stun|nat.?hole|make hole|login|timeout|refused|error/i.test(line)).slice(-12)
       .map(line=>line.replace(/eyJ[A-Za-z0-9_.-]+/g,'[redacted]'))).catch(()=>[]);
-    await report({ reason: selected.name==='normal'?(!direct.length&&!kcp.length?'nat-timeout':'quality'):selected.name,
-      normal,relay,direct,kcp,details });
+    await report({ reason: selected.name==='normal'?(!relay.length&&!direct.length&&!kcp.length?'tunnel-unavailable':'quality'):selected.name,
+      normal,relay,direct,kcp,probeErrors,details });
     const median = (values: number[]) => values.length === 5 ? `${Math.round([...values].sort((a, b) => a - b)[2])} мс` : 'нет ответа';
     log(`Маршруты: обычный — ${median(normal)}, relay — ${median(relay)}, direct QUIC — ${median(direct)}, direct KCP — ${median(kcp)}.`);
-    if(selected.name==='normal'){close();log('Обычный маршрут выбран по задержке и стабильности.');return fallback;}
+    if(selected.name==='normal'){
+      close();
+      log(!relay.length&&!direct.length&&!kcp.length
+        ? 'Туннели не ответили за время проверки. Используем обычный маршрут; причины сохранены в latest-route.json.'
+        : 'Обычный маршрут выбран по задержке и стабильности.');
+      return fallback;
+    }
     log(`Выбран ${selected.name}: быстрее и стабилен. Relay проходит через VPS; direct соединяет игрока с сервером.`);
     return { address: `127.0.0.1:${selected.port}`, close };
   } catch (error) { close(); const details = directError(error); await report({ reason: 'error', stage, error: details }).catch(() => {}); log(`Direct: ${stage} — ${details.message}. Используем обычное подключение.`); return fallback; }

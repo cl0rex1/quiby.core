@@ -17,7 +17,15 @@ test('direct tickets restrict proxy publishing and recheck current player access
   process.env.DIRECT_SERVER = '185.146.157.76'; process.env.DIRECT_CA = 'test-ca'; process.env.DIRECT_PROVIDER_KEY = 'p'.repeat(64);
   const { config } = await import('../config');
   const { initDatabase, dbRun, closeDatabase } = await import('../models/db'); await initDatabase();
-  const app = express(); app.use(express.json()); app.use('/api/direct', (await import('../routes/direct')).default);
+  let loginDelay = 0, delayedLogins = 0;
+  const app = express(); app.use(express.json());
+  app.use('/api/direct/authorize', async (req, _res, next) => {
+    if (loginDelay && req.query.op === 'Login' && req.body.content?.user === 'quiby-player') {
+      delayedLogins++; await new Promise(resolve => setTimeout(resolve, loginDelay));
+    }
+    next();
+  });
+  app.use('/api/direct', (await import('../routes/direct')).default);
   const { requireAuth } = await import('../middleware/auth'); app.get('/protected', requireAuth, (_req, res) => res.sendStatus(204));
   const server = app.listen(0, '127.0.0.1'); await new Promise<void>(resolve => server.once('listening', resolve));
   const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
@@ -41,7 +49,10 @@ test('direct tickets restrict proxy publishing and recheck current player access
     assert.equal(await authorize('Login', provider), false);
     assert.equal(await authorize('NewProxy', { user: provider, proxy_type: 'xtcp', proxy_name: 'quiby-host.minecraft-direct' }), false);
     assert.equal(await authorize('NewProxy', { user: provider, proxy_type: 'tcp', proxy_name: 'quiby-host.minecraft-direct' }), true);
-    if (process.env.QUIBY_FRP_TEST_DIR) await checkFrp(directory, base, c, provider.metas.providerKey);
+    if (process.env.QUIBY_FRP_TEST_DIR) {
+      await checkFrp(directory, base, c, provider.metas.providerKey, () => { loginDelay = 1800; });
+      if (process.platform === 'win32') assert.ok(delayedLogins > 0, 'launcher regression did not delay frpc Login');
+    }
     assert.equal((await fetch(base + '/protected', { headers: { Authorization: `Bearer ${c.ticket}` } })).status, 401);
     await dbRun('UPDATE users SET is_whitelisted=0 WHERE discord_id=?', [id]);
     assert.equal(await authorize('Ping', { user }), true);
@@ -55,7 +66,7 @@ test('direct tickets restrict proxy publishing and recheck current player access
   } finally { await new Promise<void>(resolve => server.close(() => resolve())); await closeDatabase(); await fs.rm(directory, { recursive: true, force: true }); }
 });
 
-async function checkFrp(directory: string, api: string, visitor: { user: string; ticket: string }, providerKey: string) {
+async function checkFrp(directory: string, api: string, visitor: { user: string; ticket: string }, providerKey: string, delayLauncherLogin: () => void) {
   const binaries = path.resolve(process.env.QUIBY_FRP_TEST_DIR!);
   const suffix = process.platform === 'win32' ? '.exe' : '';
   const openssl = process.platform === 'win32' ? 'C:/Program Files/Git/usr/bin/openssl.exe' : 'openssl';
@@ -128,6 +139,7 @@ async function checkFrp(directory: string, api: string, visitor: { user: string;
       const launcherModule = '../../../launcher/src/main/engine/directRoute.ts';
       const { prepareDirectRoute, minecraftPing } = await import(launcherModule);
       const token = jwt.sign({ discordId: (jwt.decode(visitor.ticket) as jwt.JwtPayload).sub, mcUsername: 'Tester', authMethod: 'discord' }, config.jwtSecret);
+      delayLauncherLogin(); // Longer than the launcher's original fixed 750 ms startup grace.
       const route = await prepareDirectRoute(api, token, MINIMUM_LAUNCHER_VERSION, launcher, '127.0.0.1:1', () => {});
       try {
         assert.notEqual(route.address, '127.0.0.1:1', 'launcher did not start the authenticated tunnel');
@@ -136,6 +148,8 @@ async function checkFrp(directory: string, api: string, visitor: { user: string;
         assert.ok(['relay','direct','direct-kcp'].includes(report.reason));
         assert.equal(report.relay.length,5,'authenticated TCP relay must be measured even if NAT punching fails');
         assert.ok(Array.isArray(report.kcp)&&Array.isArray(report.details));
+        assert.equal(report.schema,2); assert.equal(report.measurement,'minecraft-pong-rtt');
+        assert.equal(report.probeErrors.relay,undefined,'relay was discarded during delayed Login');
         assert.equal(JSON.stringify(report).includes(visitor.ticket),false,'route diagnostics leaked admission ticket');
       } finally { route.close(); }
       await new Promise(r => setTimeout(r, 500));

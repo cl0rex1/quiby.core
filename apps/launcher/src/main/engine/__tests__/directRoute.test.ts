@@ -6,7 +6,7 @@ import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
-import { minecraftPing, preferDirect, prepareDirectRoute, directExecutable, directError } from '../directRoute';
+import { minecraftPing, waitForMinecraft, preferDirect, prepareDirectRoute, directExecutable, directError, readDirectReport } from '../directRoute';
 
 test('bundled direct works offline with an empty or corrupted cache and reports useful errors', { skip: !existsSync(path.resolve('apps/launcher/direct/frpc-0.71.1.exe')) && 'run npm run prepare:direct --workspace=apps/launcher for the packaging fixture' }, async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'quiby-проверка direct-'));
@@ -47,6 +47,22 @@ test('port and process failures preserve their exact stage without reaching NAT'
   } finally { listener.mock.restore(); api.mock.restore(); await fs.rm(directory, { recursive: true, force: true }); }
 });
 
+test('network reports handle a missing file and reject malformed measurements', async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'quiby-network-report-'));
+  const report = {at:new Date().toISOString(),reason:'direct',normal:[90,91,92,93,94],direct:[10,11,12,13,14]};
+  try {
+    assert.equal(await readDirectReport(directory),null);
+    await fs.mkdir(path.join(directory,'direct'));
+    const file = path.join(directory,'direct/latest-route.json');
+    await fs.writeFile(file,JSON.stringify(report));
+    assert.deepEqual(await readDirectReport(directory),report);
+    await fs.writeFile(file,JSON.stringify({...report,direct:['invalid']}));
+    await assert.rejects(readDirectReport(directory),/повреждён/);
+    await fs.writeFile(file,' '.repeat(65537));
+    await assert.rejects(readDirectReport(directory),/слишком большой/);
+  } finally { await fs.rm(directory,{recursive:true,force:true}); }
+});
+
 test('route selection rejects jitter, failed probes and marginal improvements', () => {
   assert.equal(preferDirect([90, 91, 93, 90, 95], [30, 31, 30, 32, 31]), true);
   assert.equal(preferDirect([90, 91, 93, 90, 95], [30, 31, 90, 32, 31]), false);
@@ -79,4 +95,62 @@ test('Minecraft probes wait for a matching pong and bound stalled responses', as
       if (process.platform === 'win32') assert.equal(JSON.parse(await fs.readFile(path.join(directory, 'direct/latest-route.json'), 'utf8')).stage, 'API');
     } finally { await fs.rm(directory, { recursive: true, force: true }); }
   } finally { for (const peer of peers) peer.destroy(); await new Promise<void>(resolve => server.close(() => resolve())); }
+});
+
+test('Minecraft RTT excludes status handshake latency', async () => {
+  let clock = 0;
+  const now = mock.method(performance, 'now', () => clock);
+  const server = net.createServer(socket => {
+    let status = false;
+    socket.on('data', data => {
+      if (!status) {
+        status = true; clock = 1000;
+        const json = Buffer.from('{"version":{"protocol":767}}');
+        socket.write(Buffer.concat([Buffer.from([json.length + 2, 0, json.length]), json]));
+      } else { clock = 1017; socket.write(data); }
+    });
+  });
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  try { assert.equal(await minecraftPing('127.0.0.1', (server.address() as net.AddressInfo).port), 17); }
+  finally { now.mock.restore(); await new Promise<void>(resolve => server.close(() => resolve())); }
+});
+
+test('tunnel readiness retries refused sockets, bounds stalls and stops with frpc', async () => {
+  const peers = new Set<net.Socket>();
+  const server = net.createServer(socket => {
+    peers.add(socket); socket.on('close', () => peers.delete(socket));
+    let status = false;
+    socket.on('data', data => {
+      if (!status) {
+        status = true;
+        const json = Buffer.from('{"version":{"protocol":767}}');
+        socket.write(Buffer.concat([Buffer.from([json.length + 2, 0, json.length]), json]));
+      } else socket.write(data);
+    });
+  });
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  const port = (server.address() as net.AddressInfo).port;
+  await new Promise<void>(resolve => server.close(() => resolve()));
+  // Reproduce a visitor which only starts listening after its remote Login completes.
+  const listening = new Promise<void>(resolve => setTimeout(() => server.listen(port, '127.0.0.1', resolve), 100));
+  try {
+    await assert.rejects(minecraftPing('127.0.0.1', port, 50), /ECONNREFUSED/);
+    await waitForMinecraft('127.0.0.1', port, 1500);
+    await listening;
+    await assert.rejects(waitForMinecraft('127.0.0.1', port, 1500, () => true), /frpc stopped/);
+    const stalled = net.createServer(socket => { peers.add(socket); socket.on('close', () => peers.delete(socket)); });
+    await new Promise<void>(resolve => stalled.listen(0, '127.0.0.1', resolve));
+    try {
+      const start = performance.now();
+      await assert.rejects(waitForMinecraft('127.0.0.1', (stalled.address() as net.AddressInfo).port, 80), /timeout/);
+      assert.ok(performance.now() - start < 1000, 'readiness exceeded its total deadline');
+    } finally {
+      for (const peer of peers) peer.destroy();
+      await new Promise<void>(resolve => stalled.close(() => resolve()));
+    }
+  } finally {
+    await listening;
+    for (const peer of peers) peer.destroy();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
 });

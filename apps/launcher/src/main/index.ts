@@ -16,12 +16,14 @@ import { configureDiscordRpc } from './rpc/discordRpc';
 import { registerUpdates, requireCurrentLauncher, markUpdateRequired } from './updates';
 import { getLatestModpackManifest } from './engine/manifestSource';
 import { normalizeSettings } from '../shared/launcherSettings';
+import { prepareDirectRoute, readDirectReport } from './engine/directRoute';
 
 let mainWindow: BrowserWindow | null = null;
 let splashWindow: BrowserWindow | null = null;
 let mainReady = false;
 let splashReady = false;
 let notificationWrite = Promise.resolve();
+let networkChecking = false;
 const appIcon = app.isPackaged
   ? path.join(process.resourcesPath, 'icon.png')
   : path.join(__dirname, '../../src/renderer/src/assets/quiby_q_logo.png');
@@ -482,6 +484,21 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
   });
 
   // 7. Game Launching
+  ipcMain.handle('network:report', () => readDirectReport(app.getPath('userData')));
+  ipcMain.handle('network:check', async (_, token: string) => {
+    if (process.platform !== 'win32') throw new Error('Проверка direct пока доступна только на Windows.');
+    if (networkChecking || isGameActive()) throw new Error('Завершите игру или текущую проверку сети.');
+    if (typeof token !== 'string' || !token || token.length > 8192) throw new Error('Войдите через Discord.');
+    networkChecking = true;
+    try {
+      await requireCurrentLauncher();
+      const manifest = await getLatestModpackManifest(DEFAULT_SERVER_URL);
+      if (!manifest.serverAddress) throw new Error('Адрес Minecraft не настроен.');
+      const route = await prepareDirectRoute(DEFAULT_SERVER_URL, token, app.getVersion(), app.getPath('userData'),
+        manifest.serverAddress, () => {}, 'diagnostic');
+      try { return await readDirectReport(app.getPath('userData')); } finally { route.close(); }
+    } finally { networkChecking = false; }
+  });
   ipcMain.handle('game:state', () => getLaunchState());
   ipcMain.handle(
     'game:launch',
@@ -492,6 +509,7 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
       customModFilenames: string[] = [],
       disabledCustomModFilenames: string[] = []
     ) => {
+      if (networkChecking) throw new Error('Дождитесь завершения проверки сети в настройках.');
       await requireCurrentLauncher();
       let authResponse: Response;
       try {
@@ -518,6 +536,7 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
       if (!user?.isWhitelisted) {
         throw new Error('У аккаунта нет доступа к серверу quiby.');
       }
+      if (networkChecking) throw new Error('Дождитесь завершения проверки сети в настройках.');
       await launchMinecraft(
         { ...session, user },
         normalizeSettings({ ...settings, gameDir: settings.gameDir?.trim() || getDefaultGameDir() }, loadSettings()),

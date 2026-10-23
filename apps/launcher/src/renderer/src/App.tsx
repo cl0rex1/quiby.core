@@ -804,6 +804,8 @@ export const App: React.FC = () => {
 
               {activeTab === 'settings' && (
                 <SettingsView
+                  token={session?.token}
+                  gameActive={launchPending || ['updating', 'starting', 'running'].includes(launchState.status)}
                   settings={settings}
                   saveStatus={settingsStatus}
                   onRetrySave={() => void handleUpdateSettings(settings)}

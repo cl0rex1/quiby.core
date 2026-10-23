@@ -11,6 +11,7 @@ import {
   SlidersHorizontal,
   Waves,
   Download,
+  Network,
 } from 'lucide-react';
 import { LauncherSettings } from '@quiby/shared';
 import { buildVideo, buildPoster } from '../utils/buildScreenshots';
@@ -22,19 +23,22 @@ import { parseCustomJvmArgs } from '../../../shared/jvmArgs';
 import { windowLimits } from '../../../shared/launcherSettings';
 import { SelectMenu } from '../components/SelectMenu';
 import { SettingsField } from '../components/SettingsField';
+import { NetworkSettings } from '../components/NetworkSettings';
 
 interface SettingsViewProps {
   onChooseBuild: () => void;
   hasServerAddress: boolean;
+  token?: string;
+  gameActive: boolean;
   settings: LauncherSettings;
   saveStatus: 'loading' | 'saved' | 'saving' | 'error';
   onRetrySave: () => void;
   onUpdateSettings: (newSettings: LauncherSettings) => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus, onRetrySave, onUpdateSettings, onChooseBuild, hasServerAddress }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus, onRetrySave, onUpdateSettings, onChooseBuild, hasServerAddress, token, gameActive }) => {
   const build = selectedBuild(settings);
-  const [section, setSection] = useState<'game' | 'appearance' | 'files'>('game');
+  const [section, setSection] = useState<'game' | 'appearance' | 'files' | 'network'>('game');
   const [totalRamGb, setTotalRamGb] = useState(16);
   const [javaList, setJavaList] = useState<Array<{ path: string; version: number; versionString: string }>>(
     [],
@@ -110,6 +114,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus
               ['game', 'Игра', Monitor],
               ['appearance', 'Интерфейс', Waves],
               ['files', 'Файлы и Java', Cpu],
+              ['network', 'Сеть', Network],
             ] as const
           ).map(([id, label, Icon]) => (
             <button
@@ -124,6 +129,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, saveStatus
           ))}
         </nav>
         <div className="settings-body" data-section={section} key={section}>
+          {section === 'network' && <NetworkSettings token={token} gameActive={gameActive}/>}
           {error && (
             <p className="inline-error" role="alert">
               {error}

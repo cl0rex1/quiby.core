@@ -65,6 +65,9 @@ def build(source, output, quiby_jar):
         raise ValueError("Missing server dependencies: " + ", ".join(sorted(missing)))
     for file in sorted(TEMPLATES.rglob("*")):
         if file.is_file() and "__pycache__" not in file.parts:
+            # Deployment bootstraps are separate release assets, not part of their own hashed payload.
+            if file.name.startswith("install-") and file.suffix == ".py":
+                continue
             name = file.relative_to(TEMPLATES).as_posix()
             raw = file.read_bytes()
             # All deployment templates are text. Normalize Windows checkouts too.
@@ -99,6 +102,6 @@ if __name__ == "__main__":
     parser.add_argument("--source", type=pathlib.Path,
                         default=pathlib.Path(os.environ.get("APPDATA", pathlib.Path.home())) / ".quiby-launcher")
     parser.add_argument("--output", type=pathlib.Path, default=ROOT / f"temp/quiby-server-{version}.zip")
-    parser.add_argument("--quiby-jar", type=pathlib.Path, default=ROOT.parent / "quiby.mod/build/libs/quiby-1.21.1-1.1.31.jar")
+    parser.add_argument("--quiby-jar", type=pathlib.Path, default=ROOT.parent / "quiby.mod/build/libs/quiby-1.21.1-1.1.32.jar")
     args = parser.parse_args()
     build(args.source, args.output, args.quiby_jar)

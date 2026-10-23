@@ -49,6 +49,9 @@ app.on('browser-window-created', (_event, win) => {
         await api.saveNotifications([{ id: 'test', title: 'Smoke test', read: false, timestamp: Date.now() }]);
         const notifications = await api.loadNotifications();
         const state = await api.getLaunchState();
+        const networkReport = await api.getNetworkReport();
+        let networkError = '';
+        try { await api.checkNetwork(''); } catch(error) { networkError = error.message; }
         const backgroundId = await api.selectBackground();
         const loadImage = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image.naturalWidth); image.onerror = () => reject(Error('Background failed to load')); image.src = src; });
         const imageWidth = await loadImage('quiby-media://background/' + backgroundId);
@@ -61,7 +64,7 @@ app.on('browser-window-created', (_event, win) => {
             packReviews.push({ filename, hash, delivered: upload.delivered });
           } catch (error) { packReviews.push({ filename, error: error.message }); }
         }
-        return { saved, after, notifications: notifications.length, state, packReviews, background: { id: backgroundId, imageWidth, posterWidth }, maximized: await api.isMaximized(), authVisible: !!document.querySelector('.auth-page'), accessVisible: !!document.querySelector('.launcher-access-screen') };
+        return { saved, after, notifications: notifications.length, state, networkReport, networkError, packReviews, background: { id: backgroundId, imageWidth, posterWidth }, maximized: await api.isMaximized(), authVisible: !!document.querySelector('.auth-page'), accessVisible: !!document.querySelector('.launcher-access-screen') };
       })()`);
       assert.equal(result.saved, true);
       assert.equal(result.after.windowWidth, 7680);
@@ -69,6 +72,8 @@ app.on('browser-window-created', (_event, win) => {
       assert.equal(result.after.ramMinMb, 4096);
       assert.equal(result.notifications, 1);
       assert.equal(result.state.status, 'idle');
+      assert.equal(result.networkReport, null);
+      assert.match(result.networkError, /Discord|Windows/);
       assert.equal(result.authVisible, false); // Offline startup stays on the access check screen.
       assert.equal(result.accessVisible, true);
       assert.equal(typeof result.maximized, 'boolean');
