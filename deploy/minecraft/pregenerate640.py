@@ -34,10 +34,18 @@ def command(text):
     return True
 
 try:
+    recovered=set()
     while pending.exists():
         log=game/'logs/latest.log'
         text=log.read_text(errors='replace') if log.exists() else ''
         lines=[line for line in text.splitlines() if '[Chunky]' in line]
+        proc=jvm()
+        if proc is not None and proc.name not in recovered and lines and 'No tasks to continue.' in lines[-1] and 'Done (' in text:
+            # A JVM crash can precede Chunky's first task checkpoint; saved chunks are skipped.
+            for cmd in ['chunky world minecraft:overworld','chunky spawn','chunky shape circle',f"chunky radius {state['radius']}",'chunky pattern concentric','chunky quiet 10','chunky start']:
+                assert command(cmd)
+            recovered.add(proc.name)
+            time.sleep(2);continue
         if any('Task finished for ' in line and '100.00%' in line for line in lines[-6:]):
             proc=jvm()
             if proc is None:
@@ -57,6 +65,7 @@ try:
                 fresh=log.read_bytes()[offset:].decode(errors='replace')
                 if 'Saved the game' in fresh:break
             else:raise RuntimeError('Fresh final save did not complete')
+            proof=json.loads(pending.read_text())['proof']
             proof['game']['pid']=proc.name
             proof['pregeneration']={'radius':state['radius'],'shape':'circle','complete':True,'last':lines[-6:],'elapsedSeconds':round(time.time()-state['startedAt'])}
             proof['finalWorldSaved']=True
