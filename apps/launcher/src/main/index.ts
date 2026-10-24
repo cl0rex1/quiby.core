@@ -500,8 +500,8 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     } finally { networkChecking = false; }
   });
   ipcMain.handle('game:state', () => getLaunchState());
-  ipcMain.handle(
-    'game:launch',
+  for (const operation of ['launch', 'preinstall'] as const) ipcMain.handle(
+    `game:${operation}`,
     async (
       _,
       session: AuthSession,
@@ -543,7 +543,8 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
         DEFAULT_SERVER_URL,
         mainWindow,
         customModFilenames,
-        disabledCustomModFilenames
+        disabledCustomModFilenames,
+        operation === 'preinstall'
       );
     }
   );

@@ -18,7 +18,7 @@ test('launch preflight rejects older launchers even without a version header', a
   assert.ok(address && typeof address !== 'string');
   const url = `http://127.0.0.1:${address.port}/me`;
   try {
-    for (const version of ['', '1.0.1-beta.18']) {
+    for (const version of ['', '1.0.1-beta.18', '1.1.6']) {
       const response = await fetch(url, { headers: version ? { 'x-quiby-launcher-version': version } : {} });
       assert.equal(response.status, 426);
       assert.equal((await response.json()).minimumVersion, MINIMUM_LAUNCHER_VERSION);

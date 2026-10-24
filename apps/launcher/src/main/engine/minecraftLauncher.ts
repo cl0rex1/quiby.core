@@ -40,7 +40,8 @@ export async function launchMinecraft(
   serverBaseUrl: string,
   win: BrowserWindow | null,
   activeCustomModFilenames: string[] = [],
-  disabledCustomModFilenames: string[] = []
+  disabledCustomModFilenames: string[] = [],
+  preinstallOnly = false
 ): Promise<void> {
   if (launchInProgress || runningGameProcess) {
     throw new Error('Minecraft уже запускается или запущен');
@@ -91,9 +92,9 @@ export async function launchMinecraft(
   };
 
   try {
-    await requireGameLaunchAccess(serverBaseUrl, session.token);
-    const customJavaArgs = parseCustomJvmArgs(settings.customJvmArgs || '');
-    setLaunchState({ status: 'updating' });
+    if (!preinstallOnly) await requireGameLaunchAccess(serverBaseUrl, session.token);
+    const customJavaArgs = preinstallOnly ? [] : parseCustomJvmArgs(settings.customJvmArgs || '');
+    setLaunchState({ status: 'updating', ...(preinstallOnly ? { mode: 'preinstall' as const } : {}) });
     if (settings.modpackProfile === 'full') throw new Error('Visual временно недоступна. Выберите Standard или Draft в настройках.');
     const profileName = settings.modpackProfile === 'clean' ? 'Draft' : 'Standard';
     updateDiscordRpcStatus({ details: 'Готовится к игре', state: `Сборка ${profileName} · quiby. S6` });
@@ -171,6 +172,18 @@ export async function launchMinecraft(
     // 4. Ensure NeoForge Loader
     sendLog('info', `⚙️ Проверка загрузчика ${manifest.loader.type} ${manifest.loader.version}...`);
     const neoforge = await ensureNeoForge(manifest.gameVersion, manifest.loader.version, gameDir, javaBin, win);
+
+    if (stopRequested) throw new Error('Подготовка отменена');
+    if (preinstallOnly) {
+      await verifyLaunchContent(gameDir, manifest.files, approvedCustomMods, packAdmission.approved);
+      if (stopRequested) throw new Error('Предустановка отменена');
+      launchInProgress = false;
+      sendLog('info', `Minecraft и сборка ${manifest.version} предустановлены. Игра не запускалась.`);
+      setLaunchState({ status: 'installed', mode: 'preinstall' });
+      updateDiscordRpcStatus({ details: 'В главном меню лаунчера', state: 'Minecraft предустановлен' });
+      quitIfNoWindows();
+      return;
+    }
 
     // 5. Construct Launch Arguments
     sendLog('info', `🛠️ Формирование аргументов запуска JVM (Память: ${settings.ramMinMb}MB - ${settings.ramMaxMb}MB)...`);
@@ -376,7 +389,7 @@ export async function launchMinecraft(
       sendLog('info', 'Запуск отменён'); setLaunchState({ status: 'stopped' }); quitIfNoWindows(); return;
     }
     sendLog('error', `Критическая ошибка запуска: ${error.message}`);
-    setLaunchState({ status: 'crashed', error: error.message });
+    setLaunchState({ status: 'crashed', error: error.message, ...(preinstallOnly ? { mode: 'preinstall' as const } : {}) });
     quitIfNoWindows();
     throw error;
   }

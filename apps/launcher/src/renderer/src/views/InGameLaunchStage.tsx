@@ -28,6 +28,7 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
   const logViewport = useRef<HTMLDivElement>(null);
   const followLogs = useRef(true);
   const stage = launchState.status === 'running' ? 2 : launchState.status === 'starting' ? 1 : 0;
+  const preinstall = launchState.mode === 'preinstall';
   const titles = ['Собираем\nтвой мир.', 'Время\nотправляться.', 'Увидимся\nв игре.'];
   const descriptions = [
     'Проверяем сборку и загружаем нужные файлы.',
@@ -67,14 +68,14 @@ export const InGameLaunchStage: React.FC<InGameLaunchStageProps> = ({
           </div>
           <span className="launch-scene-caption">{stage === 2 ? 'ТВОЙ ХОД.' : 'МИР СТАНОВИТСЯ БЛИЖЕ.'}</span>
         </div>
-        <section className="launch-story" aria-label="Запуск игры">
+        <section className="launch-story" aria-label={preinstall ? 'Предустановка Minecraft' : 'Запуск игры'}>
           <div className="launch-story-copy" key={stage} aria-live="polite" aria-atomic="true">
-            <p className="page-kicker">{['ПОДГОТОВКА СБОРКИ', 'ЗАПУСК ИГРЫ', 'MINECRAFT ЗАПУЩЕН'][stage]}</p>
-            <h1>{titles[stage]}</h1>
-            <p>{descriptions[stage]}</p>
+            <p className="page-kicker">{preinstall ? 'ПРЕДУСТАНОВКА MINECRAFT' : ['ПОДГОТОВКА СБОРКИ', 'ЗАПУСК ИГРЫ', 'MINECRAFT ЗАПУЩЕН'][stage]}</p>
+            <h1>{preinstall ? 'Подготовим\nтвой мир.' : titles[stage]}</h1>
+            <p>{preinstall ? 'Скачиваем Java, Minecraft и сборку. Игра не запустится — всё будет готово к открытию доступа.' : descriptions[stage]}</p>
           </div>
           <ol className="launch-steps" aria-label="Этапы запуска">
-            {['Файлы', 'Запуск', 'Игра'].map((label, index) => (
+            {(preinstall ? ['Загрузка и проверка файлов'] : ['Файлы', 'Запуск', 'Игра']).map((label, index) => (
               <li key={label} className={index < stage ? 'is-done' : index === stage ? 'is-current' : ''} aria-current={index === stage ? 'step' : undefined}>
                 <span>{index < stage ? <Check size={13} /> : `0${index + 1}`}</span>{label}
               </li>

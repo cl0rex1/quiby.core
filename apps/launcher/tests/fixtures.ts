@@ -71,6 +71,7 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
         uploadModReview: () => ({ success: true, delivered: true }),
         refreshCustomMod: () => ({ isAllowed: true, status: 'approved' }),
         launchGame: () => { throw Error('Сервер авторизации недоступен'); },
+        preinstallGame: () => { control.emit('onLaunchStateChange', { status: 'installed', mode: 'preinstall' }); },
       };
       for (const name of ['minimize', 'maximize', 'close', 'killGame', 'openContentFolder', 'openResourcePacksFolder', 'openScreenshotsFolder', 'installCustomMod', 'removeCustomMod', 'copyScreenshot', 'checkForUpdates', 'downloadUpdate', 'installUpdate']) methods[name] = () => true;
       (window as any).quibyApi = new Proxy({}, { get(_target, name: string) {

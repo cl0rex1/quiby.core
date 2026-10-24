@@ -487,8 +487,9 @@ export const App: React.FC = () => {
         setLaunchState(state);
         if (state.status === 'crashed') {
           setLaunchTransition(false);
-          handleNotify('Сбой Minecraft', state.error || `Игра завершилась с кодом ${state.exitCode ?? 'неизвестно'}.`, 'error');
+          handleNotify(state.mode === 'preinstall' ? 'Не удалось предустановить Minecraft' : 'Сбой Minecraft', state.error || `Игра завершилась с кодом ${state.exitCode ?? 'неизвестно'}.`, 'error');
         }
+        if (state.status === 'installed') handleNotify('Minecraft предустановлен', 'Файлы скачаны и проверены. Вы сможете запустить игру после открытия доступа.', 'success');
       });
       void window.quibyApi.getLaunchState().then(state => {
         if (!active || receivedLiveState) return;
@@ -586,7 +587,7 @@ export const App: React.FC = () => {
     localStorage.setItem('quiby_session', JSON.stringify(newSession));
   };
 
-  const handleLaunchGame = async () => {
+  const handleLaunchGame = async (preinstallOnly = false) => {
     if (settings.modpackProfile === 'full') { setIsOnboardingOpen(true); return; }
     if (launchRequested.current || ['updating', 'starting', 'running'].includes(latestLaunchState.current.status)) return;
     if (settingsStatus !== 'saved') {
@@ -610,16 +611,18 @@ export const App: React.FC = () => {
     setActiveTab('home');
     if (!window.quibyApi) return;
     launchRequested.current = true;
-    setLaunchTransition(motionActive);
+    setLaunchTransition(!preinstallOnly && motionActive);
     setLaunchPending(true);
     setDownloadProgress(null);
     clearLogs();
-    latestLaunchState.current = { status: 'idle' };
+    latestLaunchState.current = preinstallOnly ? { status: 'updating', mode: 'preinstall' } : { status: 'idle' };
+    if (preinstallOnly) setLaunchState(latestLaunchState.current);
     try {
       const selectedSkin = localStorage.getItem('quiby_custom_skin_data');
-      if (selectedSkin) await syncSelectedSkin(session, selectedSkin);
+      if (selectedSkin && !preinstallOnly) await syncSelectedSkin(session, selectedSkin);
     } catch (err) {
       setLaunchTransition(false);
+      if (preinstallOnly) { latestLaunchState.current = { status: 'crashed', mode: 'preinstall' }; setLaunchState(latestLaunchState.current); }
       handleNotify('Не удалось синхронизировать скин', err instanceof Error ? err.message : 'Проверьте соединение и попробуйте снова.', 'error');
       launchRequested.current = false;
       setLaunchPending(false);
@@ -632,9 +635,12 @@ export const App: React.FC = () => {
       .filter((m) => !m.enabled || m.safetyStatus !== 'approved')
       .map((m) => m.filename);
     try {
-      await window.quibyApi.launchGame(session, settings, activeModFiles, disabledModFiles);
+      if (preinstallOnly) await window.quibyApi.preinstallGame(session, settings, activeModFiles, disabledModFiles);
+      else await window.quibyApi.launchGame(session, settings, activeModFiles, disabledModFiles);
     } catch (err) {
       setLaunchTransition(false);
+      const engineFailed = latestLaunchState.current.status === 'crashed';
+      if (preinstallOnly && !engineFailed) { latestLaunchState.current = { status: 'crashed', mode: 'preinstall' }; setLaunchState(latestLaunchState.current); }
       if (err instanceof Error && err.message.includes('У аккаунта нет доступа')) {
         const current = storedSession();
         if (current?.token === session.token) {
@@ -646,8 +652,8 @@ export const App: React.FC = () => {
         return;
       }
       // Engine failures already arrive with a crash report; preflight failures do not.
-      if (latestLaunchState.current.status !== 'crashed') {
-        handleNotify('Не удалось запустить игру', err instanceof Error ? err.message : 'Повторите запуск.', 'error');
+      if (!engineFailed) {
+        handleNotify(preinstallOnly ? 'Не удалось предустановить Minecraft' : 'Не удалось запустить игру', err instanceof Error ? err.message : 'Повторите запуск.', 'error');
       }
     } finally {
       launchRequested.current = false;
@@ -831,7 +837,9 @@ export const App: React.FC = () => {
             accessMessage={gameAccess.access?.closed ? gameAccess.access.message : !gameAccess.access && gameAccess.error ? gameAccess.error : undefined}
             onRetryAccess={gameAccess.retry}
             accessChecking={gameAccess.checking}
-            onLaunch={handleLaunchGame}
+            onLaunch={() => void handleLaunchGame()}
+            onPreinstall={() => void handleLaunchGame(true)}
+            preinstallBlocked={launcherUpdate?.required || settingsStatus !== 'saved'}
             onOpenLogin={() => setIsAuthModalOpen(true)}
           />
         )}

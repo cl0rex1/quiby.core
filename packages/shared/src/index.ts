@@ -129,7 +129,8 @@ export interface DownloadProgress {
 }
 
 export interface LaunchState {
-  status: 'idle' | 'updating' | 'starting' | 'running' | 'crashed' | 'stopped';
+  status: 'idle' | 'updating' | 'installed' | 'starting' | 'running' | 'crashed' | 'stopped';
+  mode?: 'preinstall';
   gamePid?: number;
   exitCode?: number;
   error?: string;

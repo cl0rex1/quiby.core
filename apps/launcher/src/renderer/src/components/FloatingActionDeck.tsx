@@ -19,6 +19,8 @@ interface FloatingActionDeckProps {
   onRetryAccess?: () => void;
   accessChecking?: boolean;
   onLaunch: () => void;
+  onPreinstall: () => void;
+  preinstallBlocked?: boolean;
   onOpenLogin: () => void;
   hasUnsavedChanges?: boolean;
   onSave?: () => void | Promise<void>;
@@ -36,6 +38,8 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   onRetryAccess,
   accessChecking,
   onLaunch,
+  onPreinstall,
+  preinstallBlocked,
   onOpenLogin,
   hasUnsavedChanges = false,
   onSave,
@@ -54,6 +58,7 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
         {/* Right Side: Primary Play Button */}
         <div className="relative flex flex-col items-center gap-3">
           {session && accessMessage && <div className="game-access-notice"><p role="status">{accessMessage}</p><button type="button" className="ui-button" onClick={onRetryAccess} disabled={accessChecking}>{accessChecking ? 'Проверяем…' : 'Проверить доступ'}</button></div>}
+          {session && <button type="button" className="ui-button game-preinstall-button" onClick={onPreinstall} disabled={!session.user.isWhitelisted || launchPending || preinstallBlocked}>Предустановить Minecraft</button>}
           {!session ? (
             <button
               type="button"

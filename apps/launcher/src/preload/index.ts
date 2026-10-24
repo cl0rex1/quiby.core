@@ -79,6 +79,8 @@ export const quibyApi = {
   getLaunchState: (): Promise<LaunchState> => ipcRenderer.invoke('game:state'),
   launchGame: (session: AuthSession, settings: LauncherSettings, customModFilenames?: string[], disabledCustomModFilenames?: string[]) =>
     ipcRenderer.invoke('game:launch', session, settings, customModFilenames, disabledCustomModFilenames),
+  preinstallGame: (session: AuthSession, settings: LauncherSettings, customModFilenames?: string[], disabledCustomModFilenames?: string[]) =>
+    ipcRenderer.invoke('game:preinstall', session, settings, customModFilenames, disabledCustomModFilenames),
   killGame: () => ipcRenderer.invoke('game:kill'),
 
   // Event Listeners

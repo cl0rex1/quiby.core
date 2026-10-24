@@ -1,6 +1,6 @@
 {
   "name": "@quiby/launcher",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "quiby. Season 6 Minecraft 1.21.1 NeoForge Desktop Launcher",
   "main": "dist/main/index.js",
   "scripts": {

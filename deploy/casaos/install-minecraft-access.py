@@ -1,7 +1,7 @@
 """Install the independent game access policy without touching Minecraft or access settings.
 
 Run as the existing CasaOS owner; the payload contains compiled API code, admin
-assets and the six changed source files, never credentials or a database.
+assets and corresponding source files, never credentials or a database.
 """
 import hashlib
 import json
@@ -24,7 +24,9 @@ const all=sql=>new Promise((resolve,reject)=>db.all(sql,(e,r)=>e?reject(e):resol
 (async()=>{
   if(process.argv[1]){fs.mkdirSync('/app/data/backups',{recursive:true});await new Promise((resolve,reject)=>db.exec("VACUUM INTO '"+process.argv[1]+"'",e=>e?reject(e):resolve()));}
   const access=await all('SELECT * FROM launcher_access ORDER BY id');
-  const users=await all('SELECT discord_id,is_whitelisted,launcher_access_exempt FROM users ORDER BY discord_id');
+  const columns=await all('PRAGMA table_info(users)');
+  const gameColumns=['minecraft_access_blocked','minecraft_access_exempt'].map(name=>columns.some(c=>c.name===name)?name:'0 AS '+name);
+  const users=await all('SELECT discord_id,is_whitelisted,launcher_access_exempt,'+gameColumns.join(',')+' FROM users ORDER BY discord_id');
   const pack=await all('SELECT version_id,is_active FROM modpack_versions ORDER BY id');
   console.log(JSON.stringify({hash:crypto.createHash('sha256').update(JSON.stringify({access,users,pack})).digest('hex'),launcherClosed:Boolean(access[0]?.closed),players:users.length}));
   db.close();
@@ -69,9 +71,15 @@ def main():
         archive.extractall(work)
     assert (work / 'dist/services/gameAccess.js').is_file()
     base_tag = 'quiby-core-api:pre-minecraft-access-' + stamp.lower()
-    new_tag = 'quiby-core-api:minecraft-access-' + stamp.lower()
+    package = work / 'runtime/apps/server/package.json'
+    version = json.loads(package.read_text())['version'] if package.exists() else None
+    assert version in (None, '1.1.7'), 'Unexpected API release'
+    new_tag = 'quiby-core-api:' + version if version else 'quiby-core-api:minecraft-access-' + stamp.lower()
     run('docker', 'tag', before_api['Image'], base_tag)
-    (work / 'Dockerfile').write_text(f'FROM {base_tag}\nCOPY --chown=node:node dist /app/apps/server/dist\nCOPY --chown=node:node public /app/apps/server/public\n')
+    dockerfile = f'FROM {base_tag}\nCOPY --chown=node:node dist /app/apps/server/dist\nCOPY --chown=node:node public /app/apps/server/public\n'
+    if version:
+        dockerfile += 'COPY --chown=node:node runtime /app\n'
+    (work / 'Dockerfile').write_text(dockerfile)
     run('docker', 'build', '--pull=false', '-t', new_tag, str(work))
     run('docker', 'run', '--rm', '--network', 'none', '-e', 'NODE_ENV=test',
         '-e', 'DB_PATH=/tmp/access-check.sqlite', '-e', 'STORAGE_PATH=/tmp/access-check', new_tag,
@@ -79,6 +87,7 @@ def main():
     backup = '/app/data/backups/pre-minecraft-access-' + stamp + '.sqlite'
     original_policy = snapshot(backup)
     shutil.copy2(configs[1], work / 'api.override.before.json')
+    (work / 'api.override.before.json').chmod(0o600)
     compose = ['docker', 'compose', '--project-directory', labels['com.docker.compose.project.working_dir'], '-p', labels['com.docker.compose.project']]
     for config in configs:
         compose += ['-f', str(config)]
@@ -109,7 +118,7 @@ def main():
         if not source.is_file():
             continue
         relative = source.relative_to(work / 'source')
-        assert relative.parts[:2] == ('apps', 'server')
+        assert relative.parts[:2] in (('apps', 'server'), ('packages', 'shared')) or str(relative) in ('package.json', 'package-lock.json')
         target = REPO / relative
         if target.exists():
             saved = work / 'source-before' / relative
@@ -117,7 +126,7 @@ def main():
             shutil.copy2(target, saved)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
-    proof = {'stage': 'installed', 'image': new_tag, 'databaseBackup': backup, 'policyPreserved': True,
+    proof = {'stage': 'installed', 'image': new_tag, 'apiVersion': version, 'databaseBackup': backup, 'policyPreserved': True,
              'minecraftContainerUnchanged': True, 'minecraftAccessClosed': status['closed'], 'launcherClosed': original_policy['launcherClosed']}
     (work / 'proof.json').write_text(json.dumps(proof, indent=2) + '\n')
     print(json.dumps(proof), flush=True)
