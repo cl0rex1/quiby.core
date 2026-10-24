@@ -1,5 +1,5 @@
 """One-off progress/save guard; also resumes monitoring after the daily host restart."""
-import fcntl,hashlib,json,pathlib,time,urllib.request
+import fcntl,hashlib,json,os,pathlib,time,urllib.request
 
 game=pathlib.Path(__file__).resolve().parent
 assert game==pathlib.Path('/crafty/servers/827910b5-67f5-459f-8e6d-8b8e4b34367b')
@@ -40,6 +40,15 @@ try:
         text=log.read_text(errors='replace') if log.exists() else ''
         lines=[line for line in text.splitlines() if '[Chunky]' in line]
         proc=jvm()
+        if proc is None:
+            post('waiting-server',{'last':lines[-1:],'reason':'Minecraft JVM is not running'})
+            time.sleep(15);continue
+        fatal=game/f'hs_err_pid{proc.name}.log'
+        start_ticks=int((proc/'stat').read_text().split(') ',1)[1].split()[19])
+        started=time.time()-float(pathlib.Path('/proc/uptime').read_text().split()[0])+start_ticks/os.sysconf('SC_CLK_TCK')
+        if fatal.exists() and fatal.stat().st_mtime>=started:
+            post('awaiting-restart',{'last':lines[-1:],'fatalReport':fatal.name,'reason':'Native JVM failure; saved task is retained'})
+            time.sleep(15);continue
         if proc is not None and proc.name not in recovered and lines and 'No tasks to continue.' in lines[-1] and 'Done (' in text:
             # A JVM crash can precede Chunky's first task checkpoint; saved chunks are skipped.
             for cmd in ['chunky world minecraft:overworld','chunky spawn','chunky shape circle',f"chunky radius {state['radius']}",'chunky pattern concentric','chunky quiet 10','chunky start']:
