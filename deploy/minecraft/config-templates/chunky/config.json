@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "continueOnRestart": true,
+  "forceLoadExistingChunks": false,
+  "silent": false,
+  "updateInterval": 5,
+  "language": "en",
+  "tasks": {}
+}

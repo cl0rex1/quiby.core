@@ -1,5 +1,5 @@
 {
-  "packVersion": "6.1.39",
+  "packVersion": "6.1.40",
   "minecraft": "1.21.1",
   "neoforge": "21.1.250",
   "java": 21,
@@ -308,15 +308,15 @@
       }
     },
     {
-      "file": "quiby-1.21.1-1.1.32.jar",
+      "file": "quiby-1.21.1-1.1.33.jar",
       "modIds": [
         "quiby"
       ],
-      "sha256": "4f8c3b4c0fbbcbcb0589c01694f24fea279a467158d4519389b0d114570fd904",
+      "sha256": "e38b380c0e5b5e915941153320bcaf9af708e964e821e77fae406d1e3aa5a93c",
       "versions": {
-        "quiby": "1.1.32"
+        "quiby": "1.1.33"
       },
-      "sourceFile": "quiby-1.21.1-1.1.32.jar",
+      "sourceFile": "quiby-1.21.1-1.1.33.jar",
       "builtQuiby": true
     },
     {
@@ -380,6 +380,19 @@
         "voicechat": "1.21.1-2.6.24",
         "voicechat_api": "2.6.24"
       }
+    },
+    {
+      "file": "Chunky-NeoForge-1.4.23.jar",
+      "sha256": "d72f235cf1f56f2c374f52c00bdda5034524b28142305a84cfc123a3f92ad274",
+      "modIds": [
+        "chunky"
+      ],
+      "versions": {
+        "chunky": "1.4.23"
+      },
+      "importedArtifact": "imported/d72f235cf1f56f2c374f52c00bdda5034524b28142305a84cfc123a3f92ad274/Chunky-NeoForge-1.4.23.jar",
+      "origin": "https://cdn.modrinth.com/data/fALzjamp/versions/LuFhm4eU/Chunky-NeoForge-1.4.23.jar",
+      "serverOnly": true
     }
   ],
   "excluded": [
@@ -488,7 +501,7 @@
       "reason": "Client inventory controls"
     },
     {
-      "file": "quiby-early-loading-1.21.1-1.1.32.jar",
+      "file": "quiby-early-loading-1.21.1-1.1.33.jar",
       "modIds": [],
       "sha256": "1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99",
       "reason": "Client NeoForge early loading provider"

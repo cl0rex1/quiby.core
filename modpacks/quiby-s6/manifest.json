@@ -1,7 +1,7 @@
 {
   "id": "quiby-s6",
   "name": "quiby. Season 6",
-  "version": "6.1.39",
+  "version": "6.1.40",
   "gameVersion": "1.21.1",
   "loader": {
     "type": "neoforge",
@@ -10,7 +10,7 @@
   "javaVersion": 21,
   "recommendedRamMb": 8192,
   "minRamMb": 4096,
-  "totalSize": 285918775,
+  "totalSize": 286336341,
   "files": [
     {
       "path": "config/DistantHorizons.toml",
@@ -1597,10 +1597,10 @@
       "modIconUrl": "/api/modpack/files/imported/icons/53a0958b7047763f0eba0cf0e6909ab44bc71450448a9840a0f1e1e26f7a0e38.png"
     },
     {
-      "path": "mods/quiby-1.21.1-1.1.32.jar",
-      "sha256": "4f8c3b4c0fbbcbcb0589c01694f24fea279a467158d4519389b0d114570fd904",
-      "size": 5364165,
-      "downloadUrl": "/api/modpack/files/imported/4f8c3b4c0fbbcbcb0589c01694f24fea279a467158d4519389b0d114570fd904/quiby-1.21.1-1.1.32.jar",
+      "path": "mods/quiby-1.21.1-1.1.33.jar",
+      "sha256": "e38b380c0e5b5e915941153320bcaf9af708e964e821e77fae406d1e3aa5a93c",
+      "size": 5781731,
+      "downloadUrl": "/api/modpack/files/imported/e38b380c0e5b5e915941153320bcaf9af708e964e821e77fae406d1e3aa5a93c/quiby-1.21.1-1.1.33.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1609,15 +1609,15 @@
       ],
       "modId": "quiby",
       "modName": "Quiby Season 6",
-      "modVersion": "1.1.32",
+      "modVersion": "1.1.33",
       "modDescription": "Локализация, скины, проверка входа, рецепты Create Radars и цепная детонация снарядов Create Big Cannons.",
       "modIconUrl": "/api/modpack/files/imported/icons/6c55e1cae1bc95d249fa2243eaf2b8452df78f326906da34186ace40a8cc969a.png"
     },
     {
-      "path": "mods/quiby-early-loading-1.21.1-1.1.32.jar",
+      "path": "mods/quiby-early-loading-1.21.1-1.1.33.jar",
       "sha256": "1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99",
       "size": 3036102,
-      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.32.jar",
+      "downloadUrl": "/api/modpack/files/imported/1814dc59e58df8e8663d3e4bf7eefe57d361dfd7cd63239f8426722da31e0c99/quiby-early-loading-1.21.1-1.1.33.jar",
       "action": "sync",
       "profiles": [
         "full",
@@ -1626,7 +1626,7 @@
       ],
       "modId": "quiby_early_loading",
       "modName": "Quiby Early Loading",
-      "modVersion": "1.1.32",
+      "modVersion": "1.1.33",
       "modDescription": "Фирменная анимация на раннем экране NeoForge."
     },
     {
@@ -1874,7 +1874,7 @@
       "action": "sync"
     }
   ],
-  "changelog": "Исправлено падение Sable при разделении уже удалённой взрывом физической конструкции. Радиация аварии Create Nuclear: радиус 135–900 блоков, обработка загруженных чанков с ограничением за тик. Зелье ветрового заряда сохраняет ванильный эффект без взрыва Explosion Overhaul. Для исправления direct и диагностики маршрутов требуется лаунчер 1.1.6.",
+  "changelog": "Первый вход — кинематографичный прилёт на метеорите у костра открытия: дальний подлёт, звук, удар, дым Create Big Cannons и отдельные точки приземления. Пули и осколки Create Big Cannons поражают игроков в рэгдолле; выход из рэгдолла больше не сбрасывает накопленное падение. Оптимизированы геометрия, частицы и выбор мест прибытия. Серверная сборка дополнена Chunky для прогрузки мира. Требуется полностью перезапустить Minecraft.",
   "serverAddress": "play.quiby.me:25565",
-  "updatedAt": "2026-10-23T20:15:28.039749+00:00"
+  "updatedAt": "2026-10-24T00:34:07.601773Z"
 }
