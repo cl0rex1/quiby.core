@@ -1,5 +1,6 @@
 import { renderNewsContent } from '../services/newsMarkup';
 import { defaultAccessMessage, getLauncherAccess, setLauncherAccess } from '../services/launcherAccess';
+import { defaultGameAccessMessage, getGameAccess, setGameAccess } from '../services/gameAccess';
 import { listNews, newsSchema, saveNews } from '../services/newsService';
 import { Router, Request, Response, NextFunction } from 'express';
 import { createHash, timingSafeEqual } from 'crypto';
@@ -55,7 +56,7 @@ router.use((req, res, next) => {
 });
 router.get('/session', (_req, res) => res.json({ authenticated: true }));
 router.post('/logout', (_req, res) => { res.clearCookie(cookieName, cookieOptions); res.json({ success: true }); });
-const querySchema = z.object({ page: z.coerce.number().int().min(1).max(100000).default(1), search: z.string().max(100).default(''), status: z.enum(['all','pending','approved','rejected']).default('all'), category:z.enum(['all','mods','resourcepacks','other']).default('all'), access:z.enum(['all','allowed','blocked','exempt']).default('all') });
+const querySchema = z.object({ page: z.coerce.number().int().min(1).max(100000).default(1), search: z.string().max(100).default(''), status: z.enum(['all','pending','approved','rejected']).default('all'), category:z.enum(['all','mods','resourcepacks','other']).default('all'), access:z.enum(['all','allowed','blocked','exempt','game-exempt','game-blocked']).default('all') });
 const decisionSchema = z.object({ decision: z.enum(['approved','rejected']), reason: z.string().trim().min(3).max(1000) });
 const idSchema = z.coerce.number().int().positive();
 async function audit(action: string, target: string, details: string) {
@@ -67,6 +68,14 @@ router.put('/launcher-access', wrap(async (req, res) => {
   if (!input.success) return res.status(400).json({ error: 'Укажите состояние доступа и сообщение до 500 символов.' });
   const access = await setLauncherAccess(input.data.closed, input.data.message);
   await audit(access.closed ? 'launcher:close' : 'launcher:open', 'all', access.message);
+  return res.json(access);
+}));
+router.get('/minecraft-access', wrap(async (_req, res) => res.json(await getGameAccess())));
+router.put('/minecraft-access', wrap(async (req, res) => {
+  const input = z.object({ closed: z.boolean(), message: z.string().trim().max(500).default(defaultGameAccessMessage) }).strict().safeParse(req.body);
+  if (!input.success) return res.status(400).json({ error: 'Укажите состояние доступа и сообщение до 500 символов.' });
+  const access = await setGameAccess(input.data.closed, input.data.message);
+  await audit(access.closed ? 'minecraft:close' : 'minecraft:open', 'all', access.message);
   return res.json(access);
 }));
 router.get('/overview', wrap(async (_req, res) => {
@@ -101,10 +110,12 @@ for (const [route, table, searchColumns] of [
       if(q.access==='allowed')clauses.push('is_whitelisted=1');
       if(q.access==='blocked')clauses.push('is_whitelisted=0');
       if(q.access==='exempt')clauses.push('is_whitelisted=1 AND launcher_access_exempt=1');
+      if(q.access==='game-exempt')clauses.push('is_whitelisted=1 AND minecraft_access_blocked=0 AND minecraft_access_exempt=1');
+      if(q.access==='game-blocked')clauses.push('minecraft_access_blocked=1');
     }
     const where = clauses.join(' AND ');
     const count = await dbGet(`SELECT COUNT(*) total FROM ${table} WHERE ${where}`, values);
-    const columns = route === 'players' ? 'id,discord_id,discord_username,mc_username,uuid,is_whitelisted,launcher_access_exempt,playtime_seconds,created_at,last_login_at' : '*';
+    const columns = route === 'players' ? 'id,discord_id,discord_username,mc_username,uuid,is_whitelisted,launcher_access_exempt,minecraft_access_blocked,minecraft_access_exempt,playtime_seconds,created_at,last_login_at' : '*';
     const items = await dbAll(`SELECT ${columns} FROM ${table} WHERE ${where} ORDER BY id DESC LIMIT 30 OFFSET ?`, [...values, (q.page - 1) * 30]);
     res.json({ items, total: count?.total || 0, page: q.page, pageSize: 30, ...(route==='mods'?{categories}:{}) });
   }));
@@ -130,16 +141,24 @@ router.post('/mods', wrap(async (req, res) => {
   return res.status(code).json(result);
 }));
 router.patch('/players/:id', wrap(async (req, res) => {
-  const body = z.object({ allowed: z.boolean().optional(), launcherExempt:z.boolean().optional() }).strict().refine(b=>b.allowed!==undefined||b.launcherExempt!==undefined).safeParse(req.body);
+  const body = z.object({ allowed: z.boolean().optional(), launcherExempt:z.boolean().optional(), minecraftBlocked:z.boolean().optional(), minecraftExempt:z.boolean().optional() }).strict().refine(b=>Object.values(b).some(value=>value!==undefined)).safeParse(req.body);
   if (!/^\d{17,20}$/.test(req.params.id) || !body.success) return res.status(400).json({ error: 'Некорректные данные' });
-  const player=await dbGet<{is_whitelisted:number}>('SELECT is_whitelisted FROM users WHERE discord_id=?',[req.params.id]);
+  const player=await dbGet<{is_whitelisted:number;minecraft_access_blocked:number}>('SELECT is_whitelisted,minecraft_access_blocked FROM users WHERE discord_id=?',[req.params.id]);
   if(!player)return res.status(404).json({error:'Игрок не найден'});
   if(body.data.launcherExempt && !(body.data.allowed??Boolean(player.is_whitelisted)))return res.status(400).json({error:'Сначала разрешите личный доступ игроку.'});
+  if(body.data.minecraftExempt && (!(body.data.allowed??Boolean(player.is_whitelisted)) || (body.data.minecraftBlocked??Boolean(player.minecraft_access_blocked))))return res.status(400).json({error:'Сначала разрешите игроку запуск Minecraft.'});
   const allowed=body.data.allowed===undefined?null:Number(body.data.allowed), exempt=body.data.launcherExempt===undefined?null:Number(body.data.launcherExempt);
-  const result = await dbRun('UPDATE users SET is_whitelisted=COALESCE(?,is_whitelisted), launcher_access_exempt=CASE WHEN COALESCE(?,is_whitelisted)=0 THEN 0 ELSE COALESCE(?,launcher_access_exempt) END WHERE discord_id=?', [allowed,allowed,exempt,req.params.id]);
+  const gameBlocked=body.data.minecraftBlocked===undefined?null:Number(body.data.minecraftBlocked), gameExempt=body.data.minecraftExempt===undefined?null:Number(body.data.minecraftExempt);
+  const result = await dbRun(`UPDATE users SET is_whitelisted=COALESCE(?,is_whitelisted),
+    launcher_access_exempt=CASE WHEN COALESCE(?,is_whitelisted)=0 THEN 0 ELSE COALESCE(?,launcher_access_exempt) END,
+    minecraft_access_blocked=COALESCE(?,minecraft_access_blocked),
+    minecraft_access_exempt=CASE WHEN COALESCE(?,is_whitelisted)=0 OR COALESCE(?,minecraft_access_blocked)=1 THEN 0 ELSE COALESCE(?,minecraft_access_exempt) END
+    WHERE discord_id=?`, [allowed,allowed,exempt,gameBlocked,allowed,gameBlocked,gameExempt,req.params.id]);
   if (!result.changes) return res.status(404).json({ error: 'Игрок не найден' });
   if(body.data.allowed!==undefined)await audit(body.data.allowed ? 'players:allow' : 'players:block', req.params.id, 'Личный доступ к лаунчеру и игре; личный запрет отменяет исключение.');
   if(body.data.launcherExempt!==undefined)await audit(body.data.launcherExempt?'players:exempt':'players:unexempt',req.params.id,'Исключение из общей блокировки лаунчера');
+  if(body.data.minecraftBlocked!==undefined)await audit(body.data.minecraftBlocked?'minecraft:player-block':'minecraft:player-allow',req.params.id,'Личный доступ к запуску Minecraft');
+  if(body.data.minecraftExempt!==undefined)await audit(body.data.minecraftExempt?'minecraft:exempt':'minecraft:unexempt',req.params.id,'Исключение из общей блокировки Minecraft');
   res.json({ success: true });
 }));
 router.post('/news/preview', wrap(async (req, res) => {

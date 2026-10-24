@@ -15,6 +15,9 @@ interface FloatingActionDeckProps {
   launchState: LaunchState;
   launchPending?: boolean;
   launchBlocked?: string;
+  accessMessage?: string;
+  onRetryAccess?: () => void;
+  accessChecking?: boolean;
   onLaunch: () => void;
   onOpenLogin: () => void;
   hasUnsavedChanges?: boolean;
@@ -29,6 +32,9 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
   launchState,
   launchPending = false,
   launchBlocked,
+  accessMessage,
+  onRetryAccess,
+  accessChecking,
   onLaunch,
   onOpenLogin,
   hasUnsavedChanges = false,
@@ -46,7 +52,8 @@ export const FloatingActionDeck: React.FC<FloatingActionDeckProps> = ({
     return (
       <div className={`launcher-dock home-launch-dock ${transitioning ? 'is-launching' : ''}`} >
         {/* Right Side: Primary Play Button */}
-        <div className="relative flex items-center gap-3">
+        <div className="relative flex flex-col items-center gap-3">
+          {session && accessMessage && <div className="game-access-notice"><p role="status">{accessMessage}</p><button type="button" className="ui-button" onClick={onRetryAccess} disabled={accessChecking}>{accessChecking ? 'Проверяем…' : 'Проверить доступ'}</button></div>}
           {!session ? (
             <button
               type="button"

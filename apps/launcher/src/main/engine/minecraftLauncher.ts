@@ -20,7 +20,7 @@ import { getLatestModpackManifest } from './manifestSource';
 import { readCrashDetails } from './crashDetails';
 import { prepareResourcePackAdmission } from './resourcePackAdmission';
 import { guardModDirectory } from './modDirectoryGuard';
-import { prepareGameAdmission } from './gameAdmission';
+import { prepareGameAdmission, requireGameLaunchAccess } from './gameAdmission';
 import { prepareDirectRoute } from './directRoute';
 
 let runningGameProcess: ChildProcess | null = null;
@@ -91,6 +91,7 @@ export async function launchMinecraft(
   };
 
   try {
+    await requireGameLaunchAccess(serverBaseUrl, session.token);
     const customJavaArgs = parseCustomJvmArgs(settings.customJvmArgs || '');
     setLaunchState({ status: 'updating' });
     if (settings.modpackProfile === 'full') throw new Error('Visual временно недоступна. Выберите Standard или Draft в настройках.');

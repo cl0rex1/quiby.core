@@ -19,7 +19,7 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
         await route.fulfill({ json: { totalSeconds: cloudSeconds } }); return;
       }
       const body = pathname === '/api/auth/me' ? { user: { discordId: 'fixture', username: 'Fixture', mcUsername: 'QuibyPlayer', uuid: 'fixture', roles: [], isWhitelisted: true } }
-        : pathname === '/api/launcher/access' ? { closed: false, message: '' }
+        : pathname === '/api/launcher/access' || pathname === '/api/game/access' ? { closed: false, message: '' }
         : pathname === '/api/status' ? { online: true, ip: 'localhost', port: 25565, players: { online: 12, max: 50 } }
         : pathname === '/api/news' ? [] : {};
       await route.fulfill({ json: body });

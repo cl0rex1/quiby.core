@@ -3,7 +3,8 @@ import { createPublicKey } from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { config } from '../config';
-import { AuthenticatedRequest, requireAuth, requireSession } from '../middleware/auth';
+import { AuthenticatedRequest, requireAuth, requireSession, sessionDiscordId } from '../middleware/auth';
+import { getPlayerGameAccess } from '../services/gameAccess';
 import { requireSupportedLauncher } from '../middleware/launcherVersion';
 import { dbGet, dbRun } from '../models/db';
 
@@ -13,6 +14,11 @@ const issuer = 'quiby-core';
 const issueSchema = z.object({ publicKey: z.string().regex(/^[A-Za-z0-9+/]+={0,2}$/).max(128) });
 const verifySchema = z.object({ ticket: z.string().min(1).max(4096), username: z.string().regex(/^[a-zA-Z0-9_]{3,16}$/), uuid: z.string().uuid() });
 const playtimeSchema = z.object({ deviceId: z.string().uuid(), totalSeconds: z.number().int().min(0).max(315360000), legacySeconds: z.number().int().min(0).max(315360000).default(0) }).strict();
+
+router.get('/access', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  void getPlayerGameAccess(sessionDiscordId(req)).then(access => res.json(access)).catch(next);
+});
 
 // Keep saving an already running game during a launcher closure. Device counters
 // make retries and out-of-order requests idempotent, including after reinstall.
@@ -33,9 +39,14 @@ router.put('/playtime', requireSupportedLauncher, requireSession, async (req: Au
 
 // A game-only ticket is not an API/Discord session. The private signing key
 // stays in the launched JVM; captured tickets cannot authenticate another client.
-router.post('/join-ticket', requireSupportedLauncher, requireAuth, (req: AuthenticatedRequest, res: Response) => {
+router.post('/join-ticket', requireSupportedLauncher, requireAuth, (req: AuthenticatedRequest, res: Response, next) => {
+  void issueTicket(req, res).catch(next);
+});
+async function issueTicket(req: AuthenticatedRequest, res: Response) {
   res.set('Cache-Control', 'no-store');
   if (!req.user?.isWhitelisted) return res.status(403).json({ error: 'Доступ к серверу закрыт.' });
+  const access = await getPlayerGameAccess(req.user.discordId);
+  if (access.closed) return res.set('Retry-After', '30').status(access.personalBlocked ? 403 : 503).json({ code: 'MINECRAFT_ACCESS_CLOSED', error: access.message });
   const input = issueSchema.safeParse(req.body);
   if (!input.success) return res.status(400).json({ error: 'Invalid game public key' });
   try {
@@ -48,7 +59,7 @@ router.post('/join-ticket', requireSupportedLauncher, requireAuth, (req: Authent
   } catch {
     return res.status(400).json({ error: 'Invalid game public key' });
   }
-});
+}
 
 router.post('/verify-join-ticket', async (req, res) => {
   res.set('Cache-Control', 'no-store');
@@ -64,6 +75,9 @@ router.post('/verify-join-ticket', async (req, res) => {
       || claims.mcUsername !== user.mc_username || claims.uuid !== user.uuid || typeof claims.publicKey !== 'string') {
       return res.status(403).json({ valid: false });
     }
+    // Recheck old tickets too; a restriction must not be bypassed with a ticket
+    // obtained before the closure. Already connected players are unaffected.
+    if ((await getPlayerGameAccess(claims.sub)).closed) return res.status(403).json({ valid: false });
     return res.json({ valid: true, username: user.mc_username, uuid: user.uuid, publicKey: claims.publicKey });
   } catch {
     return res.status(401).json({ valid: false });

@@ -3,6 +3,9 @@ const $ = id => document.getElementById(id);
 let tab = 'mods', page = 1, selection = null, generation = 0, category='all';
 let requestController, busy = false, renderedKey = '', renderedData = '', toastTimer;
 let accessState = null, accessSaving = false;
+const accessDrafts = new Map();
+const isAccessTab = () => tab==='access'||tab==='gameAccess';
+const accessEndpoint = () => tab==='gameAccess'?'/minecraft-access':'/launcher-access';
 const filters = new Map();
 const names = { access: ['Доступ к лаунчеру','Общая блокировка и исключения для игроков.'], news: ['Новости и рассылки','Публикуйте новости и отправляйте уведомления в лаунчер.'], mods: ['Вайтлист контента','Моды, ресурспаки и решения по конкретным файлам.'], players: ['Игроки','Личный доступ, исключения из общей блокировки и время в игре.'], names: ['Смена ников','Проверяйте заявки перед изменением игрового имени и UUID.'], audit: ['Журнал действий','История решений, принятых через веб-панель.'] };
 async function api(path, options = {}) {
@@ -20,8 +23,9 @@ async function api(path, options = {}) {
     throw error;
   }
 }
+names.gameAccess = ['Запуск Minecraft','Отдельная блокировка игры, сообщения и исключения для игроков.'];
 function el(tag, text, className) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; return e; }
-function showLogin() { generation++; requestController?.abort(); busy=false; accessState=null;renderedKey='';renderedData='';$('login').hidden = false; $('app').hidden = true; $('decision').close(); $('news-editor').close(); }
+function showLogin() { generation++; requestController?.abort(); busy=false; accessState=null;accessDrafts.clear();renderedKey='';renderedData='';$('login').hidden = false; $('app').hidden = true; $('decision').close(); $('news-editor').close(); }
 function toast(text) { clearTimeout(toastTimer); $('toast').textContent = text; $('toast').hidden = false; toastTimer=setTimeout(() => { $('toast').hidden = true; }, 5000); }
 function date(value) { if (!value) return '—'; const d = new Date(value.includes('T') ? value : value.replace(' ','T') + 'Z'); return isNaN(d) ? value : d.toLocaleString('ru-RU'); }
 function button(label, action, danger = false) { const b = el('button',label,danger ? 'danger' : ''); b.type='button'; b.onclick=action; return b; }
@@ -29,7 +33,8 @@ function copyButton(value,label) { return button(label,async()=>{try{await navig
 function timePlayed(seconds=0){const minutes=Math.floor(seconds/60);return Math.floor(minutes/60)+' ч '+minutes%60+' мин';}
 async function changePlayer(item,body) {
   const message=body.launcherExempt===undefined?(body.allowed?'Разрешить личный доступ':'Закрыть личный доступ и убрать исключение'):body.launcherExempt?'Разрешить вход при общей блокировке':'Убрать исключение из общей блокировки';
-  if(!confirm(message+' игроку '+item.mc_username+'?'))return;
+  const gameMessage=body.minecraftBlocked!==undefined?(body.minecraftBlocked?'Запретить запуск Minecraft':'Разрешить запуск Minecraft'):body.minecraftExempt!==undefined?(body.minecraftExempt?'Разрешить Minecraft при общей блокировке':'Убрать исключение Minecraft'):message;
+  if(!confirm(gameMessage+' игроку '+item.mc_username+'?'))return;
   try{await api('/players/'+item.discord_id,{method:'PATCH',body:JSON.stringify(body)});toast('Доступ игрока обновлён');await load();}catch(error){toast(error.message);}
 }
 async function enter() { $('login').hidden=true; $('app').hidden=false; navigate(location.hash.slice(1)||tab,undefined,true); }
@@ -46,13 +51,20 @@ function renderRows(data, reviewed) {
       else if(tab==='players') {
         info.append(el('span',item.is_whitelisted?'Личный доступ открыт':'Личный доступ закрыт','badge '+(item.is_whitelisted?'approved':'rejected')),el('h3',item.mc_username));
         if(item.launcher_access_exempt && item.is_whitelisted)info.append(el('span','Вход при общей блокировке','badge exempt'));
+        if(item.minecraft_access_blocked)info.append(el('span','Запуск Minecraft запрещён','badge rejected'));
+        else if(item.minecraft_access_exempt && item.is_whitelisted)info.append(el('span','Minecraft: исключение из блокировки','badge exempt'));
         info.append(el('p',item.discord_username+' · '+item.discord_id,'details'),el('p','UUID: '+item.uuid,'details'),el('p','Наиграно: '+timePlayed(item.playtime_seconds)+' · Последний вход: '+date(item.last_login_at),'details'));
         const exemption=button(item.launcher_access_exempt?'Убрать исключение':'Разрешить при блокировке',()=>changePlayer(item,{launcherExempt:!item.launcher_access_exempt}));
         exemption.disabled=!item.is_whitelisted;exemption.title=!item.is_whitelisted?'Сначала разрешите личный доступ':'';
         actions.append(button(item.is_whitelisted?'Закрыть доступ':'Разрешить доступ',()=>changePlayer(item,{allowed:!item.is_whitelisted}),!!item.is_whitelisted),exemption,copyButton(item.discord_id,'Копировать Discord ID'));
+        exemption.title=item.is_whitelisted?'Исключение для лаунчера; Minecraft настраивается отдельно':exemption.title;
+        const gameExemption=button(item.minecraft_access_exempt?'Убрать исключение Minecraft':'Разрешить Minecraft при блокировке',()=>changePlayer(item,{minecraftExempt:!item.minecraft_access_exempt}));
+        gameExemption.disabled=!item.is_whitelisted||!!item.minecraft_access_blocked;
+        gameExemption.title=gameExemption.disabled?'Сначала разрешите личный доступ и запуск Minecraft':'';
+        actions.append(button(item.minecraft_access_blocked?'Разрешить Minecraft':'Запретить Minecraft',()=>changePlayer(item,{minecraftBlocked:!item.minecraft_access_blocked}),!item.minecraft_access_blocked),gameExemption);
       }
       else if(tab==='news'){info.append(el('span',item.broadcastRevision?'С уведомлением':'В ленте','badge'),el('h3',item.title),el('p',item.excerpt),el('p',item.author+' · '+date(item.date),'details'));actions.append(button('Изменить',()=>editNews(item)),button('Удалить',async()=>{if(!confirm('Удалить новость из ленты? Уже доставленное уведомление останется у читателей.'))return;try{await api('/news/'+encodeURIComponent(item.id),{method:'DELETE'});await load();}catch(e){toast(e.message);}},true));}
-      else {const labels={'resourcepacks:approved':'Ресурспак разрешён','resourcepacks:rejected':'Ресурспак отклонён','players:exempt':'Добавлено исключение доступа','players:unexempt':'Убрано исключение доступа','mods:approved':'Мод разрешён','mods:rejected':'Мод отклонён','names:approved':'Смена ника одобрена','names:rejected':'Смена ника отклонена','players:allow':'Доступ игроку открыт','players:block':'Доступ игроку закрыт','news:save':'Новость сохранена','news:broadcast':'Новость с уведомлением','news:delete':'Новость удалена','launcher:close':'Доступ к лаунчеру закрыт','launcher:open':'Доступ к лаунчеру открыт'};info.append(el('h3',labels[item.action]||item.action),el('p',item.details),el('p',(item.target==='all'?'Все игроки':item.target)+' · '+date(item.created_at),'details'));}
+      else {const labels={'minecraft:close':'Запуск Minecraft закрыт','minecraft:open':'Запуск Minecraft открыт','minecraft:player-block':'Игроку запрещён Minecraft','minecraft:player-allow':'Игроку разрешён Minecraft','minecraft:exempt':'Добавлено исключение Minecraft','minecraft:unexempt':'Убрано исключение Minecraft','resourcepacks:approved':'Ресурспак разрешён','resourcepacks:rejected':'Ресурспак отклонён','players:exempt':'Добавлено исключение доступа','players:unexempt':'Убрано исключение доступа','mods:approved':'Мод разрешён','mods:rejected':'Мод отклонён','names:approved':'Смена ника одобрена','names:rejected':'Смена ника отклонена','players:allow':'Доступ игроку открыт','players:block':'Доступ игроку закрыт','news:save':'Новость сохранена','news:broadcast':'Новость с уведомлением','news:delete':'Новость удалена','launcher:close':'Доступ к лаунчеру закрыт','launcher:open':'Доступ к лаунчеру открыт'};info.append(el('h3',labels[item.action]||item.action),el('p',item.details),el('p',(item.target==='all'?'Все игроки':item.target)+' · '+date(item.created_at),'details'));}
       if(tab==='mods')actions.append(copyButton(item.hash_sha1,'Копировать SHA-1'));
       row.append(info,actions);return row;
     });
@@ -71,17 +83,19 @@ function updateAccessDraft() {
   $('access-draft').textContent = dirty ? 'Есть несохранённые изменения' : 'Все изменения сохранены';
   $('access-draft').dataset.dirty = String(dirty);
   $('access-save').disabled = !dirty || accessSaving || $('access-fields').disabled;
-  $('access-preview-title').textContent = closed ? 'Доступ временно закрыт' : 'Лаунчер доступен';
-  $('access-preview-message').textContent = closed ? ($('access-message').value.trim() || 'Доступ к лаунчеру временно закрыт. Попробуйте позже.') : 'Игроки могут войти и запустить игру.';
+  const game=tab==='gameAccess';
+  $('access-preview-title').textContent = closed ? (game?'Запуск Minecraft закрыт':'Доступ временно закрыт') : game?'Minecraft доступен':'Лаунчер доступен';
+  $('access-preview-message').textContent = closed ? ($('access-message').value.trim() || (game?'Запуск Minecraft временно закрыт. Попробуйте позже.':'Доступ к лаунчеру временно закрыт. Попробуйте позже.')) : game?'Игроки могут запускать Minecraft.':'Игроки могут войти и запустить игру.';
 }
 function showAccess(state) {
+  accessDrafts.delete(tab);
   accessState = state;
   $('access-closed').checked = state.closed;
   $('access-message').value = state.message;
   $('access-status').textContent = state.closed ? 'Общий доступ закрыт' : 'Доступ открыт';
   $('access-state-badge').textContent = state.closed ? 'Закрыт' : 'Открыт';
   $('access-state-badge').className = 'badge ' + (state.closed ? 'rejected' : 'approved');
-  $('access-updated').textContent = state.updatedAt ? 'Последнее изменение: ' + date(state.updatedAt) : 'Игроки могут войти и запустить игру.';
+  $('access-updated').textContent = state.updatedAt ? 'Последнее изменение: ' + date(state.updatedAt) : state.closed?'Настройка хранится на сервере.':tab==='gameAccess'?'Запуск Minecraft разрешён.':'Игроки могут войти и запустить игру.';
   $('access-error').textContent = '';
   updateAccessDraft();
 }
@@ -113,7 +127,10 @@ async function load({ silent = false } = {}) {
   requestController?.abort();
   busy=false;$('refresh').disabled=false;
   const controller = requestController = new AbortController(), mine = ++generation, currentTab=tab;
-  const reviewed = tab==='mods'||tab==='names', isAccess=tab==='access';
+  const reviewed = tab==='mods'||tab==='names', isAccess=isAccessTab();
+  $('access-scope').textContent=tab==='gameAccess'?'ЗАПУСК MINECRAFT':'СЕЙЧАС В ЛАУНЧЕРЕ';
+  $('access-description').textContent=tab==='gameAccess'?'Запретить запуск игры всем, кроме игроков с исключением Minecraft. Лаунчер, новости и настройки останутся доступны.':'Для всех игроков, кроме разрешённых исключений в списке аккаунтов.';
+  $('access-note-check').textContent=tab==='gameAccess'?'Доступ проверяется перед запуском Minecraft и при подключении к серверу.':'Открытые лаунчеры обновят доступ в течение 30 секунд.';
   document.querySelector('.footnote').hidden=isAccess;
   $('records-panel').hidden=isAccess;$('access-panel').hidden=!isAccess;$('stats').hidden=isAccess;
   $('players-tabs').hidden=tab!=='players'&&!isAccess;$('content-categories').hidden=tab!=='mods';$('player-filter').hidden=tab!=='players';
@@ -133,7 +150,7 @@ async function load({ silent = false } = {}) {
   }
   try {
     if (isAccess) {
-      const state=await api('/launcher-access',{signal:controller.signal});
+      const state=await api(accessEndpoint(),{signal:controller.signal});
       if (mine!==generation)return;
       if(typeof state.closed!=='boolean'||typeof state.message!=='string')throw Error('Не удалось прочитать настройки доступа. Повторите запрос.');
       showAccess(state);$('access-fields').disabled=false;updateAccessDraft();
@@ -166,24 +183,31 @@ async function load({ silent = false } = {}) {
   }
 }
 function navigate(nextTab, status, fromHistory=false) {
+  if(accessSaving)return;
   const [section,subsection]=nextTab.split('/');
-  nextTab=section==='players'&&subsection==='access'?'access':section;
+  nextTab=section==='players'&&subsection==='access'?'access':section==='players'&&subsection==='minecraft'?'gameAccess':section;
   if (!names[nextTab])nextTab='mods';
   clearTimeout(debounce);
   filters.set(tab==='mods'?tab+':'+category:tab,{search:$('search').value,status:$('status').value,access:$('player-filter').value,page});
   if(nextTab==='mods'&&!subsection&&fromHistory)category='all';
   if(nextTab==='mods'&&['all','mods','resourcepacks','other'].includes(subsection))category=subsection;
+  if(isAccessTab())accessDrafts.set(tab,{state:accessState,closed:$('access-closed').checked,message:$('access-message').value});
   tab=nextTab;
+  if(isAccessTab()){
+    const draft=accessDrafts.get(tab);accessState=draft?.state||null;
+    if(accessState){showAccess(accessState);$('access-closed').checked=draft.closed;$('access-message').value=draft.message;$('access-fields').disabled=false;updateAccessDraft();}
+    else{$('access-fields').disabled=true;$('access-error').textContent='';$('access-status').textContent='Проверяем доступ…';}
+  }
   const saved=filters.get(tab==='mods'?tab+':'+category:tab);
   page=status?1:saved?.page||1;$('search').value=saved?.search||'';$('status').value=status||saved?.status||'pending';
   $('player-filter').value=saved?.access||'all';
   for(const button of document.querySelectorAll('[data-tab]')){
-    const active=button.dataset.tab===(tab==='access'?'players':tab);button.classList.toggle('active',active);
+    const active=button.dataset.tab===(isAccessTab()?'players':tab);button.classList.toggle('active',active);
     if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
   }
   document.querySelector('[aria-current="page"]')?.scrollIntoView({block:'nearest',inline:'nearest'});
   window.scrollTo({top:0});
-  const route=tab==='access'?'players/access':tab==='mods'&&category!=='all'?'mods/'+category:tab;
+  const route=tab==='access'?'players/access':tab==='gameAccess'?'players/minecraft':tab==='mods'&&category!=='all'?'mods/'+category:tab;
   if(location.hash.slice(1)!==route)history[fromHistory?'replaceState':'pushState'](null,'','#'+route);
   void load();
 }
@@ -196,7 +220,7 @@ $('status').onchange=()=>{clearTimeout(debounce);page=1;void load();};
 $('player-filter').onchange=()=>{page=1;void load();};
 $('prev').onclick=()=>{page--;void load();};$('next').onclick=()=>{page++;void load();};
 async function refresh() {
-  if(tab==='access'&&accessDirty()) {
+  if(isAccessTab()&&accessDirty()) {
     if(!confirm('Обновить настройки с сервера? Несохранённые изменения будут потеряны.'))return;
     showAccess(accessState);
   }
@@ -205,7 +229,7 @@ async function refresh() {
 $('refresh').onclick=refresh;$('retry').onclick=refresh;
 $('access-closed').onchange=updateAccessDraft;$('access-message').oninput=updateAccessDraft;
 window.addEventListener('popstate',()=>navigate(location.hash.slice(1),undefined,true));
-window.addEventListener('beforeunload',event=>{if(accessDirty()){event.preventDefault();event.returnValue='';}});
+window.addEventListener('beforeunload',event=>{if(accessDirty()||[...accessDrafts.values()].some(d=>d.state&&(d.closed!==d.state.closed||d.message!==d.state.message))){event.preventDefault();event.returnValue='';}});
 document.addEventListener('keydown',event=>{
   if(event.key==='/'&&!event.ctrlKey&&!event.metaKey&&!$('app').hidden&&tab!=='access'&&!document.querySelector('dialog[open]')&&!event.target.closest('input,textarea,select,[contenteditable]')){event.preventDefault();$('search').focus();}
 });
@@ -260,8 +284,8 @@ $('access-form').onsubmit=async event=>{
   event.preventDefault();if(!accessDirty()||accessSaving||$('access-fields').disabled)return;
   accessSaving=true;$('access-save').disabled=true;$('access-save').textContent='Сохраняем…';$('access-fields').disabled=true;$('refresh').disabled=true;$('access-error').textContent='';
   try {
-    const state=await api('/launcher-access',{method:'PUT',body:JSON.stringify({closed:$('access-closed').checked,message:$('access-message').value})});
-    showAccess(state);toast('Доступ обновлён');
+    const state=await api(accessEndpoint(),{method:'PUT',body:JSON.stringify({closed:$('access-closed').checked,message:$('access-message').value})});
+    showAccess(state);accessDrafts.delete(tab);toast('Доступ обновлён');connection('Доступ сохранён');
   } catch(error) { $('access-error').textContent=error.message; }
   finally { accessSaving=false;$('access-fields').disabled=!accessState;$('refresh').disabled=false;$('access-save').textContent='Сохранить доступ';updateAccessDraft(); }
 };

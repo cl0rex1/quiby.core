@@ -134,3 +134,52 @@ test('players own global settings, personal access, exceptions and filters',asyn
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.screenshot({path:info.outputPath('players-mobile.png'),fullPage:true});
 });
+
+test('Minecraft access has its own settings, drafts and player controls',async({page},info)=>{
+  await admin(page);
+  let game={closed:false,message:'Готовим сервер'}, saves=0;
+  await page.route('**/api/control/minecraft-access',async route=>{
+    if(route.request().method()==='PUT'){game=route.request().postDataJSON();saves++;}
+    await route.fulfill({json:game});
+  });
+  const player={id:1,discord_id:'123456789012345678',mc_username:'Tester',discord_username:'Tester',uuid:'uuid',is_whitelisted:1,minecraft_access_blocked:0,minecraft_access_exempt:0};
+  await page.route('**/api/control/players**',async route=>{
+    if(route.request().method()==='PATCH'){
+      const body=route.request().postDataJSON();
+      if(body.minecraftBlocked!==undefined){player.minecraft_access_blocked=Number(body.minecraftBlocked);if(body.minecraftBlocked)player.minecraft_access_exempt=0;}
+      if(body.minecraftExempt!==undefined)player.minecraft_access_exempt=Number(body.minecraftExempt);
+      return route.fulfill({json:{success:true}});
+    }
+    await route.fulfill({json:{items:[player],total:1,pageSize:30}});
+  });
+  page.on('dialog',dialog=>dialog.accept());
+  await page.goto('/admin/#players/minecraft');
+  await expect(page.getByRole('heading',{name:'Запуск Minecraft',exact:true})).toBeVisible();
+  await expect(page.getByRole('switch')).not.toBeChecked();
+  await page.screenshot({path:info.outputPath('admin-minecraft-open.png'),fullPage:true});
+  await page.getByRole('switch').check();await page.getByLabel('Сообщение игрокам').fill('Сезон откроется вечером');
+  await page.getByRole('button',{name:'Доступ к лаунчеру',exact:true}).click();
+  await expect(page.getByRole('switch')).not.toBeChecked();
+  await page.getByLabel('Сообщение игрокам').fill('Черновик лаунчера');
+  await page.getByRole('button',{name:'Запуск Minecraft',exact:true}).click();
+  await expect(page.getByRole('switch')).toBeChecked();
+  await expect(page.getByLabel('Сообщение игрокам')).toHaveValue('Сезон откроется вечером');
+  await page.getByRole('button',{name:'Сохранить доступ'}).click();
+  await expect(page.locator('#access-status')).toHaveText('Общий доступ закрыт');
+  expect(game).toEqual({closed:true,message:'Сезон откроется вечером'});expect(saves).toBe(1);
+  await page.screenshot({path:info.outputPath('admin-minecraft-access.png'),fullPage:true});
+  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa']).analyze()).violations).toEqual([]);
+  await page.getByRole('button',{name:'Доступ к лаунчеру',exact:true}).click();
+  await expect(page.getByLabel('Сообщение игрокам')).toHaveValue('Черновик лаунчера');
+  await page.getByRole('button',{name:'Аккаунты',exact:true}).click();
+  const row=page.locator('.row');
+  await row.getByRole('button',{name:'Разрешить Minecraft при блокировке',exact:true}).click();
+  await expect(row).toContainText('Minecraft: исключение из блокировки');
+  await row.getByRole('button',{name:'Запретить Minecraft',exact:true}).click();
+  await expect(row).toContainText('Запуск Minecraft запрещён');
+  await expect(row.getByRole('button',{name:'Разрешить Minecraft при блокировке',exact:true})).toBeDisabled();
+  await row.getByRole('button',{name:'Разрешить Minecraft',exact:true}).click();
+  await expect(row.getByRole('button',{name:'Разрешить Minecraft при блокировке',exact:true})).toBeEnabled();
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});

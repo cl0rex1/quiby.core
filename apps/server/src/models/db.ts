@@ -53,6 +53,10 @@ export async function initDatabase(): Promise<void> {
     id INTEGER PRIMARY KEY CHECK(id = 1), closed INTEGER NOT NULL DEFAULT 0,
     message TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`);
+  await dbRun(`CREATE TABLE IF NOT EXISTS minecraft_access (
+    id INTEGER PRIMARY KEY CHECK(id = 1), closed INTEGER NOT NULL DEFAULT 0,
+    message TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`);
   await dbRun(`CREATE TABLE IF NOT EXISTS admin_audit (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL, target TEXT NOT NULL, details TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   // Users / Discord-Minecraft Whitelist Table
   await dbRun(`
@@ -90,6 +94,9 @@ export async function initDatabase(): Promise<void> {
   // Account playtime and idempotent per-device counters.
   const userColumns = await dbAll<{ name: string }>('PRAGMA table_info(users)');
   if (!userColumns.some(item => item.name === 'launcher_access_exempt')) await dbRun('ALTER TABLE users ADD COLUMN launcher_access_exempt INTEGER NOT NULL DEFAULT 0');
+  for (const column of ['minecraft_access_exempt', 'minecraft_access_blocked']) {
+    if (!userColumns.some(item => item.name === column)) await dbRun(`ALTER TABLE users ADD COLUMN ${column} INTEGER NOT NULL DEFAULT 0`);
+  }
   for (const column of ['playtime_seconds', 'playtime_legacy_seconds']) {
     if (!userColumns.some(item => item.name === column)) await dbRun(`ALTER TABLE users ADD COLUMN ${column} INTEGER NOT NULL DEFAULT 0`);
   }

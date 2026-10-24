@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LockKeyhole, Loader2, RefreshCw } from 'lucide-react';
 
-export function useLauncherAccess(server: string, token?: string) {
+export function useLauncherAccess(server: string, token?: string, endpoint = '/api/launcher/access') {
   const [access, setAccess] = useState<{ closed: boolean; message: string; canLogin: boolean; token?: string } | null>(null);
   const [checking, setChecking] = useState(true), [error, setError] = useState('');
   const refresh = useRef<() => void>(() => {});
@@ -10,7 +10,7 @@ export function useLauncherAccess(server: string, token?: string) {
     const check = async () => {
       if (busy) return; busy = true; setChecking(true);
       try {
-        const response = await fetch(`${server}/api/launcher/access`, { headers: token ? {Authorization:'Bearer '+token} : {}, cache: 'no-store', signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]) });
+        const response = await fetch(`${server}${endpoint}`, { headers: token ? {Authorization:'Bearer '+token} : {}, cache: 'no-store', signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]) });
         const result = await response.json();
         if (!response.ok || typeof result.closed !== 'boolean') throw Error();
         if (!controller.signal.aborted) { setAccess({ token, closed: result.closed, canLogin: result.canLogin===true, message: typeof result.message === 'string' ? result.message : 'Попробуйте позже.' }); setError(''); }
@@ -21,7 +21,7 @@ export function useLauncherAccess(server: string, token?: string) {
     const timer = window.setInterval(check, 30000);
     window.addEventListener('focus', refresh.current);
     return () => { controller.abort(); clearInterval(timer); window.removeEventListener('focus', refresh.current); };
-  }, [server,token]);
+  }, [server,token,endpoint]);
   return { access:access?.token===token?access:null, checking, error, retry: useCallback(() => refresh.current(), []) };
 }
 

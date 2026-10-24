@@ -73,6 +73,7 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [session, setSession] = useState<AuthSession | null>(storedSession);
   const launcherAccess = useLauncherAccess(SERVER_URL,session?.token);
+  const gameAccess = useLauncherAccess(SERVER_URL, session?.token, '/api/game/access');
   const [accessLoginOpen,setAccessLoginOpen]=useState(false);
   const [remoteManifest, setManifest] = useState<ModpackManifest | null>(null);
   const [news, setNews] = useState<NewsArticle[]>([]);
@@ -826,7 +827,10 @@ export const App: React.FC = () => {
             session={session}
             launchState={launchState}
             launchPending={launchPending || settingsStatus === 'loading' || settingsStatus === 'saving'}
-            launchBlocked={launcherUpdate?.required ? 'Обновите лаунчер' : settingsStatus === 'error' ? 'Проверьте настройки' : undefined}
+            launchBlocked={launcherUpdate?.required ? 'Обновите лаунчер' : settingsStatus === 'error' ? 'Проверьте настройки' : !gameAccess.access ? 'Проверка доступа' : gameAccess.access.closed ? 'Запуск Minecraft закрыт' : undefined}
+            accessMessage={gameAccess.access?.closed ? gameAccess.access.message : !gameAccess.access && gameAccess.error ? gameAccess.error : undefined}
+            onRetryAccess={gameAccess.retry}
+            accessChecking={gameAccess.checking}
             onLaunch={handleLaunchGame}
             onOpenLogin={() => setIsAuthModalOpen(true)}
           />
